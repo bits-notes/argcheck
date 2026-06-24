@@ -11,7 +11,8 @@ import (
 const (
 	SchemaVersionV1 = "validator/v1"
 
-	KindBuiltin = "builtin"
+	KindBuiltin    = "builtin"
+	KindJSONSchema = "json_schema"
 
 	BuiltinNone                   = "none"
 	BuiltinNonEmpty               = "non_empty"
@@ -32,9 +33,10 @@ type Spec struct {
 
 // Result is the product-facing answer returned by a validator.
 type Result struct {
-	Passed  bool           `json:"passed"`
-	Message string         `json:"message"`
-	Details map[string]any `json:"details,omitempty"`
+	Passed       bool            `json:"passed"`
+	Message      string          `json:"message"`
+	Details      map[string]any  `json:"details,omitempty"`
+	ParsedOutput json.RawMessage `json:"parsed_output,omitempty"`
 }
 
 // Error carries a failed validation result through legacy ValidateFunc paths.
@@ -110,6 +112,8 @@ func Compile(spec Spec) (OutputValidator, error) {
 	switch spec.Kind {
 	case KindBuiltin:
 		return compileBuiltin(spec)
+	case KindJSONSchema:
+		return compileJSONSchema(spec)
 	default:
 		return nil, fmt.Errorf("unknown validator kind %q", spec.Kind)
 	}
