@@ -13,6 +13,8 @@ const (
 
 	KindBuiltin    = "builtin"
 	KindJSONSchema = "json_schema"
+	KindRegexMatch = "regex_match"
+	KindLineRules  = "line_rules"
 
 	BuiltinNone                   = "none"
 	BuiltinNonEmpty               = "non_empty"
@@ -114,6 +116,10 @@ func Compile(spec Spec) (OutputValidator, error) {
 		return compileBuiltin(spec)
 	case KindJSONSchema:
 		return compileJSONSchema(spec)
+	case KindRegexMatch:
+		return compileRegexMatch(spec)
+	case KindLineRules:
+		return compileLineRules(spec)
 	default:
 		return nil, fmt.Errorf("unknown validator kind %q", spec.Kind)
 	}
