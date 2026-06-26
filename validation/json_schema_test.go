@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -64,5 +65,28 @@ func TestJSONSchemaValidatorRejectsAdditionalProperties(t *testing.T) {
 	result := Validate(context.Background(), spec, `{"status":"ok","extra":true}`)
 	if result.Passed {
 		t.Fatal("Passed = true, want false")
+	}
+}
+
+func TestJSONSchemaValidatorReportsArrayInsteadOfStringPath(t *testing.T) {
+	spec := Spec{
+		SchemaVersion: SchemaVersionV1,
+		Kind:          KindJSONSchema,
+		Spec: json.RawMessage(`{
+			"type": "object",
+			"required": ["remediation_instructions"],
+			"properties": {
+				"remediation_instructions": {"type": "string"}
+			},
+			"additionalProperties": false
+		}`),
+	}
+
+	result := Validate(context.Background(), spec, `{"remediation_instructions":["fix the citations"]}`)
+	if result.Passed {
+		t.Fatal("Passed = true, want false")
+	}
+	if !strings.Contains(result.Message, "$.remediation_instructions has type array, expected string") {
+		t.Fatalf("message = %q, want path-specific type error", result.Message)
 	}
 }

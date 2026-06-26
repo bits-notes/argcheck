@@ -20,6 +20,9 @@ var (
 	premiseLinePattern      = regexp.MustCompile(`^([1-9][0-9]*)\. (.+)\.$`)
 	conclusionLinePattern   = regexp.MustCompile(`^([1-9][0-9]*)\. Therefore, (.+)\. \[([1-9][0-9]*(?:,[1-9][0-9]*)*)\]$`)
 	terminalCitationPattern = regexp.MustCompile(`\. \[[1-9][0-9]*(?:,[1-9][0-9]*)*\]$`)
+	bracketReferencePattern = regexp.MustCompile(`\[([^\]]+)\]`)
+	numericReferencePattern = regexp.MustCompile(`^[1-9][0-9]*(?:,[1-9][0-9]*)*$`)
+	inlineStepBridgePattern = regexp.MustCompile(`^If ((?:\[[1-9][0-9]*(?:,[1-9][0-9]*)*\](?: and )?)+)(?:,? then |, ).+`)
 	fenceLinePattern        = regexp.MustCompile("^```[A-Za-z0-9_-]*$")
 )
 
@@ -233,6 +236,9 @@ func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentSte
 				Details: map[string]any{"line": lineNumber},
 			}
 		}
+		if result := validateStatementBracketReferences(statement, lineNumber, number); !result.Passed {
+			return NumberedArgumentStep{}, result
+		}
 		return NumberedArgumentStep{
 			Number:    number,
 			Kind:      numberedArgumentStepConclusion,
@@ -266,6 +272,9 @@ func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentSte
 				Details: map[string]any{"line": lineNumber},
 			}
 		}
+		if result := validateStatementBracketReferences(statement, lineNumber, number); !result.Passed {
+			return NumberedArgumentStep{}, result
+		}
 		return NumberedArgumentStep{
 			Number:    number,
 			Kind:      numberedArgumentStepPremise,
@@ -279,6 +288,64 @@ func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentSte
 		Message: fmt.Sprintf("line %d is not a valid premise or conclusion", lineNumber),
 		Details: map[string]any{"line": lineNumber},
 	}
+}
+
+func validateStatementBracketReferences(statement string, lineNumber int, stepNumber int) Result {
+	matches := bracketReferencePattern.FindAllStringSubmatch(statement, -1)
+	if len(matches) == 0 {
+		return Result{Passed: true}
+	}
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+		if !numericReferencePattern.MatchString(match[1]) {
+			return Result{
+				Passed:  false,
+				Message: fmt.Sprintf("line %d contains non-numeric bracket reference %q; formal numbered arguments may only use bracketed step references like [1] inside statements", lineNumber, match[0]),
+				Details: map[string]any{"line": lineNumber, "reference": match[0]},
+			}
+		}
+	}
+	if !statementAllowsInlineStepReferences(statement) {
+		return Result{
+			Passed:  false,
+			Message: fmt.Sprintf("line %d contains inline bracket references outside an explicit bridge premise", lineNumber),
+			Details: map[string]any{"line": lineNumber},
+		}
+	}
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+		references, err := parseCitations(match[1])
+		if err != nil {
+			return Result{
+				Passed:  false,
+				Message: fmt.Sprintf("line %d contains invalid bracketed step reference %q", lineNumber, match[0]),
+				Details: map[string]any{"line": lineNumber, "reference": match[0]},
+			}
+		}
+		for _, reference := range references {
+			if reference >= stepNumber {
+				return Result{
+					Passed:  false,
+					Message: fmt.Sprintf("line %d contains bracketed step reference %q that does not refer to a prior step", lineNumber, match[0]),
+					Details: map[string]any{"line": lineNumber, "reference": match[0], "step": stepNumber},
+				}
+			}
+		}
+	}
+	return Result{Passed: true}
+}
+
+func statementAllowsInlineStepReferences(statement string) bool {
+	statement = strings.TrimSpace(statement)
+	matches := inlineStepBridgePattern.FindStringSubmatch(statement)
+	if len(matches) < 2 {
+		return false
+	}
+	return len(bracketReferencePattern.FindAllStringSubmatch(statement, -1)) == len(bracketReferencePattern.FindAllStringSubmatch(matches[1], -1))
 }
 
 func parseCitations(raw string) ([]int, error) {

@@ -19,6 +19,8 @@ const (
 	BuiltinNone                   = "none"
 	BuiltinNonEmpty               = "non_empty"
 	BuiltinNumberedArgumentSyntax = "numbered_argument_syntax"
+	BuiltinDisputationChallenge   = "disputation_challenge"
+	BuiltinConditionalityPreserve = "conditionality_preservation"
 
 	defaultMaxOutputBytes = 128 * 1024
 	defaultDeadline       = 250 * time.Millisecond
@@ -67,6 +69,10 @@ func LegacyKindSpec(kind string) Spec {
 		return BuiltinSpec(BuiltinNone)
 	case BuiltinNumberedArgumentSyntax:
 		return BuiltinSpec(BuiltinNumberedArgumentSyntax)
+	case BuiltinDisputationChallenge:
+		return BuiltinSpec(BuiltinDisputationChallenge)
+	case BuiltinConditionalityPreserve:
+		return BuiltinSpec(BuiltinConditionalityPreserve)
 	default:
 		return Spec{Kind: strings.TrimSpace(kind)}
 	}
@@ -94,7 +100,7 @@ func Normalize(spec Spec) Spec {
 	if spec.SchemaVersion == "" {
 		spec.SchemaVersion = SchemaVersionV1
 	}
-	if spec.Kind == BuiltinNonEmpty || spec.Kind == BuiltinNone || spec.Kind == BuiltinNumberedArgumentSyntax {
+	if spec.Kind == BuiltinNonEmpty || spec.Kind == BuiltinNone || spec.Kind == BuiltinNumberedArgumentSyntax || spec.Kind == BuiltinDisputationChallenge || spec.Kind == BuiltinConditionalityPreserve {
 		spec.Name = spec.Kind
 		spec.Kind = KindBuiltin
 	}
@@ -149,6 +155,18 @@ func compileBuiltin(spec Spec) (OutputValidator, error) {
 			return nil, err
 		}
 		return numberedArgumentSyntaxValidator{options: options}, nil
+	case BuiltinDisputationChallenge:
+		options, err := parseDisputationChallengeOptions(spec.Options)
+		if err != nil {
+			return nil, err
+		}
+		return disputationChallengeValidator{options: options}, nil
+	case BuiltinConditionalityPreserve:
+		options, err := parseConditionalityPreservationOptions(spec.Options)
+		if err != nil {
+			return nil, err
+		}
+		return conditionalityPreservationValidator{options: options}, nil
 	default:
 		return nil, fmt.Errorf("unknown built-in validator %q", spec.Name)
 	}
