@@ -41,9 +41,9 @@ func TestNumberedArgumentSyntaxValidator_ValidExamples(t *testing.T) {
 		{
 			name: "inline references in bridge premise",
 			output: strings.Join([]string{
-				"1. The proposition expressed by [1] is available.",
-				"2. If [1] is available, the argument can refer to it.",
-				"3. Therefore, the argument can refer to the proposition expressed by [1]. [1,2]",
+				"1. The first premise is available.",
+				"2. If [1], then the argument can refer to it.",
+				"3. Therefore, the argument can refer to the first premise. [1,2]",
 			}, "\n"),
 		},
 	}
@@ -148,6 +148,64 @@ func TestNumberedArgumentSyntaxValidator_InvalidAntiExamples(t *testing.T) {
 				"2. Therefore, all cats are animals. [1]",
 			}, "\n"),
 			wantMessage: "line 2 is blank",
+		},
+		{
+			name: "intermediate therefore missing terminal citations",
+			output: strings.Join([]string{
+				"1. All cats are animals.",
+				"2. Therefore, cats are animals.",
+				"3. Therefore, cats are animals. [2]",
+			}, "\n"),
+			wantMessage: "line 2 starts with Therefore, but does not have valid terminal citations",
+		},
+		{
+			name: "source note bracket in premise",
+			output: strings.Join([]string{
+				"1. LSAG considered stable black-hole scenarios [LSAG 2008].",
+				"2. Therefore, LSAG considered stable black-hole scenarios. [1]",
+			}, "\n"),
+			wantMessage: "line 1 contains non-numeric bracket reference",
+		},
+		{
+			name: "source note bracket in conclusion statement",
+			output: strings.Join([]string{
+				"1. LSAG considered stable black-hole scenarios.",
+				"2. Therefore, LSAG considered stable black-hole scenarios [LSAG 2008]. [1]",
+			}, "\n"),
+			wantMessage: "line 2 contains non-numeric bracket reference",
+		},
+		{
+			name: "numeric source note bracket in premise",
+			output: strings.Join([]string{
+				"1. LSAG considered stable black-hole scenarios [2008].",
+				"2. Therefore, LSAG considered stable black-hole scenarios. [1]",
+			}, "\n"),
+			wantMessage: "line 1 contains inline bracket references outside an explicit bridge premise",
+		},
+		{
+			name: "numeric source page bracket in conclusion statement",
+			output: strings.Join([]string{
+				"1. LSAG considered stable black-hole scenarios.",
+				"2. Therefore, LSAG considered stable black-hole scenarios [12]. [1]",
+			}, "\n"),
+			wantMessage: "line 2 contains inline bracket references outside an explicit bridge premise",
+		},
+		{
+			name: "current-step inline reference",
+			output: strings.Join([]string{
+				"1. If [1], then the argument can refer to it.",
+				"2. Therefore, the argument can refer to it. [1]",
+			}, "\n"),
+			wantMessage: "line 1 contains bracketed step reference",
+		},
+		{
+			name: "source note inside bridge-looking premise",
+			output: strings.Join([]string{
+				"1. LSAG is authoritative.",
+				"2. If LSAG [1] is authoritative, then the claim is supported.",
+				"3. Therefore, the claim is supported. [1,2]",
+			}, "\n"),
+			wantMessage: "line 2 contains inline bracket references outside an explicit bridge premise",
 		},
 	}
 
