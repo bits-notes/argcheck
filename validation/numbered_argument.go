@@ -41,6 +41,7 @@ type NumberedArgumentStep struct {
 type numberedArgumentOptions struct {
 	AllowSingleFencedBlock bool `json:"allow_single_fenced_block"`
 	AllowBlankLines        bool `json:"allow_blank_lines"`
+	allowNoConclusions     bool
 }
 
 type numberedArgumentSyntaxValidator struct {
@@ -185,13 +186,20 @@ func ParseNumberedArgument(output string, options numberedArgumentOptions) (Numb
 	if !seenPremise {
 		return NumberedArgument{}, Result{Passed: false, Message: "numbered argument must contain at least one premise"}
 	}
-	if !seenConclusion {
+	if !seenConclusion && !options.allowNoConclusions {
 		return NumberedArgument{}, Result{Passed: false, Message: "numbered argument must contain at least one conclusion"}
 	}
-	if argument.Steps[len(argument.Steps)-1].Kind != numberedArgumentStepConclusion {
+	if seenConclusion && argument.Steps[len(argument.Steps)-1].Kind != numberedArgumentStepConclusion {
 		return NumberedArgument{}, Result{Passed: false, Message: "final step must be a conclusion"}
 	}
 	return argument, Result{Passed: true}
+}
+
+// ParseNumberedArgumentAllowingNoConclusions applies the numbered-argument
+// parser while permitting a premise-only argument. All other syntax and
+// structural checks remain unchanged.
+func ParseNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
+	return ParseNumberedArgument(output, numberedArgumentOptions{allowNoConclusions: true})
 }
 
 func unwrapOptionalFence(output string, options numberedArgumentOptions) (string, Result) {
