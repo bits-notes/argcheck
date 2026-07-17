@@ -148,7 +148,7 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 	}
 
 	for _, schema := range entailmentSchemas {
-		if schema.arity != len(premises) {
+		if !schemaAcceptsPremiseCount(schema, len(premises)) {
 			continue
 		}
 		for _, ordered := range orderedPremiseSelections(premises, schema.arity) {
@@ -161,10 +161,12 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 		}
 	}
 
-	if special, ok := conjunctiveAntecedentModusPonensFailure(premises, conclusion); ok {
-		report.NearestForm = "modus ponens"
-		report.Mismatch = special
-		return report
+	if len(premises) < 3 {
+		if special, ok := conjunctiveAntecedentModusPonensFailure(premises, conclusion); ok {
+			report.NearestForm = "modus ponens"
+			report.Mismatch = special
+			return report
+		}
 	}
 
 	best := schemaMatchOutcome{}
@@ -173,7 +175,7 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 		selections := orderedPremiseSelections(premises, schema.arity)
 		for _, ordered := range selections {
 			outcome := schema.match(ordered, conclusion)
-			if schema.arity != len(premises) {
+			if !schemaAcceptsPremiseCount(schema, len(premises)) {
 				outcome.traction = false
 			}
 			if outcome.score > best.score || (outcome.score == best.score && outcome.traction && !best.traction) {
@@ -204,7 +206,20 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 	return report
 }
 
+func schemaAcceptsPremiseCount(schema entailmentSchema, premiseCount int) bool {
+	if schema.arity == variableArity {
+		return premiseCount >= 3
+	}
+	return schema.arity == premiseCount
+}
+
 func orderedPremiseSelections(premises []NumberedArgumentStep, arity int) [][]NumberedArgumentStep {
+	if arity == variableArity {
+		if len(premises) < 3 {
+			return nil
+		}
+		return [][]NumberedArgumentStep{premises}
+	}
 	if arity == 1 {
 		result := make([][]NumberedArgumentStep, 0, len(premises))
 		for _, premise := range premises {

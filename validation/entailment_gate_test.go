@@ -82,10 +82,8 @@ func TestEntailmentGateRealDiagnosticFixtures(t *testing.T) {
 2. The transparent-validity standard satisfies condition (b).
 3. If it is the case both that, if the articulability thesis is true, then the transparent-validity standard satisfies condition (a), and that the transparent-validity standard satisfies condition (b), then, if the articulability thesis is true, then the transparent-validity standard satisfies both condition (a) and condition (b).
 4. Therefore, if the articulability thesis is true, then the transparent-validity standard satisfies both condition (a) and condition (b). [1,2,3]`,
-			form: "modus ponens",
-			mismatchContains: []string{
-				"antecedent", "is not matched verbatim by any cited premise",
-			},
+			passed: true,
+			form:   "conjunctive modus ponens",
 		},
 		{
 			name: "predicate smuggling",
@@ -116,6 +114,147 @@ func TestEntailmentGateRealDiagnosticFixtures(t *testing.T) {
 				if !strings.Contains(step.Mismatch, expected) {
 					t.Fatalf("mismatch %q does not contain %q", step.Mismatch, expected)
 				}
+			}
+		})
+	}
+}
+
+func TestConjunctiveModusPonensThroughBridgeExpansion(t *testing.T) {
+	tests := []struct {
+		name             string
+		argument         string
+		passed           bool
+		mismatchContains []string
+	}{
+		{
+			name: "two conjuncts",
+			argument: `1. Rain falls.
+2. Wind blows.
+3. Clouds gather.
+4. If [1,2], then the storm arrives.
+5. Therefore, the storm arrives. [1,2,4]`,
+			passed: true,
+		},
+		{
+			name: "three conjuncts",
+			argument: `1. Rain falls.
+2. Wind blows.
+3. Clouds gather.
+4. If [1,2,3], then the storm arrives.
+5. Therefore, the storm arrives. [1,2,3,4]`,
+			passed: true,
+		},
+		{
+			name: "conjunct contains comma and",
+			argument: `1. The study was preregistered, and the protocol was public.
+2. The analysis plan was frozen.
+3. Background evidence was collected.
+4. If [1,2], then the evidence is credible.
+5. Therefore, the evidence is credible. [1,2,4]`,
+			passed: true,
+		},
+		{
+			name: "one cited conjunct reworded",
+			argument: `1. Rain falls.
+2. Wind blows.
+3. A wind is blowing.
+4. If [1,2], then the storm arrives.
+5. Therefore, the storm arrives. [1,3,4]`,
+			mismatchContains: []string{"wind blows", "a wind is blowing"},
+		},
+		{
+			name: "unused extra premise",
+			argument: `1. Rain falls.
+2. Wind blows.
+3. Clouds gather.
+4. If [1,2], then the storm arrives.
+5. Therefore, the storm arrives. [1,2,3,4]`,
+			mismatchContains: []string{"premise 3", "unused"},
+		},
+		{
+			name: "duplicate citation is not a distinct premise",
+			argument: `1. Rain falls.
+2. Wind blows.
+3. Clouds gather.
+4. If [1,2], then the storm arrives.
+5. Therefore, the storm arrives. [1,1,4]`,
+			mismatchContains: []string{"wind blows", "rain falls"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			report, result := CheckEntailmentGate(test.argument)
+			if report.Passed != test.passed || result.Passed != test.passed {
+				t.Fatalf("passed = (%v, %v), want %v; result=%#v report=%#v", report.Passed, result.Passed, test.passed, result, report)
+			}
+			if len(report.Steps) != 1 {
+				t.Fatalf("gated steps = %d, want 1", len(report.Steps))
+			}
+			step := report.Steps[0]
+			if test.passed {
+				if step.Form != "conjunctive modus ponens" {
+					t.Fatalf("form = %q, want conjunctive modus ponens", step.Form)
+				}
+				if expansions, ok := result.Details["expansions"].([]BridgeExpansion); !ok || len(expansions) != 1 {
+					t.Fatalf("expansions = %#v, want one record", result.Details["expansions"])
+				}
+				return
+			}
+			if step.NearestForm != "conjunctive modus ponens" {
+				t.Fatalf("nearest form = %q, want conjunctive modus ponens; step=%#v", step.NearestForm, step)
+			}
+			for _, expected := range test.mismatchContains {
+				if !strings.Contains(step.Mismatch, expected) {
+					t.Fatalf("mismatch %q does not contain %q", step.Mismatch, expected)
+				}
+			}
+		})
+	}
+}
+
+func TestEntailmentGateOpaqueAndInvalidInvariants(t *testing.T) {
+	tests := []struct {
+		name     string
+		argument string
+	}{
+		{
+			name: "opaque kinship composition",
+			argument: `1. Dana is Pat's mother.
+2. Lee is Dana's brother.
+3. Therefore, Lee is Pat's uncle. [1,2]`,
+		},
+		{
+			name: "opaque relational rewrite",
+			argument: `1. Lee is Pat's uncle.
+2. Therefore, Lee is Pat's mother's brother. [1]`,
+		},
+		{
+			name: "affirming the consequent",
+			argument: `1. If it rains, the ground gets wet.
+2. The ground gets wet.
+3. Therefore, it rains. [1,2]`,
+		},
+		{
+			name: "undistributed middle",
+			argument: `1. All artists are creative.
+2. All scientists are creative.
+3. Therefore, all scientists are artists. [1,2]`,
+		},
+		{
+			name: "D-TV-uncle-explicit",
+			argument: `1. Dana is Pat's mother.
+2. Lee is Dana's brother.
+3. Any brother of a person's parent is that person's uncle.
+4. Therefore, Lee is Pat's uncle. [1,2,3]`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			report, result := CheckEntailmentGate(test.argument)
+			if result.Passed || report.Passed {
+				t.Fatalf("gold invalid fixture unexpectedly passed: result=%#v report=%#v", result, report)
 			}
 		})
 	}

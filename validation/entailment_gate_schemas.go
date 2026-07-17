@@ -8,6 +8,8 @@ import (
 
 const clauseWrapper = "it is the case that"
 
+const variableArity = -1
+
 var conditionalSplitPattern = regexp.MustCompile(`(?i),?\bthen\b,? `)
 
 type clausePair struct {
@@ -36,6 +38,7 @@ type clauseIdentity struct {
 }
 
 var entailmentSchemas = []entailmentSchema{
+	{name: "conjunctive modus ponens", arity: variableArity, match: matchConjunctiveModusPonens},
 	{name: "modus ponens", arity: 2, match: matchModusPonens},
 	{name: "modus tollens", arity: 2, match: matchModusTollens},
 	{name: "hypothetical syllogism", arity: 2, match: matchHypotheticalSyllogism},
@@ -46,6 +49,7 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "double negation", arity: 1, match: matchDoubleNegation},
 	{name: "self-entailment", arity: 1, match: matchSelfEntailment},
 	{name: "identity transitivity", arity: 2, match: matchIdentityTransitivity},
+	{name: "universal syllogism", arity: 2, match: matchUniversalSyllogism},
 	{name: "universal instantiation", arity: 2, match: matchUniversalInstantiation},
 }
 
@@ -125,6 +129,23 @@ func conjunctionCandidates(statement string) []clausePair {
 	return result
 }
 
+func conjunctiveAntecedentCandidates(statement string) [][]string {
+	statement = normalizeClause(statement)
+	result := make([][]string, 0)
+	separator := ", and " + clauseWrapper
+	if strings.Contains(statement, separator) {
+		parts := strings.Split(statement, separator)
+		for index := 1; index < len(parts); index++ {
+			parts[index] = clauseWrapper + " " + parts[index]
+		}
+		result = append(result, parts)
+	}
+	for _, conjunction := range conjunctionCandidates(statement) {
+		result = append(result, []string{conjunction.left, conjunction.right})
+	}
+	return result
+}
+
 func disjunctionCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
 	statement = strings.TrimPrefix(statement, "either ")
@@ -133,10 +154,51 @@ func disjunctionCandidates(statement string) []clausePair {
 
 func universalCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
-	if !strings.HasPrefix(statement, "every ") {
-		return nil
+	result := make([]clausePair, 0)
+	if strings.HasPrefix(statement, "every ") {
+		result = appendSplitCandidates(result, strings.TrimPrefix(statement, "every "), " is ", false)
 	}
-	return appendSplitCandidates(nil, strings.TrimPrefix(statement, "every "), " is ", false)
+	if strings.HasPrefix(statement, "all ") {
+		result = appendSplitCandidates(result, strings.TrimPrefix(statement, "all "), " are ", false)
+	}
+	return result
+}
+
+func equalTerms(left, right string) bool {
+	leftCandidates := termCandidates(left)
+	rightCandidates := termCandidates(right)
+	for _, leftCandidate := range leftCandidates {
+		for _, rightCandidate := range rightCandidates {
+			if leftCandidate == rightCandidate {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func termCandidates(value string) []string {
+	value = normalizeClause(value)
+	for _, copula := range []string{"is ", "are "} {
+		if strings.HasPrefix(value, copula) {
+			value = strings.TrimPrefix(value, copula)
+			break
+		}
+	}
+	for _, article := range []string{"a ", "an ", "the "} {
+		if strings.HasPrefix(value, article) {
+			value = strings.TrimPrefix(value, article)
+			break
+		}
+	}
+	result := []string{value}
+	if strings.HasSuffix(value, "s") && len(value) > 1 {
+		result = append(result, strings.TrimSuffix(value, "s"))
+	}
+	if strings.HasSuffix(value, "es") && len(value) > 2 {
+		result = append(result, strings.TrimSuffix(value, "es"))
+	}
+	return result
 }
 
 func instanceCandidates(statement string) []clausePair {
@@ -168,9 +230,17 @@ func appendSplitCandidates(result []clausePair, statement, separator string, str
 }
 
 func evaluateIdentities(identities ...clauseIdentity) schemaMatchOutcome {
+	return evaluateIdentityComparisons(equalClauses, identities...)
+}
+
+func evaluateTermIdentities(identities ...clauseIdentity) schemaMatchOutcome {
+	return evaluateIdentityComparisons(equalTerms, identities...)
+}
+
+func evaluateIdentityComparisons(equal func(string, string) bool, identities ...clauseIdentity) schemaMatchOutcome {
 	outcome := schemaMatchOutcome{traction: true}
 	for _, identity := range identities {
-		if equalClauses(identity.left, identity.right) {
+		if equal(identity.left, identity.right) {
 			outcome.score++
 			continue
 		}
@@ -188,11 +258,134 @@ func evaluateIdentities(identities ...clauseIdentity) schemaMatchOutcome {
 	return outcome
 }
 
+func appendOutcome(current *schemaMatchOutcome, addition schemaMatchOutcome) {
+	current.score += addition.score
+	current.traction = current.traction || addition.traction
+	if current.mismatch == "" {
+		current.mismatch = addition.mismatch
+	}
+}
+
 func betterOutcome(current, candidate schemaMatchOutcome) schemaMatchOutcome {
 	if candidate.matched || candidate.score > current.score || (candidate.score == current.score && candidate.traction && !current.traction) {
 		return candidate
 	}
 	return current
+}
+
+func matchConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if len(premises) < 3 {
+		return schemaMatchOutcome{}
+	}
+
+	best := schemaMatchOutcome{}
+	for conditionalIndex, premise := range premises {
+		for _, conditional := range conditionalCandidates(premise.Statement) {
+			conjunctiveCandidates := conjunctiveAntecedentCandidates(conditional.left)
+			if len(conjunctiveCandidates) == 0 {
+				candidate := schemaMatchOutcome{
+					traction: true,
+					mismatch: fmt.Sprintf(
+						"premise %d antecedent %q does not split into two or more conjuncts",
+						premise.Number,
+						normalizeClause(conditional.left),
+					),
+				}
+				best = betterOutcome(best, candidate)
+				continue
+			}
+
+			for _, conjuncts := range conjunctiveCandidates {
+				candidate := evaluateConjunctiveModusPonensCandidate(
+					premises,
+					conditionalIndex,
+					conditional,
+					conjuncts,
+					conclusion,
+				)
+				best = betterOutcome(best, candidate)
+				if best.matched {
+					return best
+				}
+			}
+		}
+	}
+	return best
+}
+
+func evaluateConjunctiveModusPonensCandidate(
+	premises []NumberedArgumentStep,
+	conditionalIndex int,
+	conditional clausePair,
+	conjuncts []string,
+	conclusion NumberedArgumentStep,
+) schemaMatchOutcome {
+	conditionalPremise := premises[conditionalIndex]
+	outcome := evaluateIdentities(clauseIdentity{
+		fmt.Sprintf("premise %d consequent", conditionalPremise.Number), conditional.right,
+		fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
+	})
+	used := make([]bool, len(premises))
+	used[conditionalIndex] = true
+	usedPremiseNumbers := map[int]bool{conditionalPremise.Number: true}
+
+	for _, conjunct := range conjuncts {
+		matchedIndex := -1
+		for premiseIndex, premise := range premises {
+			if used[premiseIndex] || usedPremiseNumbers[premise.Number] || !equalClauses(conjunct, premise.Statement) {
+				continue
+			}
+			matchedIndex = premiseIndex
+			break
+		}
+		if matchedIndex >= 0 {
+			used[matchedIndex] = true
+			usedPremiseNumbers[premises[matchedIndex].Number] = true
+			outcome.score++
+			continue
+		}
+		if outcome.mismatch == "" {
+			unused := make([]NumberedArgumentStep, 0, len(premises))
+			for premiseIndex, premise := range premises {
+				if !used[premiseIndex] {
+					unused = append(unused, premise)
+				}
+			}
+			nearest := nearestPremiseToClause(unused, 0, conjunct)
+			if nearest.Number == 0 {
+				outcome.mismatch = fmt.Sprintf(
+					"premise %d antecedent conjunct %q is not matched verbatim by any unused cited premise",
+					conditionalPremise.Number,
+					normalizeClause(conjunct),
+				)
+			} else {
+				outcome.mismatch = fmt.Sprintf(
+					"premise %d antecedent conjunct %q does not match cited premise %d %q verbatim",
+					conditionalPremise.Number,
+					normalizeClause(conjunct),
+					nearest.Number,
+					normalizeClause(nearest.Statement),
+				)
+			}
+		}
+	}
+
+	for premiseIndex, premise := range premises {
+		if used[premiseIndex] {
+			continue
+		}
+		if outcome.mismatch == "" {
+			outcome.mismatch = fmt.Sprintf(
+				"cited premise %d %q is unused by premise %d conjunctive antecedent",
+				premise.Number,
+				normalizeClause(premise.Statement),
+				conditionalPremise.Number,
+			)
+		}
+	}
+
+	outcome.matched = outcome.mismatch == "" && len(conjuncts)+1 == len(premises)
+	return outcome
 }
 
 func matchModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
@@ -372,11 +565,17 @@ func matchUniversalInstantiation(premises []NumberedArgumentStep, conclusion Num
 	for _, universal := range universalCandidates(premises[0].Statement) {
 		for _, instance := range instanceCandidates(premises[1].Statement) {
 			for _, result := range instanceCandidates(conclusion.Statement) {
-				candidate := evaluateIdentities(
+				candidate := schemaMatchOutcome{}
+				appendOutcome(&candidate, evaluateTermIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d class", premises[0].Number), universal.left, fmt.Sprintf("premise %d predicate", premises[1].Number), instance.right},
+				))
+				appendOutcome(&candidate, evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d instance", premises[1].Number), instance.left, fmt.Sprintf("conclusion %d instance", conclusion.Number), result.left},
+				))
+				appendOutcome(&candidate, evaluateTermIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), universal.right, fmt.Sprintf("conclusion %d predicate", conclusion.Number), result.right},
-				)
+				))
+				candidate.matched = candidate.score == 3
 				best = betterOutcome(best, candidate)
 				if best.matched {
 					return best
@@ -391,11 +590,31 @@ func scoreUniversalPredicateSwap(premise, conclusion NumberedArgumentStep) schem
 	best := schemaMatchOutcome{}
 	for _, source := range universalCandidates(premise.Statement) {
 		for _, target := range universalCandidates(conclusion.Statement) {
-			candidate := evaluateIdentities(
+			candidate := evaluateTermIdentities(
 				clauseIdentity{fmt.Sprintf("premise %d class", premise.Number), source.left, fmt.Sprintf("conclusion %d class", conclusion.Number), target.left},
 				clauseIdentity{fmt.Sprintf("premise %d predicate", premise.Number), "is " + source.right, fmt.Sprintf("conclusion %d predicate", conclusion.Number), "is " + target.right},
 			)
 			best = betterOutcome(best, candidate)
+		}
+	}
+	return best
+}
+
+func matchUniversalSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, first := range universalCandidates(premises[0].Statement) {
+		for _, second := range universalCandidates(premises[1].Statement) {
+			for _, result := range universalCandidates(conclusion.Statement) {
+				candidate := evaluateTermIdentities(
+					clauseIdentity{fmt.Sprintf("premise %d class", premises[0].Number), first.left, fmt.Sprintf("conclusion %d class", conclusion.Number), result.left},
+					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), first.right, fmt.Sprintf("premise %d class", premises[1].Number), second.left},
+					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[1].Number), second.right, fmt.Sprintf("conclusion %d predicate", conclusion.Number), result.right},
+				)
+				best = betterOutcome(best, candidate)
+				if best.matched {
+					return best
+				}
+			}
 		}
 	}
 	return best

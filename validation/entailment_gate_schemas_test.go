@@ -15,6 +15,12 @@ func TestNormalizeClauseAndWrapperEquality(t *testing.T) {
 	if equalClauses("the red box", "the blue box") {
 		t.Fatal("clause equality rewrote non-wrapper vocabulary")
 	}
+	if !equalTerms("humans", "a human") || !equalTerms("classes", "the class") {
+		t.Fatal("universal term equality did not tolerate articles and naive plurals")
+	}
+	if equalClauses("humans", "a human") {
+		t.Fatal("general clause equality inherited universal term tolerance")
+	}
 }
 
 func TestClauseCandidateEnumeration(t *testing.T) {
@@ -35,6 +41,11 @@ func TestClauseCandidateEnumeration(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("scaffold conjunction candidate missing: %#v", conjunctions)
+	}
+
+	universals := universalCandidates("All humans are mortal.")
+	if len(universals) != 1 || universals[0] != (clausePair{left: "humans", right: "mortal"}) {
+		t.Fatalf("all/are universal candidates = %#v", universals)
 	}
 }
 
@@ -108,9 +119,9 @@ func TestEntailmentSchemaCatalogPositiveAndNegative(t *testing.T) {
 		},
 		{
 			name: "universal instantiation", form: "universal instantiation",
-			positive:         "1. Every raven is black.\n2. Hugin is raven.\n3. Therefore, Hugin is black. [1,2]",
-			negative:         "1. Every raven is black.\n2. Hugin is raven.\n3. Therefore, Hugin is dark. [1,2]",
-			mismatchContains: [2]string{"black", "dark"},
+			positive:         "1. All humans are mortal.\n2. Socrates is a human.\n3. Therefore, Socrates is mortal. [1,2]",
+			negative:         "1. All humans are mortal.\n2. Socrates is a human.\n3. Therefore, Socrates is wise. [1,2]",
+			mismatchContains: [2]string{"mortal", "wise"},
 		},
 	}
 
@@ -137,6 +148,45 @@ func TestEntailmentSchemaCatalogPositiveAndNegative(t *testing.T) {
 				if !strings.Contains(step.Mismatch, expected) {
 					t.Fatalf("mismatch %q does not quote %q", step.Mismatch, expected)
 				}
+			}
+		})
+	}
+}
+
+func TestUniversalSyllogismPositiveAndInvalidForms(t *testing.T) {
+	positive := `1. All humans are mammals.
+2. Every mammal is mortal.
+3. Therefore, all humans are mortal. [1,2]`
+	report, result := CheckEntailmentGate(positive)
+	if !result.Passed || !report.Passed {
+		t.Fatalf("universal syllogism failed: result=%#v report=%#v", result, report)
+	}
+	if got := report.Steps[0].Form; got != "universal syllogism" {
+		t.Fatalf("form = %q, want universal syllogism", got)
+	}
+
+	tests := []struct {
+		name     string
+		argument string
+	}{
+		{
+			name: "undistributed middle",
+			argument: `1. All artists are creative.
+2. All scientists are creative.
+3. Therefore, all scientists are artists. [1,2]`,
+		},
+		{
+			name: "affirming the consequent",
+			argument: `1. All humans are mortal.
+2. Socrates is mortal.
+3. Therefore, Socrates is a human. [1,2]`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			report, result := CheckEntailmentGate(test.argument)
+			if result.Passed || report.Passed {
+				t.Fatalf("invalid universal form unexpectedly passed: result=%#v report=%#v", result, report)
 			}
 		})
 	}
