@@ -32,11 +32,17 @@ func TestNumberedArgumentUnusedSteps(t *testing.T) {
 			want: []int{3},
 		},
 		{
-			name: "orphan intermediate conclusion drags its private premise out",
-			// step 3 is a conclusion nothing cites; premise 1 feeds only step 3; the
-			// final conclusion (5) reaches neither, so both 1 and 3 are unused.
-			arg:  "1. The moon is made of rock.\n2. Socrates is a man.\n3. Therefore, the moon is a body. [1]\n4. All men are mortal.\n5. Therefore, Socrates is mortal. [2,4]",
-			want: []int{1, 3},
+			name: "two independent conclusions, every premise used",
+			// A valid multi-conclusion argument: premise 1 feeds conclusion 2, premises
+			// 4,5 feed conclusion 6. No premise is dead even though 1/2 don't feed the
+			// final conclusion.
+			arg:  "1. The box is red.\n2. Therefore, the box has a color. [1]\n3. Steam is water.\n4. All water is wet.\n5. Therefore, steam is wet. [3,4]",
+			want: nil,
+		},
+		{
+			name: "dead premise among multiple conclusions",
+			arg:  "1. The box is red.\n2. The moon is far.\n3. Therefore, the box has a color. [1]\n4. Steam is water.\n5. All water is wet.\n6. Therefore, steam is wet. [4,5]",
+			want: []int{2},
 		},
 	}
 	for _, tc := range cases {
