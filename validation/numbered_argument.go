@@ -75,6 +75,16 @@ func (v numberedArgumentSyntaxValidator) Validate(ctx context.Context, output st
 	if !result.Passed {
 		return result
 	}
+	if unused := NumberedArgumentUnusedSteps(argument); len(unused) > 0 {
+		return Result{
+			Passed: false,
+			Message: fmt.Sprintf(
+				"steps %v do not support the final conclusion; every premise must feed a conclusion and every intermediate conclusion must be cited",
+				unused,
+			),
+			Details: map[string]any{"unused_steps": unused},
+		}
+	}
 	return Result{
 		Passed:  true,
 		Message: "output matches numbered_argument_syntax",
