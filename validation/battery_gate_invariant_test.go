@@ -17,11 +17,12 @@ import (
 // gold cannot be frozen.
 
 type goldGateCase struct {
-	ID         string `json:"id"`
-	GoldStatus string `json:"gold_status"`
-	CatalogGap string `json:"catalog_gap"`
-	Argument   string `json:"argument"`
-	Input      string `json:"input"`
+	ID               string `json:"id"`
+	GoldStatus       string `json:"gold_status"`
+	CatalogGap       string `json:"catalog_gap"`
+	StructuralDefect string `json:"structural_defect"`
+	Argument         string `json:"argument"`
+	Input            string `json:"input"`
 }
 
 func (c goldGateCase) text() string {
@@ -55,6 +56,23 @@ func assertGoldGateConsistent(t *testing.T, path string) {
 	for _, c := range loadGoldGateCases(t, path) {
 		c := c
 		t.Run(c.ID, func(t *testing.T) {
+			parsed, res := ParseNumberedArgument(c.text(), numberedArgumentOptions{})
+			if !res.Passed {
+				t.Fatalf("case %s does not parse: %s", c.ID, res.Message)
+			}
+			unused := NumberedArgumentUnusedSteps(parsed)
+			if c.StructuralDefect == "unused_premise" {
+				// Connectivity defect is orthogonal to the gate (its conclusions may
+				// still gate-pass); the structural check is what must reject it.
+				if len(unused) == 0 {
+					t.Fatalf("structural_defect case %s must have an uncited premise but none was found", c.ID)
+				}
+				return
+			}
+			if len(unused) > 0 {
+				t.Fatalf("gold case %s has dead premises %v; every battery argument must be connectivity-clean", c.ID, unused)
+			}
+
 			report, _ := CheckEntailmentGate(c.text())
 			transparent := c.GoldStatus == "transparently_valid"
 			switch {
