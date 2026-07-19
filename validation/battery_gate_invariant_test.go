@@ -69,6 +69,22 @@ func assertGoldGateConsistent(t *testing.T, path string) {
 				}
 				return
 			}
+			if c.StructuralDefect == "inert_citation" {
+				// The inert premise IS cited, so connectivity is clean and the
+				// connectivity check cannot catch it. The gate must: a gate-pass
+				// implies every cited premise participates in the matched schema, so
+				// a conclusion that over-cites an inert premise must gate-FAIL. This
+				// pins that intrinsic against a future schema/arity refactor silently
+				// reintroducing the hole.
+				if len(unused) != 0 {
+					t.Fatalf("inert_citation case %s must be connectivity-clean (the inert premise is cited) but found unused %v", c.ID, unused)
+				}
+				report, _ := CheckEntailmentGate(c.text())
+				if report.Passed {
+					t.Fatalf("inert_citation case %s must gate-FAIL (a cited-but-unused premise is not a clean entailment) but gate-passed", c.ID)
+				}
+				return
+			}
 			if len(unused) > 0 {
 				t.Fatalf("gold case %s has dead premises %v; every battery argument must be connectivity-clean", c.ID, unused)
 			}
