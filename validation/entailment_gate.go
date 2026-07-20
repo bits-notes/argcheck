@@ -30,6 +30,16 @@ type EntailmentGateStepReport struct {
 	Mismatch    string `json:"mismatch,omitempty"`
 }
 
+// InertCitationReport identifies a conclusion whose full citation set fails
+// the gate even though a proper subset instantiates a known gate schema. The
+// omitted citations therefore do no work in that certified entailment.
+type InertCitationReport struct {
+	Step           int    `json:"step"`
+	Form           string `json:"form"`
+	UsedCitations  []int  `json:"used_citations"`
+	InertCitations []int  `json:"inert_citations"`
+}
+
 type entailmentGateValidator struct {
 	options numberedArgumentOptions
 }
@@ -129,6 +139,66 @@ func GateNumberedArgument(arg NumberedArgument) EntailmentGateReport {
 		}
 	}
 	return report
+}
+
+// NumberedArgumentInertCitations finds gate-failing conclusions for which a
+// fixed-arity schema passes on a proper subset of the cited premises. It is a
+// conservative structural check: it reports only a witnessed gate proof and
+// never guesses whether semantically difficult residue contains an extra
+// citation.
+func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport {
+	stepsByNumber := make(map[int]NumberedArgumentStep, len(arg.Steps))
+	for _, step := range arg.Steps {
+		stepsByNumber[step.Number] = step
+	}
+
+	reports := make([]InertCitationReport, 0)
+	for _, conclusion := range arg.Steps {
+		if conclusion.Kind != numberedArgumentStepConclusion || len(conclusion.Citations) < 2 {
+			continue
+		}
+		if gateConclusionStep(conclusion, stepsByNumber).Passed {
+			continue
+		}
+
+		premises := make([]NumberedArgumentStep, 0, len(conclusion.Citations))
+		for _, citation := range conclusion.Citations {
+			premises = append(premises, stepsByNumber[citation])
+		}
+		for _, schema := range entailmentSchemas {
+			if schema.arity == variableArity || schema.arity >= len(premises) {
+				continue
+			}
+			for _, selection := range orderedPremiseSelections(premises, schema.arity) {
+				if !schema.match(selection, conclusion).matched {
+					continue
+				}
+				used := make(map[int]bool, len(selection))
+				usedCitations := make([]int, 0, len(selection))
+				for _, premise := range selection {
+					used[premise.Number] = true
+					usedCitations = append(usedCitations, premise.Number)
+				}
+				inert := make([]int, 0, len(premises)-len(selection))
+				for _, citation := range conclusion.Citations {
+					if !used[citation] {
+						inert = append(inert, citation)
+					}
+				}
+				reports = append(reports, InertCitationReport{
+					Step:           conclusion.Number,
+					Form:           schema.name,
+					UsedCitations:  usedCitations,
+					InertCitations: inert,
+				})
+				break
+			}
+			if len(reports) > 0 && reports[len(reports)-1].Step == conclusion.Number {
+				break
+			}
+		}
+	}
+	return reports
 }
 
 func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
