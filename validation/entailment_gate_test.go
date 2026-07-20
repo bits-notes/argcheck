@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -276,5 +277,56 @@ func TestEntailmentGateBuiltinOptionsAndDetails(t *testing.T) {
 	}
 	if result.Details["gated_steps"] != 1 || result.Details["passed_steps"] != 1 {
 		t.Fatalf("details = %#v", result.Details)
+	}
+}
+
+func TestNumberedArgumentInertCitations(t *testing.T) {
+	tests := []struct {
+		name     string
+		argument string
+		want     []int
+	}{
+		{
+			name: "extra premise beside modus ponens",
+			argument: `1. If it is the case that it rains, then the ground is wet.
+2. It rains.
+3. The moon orbits the Earth.
+4. Therefore, the ground is wet. [1,2,3]`,
+			want: []int{3},
+		},
+		{
+			name: "semantic residue has no witnessed inert citation",
+			argument: `1. The box is red.
+2. The box is wooden.
+3. Therefore, the box is some color. [1,2]`,
+		},
+		{
+			name: "full citation set gate passes",
+			argument: `1. If it is the case that it rains, then the ground is wet.
+2. It rains.
+3. Therefore, the ground is wet. [1,2]`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			argument, result := ParseNumberedArgumentAllowingNoConclusions(test.argument)
+			if !result.Passed {
+				t.Fatalf("parse: %s", result.Message)
+			}
+			reports := NumberedArgumentInertCitations(argument)
+			if len(test.want) == 0 {
+				if len(reports) != 0 {
+					t.Fatalf("reports = %+v, want none", reports)
+				}
+				return
+			}
+			if len(reports) != 1 || !slices.Equal(reports[0].InertCitations, test.want) {
+				t.Fatalf("reports = %+v, want inert citations %v", reports, test.want)
+			}
+			if reports[0].Form != "modus ponens" || reports[0].Step != 4 {
+				t.Fatalf("unexpected witness: %+v", reports[0])
+			}
+		})
 	}
 }
