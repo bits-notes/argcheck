@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+// EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
+// whenever a schema is added or changed so certificates stay comparable.
+const EntailmentGateCatalogVersion = "v2"
+
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
 type EntailmentGateOptions struct {
@@ -99,6 +103,7 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 		"gated_steps":  len(report.Steps),
 		"passed_steps": passedSteps,
 		"expansions":   expansions,
+		"catalog":      EntailmentGateCatalogVersion,
 	}
 	if report.Passed {
 		return report, Result{
@@ -217,16 +222,18 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 		premises = append(premises, premise)
 	}
 
-	for _, schema := range entailmentSchemas {
-		if !schemaAcceptsPremiseCount(schema, len(premises)) {
-			continue
-		}
-		for _, ordered := range orderedPremiseSelections(premises, schema.arity) {
-			outcome := schema.match(ordered, conclusion)
-			if outcome.matched {
-				report.Passed = true
-				report.Form = schema.name
-				return report
+	for _, set := range gateCandidateSets(premises, conclusion) {
+		for _, schema := range entailmentSchemas {
+			if !schemaAcceptsPremiseCount(schema, len(set.premises)) {
+				continue
+			}
+			for _, ordered := range orderedPremiseSelections(set.premises, schema.arity) {
+				outcome := schema.match(ordered, set.conclusion)
+				if outcome.matched {
+					report.Passed = true
+					report.Form = schema.name + set.formSuffix
+					return report
+				}
 			}
 		}
 	}
@@ -241,24 +248,26 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 
 	best := schemaMatchOutcome{}
 	bestName := "none"
-	for _, schema := range entailmentSchemas {
-		selections := orderedPremiseSelections(premises, schema.arity)
-		for _, ordered := range selections {
-			outcome := schema.match(ordered, conclusion)
-			if !schemaAcceptsPremiseCount(schema, len(premises)) {
-				outcome.traction = false
-			}
-			if outcome.score > best.score || (outcome.score == best.score && outcome.traction && !best.traction) {
-				best = outcome
-				bestName = schema.name
-			}
-		}
-		if schema.name == "universal instantiation" {
-			for _, premise := range premises {
-				outcome := scoreUniversalPredicateSwap(premise, conclusion)
+	for _, set := range gateCandidateSets(premises, conclusion) {
+		for _, schema := range entailmentSchemas {
+			selections := orderedPremiseSelections(set.premises, schema.arity)
+			for _, ordered := range selections {
+				outcome := schema.match(ordered, set.conclusion)
+				if !schemaAcceptsPremiseCount(schema, len(set.premises)) {
+					outcome.traction = false
+				}
 				if outcome.score > best.score || (outcome.score == best.score && outcome.traction && !best.traction) {
 					best = outcome
-					bestName = schema.name
+					bestName = schema.name + set.formSuffix
+				}
+			}
+			if schema.name == "universal instantiation" {
+				for _, premise := range set.premises {
+					outcome := scoreUniversalPredicateSwap(premise, set.conclusion)
+					if outcome.score > best.score || (outcome.score == best.score && outcome.traction && !best.traction) {
+						best = outcome
+						bestName = schema.name + set.formSuffix
+					}
 				}
 			}
 		}
@@ -274,6 +283,45 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 	report.NearestForm = "none"
 	report.Mismatch = fmt.Sprintf("no cited premise matches conclusion step %d under any entailment-gate schema", conclusion.Number)
 	return report
+}
+
+type gateCandidateSet struct {
+	premises   []NumberedArgumentStep
+	conclusion NumberedArgumentStep
+	formSuffix string
+}
+
+// gateCandidateSets returns the step as written plus, when the conclusion and
+// every cited premise carry a leading "Necessarily," operator, the
+// de-modalized step. Certifying the stripped step under any catalog schema is
+// sound in modal logic K: from boxed premises whose unboxed forms entail C,
+// infer boxed C. Steps where only some premises are modalized get no stripped
+// set — necessity in the conclusion must not outrun a contingent premise.
+func gateCandidateSets(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) []gateCandidateSet {
+	sets := []gateCandidateSet{{premises: premises, conclusion: conclusion}}
+	if len(premises) == 0 {
+		return sets
+	}
+	strippedConclusions := necessityCandidates(conclusion.Statement)
+	if len(strippedConclusions) == 0 {
+		return sets
+	}
+	strippedPremises := make([]NumberedArgumentStep, len(premises))
+	for index, premise := range premises {
+		stripped := necessityCandidates(premise.Statement)
+		if len(stripped) == 0 {
+			return sets
+		}
+		strippedPremises[index] = premise
+		strippedPremises[index].Statement = stripped[0]
+	}
+	strippedConclusion := conclusion
+	strippedConclusion.Statement = strippedConclusions[0]
+	return append(sets, gateCandidateSet{
+		premises:   strippedPremises,
+		conclusion: strippedConclusion,
+		formSuffix: " (necessitation)",
+	})
 }
 
 func schemaAcceptsPremiseCount(schema entailmentSchema, premiseCount int) bool {

@@ -50,7 +50,9 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "self-entailment", arity: 1, match: matchSelfEntailment},
 	{name: "identity transitivity", arity: 2, match: matchIdentityTransitivity},
 	{name: "universal syllogism", arity: 2, match: matchUniversalSyllogism},
+	{name: "universal negative syllogism", arity: 2, match: matchUniversalNegativeSyllogism},
 	{name: "universal instantiation", arity: 2, match: matchUniversalInstantiation},
+	{name: "necessity elimination", arity: 1, match: matchNecessityElimination},
 }
 
 func normalizeClause(value string) string {
@@ -161,7 +163,60 @@ func universalCandidates(statement string) []clausePair {
 	if strings.HasPrefix(statement, "all ") {
 		result = appendSplitCandidates(result, strings.TrimPrefix(statement, "all "), " are ", false)
 	}
+	for _, prefix := range []string{"everything ", "everyone "} {
+		if strings.HasPrefix(statement, prefix) {
+			result = appendSplitCandidates(result, strings.TrimPrefix(statement, prefix), " is ", false)
+		}
+	}
 	return result
+}
+
+// universalNegativeCandidates parses E-propositions ("no S is P") into
+// subject/predicate pairs. The regimented register stipulates wide-scope
+// negation: "every S is not P" and bare generics ("Ss are not Ps") read as
+// universal negatives, never as "not every S is P".
+func universalNegativeCandidates(statement string) []clausePair {
+	statement = normalizeClause(statement)
+	result := make([]clausePair, 0)
+	for _, prefix := range []string{"no ", "nothing ", "no one "} {
+		if strings.HasPrefix(statement, prefix) {
+			remainder := strings.TrimPrefix(statement, prefix)
+			result = appendSplitCandidates(result, remainder, " is ", false)
+			result = appendSplitCandidates(result, remainder, " are ", false)
+		}
+	}
+	for _, prefix := range []string{"every ", "all ", "everything ", "everyone "} {
+		if strings.HasPrefix(statement, prefix) {
+			remainder := strings.TrimPrefix(statement, prefix)
+			result = appendSplitCandidates(result, remainder, " is not ", false)
+			result = appendSplitCandidates(result, remainder, " are not ", false)
+		}
+	}
+	bare := true
+	for _, prefix := range []string{"some ", "most ", "many ", "few ", "several ", "at least ", "at most ", "there ", "if ", "no ", "not ", "it is not the case"} {
+		if strings.HasPrefix(statement, prefix) {
+			bare = false
+			break
+		}
+	}
+	if bare {
+		result = appendSplitCandidates(result, statement, " are not ", false)
+		result = appendSplitCandidates(result, statement, " is not ", false)
+	}
+	return result
+}
+
+func necessityCandidates(statement string) []string {
+	statement = normalizeClause(statement)
+	for _, prefix := range []string{"necessarily, ", "necessarily "} {
+		if strings.HasPrefix(statement, prefix) {
+			remainder := normalizeClause(strings.TrimPrefix(statement, prefix))
+			if remainder != "" {
+				return []string{remainder}
+			}
+		}
+	}
+	return nil
 }
 
 func equalTerms(left, right string) bool {
@@ -615,6 +670,55 @@ func matchUniversalSyllogism(premises []NumberedArgumentStep, conclusion Numbere
 					return best
 				}
 			}
+		}
+	}
+	return best
+}
+
+// matchUniversalNegativeSyllogism certifies the valid A/E second- and
+// first-figure syllogisms (Celarent, Cesare, Camestres, Camenes) in one form.
+// Because E-propositions convert (no A is B entails no B is A), the E premise
+// and E conclusion are matched in either orientation; the middle term must be
+// the A premise's predicate, never its subject.
+func matchUniversalNegativeSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, universal := range universalCandidates(premises[0].Statement) {
+		for _, negative := range universalNegativeCandidates(premises[1].Statement) {
+			for _, result := range universalNegativeCandidates(conclusion.Statement) {
+				negativeOrientations := [][2]string{{negative.left, negative.right}, {negative.right, negative.left}}
+				resultOrientations := [][2]string{{result.left, result.right}, {result.right, result.left}}
+				for _, negativeTerms := range negativeOrientations {
+					for _, resultTerms := range resultOrientations {
+						candidate := evaluateTermIdentities(
+							clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), universal.right, fmt.Sprintf("premise %d middle term", premises[1].Number), negativeTerms[0]},
+							clauseIdentity{fmt.Sprintf("premise %d class", premises[0].Number), universal.left, fmt.Sprintf("conclusion %d subject term", conclusion.Number), resultTerms[0]},
+							clauseIdentity{fmt.Sprintf("premise %d excluded term", premises[1].Number), negativeTerms[1], fmt.Sprintf("conclusion %d excluded term", conclusion.Number), resultTerms[1]},
+						)
+						best = betterOutcome(best, candidate)
+						if best.matched {
+							return best
+						}
+					}
+				}
+			}
+		}
+	}
+	return best
+}
+
+// matchNecessityElimination certifies "Necessarily, P. Therefore, P." — the T
+// axiom, sound for the alethic reading of "necessarily" the regimented
+// register stipulates.
+func matchNecessityElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, stripped := range necessityCandidates(premises[0].Statement) {
+		candidate := evaluateIdentities(clauseIdentity{
+			fmt.Sprintf("premise %d de-necessitated clause", premises[0].Number), stripped,
+			fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
+		})
+		best = betterOutcome(best, candidate)
+		if best.matched {
+			return best
 		}
 	}
 	return best
