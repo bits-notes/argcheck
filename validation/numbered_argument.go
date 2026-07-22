@@ -41,6 +41,7 @@ type NumberedArgumentStep struct {
 type numberedArgumentOptions struct {
 	AllowSingleFencedBlock bool `json:"allow_single_fenced_block"`
 	AllowBlankLines        bool `json:"allow_blank_lines"`
+	AllowDisconnectedSteps bool `json:"allow_disconnected_steps"`
 	allowNoConclusions     bool
 }
 
@@ -75,7 +76,7 @@ func (v numberedArgumentSyntaxValidator) Validate(ctx context.Context, output st
 	if !result.Passed {
 		return result
 	}
-	if unused := NumberedArgumentUnusedSteps(argument); len(unused) > 0 {
+	if unused := NumberedArgumentUnusedSteps(argument); len(unused) > 0 && !v.options.AllowDisconnectedSteps {
 		return Result{
 			Passed: false,
 			Message: fmt.Sprintf(

@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -74,5 +75,18 @@ func TestNumberedArgumentSyntaxRejectsUnusedSteps(t *testing.T) {
 	unused, ok := res.Details["unused_steps"].([]int)
 	if !ok || !reflect.DeepEqual(unused, []int{3}) {
 		t.Fatalf("unused_steps detail = %v (ok=%v), want [3]", res.Details["unused_steps"], ok)
+	}
+
+	allowDisconnected, err := Compile(Spec{
+		Kind:    KindBuiltin,
+		Name:    BuiltinNumberedArgumentSyntax,
+		Options: json.RawMessage(`{"allow_disconnected_steps":true}`),
+	})
+	if err != nil {
+		t.Fatalf("compile allow_disconnected_steps validator: %v", err)
+	}
+	if res := allowDisconnected.Validate(context.Background(),
+		"1. All men are mortal.\n2. Socrates is a man.\n3. The sky is blue.\n4. Therefore, Socrates is mortal. [1,2]"); !res.Passed {
+		t.Fatalf("argument with an uncited premise rejected with allow_disconnected_steps: %s", res.Message)
 	}
 }
