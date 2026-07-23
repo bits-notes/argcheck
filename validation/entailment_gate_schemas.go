@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 const clauseWrapper = "it is the case that"
@@ -11,6 +12,9 @@ const clauseWrapper = "it is the case that"
 const variableArity = -1
 
 var conditionalSplitPattern = regexp.MustCompile(`(?i),?\bthen\b,? `)
+var separatedQuantifierPattern = regexp.MustCompile(`\b(every|no) thing\b`)
+
+const schematicVariableMarker = "\u241f"
 
 type clausePair struct {
 	left  string
@@ -51,6 +55,8 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "identity transitivity", arity: 2, match: matchIdentityTransitivity},
 	{name: "universal syllogism", arity: 2, match: matchUniversalSyllogism},
 	{name: "universal negative syllogism", arity: 2, match: matchUniversalNegativeSyllogism},
+	{name: "universal negative instantiation", arity: 2, match: matchUniversalNegativeInstantiation},
+	{name: "schematic instantiation", arity: 2, match: matchSchematicInstantiation},
 	{name: "universal instantiation", arity: 2, match: matchUniversalInstantiation},
 	{name: "necessity elimination", arity: 1, match: matchNecessityElimination},
 }
@@ -61,11 +67,17 @@ func normalizeClause(value string) string {
 	if strings.HasSuffix(value, ".") {
 		value = strings.TrimSuffix(value, ".")
 	}
-	return strings.ToLower(value)
+	value = strings.ToLower(value)
+	return separatedQuantifierPattern.ReplaceAllString(value, "${1}thing")
 }
 
 func equalClauses(left, right string) bool {
-	return stripClauseWrappers(left) == stripClauseWrappers(right)
+	return comparisonClause(left) == comparisonClause(right)
+}
+
+func comparisonClause(value string) string {
+	value = strings.ReplaceAll(stripClauseWrappers(value), ",", "")
+	return strings.Join(strings.Fields(value), " ")
 }
 
 func stripClauseWrappers(value string) string {
@@ -81,21 +93,38 @@ func stripClauseWrappers(value string) string {
 }
 
 func conditionalCandidates(statement string) []clausePair {
-	statement = normalizeClause(statement)
-	if !strings.HasPrefix(statement, "if ") {
+	return conditionalCandidatesWithNormalizer(statement, normalizeClause)
+}
+
+func conditionalCandidatesPreservingCase(statement string) []clausePair {
+	return conditionalCandidatesWithNormalizer(statement, normalizeClausePreservingCase)
+}
+
+func conditionalCandidatesWithNormalizer(statement string, normalize func(string) string) []clausePair {
+	statement = normalize(statement)
+	if len(statement) < len("if ") || !strings.EqualFold(statement[:len("if ")], "if ") {
 		return nil
 	}
-	remainder := strings.TrimPrefix(statement, "if ")
+	remainder := statement[len("if "):]
 	indexes := conditionalSplitPattern.FindAllStringIndex(remainder, -1)
 	result := make([]clausePair, 0, len(indexes))
 	for _, index := range indexes {
-		left := normalizeClause(remainder[:index[0]])
-		right := normalizeClause(remainder[index[1]:])
+		left := normalize(remainder[:index[0]])
+		right := normalize(remainder[index[1]:])
 		if left != "" && right != "" {
 			result = append(result, clausePair{left: left, right: right})
 		}
 	}
 	return result
+}
+
+func normalizeClausePreservingCase(value string) string {
+	value = strings.Join(strings.Fields(value), " ")
+	value = strings.Trim(value, ", ")
+	if strings.HasSuffix(value, ".") {
+		value = strings.TrimSuffix(value, ".")
+	}
+	return value
 }
 
 func negationCandidates(statement string) []string {
@@ -189,6 +218,7 @@ func universalNegativeCandidates(statement string) []clausePair {
 		if strings.HasPrefix(statement, prefix) {
 			remainder := strings.TrimPrefix(statement, prefix)
 			result = appendSplitCandidates(result, remainder, " is not ", false)
+			result = appendSplitCandidates(result, remainder, " am not ", false)
 			result = appendSplitCandidates(result, remainder, " are not ", false)
 		}
 	}
@@ -202,6 +232,21 @@ func universalNegativeCandidates(statement string) []clausePair {
 	if bare {
 		result = appendSplitCandidates(result, statement, " are not ", false)
 		result = appendSplitCandidates(result, statement, " is not ", false)
+		result = appendSplitCandidates(result, statement, " am not ", false)
+	}
+	return result
+}
+
+func negativeInstanceCandidates(statement string) []clausePair {
+	statement = normalizeClause(statement)
+	for _, prefix := range []string{"every ", "all ", "everything ", "everyone ", "no ", "nothing ", "no one "} {
+		if strings.HasPrefix(statement, prefix) {
+			return nil
+		}
+	}
+	result := make([]clausePair, 0)
+	for _, separator := range []string{" is not ", " am not ", " are not "} {
+		result = appendSplitCandidates(result, statement, separator, false)
 	}
 	return result
 }
@@ -234,7 +279,9 @@ func equalTerms(left, right string) bool {
 
 func termCandidates(value string) []string {
 	value = normalizeClause(value)
-	for _, copula := range []string{"is ", "are "} {
+	value = strings.ReplaceAll(value, ",", "")
+	value = strings.Join(strings.Fields(value), " ")
+	for _, copula := range []string{"is ", "am ", "are "} {
 		if strings.HasPrefix(value, copula) {
 			value = strings.TrimPrefix(value, copula)
 			break
@@ -257,7 +304,65 @@ func termCandidates(value string) []string {
 }
 
 func instanceCandidates(statement string) []clausePair {
-	return appendSplitCandidates(nil, normalizeClause(statement), " is ", false)
+	statement = normalizeClause(statement)
+	result := make([]clausePair, 0)
+	for _, separator := range []string{" is ", " am ", " are "} {
+		result = appendSplitCandidates(result, statement, separator, false)
+	}
+	return result
+}
+
+func replaceSchematicVariables(value, replacement string) (string, int) {
+	runes := []rune(value)
+	var result strings.Builder
+	count := 0
+	for index, current := range runes {
+		if current == 'X' &&
+			(index == 0 || !unicode.IsLetter(runes[index-1])) &&
+			(index == len(runes)-1 || !unicode.IsLetter(runes[index+1])) {
+			result.WriteString(replacement)
+			count++
+			continue
+		}
+		result.WriteRune(current)
+	}
+	return result.String(), count
+}
+
+func schematicTemplate(value string) (string, int) {
+	replaced, count := replaceSchematicVariables(value, schematicVariableMarker)
+	return comparisonClause(replaced), count
+}
+
+func deriveSchematicSubstitution(antecedentTemplate, instance string) (string, bool) {
+	segments := strings.Split(antecedentTemplate, schematicVariableMarker)
+	if len(segments) < 2 {
+		return "", false
+	}
+	instance = comparisonClause(instance)
+	if !strings.HasPrefix(instance, segments[0]) {
+		return "", false
+	}
+	remainder := instance[len(segments[0]):]
+
+	var substitution string
+	if len(segments) == 2 && segments[1] == "" {
+		substitution = remainder
+	} else {
+		nextLiteral := segments[1]
+		if nextLiteral == "" {
+			return "", false
+		}
+		nextIndex := strings.Index(remainder, nextLiteral)
+		if nextIndex < 0 {
+			return "", false
+		}
+		substitution = remainder[:nextIndex]
+	}
+	if substitution == "" {
+		return "", false
+	}
+	return substitution, true
 }
 
 func identityCandidates(statement string) []clausePair {
@@ -701,6 +806,108 @@ func matchUniversalNegativeSyllogism(premises []NumberedArgumentStep, conclusion
 					}
 				}
 			}
+		}
+	}
+	return best
+}
+
+// matchUniversalNegativeInstantiation certifies the fixed-orientation
+// disjoint-class inference a is F; no G is F; therefore a is not G. Unlike
+// universal negative syllogism, neither conversion nor term morphology is
+// permitted: the shared predicate, instance, and excluded class are compared
+// as clauses. The conclusion alone may add an indefinite article before G.
+func matchUniversalNegativeInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, instance := range instanceCandidates(premises[0].Statement) {
+		for _, negative := range universalNegativeCandidates(premises[1].Statement) {
+			for _, result := range negativeInstanceCandidates(conclusion.Statement) {
+				candidate := schemaMatchOutcome{}
+				appendOutcome(&candidate, evaluateIdentities(
+					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), instance.right, fmt.Sprintf("premise %d predicate", premises[1].Number), negative.right},
+					clauseIdentity{fmt.Sprintf("premise %d instance", premises[0].Number), instance.left, fmt.Sprintf("conclusion %d instance", conclusion.Number), result.left},
+				))
+				appendOutcome(&candidate, evaluateIdentityComparisons(
+					equalClausesWithOptionalIndefiniteArticle,
+					clauseIdentity{fmt.Sprintf("premise %d restricted class", premises[1].Number), negative.left, fmt.Sprintf("conclusion %d excluded class", conclusion.Number), result.right},
+				))
+				candidate.matched = candidate.score == 3
+				best = betterOutcome(best, candidate)
+				if best.matched {
+					return best
+				}
+			}
+		}
+	}
+	return best
+}
+
+func equalClausesWithOptionalIndefiniteArticle(left, right string) bool {
+	return stripOptionalIndefiniteArticle(left) == stripOptionalIndefiniteArticle(right)
+}
+
+func stripOptionalIndefiniteArticle(value string) string {
+	value = comparisonClause(value)
+	for _, article := range []string{"a ", "an "} {
+		if strings.HasPrefix(value, article) {
+			return strings.TrimPrefix(value, article)
+		}
+	}
+	return value
+}
+
+// matchSchematicInstantiation certifies If A(X), then B(X); A(t);
+// therefore B(t), where X is a standalone uppercase variable in both sides
+// and the same non-empty substitution verifies every occurrence.
+func matchSchematicInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, conditional := range conditionalCandidatesPreservingCase(premises[0].Statement) {
+		antecedentTemplate, antecedentVariables := schematicTemplate(conditional.left)
+		consequentTemplate, consequentVariables := schematicTemplate(conditional.right)
+		candidate := schemaMatchOutcome{traction: true}
+		if antecedentVariables == 0 || consequentVariables == 0 {
+			switch {
+			case antecedentVariables == 0 && consequentVariables == 0:
+				candidate.mismatch = fmt.Sprintf("premise %d conditional has no standalone uppercase X in either side", premises[0].Number)
+			case antecedentVariables == 0:
+				candidate.score = 1
+				candidate.mismatch = fmt.Sprintf("premise %d antecedent has no standalone uppercase X", premises[0].Number)
+			default:
+				candidate.score = 1
+				candidate.mismatch = fmt.Sprintf("premise %d consequent has no standalone uppercase X", premises[0].Number)
+			}
+			best = betterOutcome(best, candidate)
+			continue
+		}
+
+		substitution, ok := deriveSchematicSubstitution(antecedentTemplate, premises[1].Statement)
+		if !ok {
+			candidate.score = 1
+			candidate.mismatch = fmt.Sprintf(
+				"premise %d does not provide a non-empty substitution for premise %d antecedent template",
+				premises[1].Number,
+				premises[0].Number,
+			)
+			best = betterOutcome(best, candidate)
+			continue
+		}
+
+		candidate = evaluateIdentities(
+			clauseIdentity{
+				fmt.Sprintf("premise %d instantiated antecedent", premises[0].Number),
+				strings.ReplaceAll(antecedentTemplate, schematicVariableMarker, substitution),
+				fmt.Sprintf("premise %d", premises[1].Number),
+				premises[1].Statement,
+			},
+			clauseIdentity{
+				fmt.Sprintf("premise %d instantiated consequent", premises[0].Number),
+				strings.ReplaceAll(consequentTemplate, schematicVariableMarker, substitution),
+				fmt.Sprintf("conclusion %d", conclusion.Number),
+				conclusion.Statement,
+			},
+		)
+		best = betterOutcome(best, candidate)
+		if best.matched {
+			return best
 		}
 	}
 	return best
