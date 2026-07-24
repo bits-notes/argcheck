@@ -18,6 +18,7 @@ const (
 	maxJSONSchemaProperties = 200
 	maxJSONSchemaRequired   = 200
 	maxJSONSchemaEnumValues = 200
+	maxJSONSchemaOneOf      = 32
 	maxJSONSchemaPatternLen = 512
 )
 
@@ -42,6 +43,7 @@ var supportedJSONSchemaKeys = map[string]bool{
 	"description":          true,
 	"default":              true,
 	"examples":             true,
+	"oneOf":                true,
 }
 
 type jsonSchemaOptions struct {
@@ -71,6 +73,7 @@ type jsonSchemaNode struct {
 	exclusiveMinimum     *float64
 	exclusiveMaximum     *float64
 	pattern              *regexp.Regexp
+	oneOf                []*jsonSchemaNode
 }
 
 func compileJSONSchema(spec Spec) (OutputValidator, error) {
@@ -302,6 +305,29 @@ func parseJSONSchemaNode(raw json.RawMessage, depth int) (*jsonSchemaNode, error
 		node.constValue = value
 		node.hasConst = true
 	}
+	if rawOneOf, ok := obj["oneOf"]; ok {
+		var alternatives []json.RawMessage
+		if err := json.Unmarshal(rawOneOf, &alternatives); err != nil {
+			return nil, fmt.Errorf("json_schema oneOf must be an array")
+		}
+		if len(alternatives) == 0 {
+			return nil, fmt.Errorf("json_schema oneOf cannot be empty")
+		}
+		if len(alternatives) > maxJSONSchemaOneOf {
+			return nil, fmt.Errorf(
+				"json_schema oneOf exceeds %d alternatives",
+				maxJSONSchemaOneOf,
+			)
+		}
+		node.oneOf = make([]*jsonSchemaNode, 0, len(alternatives))
+		for index, rawAlternative := range alternatives {
+			alternative, err := parseJSONSchemaNode(rawAlternative, depth+1)
+			if err != nil {
+				return nil, fmt.Errorf("oneOf alternative %d: %w", index+1, err)
+			}
+			node.oneOf = append(node.oneOf, alternative)
+		}
+	}
 	if node.minItems != nil && node.maxItems != nil && *node.minItems > *node.maxItems {
 		return nil, fmt.Errorf("json_schema minItems cannot exceed maxItems")
 	}
@@ -457,7 +483,44 @@ func (s *jsonSchemaNode) validate(path string, value any) error {
 			return err
 		}
 	}
+	if err := s.validateOneOf(path, value); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (s *jsonSchemaNode) validateOneOf(path string, value any) error {
+	if len(s.oneOf) == 0 {
+		return nil
+	}
+	matches := 0
+	failures := make([]string, 0, len(s.oneOf))
+	for index, alternative := range s.oneOf {
+		if err := alternative.validate(path, value); err != nil {
+			failures = append(
+				failures,
+				fmt.Sprintf("variant %d: %s", index+1, err.Error()),
+			)
+			continue
+		}
+		matches++
+	}
+	switch {
+	case matches == 1:
+		return nil
+	case matches > 1:
+		return fmt.Errorf(
+			"%s matches %d oneOf variants; exactly one is required",
+			path,
+			matches,
+		)
+	default:
+		return fmt.Errorf(
+			"%s does not match any oneOf variant (%s)",
+			path,
+			strings.Join(failures, "; "),
+		)
+	}
 }
 
 func (s *jsonSchemaNode) validateObject(path string, value map[string]any) error {
