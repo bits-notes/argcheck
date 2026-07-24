@@ -90,3 +90,87 @@ func TestJSONSchemaValidatorReportsArrayInsteadOfStringPath(t *testing.T) {
 		t.Fatalf("message = %q, want path-specific type error", result.Message)
 	}
 }
+
+func TestJSONSchemaValidatorEnforcesOneOfObjectVariants(t *testing.T) {
+	spec := Spec{
+		SchemaVersion: SchemaVersionV1,
+		Kind:          KindJSONSchema,
+		Spec: json.RawMessage(`{
+			"type": "object",
+			"required": ["op", "reason"],
+			"properties": {
+				"op": {"type": "string", "enum": ["replace", "split"]},
+				"reason": {"type": "string", "minLength": 1},
+				"atom_id": {"type": "string"},
+				"statement": {"type": "string"},
+				"statements": {"type": "array", "items": {"type": "string"}}
+			},
+			"additionalProperties": false,
+			"oneOf": [
+				{
+					"required": ["op", "atom_id", "statement", "reason"],
+					"properties": {
+						"op": {"const": "replace"},
+						"atom_id": {},
+						"statement": {},
+						"reason": {}
+					},
+					"additionalProperties": false
+				},
+				{
+					"required": ["op", "atom_id", "statements", "reason"],
+					"properties": {
+						"op": {"const": "split"},
+						"atom_id": {},
+						"statements": {},
+						"reason": {}
+					},
+					"additionalProperties": false
+				}
+			]
+		}`),
+	}
+
+	for _, output := range []string{
+		`{"op":"replace","atom_id":"a1","statement":"P","reason":"repair"}`,
+		`{"op":"split","atom_id":"a1","statements":["P","Q"],"reason":"repair"}`,
+	} {
+		if result := Validate(context.Background(), spec, output); !result.Passed {
+			t.Fatalf("valid variant rejected: %s", result.Message)
+		}
+	}
+
+	result := Validate(
+		context.Background(),
+		spec,
+		`{"op":"replace","statement":"P","statements":["P","Q"],"reason":"repair"}`,
+	)
+	if result.Passed {
+		t.Fatal("malformed cross-variant object passed")
+	}
+	if !strings.Contains(result.Message, "does not match any oneOf variant") ||
+		!strings.Contains(result.Message, `missing required property "atom_id"`) {
+		t.Fatalf("unexpected oneOf error: %q", result.Message)
+	}
+}
+
+func TestJSONSchemaValidatorRequiresExactlyOneOneOfMatch(t *testing.T) {
+	spec := Spec{
+		SchemaVersion: SchemaVersionV1,
+		Kind:          KindJSONSchema,
+		Spec: json.RawMessage(`{
+			"type": "integer",
+			"oneOf": [
+				{"minimum": 0},
+				{"maximum": 10}
+			]
+		}`),
+	}
+	result := Validate(context.Background(), spec, `5`)
+	if result.Passed {
+		t.Fatal("value matching two oneOf variants passed")
+	}
+	if !strings.Contains(result.Message, "matches 2 oneOf variants") {
+		t.Fatalf("unexpected oneOf overlap error: %q", result.Message)
+	}
+}
