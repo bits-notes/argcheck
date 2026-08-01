@@ -10,11 +10,26 @@ import (
 const clauseWrapper = "it is the case that"
 
 const variableArity = -1
+const variableArityAtLeastTwo = -2
 
 var conditionalSplitPattern = regexp.MustCompile(`(?i),?\bthen\b,? `)
 var separatedQuantifierPattern = regexp.MustCompile(`\b(every|no) thing\b`)
 
-const schematicVariableMarker = "\u241f"
+const (
+	schematicVariableMarkerX = '\u241d'
+	schematicVariableMarkerY = '\u241e'
+	schematicVariableMarkerZ = '\u241f'
+)
+
+var schematicVariableMarkers = map[rune]rune{
+	'X': schematicVariableMarkerX,
+	'Y': schematicVariableMarkerY,
+	'Z': schematicVariableMarkerZ,
+}
+
+type schematicVariableCounts map[rune]int
+
+type schematicSubstitution map[rune]string
 
 type clausePair struct {
 	left  string
@@ -42,6 +57,7 @@ type clauseIdentity struct {
 }
 
 var entailmentSchemas = []entailmentSchema{
+	{name: "schematic conjunctive modus ponens", arity: variableArity, match: matchSchematicConjunctiveModusPonens},
 	{name: "conjunctive modus ponens", arity: variableArity, match: matchConjunctiveModusPonens},
 	{name: "modus ponens", arity: 2, match: matchModusPonens},
 	{name: "modus tollens", arity: 2, match: matchModusTollens},
@@ -58,6 +74,9 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "universal negative instantiation", arity: 2, match: matchUniversalNegativeInstantiation},
 	{name: "schematic instantiation", arity: 2, match: matchSchematicInstantiation},
 	{name: "universal instantiation", arity: 2, match: matchUniversalInstantiation},
+	{name: "existential generalization", arity: 1, match: matchExistentialGeneralization},
+	{name: "existential introduction", arity: variableArityAtLeastTwo, match: matchExistentialIntroduction},
+	{name: "existential counterexample", arity: 1, match: matchExistentialCounterexample},
 	{name: "necessity elimination", arity: 1, match: matchNecessityElimination},
 }
 
@@ -175,6 +194,55 @@ func conjunctiveAntecedentCandidates(statement string) [][]string {
 		result = append(result, []string{conjunction.left, conjunction.right})
 	}
 	return result
+}
+
+func conjunctiveAntecedentCandidatesPreservingCase(statement string) [][]string {
+	statement = normalizeClausePreservingCase(statement)
+	result := make([][]string, 0)
+	separator := ", and " + clauseWrapper
+	if strings.Contains(strings.ToLower(statement), separator) {
+		parts := splitPreservingCase(statement, separator)
+		for index := 1; index < len(parts); index++ {
+			parts[index] = clauseWrapper + " " + parts[index]
+		}
+		result = append(result, parts)
+	}
+	for _, conjunction := range conjunctionCandidatesPreservingCase(statement) {
+		result = append(result, []string{conjunction.left, conjunction.right})
+	}
+	return result
+}
+
+func conjunctionCandidatesPreservingCase(statement string) []clausePair {
+	statement = normalizeClausePreservingCase(statement)
+	result := make([]clausePair, 0)
+	lower := strings.ToLower(statement)
+	if strings.HasPrefix(lower, "it is the case both that") {
+		remainder := statement[len("it is the case both that"):]
+		if remainder == "" || remainder[0] == ',' || remainder[0] == ' ' {
+			remainder = strings.TrimLeft(remainder, ", ")
+			result = appendSplitCandidatesPreservingCase(result, remainder, ", and that ", true)
+		}
+	}
+	result = appendSplitCandidatesPreservingCase(result, statement, ", and that ", true)
+	result = appendSplitCandidatesPreservingCase(result, statement, ", and ", false)
+	result = appendSplitCandidatesPreservingCase(result, statement, " and ", false)
+	return result
+}
+
+func splitPreservingCase(statement, separator string) []string {
+	lower := strings.ToLower(statement)
+	parts := make([]string, 0)
+	start := 0
+	for {
+		index := strings.Index(lower[start:], separator)
+		if index < 0 {
+			return append(parts, normalizeClausePreservingCase(statement[start:]))
+		}
+		index += start
+		parts = append(parts, normalizeClausePreservingCase(statement[start:index]))
+		start = index + len(separator)
+	}
 }
 
 func disjunctionCandidates(statement string) []clausePair {
@@ -312,57 +380,249 @@ func instanceCandidates(statement string) []clausePair {
 	return result
 }
 
-func replaceSchematicVariables(value, replacement string) (string, int) {
+// groundInstanceCandidates narrows instanceCandidates to an unquantified
+// witness with its first copula as the subject/predicate boundary. This keeps
+// the existential forms from importing existence from universals or treating
+// an embedded copula as a second, invented witness.
+func groundInstanceCandidates(statement string) []clausePair {
+	statement = normalizeClause(statement)
+	for _, prefix := range []string{
+		"a ", "an ", "all ", "any ", "each ", "every ", "everything ", "everyone ",
+		"few ", "if ", "it is not the case", "many ", "most ", "necessarily ",
+		"no ", "no one ", "nothing ", "several ", "some ", "someone ", "something ",
+		"there ", "at least ", "at most ",
+	} {
+		if strings.HasPrefix(statement, prefix) {
+			return nil
+		}
+	}
+
+	candidates := instanceCandidates(statement)
+	if len(candidates) == 0 {
+		return nil
+	}
+	shortestSubject := len(statement) + 1
+	for _, candidate := range candidates {
+		if len(candidate.left) < shortestSubject {
+			shortestSubject = len(candidate.left)
+		}
+	}
+	result := make([]clausePair, 0, 1)
+	for _, candidate := range candidates {
+		if len(candidate.left) == shortestSubject {
+			result = append(result, candidate)
+		}
+	}
+	return result
+}
+
+type existentialClause struct {
+	class        string
+	matrix       string
+	unrestricted bool
+}
+
+func unrestrictedExistentialPredicateCandidates(statement string) []string {
+	statement = normalizeClause(statement)
+	result := make([]string, 0, 1)
+	for _, prefix := range []string{
+		"there exists something that is ",
+		"there is something that is ",
+		"something is ",
+	} {
+		if !strings.HasPrefix(statement, prefix) {
+			continue
+		}
+		predicate := normalizeClause(strings.TrimPrefix(statement, prefix))
+		if predicate != "" {
+			result = append(result, predicate)
+		}
+	}
+	return result
+}
+
+func thereExistRestrictedCandidates(statement string) []existentialClause {
+	statement = normalizeClause(statement)
+	if !strings.HasPrefix(statement, "there exist ") {
+		return nil
+	}
+	remainder := strings.TrimPrefix(statement, "there exist ")
+	result := make([]existentialClause, 0)
+	for _, separator := range []string{" that are ", " that is ", " that "} {
+		for _, split := range appendSplitCandidates(nil, remainder, separator, false) {
+			result = append(result, existentialClause{class: split.left, matrix: split.right})
+		}
+	}
+	return result
+}
+
+func existentialIntroductionConclusionCandidates(statement string) []existentialClause {
+	result := thereExistRestrictedCandidates(statement)
+	statement = normalizeClause(statement)
+	if !strings.HasPrefix(statement, "some ") {
+		return result
+	}
+	remainder := strings.TrimPrefix(statement, "some ")
+	for _, separator := range []string{" is ", " are "} {
+		for _, split := range appendSplitCandidates(nil, remainder, separator, false) {
+			result = append(result, existentialClause{class: split.left, matrix: split.right})
+		}
+	}
+	return result
+}
+
+func conjunctionPartitions(statement string, partCount int) [][]string {
+	statement = normalizeClause(statement)
+	if statement == "" || partCount < 1 {
+		return nil
+	}
+	if partCount == 1 {
+		return [][]string{{statement}}
+	}
+
+	result := make([][]string, 0)
+	for _, split := range conjunctionCandidates(statement) {
+		for leftCount := 1; leftCount < partCount; leftCount++ {
+			leftPartitions := conjunctionPartitions(split.left, leftCount)
+			rightPartitions := conjunctionPartitions(split.right, partCount-leftCount)
+			for _, left := range leftPartitions {
+				for _, right := range rightPartitions {
+					partition := append(append([]string(nil), left...), right...)
+					result = append(result, partition)
+				}
+			}
+		}
+	}
+	return result
+}
+
+func replaceSchematicVariables(value string) (string, schematicVariableCounts) {
 	runes := []rune(value)
 	var result strings.Builder
-	count := 0
+	counts := schematicVariableCounts{}
 	for index, current := range runes {
-		if current == 'X' &&
+		marker, isVariable := schematicVariableMarkers[current]
+		if isVariable &&
 			(index == 0 || !unicode.IsLetter(runes[index-1])) &&
 			(index == len(runes)-1 || !unicode.IsLetter(runes[index+1])) {
-			result.WriteString(replacement)
-			count++
+			result.WriteRune(marker)
+			counts[current]++
 			continue
 		}
 		result.WriteRune(current)
 	}
-	return result.String(), count
+	return result.String(), counts
 }
 
-func schematicTemplate(value string) (string, int) {
-	replaced, count := replaceSchematicVariables(value, schematicVariableMarker)
-	return comparisonClause(replaced), count
+func schematicTemplate(value string) (string, schematicVariableCounts) {
+	replaced, counts := replaceSchematicVariables(value)
+	return comparisonClause(replaced), counts
 }
 
-func deriveSchematicSubstitution(antecedentTemplate, instance string) (string, bool) {
-	segments := strings.Split(antecedentTemplate, schematicVariableMarker)
-	if len(segments) < 2 {
-		return "", false
-	}
-	instance = comparisonClause(instance)
-	if !strings.HasPrefix(instance, segments[0]) {
-		return "", false
-	}
-	remainder := instance[len(segments[0]):]
+func unifySchematicTemplate(template, concrete string, initial schematicSubstitution) []schematicSubstitution {
+	templateRunes := []rune(comparisonClause(template))
+	concreteRunes := []rune(comparisonClause(concrete))
+	return unifySchematicRunes(templateRunes, concreteRunes, 0, 0, cloneSchematicSubstitution(initial))
+}
 
-	var substitution string
-	if len(segments) == 2 && segments[1] == "" {
-		substitution = remainder
-	} else {
-		nextLiteral := segments[1]
-		if nextLiteral == "" {
+func unifySchematicRunes(
+	template []rune,
+	concrete []rune,
+	templateIndex int,
+	concreteIndex int,
+	substitution schematicSubstitution,
+) []schematicSubstitution {
+	if templateIndex == len(template) {
+		if concreteIndex == len(concrete) {
+			return []schematicSubstitution{substitution}
+		}
+		return nil
+	}
+
+	variable, isMarker := schematicVariableForMarker(template[templateIndex])
+	if !isMarker {
+		if concreteIndex >= len(concrete) || template[templateIndex] != concrete[concreteIndex] {
+			return nil
+		}
+		return unifySchematicRunes(template, concrete, templateIndex+1, concreteIndex+1, substitution)
+	}
+
+	if bound, ok := substitution[variable]; ok {
+		boundRunes := []rune(bound)
+		if len(boundRunes) == 0 || concreteIndex+len(boundRunes) > len(concrete) {
+			return nil
+		}
+		for index, current := range boundRunes {
+			if concrete[concreteIndex+index] != current {
+				return nil
+			}
+		}
+		return unifySchematicRunes(template, concrete, templateIndex+1, concreteIndex+len(boundRunes), substitution)
+	}
+
+	result := make([]schematicSubstitution, 0)
+	for end := concreteIndex + 1; end <= len(concrete); end++ {
+		segment := concrete[concreteIndex:end]
+		if containsSchematicMarker(segment) {
+			continue
+		}
+		next := cloneSchematicSubstitution(substitution)
+		next[variable] = string(segment)
+		result = append(result, unifySchematicRunes(template, concrete, templateIndex+1, end, next)...)
+	}
+	return result
+}
+
+func schematicVariableForMarker(marker rune) (rune, bool) {
+	for variable, candidate := range schematicVariableMarkers {
+		if marker == candidate {
+			return variable, true
+		}
+	}
+	return 0, false
+}
+
+func containsSchematicMarker(value []rune) bool {
+	for _, current := range value {
+		if _, ok := schematicVariableForMarker(current); ok {
+			return true
+		}
+	}
+	return false
+}
+
+func cloneSchematicSubstitution(source schematicSubstitution) schematicSubstitution {
+	result := make(schematicSubstitution, len(source))
+	for variable, value := range source {
+		result[variable] = value
+	}
+	return result
+}
+
+func instantiateSchematicTemplate(template string, substitution schematicSubstitution) (string, bool) {
+	var result strings.Builder
+	for _, current := range template {
+		variable, isMarker := schematicVariableForMarker(current)
+		if !isMarker {
+			result.WriteRune(current)
+			continue
+		}
+		value, ok := substitution[variable]
+		if !ok || value == "" {
 			return "", false
 		}
-		nextIndex := strings.Index(remainder, nextLiteral)
-		if nextIndex < 0 {
-			return "", false
+		result.WriteString(value)
+	}
+	return result.String(), true
+}
+
+func schematicVariablesSubset(subset, superset schematicVariableCounts) bool {
+	for variable := range subset {
+		if superset[variable] == 0 {
+			return false
 		}
-		substitution = remainder[:nextIndex]
 	}
-	if substitution == "" {
-		return "", false
-	}
-	return substitution, true
+	return true
 }
 
 func identityCandidates(statement string) []clausePair {
@@ -381,6 +641,27 @@ func appendSplitCandidates(result []clausePair, statement, separator string, str
 		right := normalizeClause(statement[index+len(separator):])
 		if stripRightThat {
 			right = strings.TrimPrefix(right, "that ")
+		}
+		if left != "" && right != "" {
+			result = append(result, clausePair{left: left, right: right})
+		}
+		start = index + len(separator)
+	}
+}
+
+func appendSplitCandidatesPreservingCase(result []clausePair, statement, separator string, stripRightThat bool) []clausePair {
+	lower := strings.ToLower(statement)
+	start := 0
+	for {
+		index := strings.Index(lower[start:], separator)
+		if index < 0 {
+			return result
+		}
+		index += start
+		left := normalizeClausePreservingCase(statement[:index])
+		right := normalizeClausePreservingCase(statement[index+len(separator):])
+		if stripRightThat && len(right) >= len("that ") && strings.EqualFold(right[:len("that ")], "that ") {
+			right = right[len("that "):]
 		}
 		if left != "" && right != "" {
 			result = append(result, clausePair{left: left, right: right})
@@ -546,6 +827,202 @@ func evaluateConjunctiveModusPonensCandidate(
 
 	outcome.matched = outcome.mismatch == "" && len(conjuncts)+1 == len(premises)
 	return outcome
+}
+
+func matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if len(premises) < 3 {
+		return schemaMatchOutcome{}
+	}
+
+	best := schemaMatchOutcome{}
+	for conditionalIndex, premise := range premises {
+		for _, conditional := range conditionalCandidatesPreservingCase(premise.Statement) {
+			antecedentTemplate, antecedentVariables := schematicTemplate(conditional.left)
+			consequentTemplate, consequentVariables := schematicTemplate(conditional.right)
+			if len(antecedentVariables) == 0 && len(consequentVariables) == 0 {
+				continue
+			}
+
+			candidate := schemaMatchOutcome{traction: true}
+			if !schematicVariablesSubset(consequentVariables, antecedentVariables) {
+				candidate.mismatch = fmt.Sprintf(
+					"premise %d consequent contains a schematic variable absent from its antecedent",
+					premise.Number,
+				)
+				best = betterOutcome(best, candidate)
+				continue
+			}
+
+			conjunctiveCandidates := conjunctiveAntecedentCandidatesPreservingCase(conditional.left)
+			if len(conjunctiveCandidates) == 0 {
+				candidate.mismatch = fmt.Sprintf(
+					"premise %d antecedent %q does not split into two or more conjuncts",
+					premise.Number,
+					normalizeClause(conditional.left),
+				)
+				best = betterOutcome(best, candidate)
+				continue
+			}
+
+			for _, conjuncts := range conjunctiveCandidates {
+				conjunctTemplates := make([]string, len(conjuncts))
+				for index, conjunct := range conjuncts {
+					conjunctTemplates[index], _ = schematicTemplate(conjunct)
+				}
+				candidate = evaluateSchematicConjunctiveModusPonensCandidate(
+					premises,
+					conditionalIndex,
+					antecedentTemplate,
+					consequentTemplate,
+					conjunctTemplates,
+					conclusion,
+				)
+				best = betterOutcome(best, candidate)
+				if best.matched {
+					return best
+				}
+			}
+		}
+	}
+	return best
+}
+
+func evaluateSchematicConjunctiveModusPonensCandidate(
+	premises []NumberedArgumentStep,
+	conditionalIndex int,
+	antecedentTemplate string,
+	consequentTemplate string,
+	conjunctTemplates []string,
+	conclusion NumberedArgumentStep,
+) schemaMatchOutcome {
+	conditionalPremise := premises[conditionalIndex]
+	assignments := schematicPremiseAssignments(premises, conditionalIndex, len(conjunctTemplates))
+	if len(assignments) == 0 {
+		return schemaMatchOutcome{
+			traction: true,
+			mismatch: fmt.Sprintf(
+				"premise %d antecedent has %d conjuncts but only %d other cited premises",
+				conditionalPremise.Number,
+				len(conjunctTemplates),
+				len(premises)-1,
+			),
+		}
+	}
+
+	best := schemaMatchOutcome{}
+	for _, assignment := range assignments {
+		states := []schematicSubstitution{{}}
+		candidate := schemaMatchOutcome{traction: true}
+		for conjunctIndex, premiseIndex := range assignment {
+			nextStates := make([]schematicSubstitution, 0)
+			for _, state := range states {
+				nextStates = append(
+					nextStates,
+					unifySchematicTemplate(conjunctTemplates[conjunctIndex], premises[premiseIndex].Statement, state)...,
+				)
+			}
+			if len(nextStates) == 0 {
+				candidate.mismatch = fmt.Sprintf(
+					"premise %d antecedent conjunct %q does not instantiate cited premise %d %q under one consistent substitution",
+					conditionalPremise.Number,
+					normalizeClause(conjunctTemplates[conjunctIndex]),
+					premises[premiseIndex].Number,
+					normalizeClause(premises[premiseIndex].Statement),
+				)
+				states = nil
+				break
+			}
+			states = nextStates
+			candidate.score++
+		}
+
+		if len(states) == 0 {
+			best = betterOutcome(best, candidate)
+			continue
+		}
+
+		for _, state := range states {
+			instantiatedAntecedent, antecedentOK := instantiateSchematicTemplate(antecedentTemplate, state)
+			instantiatedConsequent, consequentOK := instantiateSchematicTemplate(consequentTemplate, state)
+			if !antecedentOK || !consequentOK {
+				continue
+			}
+			stateCandidate := schemaMatchOutcome{traction: true, score: len(conjunctTemplates)}
+			consequentOutcome := evaluateIdentities(clauseIdentity{
+				fmt.Sprintf("premise %d instantiated consequent", conditionalPremise.Number), instantiatedConsequent,
+				fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
+			})
+			appendOutcome(&stateCandidate, consequentOutcome)
+
+			unused := firstUnusedSchematicPremise(premises, conditionalIndex, assignment)
+			if stateCandidate.mismatch == "" && unused.Number != 0 {
+				stateCandidate.mismatch = fmt.Sprintf(
+					"cited premise %d %q is unused by premise %d conjunctive antecedent %q",
+					unused.Number,
+					normalizeClause(unused.Statement),
+					conditionalPremise.Number,
+					normalizeClause(instantiatedAntecedent),
+				)
+			}
+			stateCandidate.matched = stateCandidate.mismatch == "" && len(conjunctTemplates)+1 == len(premises)
+			best = betterOutcome(best, stateCandidate)
+			if best.matched {
+				return best
+			}
+		}
+	}
+	return best
+}
+
+func schematicPremiseAssignments(premises []NumberedArgumentStep, conditionalIndex, conjunctCount int) [][]int {
+	available := make([]int, 0, len(premises)-1)
+	for index, premise := range premises {
+		if index != conditionalIndex && premise.Number != premises[conditionalIndex].Number {
+			available = append(available, index)
+		}
+	}
+	if conjunctCount > len(available) {
+		return nil
+	}
+
+	result := make([][]int, 0)
+	var enumerate func([]int, []bool, map[int]bool)
+	enumerate = func(current []int, used []bool, usedNumbers map[int]bool) {
+		if len(current) == conjunctCount {
+			result = append(result, append([]int(nil), current...))
+			return
+		}
+		for availableIndex, premiseIndex := range available {
+			if used[availableIndex] || usedNumbers[premises[premiseIndex].Number] {
+				continue
+			}
+			used[availableIndex] = true
+			usedNumbers[premises[premiseIndex].Number] = true
+			enumerate(append(current, premiseIndex), used, usedNumbers)
+			delete(usedNumbers, premises[premiseIndex].Number)
+			used[availableIndex] = false
+		}
+	}
+	enumerate(nil, make([]bool, len(available)), map[int]bool{premises[conditionalIndex].Number: true})
+	return result
+}
+
+func firstUnusedSchematicPremise(
+	premises []NumberedArgumentStep,
+	conditionalIndex int,
+	assignment []int,
+) NumberedArgumentStep {
+	used := make([]bool, len(premises))
+	used[conditionalIndex] = true
+	for _, premiseIndex := range assignment {
+		used[premiseIndex] = true
+	}
+	for premiseIndex, premise := range premises {
+		if !used[premiseIndex] {
+			return premise
+		}
+	}
+	return NumberedArgumentStep{}
 }
 
 func matchModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
@@ -855,35 +1332,44 @@ func stripOptionalIndefiniteArticle(value string) string {
 	return value
 }
 
-// matchSchematicInstantiation certifies If A(X), then B(X); A(t);
-// therefore B(t), where X is a standalone uppercase variable in both sides
-// and the same non-empty substitution verifies every occurrence.
+// matchSchematicInstantiation certifies If A(vars), then B(vars); A(sigma);
+// therefore B(sigma), where vars are standalone uppercase X, Y, or Z and one
+// consistent non-empty substitution verifies every occurrence.
 func matchSchematicInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, conditional := range conditionalCandidatesPreservingCase(premises[0].Statement) {
 		antecedentTemplate, antecedentVariables := schematicTemplate(conditional.left)
 		consequentTemplate, consequentVariables := schematicTemplate(conditional.right)
 		candidate := schemaMatchOutcome{traction: true}
-		if antecedentVariables == 0 || consequentVariables == 0 {
+		if len(antecedentVariables) == 0 || len(consequentVariables) == 0 {
 			switch {
-			case antecedentVariables == 0 && consequentVariables == 0:
-				candidate.mismatch = fmt.Sprintf("premise %d conditional has no standalone uppercase X in either side", premises[0].Number)
-			case antecedentVariables == 0:
+			case len(antecedentVariables) == 0 && len(consequentVariables) == 0:
+				candidate.mismatch = fmt.Sprintf("premise %d conditional has no standalone uppercase X, Y, or Z in either side", premises[0].Number)
+			case len(antecedentVariables) == 0:
 				candidate.score = 1
-				candidate.mismatch = fmt.Sprintf("premise %d antecedent has no standalone uppercase X", premises[0].Number)
+				candidate.mismatch = fmt.Sprintf("premise %d antecedent has no standalone uppercase X, Y, or Z", premises[0].Number)
 			default:
 				candidate.score = 1
-				candidate.mismatch = fmt.Sprintf("premise %d consequent has no standalone uppercase X", premises[0].Number)
+				candidate.mismatch = fmt.Sprintf("premise %d consequent has no standalone uppercase X, Y, or Z", premises[0].Number)
 			}
 			best = betterOutcome(best, candidate)
 			continue
 		}
 
-		substitution, ok := deriveSchematicSubstitution(antecedentTemplate, premises[1].Statement)
-		if !ok {
+		if !schematicVariablesSubset(consequentVariables, antecedentVariables) {
+			candidate.mismatch = fmt.Sprintf(
+				"premise %d consequent contains a schematic variable absent from its antecedent",
+				premises[0].Number,
+			)
+			best = betterOutcome(best, candidate)
+			continue
+		}
+
+		substitutions := unifySchematicTemplate(antecedentTemplate, premises[1].Statement, nil)
+		if len(substitutions) == 0 {
 			candidate.score = 1
 			candidate.mismatch = fmt.Sprintf(
-				"premise %d does not provide a non-empty substitution for premise %d antecedent template",
+				"premise %d does not provide one consistent non-empty substitution for premise %d antecedent template",
 				premises[1].Number,
 				premises[0].Number,
 			)
@@ -891,23 +1377,237 @@ func matchSchematicInstantiation(premises []NumberedArgumentStep, conclusion Num
 			continue
 		}
 
-		candidate = evaluateIdentities(
-			clauseIdentity{
-				fmt.Sprintf("premise %d instantiated antecedent", premises[0].Number),
-				strings.ReplaceAll(antecedentTemplate, schematicVariableMarker, substitution),
-				fmt.Sprintf("premise %d", premises[1].Number),
-				premises[1].Statement,
-			},
-			clauseIdentity{
-				fmt.Sprintf("premise %d instantiated consequent", premises[0].Number),
-				strings.ReplaceAll(consequentTemplate, schematicVariableMarker, substitution),
-				fmt.Sprintf("conclusion %d", conclusion.Number),
-				conclusion.Statement,
-			},
-		)
-		best = betterOutcome(best, candidate)
-		if best.matched {
-			return best
+		for _, substitution := range substitutions {
+			instantiatedAntecedent, antecedentOK := instantiateSchematicTemplate(antecedentTemplate, substitution)
+			instantiatedConsequent, consequentOK := instantiateSchematicTemplate(consequentTemplate, substitution)
+			if !antecedentOK || !consequentOK {
+				continue
+			}
+			candidate = evaluateIdentities(
+				clauseIdentity{
+					fmt.Sprintf("premise %d instantiated antecedent", premises[0].Number),
+					instantiatedAntecedent,
+					fmt.Sprintf("premise %d", premises[1].Number),
+					premises[1].Statement,
+				},
+				clauseIdentity{
+					fmt.Sprintf("premise %d instantiated consequent", premises[0].Number),
+					instantiatedConsequent,
+					fmt.Sprintf("conclusion %d", conclusion.Number),
+					conclusion.Statement,
+				},
+			)
+			best = betterOutcome(best, candidate)
+			if best.matched {
+				return best
+			}
+		}
+	}
+	return best
+}
+
+func matchExistentialGeneralization(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, instance := range groundInstanceCandidates(premises[0].Statement) {
+		for _, predicate := range unrestrictedExistentialPredicateCandidates(conclusion.Statement) {
+			candidate := evaluateIdentities(clauseIdentity{
+				fmt.Sprintf("premise %d predicate", premises[0].Number), instance.right,
+				fmt.Sprintf("conclusion %d existential predicate", conclusion.Number), predicate,
+			})
+			best = betterOutcome(best, candidate)
+			if best.matched {
+				return best
+			}
+		}
+	}
+	return best
+}
+
+func matchExistentialIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, existential := range existentialIntroductionConclusionCandidates(conclusion.Statement) {
+		for witnessIndex, witnessPremise := range premises {
+			for _, witness := range groundInstanceCandidates(witnessPremise.Statement) {
+				candidate := evaluateTermIdentities(clauseIdentity{
+					fmt.Sprintf("premise %d witness class", witnessPremise.Number), witness.right,
+					fmt.Sprintf("conclusion %d existential class", conclusion.Number), existential.class,
+				})
+				candidate.matched = false
+				candidate.traction = true
+
+				for _, predicates := range conjunctionPartitions(existential.matrix, len(premises)-1) {
+					if !matchExistentialPredicatePremises(premises, witnessIndex, witness.left, predicates) {
+						continue
+					}
+					candidate.score += len(predicates)
+					if candidate.mismatch == "" {
+						candidate.matched = true
+						return candidate
+					}
+				}
+
+				if candidate.mismatch == "" {
+					candidate.mismatch = fmt.Sprintf(
+						"the remaining cited premises do not give subject %q every conclusion predicate verbatim",
+						normalizeClause(witness.left),
+					)
+				}
+				best = betterOutcome(best, candidate)
+			}
+		}
+	}
+	return best
+}
+
+func matchExistentialPredicatePremises(
+	premises []NumberedArgumentStep,
+	witnessIndex int,
+	subject string,
+	predicates []string,
+) bool {
+	used := make([]bool, len(premises))
+	used[witnessIndex] = true
+	var matchNext func(int) bool
+	matchNext = func(predicateIndex int) bool {
+		if predicateIndex == len(predicates) {
+			return true
+		}
+		for premiseIndex, premise := range premises {
+			if used[premiseIndex] {
+				continue
+			}
+			for _, instance := range groundInstanceCandidates(premise.Statement) {
+				if !equalClauses(subject, instance.left) || !equalClauses(predicates[predicateIndex], instance.right) {
+					continue
+				}
+				used[premiseIndex] = true
+				if matchNext(predicateIndex + 1) {
+					return true
+				}
+				used[premiseIndex] = false
+			}
+		}
+		return false
+	}
+	return matchNext(0)
+}
+
+type existentialCounterexampleClause struct {
+	class        string
+	restrictor   string
+	negated      string
+	unrestricted bool
+}
+
+func existentialCounterexampleCandidates(statement string) []existentialCounterexampleClause {
+	statement = normalizeClause(statement)
+	sources := thereExistRestrictedCandidates(statement)
+	const unrestrictedPrefix = "there exists something that is "
+	if strings.HasPrefix(statement, unrestrictedPrefix) {
+		matrix := normalizeClause(strings.TrimPrefix(statement, unrestrictedPrefix))
+		if matrix != "" {
+			sources = append(sources, existentialClause{matrix: matrix, unrestricted: true})
+		}
+	}
+
+	result := make([]existentialCounterexampleClause, 0)
+	for _, source := range sources {
+		if strings.HasPrefix(source.matrix, "not ") {
+			negated := normalizeClause(strings.TrimPrefix(source.matrix, "not "))
+			if negated != "" {
+				result = append(result, existentialCounterexampleClause{
+					class: source.class, negated: negated, unrestricted: source.unrestricted,
+				})
+			}
+		}
+		for _, conjunction := range conjunctionCandidates(source.matrix) {
+			if !strings.HasPrefix(conjunction.right, "not ") {
+				continue
+			}
+			negated := normalizeClause(strings.TrimPrefix(conjunction.right, "not "))
+			if conjunction.left == "" || negated == "" {
+				continue
+			}
+			result = append(result, existentialCounterexampleClause{
+				class: source.class, restrictor: conjunction.left, negated: negated, unrestricted: source.unrestricted,
+			})
+		}
+	}
+	return result
+}
+
+type universalCounterexampleClause struct {
+	class        string
+	restrictor   string
+	consequent   string
+	unrestricted bool
+}
+
+func universalCounterexampleCandidates(statement string) []universalCounterexampleClause {
+	statement = normalizeClause(statement)
+	result := make([]universalCounterexampleClause, 0)
+	for _, universal := range universalCandidates(statement) {
+		switch {
+		case strings.HasPrefix(statement, "everything "):
+			if !strings.HasPrefix(universal.left, "that is ") {
+				continue
+			}
+			restrictor := normalizeClause(strings.TrimPrefix(universal.left, "that is "))
+			if restrictor != "" {
+				result = append(result, universalCounterexampleClause{
+					restrictor: restrictor, consequent: universal.right, unrestricted: true,
+				})
+			}
+		case strings.HasPrefix(statement, "every "):
+			restricted := appendSplitCandidates(nil, universal.left, " that is ", false)
+			for _, split := range restricted {
+				result = append(result, universalCounterexampleClause{
+					class: split.left, restrictor: split.right, consequent: universal.right,
+				})
+			}
+			if len(restricted) == 0 && !strings.Contains(universal.left, " that") {
+				result = append(result, universalCounterexampleClause{
+					class: universal.left, consequent: universal.right,
+				})
+			}
+		}
+	}
+	return result
+}
+
+func matchExistentialCounterexample(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, negatedConclusion := range negationCandidates(conclusion.Statement) {
+		for _, existential := range existentialCounterexampleCandidates(premises[0].Statement) {
+			for _, universal := range universalCounterexampleCandidates(negatedConclusion) {
+				candidate := schemaMatchOutcome{traction: true}
+				switch {
+				case existential.unrestricted && universal.unrestricted:
+					candidate.score++
+				case !existential.unrestricted && !universal.unrestricted:
+					appendOutcome(&candidate, evaluateTermIdentities(clauseIdentity{
+						fmt.Sprintf("premise %d existential class", premises[0].Number), existential.class,
+						fmt.Sprintf("conclusion %d universal class", conclusion.Number), universal.class,
+					}))
+				default:
+					candidate.mismatch = "the existential and universal do not have the same restricted or unrestricted domain"
+				}
+				appendOutcome(&candidate, evaluateIdentities(
+					clauseIdentity{
+						fmt.Sprintf("premise %d restrictor", premises[0].Number), existential.restrictor,
+						fmt.Sprintf("conclusion %d restrictor", conclusion.Number), universal.restrictor,
+					},
+					clauseIdentity{
+						fmt.Sprintf("premise %d negated predicate", premises[0].Number), existential.negated,
+						fmt.Sprintf("conclusion %d consequent", conclusion.Number), universal.consequent,
+					},
+				))
+				candidate.matched = candidate.mismatch == "" && candidate.score == 3
+				best = betterOutcome(best, candidate)
+				if best.matched {
+					return best
+				}
+			}
 		}
 	}
 	return best

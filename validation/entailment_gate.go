@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v3"
+const EntailmentGateCatalogVersion = "v5"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -171,7 +171,7 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 			premises = append(premises, stepsByNumber[citation])
 		}
 		for _, schema := range entailmentSchemas {
-			if schema.arity == variableArity || schema.arity >= len(premises) {
+			if schema.arity < 0 || schema.arity >= len(premises) {
 				continue
 			}
 			for _, selection := range orderedPremiseSelections(premises, schema.arity) {
@@ -325,6 +325,9 @@ func gateCandidateSets(premises []NumberedArgumentStep, conclusion NumberedArgum
 }
 
 func schemaAcceptsPremiseCount(schema entailmentSchema, premiseCount int) bool {
+	if schema.arity == variableArityAtLeastTwo {
+		return premiseCount >= 2
+	}
 	if schema.arity == variableArity {
 		return premiseCount >= 3
 	}
@@ -332,6 +335,12 @@ func schemaAcceptsPremiseCount(schema entailmentSchema, premiseCount int) bool {
 }
 
 func orderedPremiseSelections(premises []NumberedArgumentStep, arity int) [][]NumberedArgumentStep {
+	if arity == variableArityAtLeastTwo {
+		if len(premises) < 2 {
+			return nil
+		}
+		return [][]NumberedArgumentStep{premises}
+	}
 	if arity == variableArity {
 		if len(premises) < 3 {
 			return nil
