@@ -62,6 +62,9 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "modus ponens", arity: 2, match: matchModusPonens},
 	{name: "modus tollens", arity: 2, match: matchModusTollens},
 	{name: "hypothetical syllogism", arity: 2, match: matchHypotheticalSyllogism},
+	{name: "biconditional introduction", arity: 2, match: matchBiconditionalIntroduction},
+	{name: "biconditional elimination", arity: 1, match: matchBiconditionalElimination},
+	{name: "biconditional modus ponens", arity: 2, match: matchBiconditionalModusPonens},
 	{name: "conjunction introduction", arity: 2, match: matchConjunctionIntroduction},
 	{name: "conjunction elimination", arity: 1, match: matchConjunctionElimination},
 	{name: "disjunction introduction", arity: 1, match: matchDisjunctionIntroduction},
@@ -135,6 +138,29 @@ func conditionalCandidatesWithNormalizer(statement string, normalize func(string
 		}
 	}
 	return result
+}
+
+func biconditionalCandidates(statement string) []clausePair {
+	statement = normalizeClause(statement)
+	const connective = " if and only if "
+	if strings.Count(statement, connective) != 1 {
+		return nil
+	}
+	index := strings.Index(statement, connective)
+	left := normalizeClause(statement[:index])
+	right := normalizeClause(statement[index+len(connective):])
+	if left == "" || right == "" {
+		return nil
+	}
+	// The infix alone cannot disambiguate a top-level biconditional from one
+	// embedded under a report, attribution, or larger punctuated clause. Reject
+	// those surface boundaries rather than risk certifying the embedded reading.
+	for _, clause := range []string{stripClauseWrappers(left), stripClauseWrappers(right)} {
+		if strings.Contains(clause, " that ") || strings.Contains(clause, " according to ") || strings.ContainsAny(clause, ",;:") {
+			return nil
+		}
+	}
+	return []clausePair{{left: left, right: right}}
 }
 
 func normalizeClausePreservingCase(value string) string {
@@ -1075,6 +1101,63 @@ func matchHypotheticalSyllogism(premises []NumberedArgumentStep, conclusion Numb
 				if best.matched {
 					return best
 				}
+			}
+		}
+	}
+	return best
+}
+
+func matchBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, forward := range conditionalCandidates(premises[0].Statement) {
+		for _, reverse := range conditionalCandidates(premises[1].Statement) {
+			for _, biconditional := range biconditionalCandidates(conclusion.Statement) {
+				candidate := evaluateIdentities(
+					clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), forward.left, fmt.Sprintf("conclusion %d left clause", conclusion.Number), biconditional.left},
+					clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), forward.right, fmt.Sprintf("conclusion %d right clause", conclusion.Number), biconditional.right},
+					clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[1].Number), reverse.left, fmt.Sprintf("conclusion %d right clause", conclusion.Number), biconditional.right},
+					clauseIdentity{fmt.Sprintf("premise %d consequent", premises[1].Number), reverse.right, fmt.Sprintf("conclusion %d left clause", conclusion.Number), biconditional.left},
+				)
+				best = betterOutcome(best, candidate)
+				if best.matched {
+					return best
+				}
+			}
+		}
+	}
+	return best
+}
+
+func matchBiconditionalElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, biconditional := range biconditionalCandidates(premises[0].Statement) {
+		for _, conditional := range conditionalCandidates(conclusion.Statement) {
+			for _, direction := range []clausePair{biconditional, {left: biconditional.right, right: biconditional.left}} {
+				candidate := evaluateIdentities(
+					clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), direction.left, fmt.Sprintf("conclusion %d antecedent", conclusion.Number), conditional.left},
+					clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), direction.right, fmt.Sprintf("conclusion %d consequent", conclusion.Number), conditional.right},
+				)
+				best = betterOutcome(best, candidate)
+				if best.matched {
+					return best
+				}
+			}
+		}
+	}
+	return best
+}
+
+func matchBiconditionalModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	best := schemaMatchOutcome{}
+	for _, biconditional := range biconditionalCandidates(premises[0].Statement) {
+		for _, direction := range []clausePair{biconditional, {left: biconditional.right, right: biconditional.left}} {
+			candidate := evaluateIdentities(
+				clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), direction.left, fmt.Sprintf("premise %d", premises[1].Number), premises[1].Statement},
+				clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), direction.right, fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement},
+			)
+			best = betterOutcome(best, candidate)
+			if best.matched {
+				return best
 			}
 		}
 	}

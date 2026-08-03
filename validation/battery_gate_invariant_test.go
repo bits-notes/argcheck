@@ -21,6 +21,7 @@ type goldGateCase struct {
 	GoldStatus       string `json:"gold_status"`
 	CatalogGap       string `json:"catalog_gap"`
 	StructuralDefect string `json:"structural_defect"`
+	ExpectedGateForm string `json:"expected_gate_form"`
 	Argument         string `json:"argument"`
 	Input            string `json:"input"`
 }
@@ -102,6 +103,14 @@ func assertGoldGateConsistent(t *testing.T, path string) {
 			case transparent:
 				if !report.Passed {
 					t.Fatalf("gold transparently_valid case %s must gate-pass; gate failed. Relabel it, decompose it, or flag catalog_gap.", c.ID)
+				}
+				if c.ExpectedGateForm != "" {
+					if len(report.Steps) != 1 {
+						t.Fatalf("form-pinned gold case %s has %d conclusion steps, want 1", c.ID, len(report.Steps))
+					}
+					if got := report.Steps[0].Form; got != c.ExpectedGateForm {
+						t.Fatalf("form-pinned gold case %s matched %q, want %q", c.ID, got, c.ExpectedGateForm)
+					}
 				}
 			default:
 				if report.Passed {
