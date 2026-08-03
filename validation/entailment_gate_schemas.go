@@ -1128,6 +1128,19 @@ func matchBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion 
 	return best
 }
 
+// MatchesBiconditionalIntroduction reports whether any two of the supplied
+// premises certify conclusion under the catalog's biconditional-introduction
+// schema. Keeping this predicate beside the schema ensures callers share its
+// exact parsing and clause-identity rules.
+func MatchesBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) bool {
+	for _, ordered := range orderedPremiseSelections(premises, 2) {
+		if matchBiconditionalIntroduction(ordered, conclusion).matched {
+			return true
+		}
+	}
+	return false
+}
+
 func matchBiconditionalElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, biconditional := range biconditionalCandidates(premises[0].Statement) {
