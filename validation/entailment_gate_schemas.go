@@ -1128,13 +1128,37 @@ func matchBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion 
 	return best
 }
 
-// MatchesBiconditionalIntroduction reports whether any two of the supplied
-// premises certify conclusion under the catalog's biconditional-introduction
-// schema. Keeping this predicate beside the schema ensures callers share its
-// exact parsing and clause-identity rules.
+// MatchesBiconditionalIntroduction reports whether a biconditional is licensed
+// as one atomic step. A conclusion must be introduced either from two verbatim
+// directional conditionals or by ordinary/conjunctive modus ponens from a
+// conditional whose full consequent is the verbatim biconditional conclusion.
+// A biconditional embedded in an anchored conditional premise is the author's
+// premise commitment, rather than a derived biconditional introduction.
+//
+// Keeping every case in this predicate ensures the catalog and atomicity scan
+// share the exact parsing and clause-identity rules.
 func MatchesBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) bool {
+	if conclusion.Kind == numberedArgumentStepPremise {
+		return biconditionalEmbeddedInConditional(conclusion.Statement)
+	}
+	if len(biconditionalCandidates(conclusion.Statement)) == 0 {
+		return false
+	}
 	for _, ordered := range orderedPremiseSelections(premises, 2) {
 		if matchBiconditionalIntroduction(ordered, conclusion).matched {
+			return true
+		}
+		if matchModusPonens(ordered, conclusion).matched {
+			return true
+		}
+	}
+	return matchConjunctiveModusPonens(premises, conclusion).matched
+}
+
+func biconditionalEmbeddedInConditional(statement string) bool {
+	const connective = " if and only if "
+	for _, conditional := range conditionalCandidates(statement) {
+		if strings.Contains(conditional.left, connective) || strings.Contains(conditional.right, connective) {
 			return true
 		}
 	}

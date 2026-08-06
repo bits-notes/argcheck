@@ -2,12 +2,6 @@ package validation
 
 import "testing"
 
-func TestCatalogV6Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v6" {
-		t.Fatalf("catalog version = %q, want v6", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestCatalogV6BiconditionalForms(t *testing.T) {
 	positives := []struct {
 		name     string
