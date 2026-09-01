@@ -20,6 +20,7 @@ const (
 	BuiltinNonEmpty                 = "non_empty"
 	BuiltinNumberedArgumentSyntax   = "numbered_argument_syntax"
 	BuiltinEntailmentGate           = "entailment_gate"
+	BuiltinFormalizedRepairOutput   = "formalized_repair_output"
 	BuiltinDisputationChallenge     = "disputation_challenge"
 	BuiltinDisputationProseResponse = "disputation_prose_response"
 	BuiltinConditionalityPreserve   = "conditionality_preservation"
@@ -73,6 +74,8 @@ func LegacyKindSpec(kind string) Spec {
 		return BuiltinSpec(BuiltinNumberedArgumentSyntax)
 	case BuiltinEntailmentGate:
 		return BuiltinSpec(BuiltinEntailmentGate)
+	case BuiltinFormalizedRepairOutput:
+		return BuiltinSpec(BuiltinFormalizedRepairOutput)
 	case BuiltinDisputationChallenge:
 		return BuiltinSpec(BuiltinDisputationChallenge)
 	case BuiltinDisputationProseResponse:
@@ -106,7 +109,7 @@ func Normalize(spec Spec) Spec {
 	if spec.SchemaVersion == "" {
 		spec.SchemaVersion = SchemaVersionV1
 	}
-	if spec.Kind == BuiltinNonEmpty || spec.Kind == BuiltinNone || spec.Kind == BuiltinNumberedArgumentSyntax || spec.Kind == BuiltinEntailmentGate || spec.Kind == BuiltinDisputationChallenge || spec.Kind == BuiltinDisputationProseResponse || spec.Kind == BuiltinConditionalityPreserve {
+	if spec.Kind == BuiltinNonEmpty || spec.Kind == BuiltinNone || spec.Kind == BuiltinNumberedArgumentSyntax || spec.Kind == BuiltinEntailmentGate || spec.Kind == BuiltinFormalizedRepairOutput || spec.Kind == BuiltinDisputationChallenge || spec.Kind == BuiltinDisputationProseResponse || spec.Kind == BuiltinConditionalityPreserve {
 		spec.Name = spec.Kind
 		spec.Kind = KindBuiltin
 	}
@@ -167,6 +170,11 @@ func compileBuiltin(spec Spec) (OutputValidator, error) {
 			return nil, fmt.Errorf("invalid entailment_gate options: %w", err)
 		}
 		return entailmentGateValidator{options: options}, nil
+	case BuiltinFormalizedRepairOutput:
+		if len(spec.Options) > 0 {
+			return nil, fmt.Errorf("validator %q does not support options", spec.Name)
+		}
+		return formalizedRepairOutputValidator{}, nil
 	case BuiltinDisputationChallenge:
 		options, err := parseDisputationChallengeOptions(spec.Options)
 		if err != nil {
