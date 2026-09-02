@@ -6,9 +6,11 @@ import (
 )
 
 const (
-	DroppedContentKindPremise    = "premise"
-	DroppedContentKindConclusion = "conclusion"
-	DroppedContentKindCitation   = "citation"
+	DroppedContentKindPremise          = "premise"
+	DroppedContentKindConclusion       = "conclusion"
+	DroppedContentKindCitation         = "citation"
+	FormalizationCoverageAnchorSource  = "source"
+	FormalizationCoverageAnchorAsFound = "as_found"
 )
 
 type FormalizationLineMapping struct {
@@ -34,16 +36,42 @@ func ValidateFormalizationCoverage(
 	dropped []FormalizationDroppedContent,
 	suppliedPremiseLines []int,
 ) ([]FormalizationDroppedContent, bool, error) {
-	asFound, parsed := ParseNumberedArgumentAllowingNoConclusions(asFoundArgument)
+	return ValidateFormalizationCoverageAnchored(
+		FormalizationCoverageAnchorAsFound,
+		asFoundArgument,
+		repairedArgument,
+		lineMapping,
+		dropped,
+		suppliedPremiseLines,
+	)
+}
+
+// ValidateFormalizationCoverageAnchored validates the repair declaration
+// against either the parsed source argument or, when no numbered source is
+// available, the as-found argument. The JSON field names retain their Phase 2
+// legacy spelling (from_as_found_lines/as_found_line), but their indices refer
+// to the declared anchor.
+func ValidateFormalizationCoverageAnchored(
+	anchorName string,
+	anchorArgument string,
+	repairedArgument string,
+	lineMapping []FormalizationLineMapping,
+	dropped []FormalizationDroppedContent,
+	suppliedPremiseLines []int,
+) ([]FormalizationDroppedContent, bool, error) {
+	if anchorName != FormalizationCoverageAnchorSource && anchorName != FormalizationCoverageAnchorAsFound {
+		return nil, false, fmt.Errorf("unsupported coverage anchor %q", anchorName)
+	}
+	anchor, parsed := ParseNumberedArgumentAllowingNoConclusions(anchorArgument)
 	if !parsed.Passed {
-		return nil, false, fmt.Errorf("parse as-found argument: %s", parsed.Message)
+		return nil, false, fmt.Errorf("parse %s argument: %s", formalizationCoverageAnchorLabel(anchorName), parsed.Message)
 	}
 	repaired, parsed := ParseNumberedArgumentAllowingNoConclusions(repairedArgument)
 	if !parsed.Passed {
 		return nil, false, fmt.Errorf("parse repaired argument: %s", parsed.Message)
 	}
 
-	asFoundCoverage := make([]int, len(asFound.Steps)+1)
+	anchorCoverage := make([]int, len(anchor.Steps)+1)
 	repairedMapped := make([]bool, len(repaired.Steps)+1)
 	seenRepairedMapping := make(map[int]bool, len(lineMapping))
 	for index, mapping := range lineMapping {
@@ -59,14 +87,14 @@ func ValidateFormalizationCoverage(
 		}
 		seenSources := make(map[int]bool, len(mapping.FromAsFoundLines))
 		for _, sourceLine := range mapping.FromAsFoundLines {
-			if sourceLine < 1 || sourceLine > len(asFound.Steps) {
-				return nil, false, fmt.Errorf("repaired line %d references as-found line %d outside 1..%d", mapping.RepairedLine, sourceLine, len(asFound.Steps))
+			if sourceLine < 1 || sourceLine > len(anchor.Steps) {
+				return nil, false, fmt.Errorf("repaired line %d references %s line %d outside 1..%d", mapping.RepairedLine, formalizationCoverageAnchorLabel(anchorName), sourceLine, len(anchor.Steps))
 			}
 			if seenSources[sourceLine] {
-				return nil, false, fmt.Errorf("repaired line %d repeats as-found line %d", mapping.RepairedLine, sourceLine)
+				return nil, false, fmt.Errorf("repaired line %d repeats %s line %d", mapping.RepairedLine, formalizationCoverageAnchorLabel(anchorName), sourceLine)
 			}
 			seenSources[sourceLine] = true
-			asFoundCoverage[sourceLine]++
+			anchorCoverage[sourceLine]++
 		}
 		repairedMapped[mapping.RepairedLine] = true
 	}
@@ -74,42 +102,47 @@ func ValidateFormalizationCoverage(
 	enrichedDropped := make([]FormalizationDroppedContent, len(dropped))
 	droppedConclusion := false
 	for index, flag := range dropped {
-		if flag.AsFoundLine < 1 || flag.AsFoundLine > len(asFound.Steps) {
-			return nil, false, fmt.Errorf("dropped[%d] references as-found line %d outside 1..%d", index, flag.AsFoundLine, len(asFound.Steps))
+		if flag.AsFoundLine < 1 || flag.AsFoundLine > len(anchor.Steps) {
+			return nil, false, fmt.Errorf("dropped[%d] references %s line %d outside 1..%d", index, formalizationCoverageAnchorLabel(anchorName), flag.AsFoundLine, len(anchor.Steps))
 		}
-		step := asFound.Steps[flag.AsFoundLine-1]
+		step := anchor.Steps[flag.AsFoundLine-1]
 		switch flag.Kind {
 		case DroppedContentKindPremise:
 			if step.Kind != DroppedContentKindPremise {
-				return nil, false, fmt.Errorf("dropped as-found line %d is a %s, not a premise", flag.AsFoundLine, step.Kind)
+				return nil, false, fmt.Errorf("dropped %s line %d is a %s, not a premise", formalizationCoverageAnchorLabel(anchorName), flag.AsFoundLine, step.Kind)
 			}
 		case DroppedContentKindConclusion:
 			if step.Kind != DroppedContentKindConclusion {
-				return nil, false, fmt.Errorf("dropped as-found line %d is a %s, not a conclusion", flag.AsFoundLine, step.Kind)
+				return nil, false, fmt.Errorf("dropped %s line %d is a %s, not a conclusion", formalizationCoverageAnchorLabel(anchorName), flag.AsFoundLine, step.Kind)
 			}
 			droppedConclusion = true
 		case DroppedContentKindCitation:
 			if len(step.Citations) == 0 {
-				return nil, false, fmt.Errorf("dropped as-found line %d has no citation", flag.AsFoundLine)
+				return nil, false, fmt.Errorf("dropped %s line %d has no citation", formalizationCoverageAnchorLabel(anchorName), flag.AsFoundLine)
 			}
 		default:
 			return nil, false, fmt.Errorf("dropped[%d] has unsupported kind %q", index, flag.Kind)
 		}
 		if strings.TrimSpace(flag.Reason) == "" {
-			return nil, false, fmt.Errorf("dropped as-found line %d requires a reason", flag.AsFoundLine)
+			return nil, false, fmt.Errorf("dropped %s line %d requires a reason", formalizationCoverageAnchorLabel(anchorName), flag.AsFoundLine)
 		}
-		asFoundCoverage[flag.AsFoundLine]++
+		anchorCoverage[flag.AsFoundLine]++
 		flag.Text = step.Statement
 		enrichedDropped[index] = flag
 	}
 
-	for line := 1; line <= len(asFound.Steps); line++ {
-		switch asFoundCoverage[line] {
+	for line := 1; line <= len(anchor.Steps); line++ {
+		switch anchorCoverage[line] {
 		case 0:
-			return nil, false, fmt.Errorf("as-found line %d is not covered by line_mapping or dropped", line)
+			return nil, false, fmt.Errorf("%s line %d is not covered by line_mapping or dropped", formalizationCoverageAnchorLabel(anchorName), line)
 		case 1:
 		default:
-			return nil, false, fmt.Errorf("as-found line %d is covered %d times; want exactly once", line, asFoundCoverage[line])
+			// A compound source premise may legitimately be split into several
+			// repaired premises. Conclusions must remain single-origin, and the
+			// as-found fallback retains Phase 2's exact-once rule.
+			if anchorName == FormalizationCoverageAnchorAsFound || anchor.Steps[line-1].Kind == DroppedContentKindConclusion {
+				return nil, false, fmt.Errorf("%s line %d is covered %d times; want exactly once", formalizationCoverageAnchorLabel(anchorName), line, anchorCoverage[line])
+			}
 		}
 	}
 
@@ -123,10 +156,29 @@ func ValidateFormalizationCoverage(
 		}
 		supplied[line] = true
 	}
+	coveredRepaired := make([]bool, len(repaired.Steps)+1)
 	for line := 1; line <= len(repaired.Steps); line++ {
-		if !repairedMapped[line] && !supplied[line] {
-			return nil, false, fmt.Errorf("repaired line %d is neither mapped from as-found content nor covered by a supplied-premise flag", line)
+		coveredRepaired[line] = repairedMapped[line] || supplied[line]
+		if !coveredRepaired[line] && repaired.Steps[line-1].Kind == DroppedContentKindConclusion {
+			derived := len(repaired.Steps[line-1].Citations) > 0
+			for _, citation := range repaired.Steps[line-1].Citations {
+				if citation < 1 || citation >= line || !coveredRepaired[citation] {
+					derived = false
+					break
+				}
+			}
+			coveredRepaired[line] = derived
+		}
+		if !coveredRepaired[line] {
+			return nil, false, fmt.Errorf("repaired line %d is neither mapped from %s content, covered by a supplied-premise flag, nor recursively derived", line, formalizationCoverageAnchorLabel(anchorName))
 		}
 	}
 	return enrichedDropped, droppedConclusion, nil
+}
+
+func formalizationCoverageAnchorLabel(anchorName string) string {
+	if anchorName == FormalizationCoverageAnchorSource {
+		return "source"
+	}
+	return "as-found"
 }

@@ -10,9 +10,10 @@ import (
 )
 
 type formalizedRepairOutput struct {
-	Argument    *string                         `json:"argument"`
-	LineMapping *[]formalizedRepairLineMapping  `json:"line_mapping"`
-	Dropped     *[]formalizedRepairDroppedEntry `json:"dropped"`
+	Argument       *string                         `json:"argument"`
+	CoverageAnchor *string                         `json:"coverage_anchor"`
+	LineMapping    *[]formalizedRepairLineMapping  `json:"line_mapping"`
+	Dropped        *[]formalizedRepairDroppedEntry `json:"dropped"`
 }
 
 type formalizedRepairLineMapping struct {
@@ -51,6 +52,12 @@ func (formalizedRepairOutputValidator) Validate(ctx context.Context, output stri
 	}
 	if repair.Argument == nil {
 		return Result{Passed: false, Message: "formalized repair output requires argument"}
+	}
+	if repair.CoverageAnchor == nil {
+		return Result{Passed: false, Message: "formalized repair output requires coverage_anchor"}
+	}
+	if *repair.CoverageAnchor != FormalizationCoverageAnchorSource && *repair.CoverageAnchor != FormalizationCoverageAnchorAsFound {
+		return Result{Passed: false, Message: "formalized repair coverage_anchor must be source or as_found"}
 	}
 	if repair.LineMapping == nil {
 		return Result{Passed: false, Message: "formalized repair output requires line_mapping"}
@@ -122,6 +129,115 @@ func (formalizedRepairOutputValidator) Validate(ctx context.Context, output stri
 		Details:      map[string]any{"step_count": argumentResult.Details["step_count"], "mapping_count": len(*repair.LineMapping), "dropped_count": len(*repair.Dropped)},
 		ParsedOutput: json.RawMessage(strings.TrimSpace(output)),
 	}
+}
+
+// ValidateFormalizedRepairOutputWithPrompt runs the same built-in validator as
+// the atomic output contract, then enforces coverage using the source and
+// as-found arguments embedded in the repair node's rendered prompt. This is
+// called by the LLM runner, so failures enter the ordinary paid retry path.
+// Re-validation without the original prompt remains structurally deterministic;
+// the assembly transform performs the defensive dependency-backed check.
+func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, prompt string) Result {
+	result := formalizedRepairOutputValidator{}.Validate(ctx, output)
+	if !result.Passed {
+		return result
+	}
+	source, sourceOK := formalizedRepairTaggedValue(prompt, "source_material")
+	asFound, asFoundOK := formalizedRepairTaggedValue(prompt, "as_found_argument")
+	if !sourceOK || !asFoundOK {
+		return result
+	}
+
+	var repair formalizedRepairOutput
+	if err := json.Unmarshal([]byte(output), &repair); err != nil {
+		return Result{Passed: false, Message: "decode formalized repair coverage context: " + err.Error()}
+	}
+	expectedAnchor := FormalizationCoverageAnchorAsFound
+	anchorArgument := asFound
+	if _, parsed := ParseNumberedArgumentAllowingNoConclusions(source); parsed.Passed {
+		expectedAnchor = FormalizationCoverageAnchorSource
+		anchorArgument = source
+	}
+	if repair.CoverageAnchor == nil || *repair.CoverageAnchor != expectedAnchor {
+		return Result{Passed: false, Message: fmt.Sprintf("formalized repair coverage_anchor is %q; want %q for this input", stringValue(repair.CoverageAnchor), expectedAnchor)}
+	}
+
+	mapping := make([]FormalizationLineMapping, len(*repair.LineMapping))
+	mappedRepaired := make(map[int]bool, len(mapping))
+	for index, entry := range *repair.LineMapping {
+		mapping[index] = FormalizationLineMapping{RepairedLine: entry.RepairedLine, FromAsFoundLines: entry.FromAsFoundLines}
+		mappedRepaired[entry.RepairedLine] = true
+	}
+	dropped := make([]FormalizationDroppedContent, len(*repair.Dropped))
+	for index, entry := range *repair.Dropped {
+		dropped[index] = FormalizationDroppedContent{AsFoundLine: entry.AsFoundLine, Kind: entry.Kind, Reason: entry.Reason}
+	}
+
+	repairedArgument, parsed := ParseNumberedArgumentAllowingNoConclusions(*repair.Argument)
+	if !parsed.Passed {
+		return Result{Passed: false, Message: "parse formalized repair argument for coverage: " + parsed.Message}
+	}
+	suppliedLines := make([]int, 0)
+	for _, step := range repairedArgument.Steps {
+		if step.Kind != DroppedContentKindPremise || mappedRepaired[step.Number] {
+			continue
+		}
+		if formalizedRepairStatementPresent(step.Statement, source) || formalizedRepairStatementPresent(step.Statement, asFound) {
+			return Result{Passed: false, Message: fmt.Sprintf("repaired premise line %d is present in the source/as-found input and must be mapped", step.Number)}
+		}
+		suppliedLines = append(suppliedLines, step.Number)
+	}
+	if _, _, err := ValidateFormalizationCoverageAnchored(expectedAnchor, anchorArgument, *repair.Argument, mapping, dropped, suppliedLines); err != nil {
+		return Result{Passed: false, Message: "formalized repair coverage validation failed: " + err.Error()}
+	}
+	result.Details["coverage_anchor"] = expectedAnchor
+	result.Details["coverage_passed"] = true
+	return result
+}
+
+func formalizedRepairTaggedValue(prompt, tag string) (string, bool) {
+	open := "<" + tag + ">"
+	close := "</" + tag + ">"
+	start := strings.Index(prompt, open)
+	if start < 0 {
+		return "", false
+	}
+	start += len(open)
+	end := strings.Index(prompt[start:], close)
+	if end < 0 {
+		return "", false
+	}
+	return strings.TrimSpace(prompt[start : start+end]), true
+}
+
+func formalizedRepairStatementPresent(statement, text string) bool {
+	normalizedStatement := normalizeFormalizedRepairText(statement)
+	normalizedText := normalizeFormalizedRepairText(text)
+	return normalizedStatement != "" && strings.Contains(normalizedText, normalizedStatement)
+}
+
+func normalizeFormalizedRepairText(value string) string {
+	var normalized strings.Builder
+	space := false
+	for _, char := range strings.ToLower(value) {
+		if (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') {
+			if space && normalized.Len() > 0 {
+				normalized.WriteByte(' ')
+			}
+			space = false
+			normalized.WriteRune(char)
+		} else {
+			space = true
+		}
+	}
+	return normalized.String()
+}
+
+func stringValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func requireJSONEOF(decoder *json.Decoder) error {
