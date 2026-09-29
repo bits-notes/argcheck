@@ -85,11 +85,14 @@ var entailmentSchemas = []entailmentSchema{
 }
 
 func normalizeClause(value string) string {
+	value = expandGateContractions(value)
 	value = strings.Join(strings.Fields(value), " ")
 	value = strings.Trim(value, ", ")
 	if strings.HasSuffix(value, ".") {
 		value = strings.TrimSuffix(value, ".")
 	}
+	value = normalizeGateConditional(value)
+	value = expandGateElidedDisjunction(value)
 	value = strings.ToLower(value)
 	return separatedQuantifierPattern.ReplaceAllString(value, "${1}thing")
 }
@@ -165,12 +168,13 @@ func biconditionalCandidates(statement string) []clausePair {
 }
 
 func normalizeClausePreservingCase(value string) string {
+	value = expandGateContractions(value)
 	value = strings.Join(strings.Fields(value), " ")
 	value = strings.Trim(value, ", ")
 	if strings.HasSuffix(value, ".") {
 		value = strings.TrimSuffix(value, ".")
 	}
-	return value
+	return expandGateElidedDisjunction(normalizeGateConditional(value))
 }
 
 func negationCandidates(statement string) []string {

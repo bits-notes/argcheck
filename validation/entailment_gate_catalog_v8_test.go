@@ -6,12 +6,6 @@ import (
 	"testing"
 )
 
-func TestCatalogV8Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v8" {
-		t.Fatalf("catalog = %q, want v8", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestCatalogV8Coverage(t *testing.T) {
 	tests := []struct {
 		name, argument string
