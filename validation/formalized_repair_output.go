@@ -17,10 +17,7 @@ type formalizedRepairOutput struct {
 	Dropped        *[]formalizedRepairDroppedEntry `json:"dropped"`
 }
 
-type formalizedRepairLineMapping struct {
-	RepairedLine     int   `json:"repaired_line"`
-	FromAsFoundLines []int `json:"from_as_found_lines"`
-}
+type formalizedRepairLineMapping = FormalizationLineMapping
 
 type formalizedRepairDroppedEntry struct {
 	AsFoundLine int    `json:"as_found_line"`
@@ -95,8 +92,16 @@ func (formalizedRepairOutputValidator) Validate(ctx context.Context, output stri
 			return Result{Passed: false, Message: fmt.Sprintf("line_mapping has duplicate repaired_line %d", mapping.RepairedLine)}
 		}
 		seenRepaired[mapping.RepairedLine] = true
-		if len(mapping.FromAsFoundLines) == 0 {
+		if len(mapping.FromAsFoundLines) == 0 && mapping.FromSourceQuote == nil {
 			return Result{Passed: false, Message: fmt.Sprintf("line_mapping[%d].from_as_found_lines must contain at least one line", index)}
+		}
+		if mapping.FromSourceQuote != nil {
+			parsed, _ := ParseNumberedArgumentAllowingNoConclusions(*repair.Argument)
+			// Without prompt context, still check length and lexical alignment. Source
+			// membership is checked by the prompt-aware validator and by assembly.
+			if _, _, err := ValidateSourceQuote(*mapping.FromSourceQuote, parsed.Steps[mapping.RepairedLine-1].Statement, *mapping.FromSourceQuote); err != nil {
+				return Result{Passed: false, Message: fmt.Sprintf("repaired line %d: %v", mapping.RepairedLine, err)}
+			}
 		}
 		seenSources := make(map[int]bool, len(mapping.FromAsFoundLines))
 		for _, line := range mapping.FromAsFoundLines {
@@ -155,13 +160,16 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 	}
 	source, sourceOK := formalizedRepairTaggedValue(prompt, "source_material")
 	asFound, asFoundOK := formalizedRepairTaggedValue(prompt, "as_found_argument")
-	if !sourceOK || !asFoundOK {
-		return result
-	}
 
 	var repair formalizedRepairOutput
 	if err := json.Unmarshal(result.ParsedOutput, &repair); err != nil {
 		return Result{Passed: false, Message: "decode formalized repair coverage context: " + err.Error()}
+	}
+	if err := ValidateRestoredLineMappings(source, *repair.Argument, *repair.LineMapping); err != nil {
+		return Result{Passed: false, Message: err.Error()}
+	}
+	if !sourceOK || !asFoundOK {
+		return result
 	}
 	expectedAnchor := FormalizationCoverageAnchorAsFound
 	anchorArgument := asFound
@@ -179,7 +187,7 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 	mapping := make([]FormalizationLineMapping, len(*repair.LineMapping))
 	mappedRepaired := make(map[int]bool, len(mapping))
 	for index, entry := range *repair.LineMapping {
-		mapping[index] = FormalizationLineMapping{RepairedLine: entry.RepairedLine, FromAsFoundLines: entry.FromAsFoundLines}
+		mapping[index] = entry
 		mappedRepaired[entry.RepairedLine] = true
 	}
 	dropped := make([]FormalizationDroppedContent, len(*repair.Dropped))
@@ -201,7 +209,7 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 		}
 		suppliedLines = append(suppliedLines, step.Number)
 	}
-	if _, _, err := ValidateFormalizationCoverageAnchored(expectedAnchor, anchorArgument, *repair.Argument, mapping, dropped, suppliedLines); err != nil {
+	if _, _, err := ValidateFormalizationCoverageAnchored(expectedAnchor, anchorArgument, *repair.Argument, mapping, dropped, suppliedLines, source); err != nil {
 		return Result{Passed: false, Message: "formalized repair coverage validation failed: " + err.Error()}
 	}
 	result.Details["coverage_anchor"] = expectedAnchor

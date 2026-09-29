@@ -14,8 +14,9 @@ const (
 )
 
 type FormalizationLineMapping struct {
-	RepairedLine     int   `json:"repaired_line"`
-	FromAsFoundLines []int `json:"from_as_found_lines"`
+	RepairedLine     int     `json:"repaired_line"`
+	FromAsFoundLines []int   `json:"from_as_found_lines"`
+	FromSourceQuote  *string `json:"from_source_quote,omitempty"`
 }
 
 type FormalizationDroppedContent struct {
@@ -50,7 +51,8 @@ func ValidateFormalizationCoverage(
 // against either the parsed source argument or, when no numbered source is
 // available, the as-found argument. The JSON field names retain their Phase 2
 // legacy spelling (from_as_found_lines/as_found_line), but their indices refer
-// to the declared anchor.
+// to the declared anchor. Optional sourceMaterial is the original passage,
+// required whenever a mapping declares from_source_quote.
 func ValidateFormalizationCoverageAnchored(
 	anchorName string,
 	anchorArgument string,
@@ -58,6 +60,7 @@ func ValidateFormalizationCoverageAnchored(
 	lineMapping []FormalizationLineMapping,
 	dropped []FormalizationDroppedContent,
 	suppliedPremiseLines []int,
+	sourceMaterial ...string,
 ) ([]FormalizationDroppedContent, bool, error) {
 	if anchorName != FormalizationCoverageAnchorSource && anchorName != FormalizationCoverageAnchorAsFound {
 		return nil, false, fmt.Errorf("unsupported coverage anchor %q", anchorName)
@@ -71,9 +74,18 @@ func ValidateFormalizationCoverageAnchored(
 		return nil, false, fmt.Errorf("parse repaired argument: %s", parsed.Message)
 	}
 
+	source := ""
+	if len(sourceMaterial) > 0 {
+		source = sourceMaterial[0]
+	}
+	if err := ValidateRestoredLineMappings(source, repairedArgument, lineMapping); err != nil {
+		return nil, false, err
+	}
+
 	anchorCoverage := make([]int, len(anchor.Steps)+1)
 	repairedMapped := make([]bool, len(repaired.Steps)+1)
 	seenRepairedMapping := make(map[int]bool, len(lineMapping))
+	restoredLines := make(map[int]bool)
 	for index, mapping := range lineMapping {
 		if mapping.RepairedLine < 1 || mapping.RepairedLine > len(repaired.Steps) {
 			return nil, false, fmt.Errorf("line_mapping[%d] references repaired line %d outside 1..%d", index, mapping.RepairedLine, len(repaired.Steps))
@@ -82,7 +94,7 @@ func ValidateFormalizationCoverageAnchored(
 			return nil, false, fmt.Errorf("repaired line %d has duplicate line_mapping entries", mapping.RepairedLine)
 		}
 		seenRepairedMapping[mapping.RepairedLine] = true
-		if len(mapping.FromAsFoundLines) == 0 {
+		if len(mapping.FromAsFoundLines) == 0 && mapping.FromSourceQuote == nil {
 			return nil, false, fmt.Errorf("repaired line %d maps from no as-found lines", mapping.RepairedLine)
 		}
 		seenSources := make(map[int]bool, len(mapping.FromAsFoundLines))
@@ -97,6 +109,7 @@ func ValidateFormalizationCoverageAnchored(
 			anchorCoverage[sourceLine]++
 		}
 		repairedMapped[mapping.RepairedLine] = true
+		restoredLines[mapping.RepairedLine] = mapping.FromSourceQuote != nil
 	}
 
 	enrichedDropped := make([]FormalizationDroppedContent, len(dropped))
@@ -153,6 +166,9 @@ func ValidateFormalizationCoverageAnchored(
 		}
 		if repaired.Steps[line-1].Kind != DroppedContentKindPremise {
 			return nil, false, fmt.Errorf("supplied premise line %d is a %s", line, repaired.Steps[line-1].Kind)
+		}
+		if restoredLines[line] {
+			return nil, false, fmt.Errorf("restored repaired line %d must not carry a supplied-premise flag", line)
 		}
 		supplied[line] = true
 	}
