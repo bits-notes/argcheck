@@ -76,6 +76,7 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "universal negative syllogism", arity: 2, match: matchUniversalNegativeSyllogism},
 	{name: "universal negative instantiation", arity: 2, match: matchUniversalNegativeInstantiation},
 	{name: "schematic instantiation", arity: 2, match: matchSchematicInstantiation},
+	{name: "non-copular universal instantiation", arity: 2, match: matchNonCopularUniversalInstantiation},
 	{name: "universal instantiation", arity: 2, match: matchUniversalInstantiation},
 	{name: "existential generalization", arity: 1, match: matchExistentialGeneralization},
 	{name: "existential introduction", arity: variableArityAtLeastTwo, match: matchExistentialIntroduction},
@@ -205,7 +206,7 @@ func conjunctionCandidates(statement string) []clausePair {
 	return result
 }
 
-func conjunctiveAntecedentCandidates(statement string) [][]string {
+func conjunctiveAntecedentCandidates(statement string, partCount int) [][]string {
 	statement = normalizeClause(statement)
 	result := make([][]string, 0)
 	separator := ", and " + clauseWrapper
@@ -219,10 +220,10 @@ func conjunctiveAntecedentCandidates(statement string) [][]string {
 	for _, conjunction := range conjunctionCandidates(statement) {
 		result = append(result, []string{conjunction.left, conjunction.right})
 	}
-	return result
+	return append(result, plainAndPartitions(statement, partCount)...)
 }
 
-func conjunctiveAntecedentCandidatesPreservingCase(statement string) [][]string {
+func conjunctiveAntecedentCandidatesPreservingCase(statement string, partCount int) [][]string {
 	statement = normalizeClausePreservingCase(statement)
 	result := make([][]string, 0)
 	separator := ", and " + clauseWrapper
@@ -236,6 +237,50 @@ func conjunctiveAntecedentCandidatesPreservingCase(statement string) [][]string 
 	for _, conjunction := range conjunctionCandidatesPreservingCase(statement) {
 		result = append(result, []string{conjunction.left, conjunction.right})
 	}
+	// The schematic evaluator also enumerates premise assignments (k!).
+	// Bound the additional plain-and search independently of legacy forms.
+	if partCount <= 5 {
+		result = append(result, plainAndPartitions(statement, partCount)...)
+	}
+	return result
+}
+
+// plainAndPartitions preserves case and enumerates each choice of boundaries
+// once. Unsplit "and" tokens remain inside a conjunct, whose entire text must
+// still match a cited premise. The cap bounds the search to at most 2^12 choices.
+func plainAndPartitions(statement string, partCount int) [][]string {
+	const separator = " and "
+	lower := strings.ToLower(statement)
+	count := strings.Count(lower, separator)
+	if count > 12 || partCount < 3 || partCount > count+1 {
+		return nil
+	}
+	var boundaries []int
+	for start := 0; ; {
+		index := strings.Index(lower[start:], separator)
+		if index < 0 {
+			break
+		}
+		index += start
+		boundaries = append(boundaries, index)
+		start = index + len(separator)
+	}
+	var result [][]string
+	var visit func(int, int, []string)
+	visit = func(start, next int, parts []string) {
+		if len(parts) == partCount-1 {
+			result = append(result, append(append([]string(nil), parts...), statement[start:]))
+			return
+		}
+		for i := next; i < len(boundaries); i++ {
+			if len(boundaries)-i < partCount-1-len(parts) {
+				break
+			}
+			boundary := boundaries[i]
+			visit(boundary+len(separator), i+1, append(parts, statement[start:boundary]))
+		}
+	}
+	visit(0, 0, nil)
 	return result
 }
 
@@ -748,7 +793,7 @@ func matchConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion Num
 	best := schemaMatchOutcome{}
 	for conditionalIndex, premise := range premises {
 		for _, conditional := range conditionalCandidates(premise.Statement) {
-			conjunctiveCandidates := conjunctiveAntecedentCandidates(conditional.left)
+			conjunctiveCandidates := conjunctiveAntecedentCandidates(conditional.left, len(premises)-1)
 			if len(conjunctiveCandidates) == 0 {
 				candidate := schemaMatchOutcome{
 					traction: true,
@@ -879,7 +924,7 @@ func matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, concl
 				continue
 			}
 
-			conjunctiveCandidates := conjunctiveAntecedentCandidatesPreservingCase(conditional.left)
+			conjunctiveCandidates := conjunctiveAntecedentCandidatesPreservingCase(conditional.left, len(premises)-1)
 			if len(conjunctiveCandidates) == 0 {
 				candidate.mismatch = fmt.Sprintf(
 					"premise %d antecedent %q does not split into two or more conjuncts",
@@ -1312,6 +1357,59 @@ func matchIdentityTransitivity(premises []NumberedArgumentStep, conclusion Numbe
 					return best
 				}
 			}
+		}
+	}
+	return best
+}
+
+// The non-copular register uses a one-word class/subject and an opaque verb phrase.
+// Do not guess noun/verb boundaries in modified classes, relative clauses, or
+// coordinated/conditional predicates. Predicate agreement is exact: no verb
+// inflection or termCandidates tolerance is applied to the verb phrase.
+func matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	statement := normalizeClause(premises[0].Statement)
+	remainder := ""
+	for _, prefix := range []string{"all ", "every "} {
+		if strings.HasPrefix(statement, prefix) {
+			remainder = strings.TrimPrefix(statement, prefix)
+			break
+		}
+	}
+	class, predicate, ok := strings.Cut(remainder, " ")
+	if !ok || class == "" || predicate == "" {
+		return schemaMatchOutcome{}
+	}
+	first, _, _ := strings.Cut(predicate, " ")
+	switch first {
+	case "is", "are", "am", "who", "which", "that", "whose", "with", "without", "of", "in", "on", "from", "and", "or":
+		return schemaMatchOutcome{}
+	}
+	if strings.ContainsAny(remainder, ",;:()") {
+		return schemaMatchOutcome{}
+	}
+	for _, connective := range []string{" and ", " or ", " if ", " unless ", " then ", " who ", " which ", " that "} {
+		if strings.Contains(predicate, connective) {
+			return schemaMatchOutcome{}
+		}
+	}
+	best := schemaMatchOutcome{}
+	for _, instance := range groundInstanceCandidates(premises[1].Statement) {
+		// A complex subject could hide an attitude report ("Ada believes whales
+		// are mammals"); substituting inside it would not be instantiation.
+		if len(strings.Fields(instance.left)) != 1 {
+			continue
+		}
+		// This schema requires is/are membership, not the broader am register.
+		membership := normalizeClause(premises[1].Statement)
+		if !strings.HasPrefix(membership, instance.left+" is ") && !strings.HasPrefix(membership, instance.left+" are ") {
+			continue
+		}
+		candidate := evaluateTermIdentities(clauseIdentity{"universal class", class, "membership class", instance.right})
+		appendOutcome(&candidate, evaluateIdentities(clauseIdentity{"instantiated predicate", instance.left + " " + predicate, "conclusion", conclusion.Statement}))
+		candidate.matched = candidate.score == 2
+		best = betterOutcome(best, candidate)
+		if best.matched {
+			return best
 		}
 	}
 	return best

@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v7"
+const EntailmentGateCatalogVersion = "v8"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.

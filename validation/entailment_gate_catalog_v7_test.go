@@ -2,12 +2,6 @@ package validation
 
 import "testing"
 
-func TestCatalogV7Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v7" {
-		t.Fatalf("catalog version = %q, want v7", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestCatalogV7MPDischargedBiconditionals(t *testing.T) {
 	positives := []struct {
 		name     string
