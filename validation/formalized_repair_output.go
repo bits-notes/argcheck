@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode/utf8"
 )
 
 type formalizedRepairOutput struct {
@@ -29,7 +30,8 @@ type formalizedRepairDroppedEntry struct {
 
 type formalizedRepairOutputValidator struct{}
 
-func (formalizedRepairOutputValidator) Validate(ctx context.Context, output string) Result {
+func (formalizedRepairOutputValidator) Validate(ctx context.Context, output string) (result Result) {
+	defer func() { result = captureRepairFailure(result, output) }()
 	ctx, cancel := withValidationContext(ctx)
 	defer cancel()
 	if limit := checkOutputLimit(output); !limit.Passed {
@@ -41,7 +43,11 @@ func (formalizedRepairOutputValidator) Validate(ctx context.Context, output stri
 	default:
 	}
 
-	decoder := json.NewDecoder(bytes.NewBufferString(output))
+	extracted, normalization, err := extractRepairJSONObject(output)
+	if err != nil {
+		return Result{Message: "output must be one formalized repair JSON object: " + err.Error()}
+	}
+	decoder := json.NewDecoder(bytes.NewBufferString(extracted))
 	decoder.DisallowUnknownFields()
 	var repair formalizedRepairOutput
 	if err := decoder.Decode(&repair); err != nil {
@@ -123,11 +129,15 @@ func (formalizedRepairOutputValidator) Validate(ctx context.Context, output stri
 		}
 	}
 
+	details := map[string]any{"step_count": argumentResult.Details["step_count"], "mapping_count": len(*repair.LineMapping), "dropped_count": len(*repair.Dropped)}
+	if normalization != "" {
+		details["normalizations"] = []string{normalization}
+	}
 	return Result{
 		Passed:       true,
 		Message:      "output matches formalized_repair_output",
-		Details:      map[string]any{"step_count": argumentResult.Details["step_count"], "mapping_count": len(*repair.LineMapping), "dropped_count": len(*repair.Dropped)},
-		ParsedOutput: json.RawMessage(strings.TrimSpace(output)),
+		Details:      details,
+		ParsedOutput: json.RawMessage(extracted),
 	}
 }
 
@@ -137,8 +147,9 @@ func (formalizedRepairOutputValidator) Validate(ctx context.Context, output stri
 // called by the LLM runner, so failures enter the ordinary paid retry path.
 // Re-validation without the original prompt remains structurally deterministic;
 // the assembly transform performs the defensive dependency-backed check.
-func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, prompt string) Result {
-	result := formalizedRepairOutputValidator{}.Validate(ctx, output)
+func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, prompt string) (result Result) {
+	defer func() { result = captureRepairFailure(result, output) }()
+	result = formalizedRepairOutputValidator{}.Validate(ctx, output)
 	if !result.Passed {
 		return result
 	}
@@ -149,7 +160,7 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 	}
 
 	var repair formalizedRepairOutput
-	if err := json.Unmarshal([]byte(output), &repair); err != nil {
+	if err := json.Unmarshal(result.ParsedOutput, &repair); err != nil {
 		return Result{Passed: false, Message: "decode formalized repair coverage context: " + err.Error()}
 	}
 	expectedAnchor := FormalizationCoverageAnchorAsFound
@@ -159,7 +170,10 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 		anchorArgument = source
 	}
 	if repair.CoverageAnchor == nil || *repair.CoverageAnchor != expectedAnchor {
-		return Result{Passed: false, Message: fmt.Sprintf("formalized repair coverage_anchor is %q; want %q for this input", stringValue(repair.CoverageAnchor), expectedAnchor)}
+		normalizations, _ := result.Details["normalizations"].([]string)
+		result.Details["normalizations"] = append(normalizations, "coverage_anchor:"+stringValue(repair.CoverageAnchor)+"->"+expectedAnchor)
+		repair.CoverageAnchor = &expectedAnchor
+		result.ParsedOutput, _ = json.Marshal(repair)
 	}
 
 	mapping := make([]FormalizationLineMapping, len(*repair.LineMapping))
@@ -249,4 +263,101 @@ func requireJSONEOF(decoder *json.Decoder) error {
 		return err
 	}
 	return nil
+}
+
+// Capture only model output, never prompts, credentials, or request metadata.
+func captureRepairFailure(result Result, output string) Result {
+	if result.Passed {
+		return result
+	}
+	if result.Details == nil {
+		result.Details = map[string]any{}
+	}
+	for key, value := range RawReplyDetails(output) {
+		result.Details[key] = value
+	}
+	return result
+}
+
+// RawReplyDetails bounds diagnostics by Unicode characters, retaining only the
+// supplied model reply. Callers must not pass prompts or request metadata.
+func RawReplyDetails(output string) map[string]any {
+	chars := utf8.RuneCountInString(output)
+	excerpt := output
+	count := 0
+	for i := range output {
+		if count == 4000 {
+			excerpt = output[:i]
+			break
+		}
+		count++
+	}
+	return map[string]any{"raw_reply_excerpt": excerpt, "raw_reply_chars": chars}
+}
+
+// extractRepairJSONObject counts balanced objects across the entire reply, even
+// outside a fence. Braces and escaped quotes inside JSON strings are ignored.
+func extractRepairJSONObject(output string) (string, string, error) {
+	trimmed := strings.TrimSpace(output)
+	if json.Valid([]byte(trimmed)) {
+		if strings.HasPrefix(trimmed, "{") {
+			return trimmed, "", nil
+		}
+		return "", "", fmt.Errorf("expected a JSON object")
+	}
+	start, depth, count := -1, 0, 0
+	quoted, escaped := false, false
+	object := ""
+	for i, c := range output {
+		if depth == 0 {
+			if c == '{' {
+				start, depth = i, 1
+			}
+			continue
+		}
+		if quoted {
+			if escaped {
+				escaped = false
+			} else if c == '\\' {
+				escaped = true
+			} else if c == '"' {
+				quoted = false
+			}
+			continue
+		}
+		switch c {
+		case '"':
+			quoted = true
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				count++
+				object = output[start : i+1]
+			}
+		}
+	}
+	if count != 1 || depth != 0 {
+		return "", "", fmt.Errorf("expected exactly one balanced JSON object")
+	}
+	normalization := "extracted_embedded_json"
+	if strings.Contains(output, "```") {
+		parts := strings.Split(output, "```")
+		if len(parts) != 3 {
+			return "", "", fmt.Errorf("expected a single JSON fence")
+		}
+		block := strings.TrimSpace(parts[1])
+		if strings.HasPrefix(block, "json\n") {
+			block = strings.TrimSpace(strings.TrimPrefix(block, "json\n"))
+		}
+		if strings.HasPrefix(block, "json\r\n") {
+			block = strings.TrimSpace(strings.TrimPrefix(block, "json\r\n"))
+		}
+		if block != object {
+			return "", "", fmt.Errorf("fence must contain only the JSON object")
+		}
+		normalization = "extracted_fenced_json"
+	}
+	return object, normalization, nil
 }

@@ -137,3 +137,82 @@ func TestFormalizedRepairOutputValidatorAcceptsDeadPremiseAndDerivedConclusionFi
 		t.Fatalf("derived-conclusion repair rejected: %+v", result)
 	}
 }
+
+func TestFormalizedRepairExtraction(t *testing.T) {
+	for _, tc := range []struct {
+		name, output, normalization string
+		passed                      bool
+	}{
+		{"bare", validFormalizedRepairOutput, "", true},
+		{"prose", "I'll repair this.\n" + validFormalizedRepairOutput + "\nDone.", "extracted_embedded_json", true},
+		{"json fence", "The repair:\n```json\n" + validFormalizedRepairOutput + "\n```", "extracted_fenced_json", true},
+		{"plain fence", "```\n" + validFormalizedRepairOutput + "\n```", "extracted_fenced_json", true},
+		{"two objects", validFormalizedRepairOutput + "\n" + validFormalizedRepairOutput, "", false},
+		{"object outside fence", "```json\n" + validFormalizedRepairOutput + "\n```\n{}", "", false},
+		{"two fences", "```json\n" + validFormalizedRepairOutput + "\n```\n```\n{}\n```", "", false},
+		{"prose only", "I'll repair this argument.", "", false},
+		{"array", "[" + validFormalizedRepairOutput + "]", "", false},
+		{"null", "null", "", false},
+		{"unknown field wrapped", "The repair: " + strings.Replace(validFormalizedRepairOutput, `"dropped": []`, `"dropped": [], "extra": true`, 1), "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Validate(t.Context(), BuiltinSpec(BuiltinFormalizedRepairOutput), tc.output)
+			if result.Passed != tc.passed {
+				t.Fatalf("result = %+v", result)
+			}
+			if !tc.passed {
+				if result.Details["raw_reply_excerpt"] != tc.output || result.Details["raw_reply_chars"] != len([]rune(tc.output)) {
+					t.Fatalf("missing raw reply: %+v", result)
+				}
+				return
+			}
+			if string(result.ParsedOutput) != validFormalizedRepairOutput {
+				t.Fatalf("parsed output = %s", result.ParsedOutput)
+			}
+			notes, _ := result.Details["normalizations"].([]string)
+			if tc.normalization == "" {
+				if len(notes) != 0 {
+					t.Fatal(notes)
+				}
+			} else if len(notes) != 1 || notes[0] != tc.normalization {
+				t.Fatal(notes)
+			}
+		})
+	}
+}
+
+func TestRepairExtractionStringAware(t *testing.T) {
+	object := `{"argument":"braces { } and escaped quote \" and slash \\"}`
+	got, note, err := extractRepairJSONObject("Text " + object + " trailing text")
+	if err != nil || got != object || note != "extracted_embedded_json" {
+		t.Fatalf("%q %q %v", got, note, err)
+	}
+}
+
+func TestRepairFailureExcerptUsesCharacters(t *testing.T) {
+	output := strings.Repeat("界", 4100)
+	result := ValidateFormalizedRepairOutputWithPrompt(t.Context(), output, "")
+	if result.Passed || result.Details["raw_reply_chars"] != 4100 || result.Details["raw_reply_excerpt"] != strings.Repeat("界", 4000) {
+		t.Fatalf("excerpt length/count incorrect")
+	}
+}
+
+func TestRepairAnchorNormalizationPreservesCoverageChecks(t *testing.T) {
+	prompt := "<source_material>A prose argument.</source_material><as_found_argument>1. If A, then B.\n2. A.\n3. Therefore, B. [1,2]</as_found_argument>"
+	result := ValidateFormalizedRepairOutputWithPrompt(t.Context(), "Here: "+validFormalizedRepairOutput, prompt)
+	if !result.Passed {
+		t.Fatalf("%+v", result)
+	}
+	notes := result.Details["normalizations"].([]string)
+	if len(notes) != 2 || notes[0] != "extracted_embedded_json" || notes[1] != "coverage_anchor:source->as_found" {
+		t.Fatal(notes)
+	}
+	if !strings.Contains(string(result.ParsedOutput), `"coverage_anchor":"as_found"`) {
+		t.Fatalf("%s", result.ParsedOutput)
+	}
+	bad := strings.Replace(validFormalizedRepairOutput, `"from_as_found_lines": [3]`, `"from_as_found_lines": [2]`, 1)
+	result = ValidateFormalizedRepairOutputWithPrompt(t.Context(), bad, prompt)
+	if result.Passed || !strings.Contains(result.Message, "coverage validation failed") || result.Details["raw_reply_excerpt"] != bad {
+		t.Fatalf("%+v", result)
+	}
+}
