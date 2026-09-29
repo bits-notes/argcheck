@@ -171,10 +171,11 @@ func compileBuiltin(spec Spec) (OutputValidator, error) {
 		}
 		return entailmentGateValidator{options: options}, nil
 	case BuiltinFormalizedRepairOutput:
-		if len(spec.Options) > 0 {
-			return nil, fmt.Errorf("validator %q does not support options", spec.Name)
+		options, err := parseFormalizedRepairOutputOptions(spec.Options)
+		if err != nil {
+			return nil, err
 		}
-		return formalizedRepairOutputValidator{}, nil
+		return formalizedRepairOutputValidator{options: options}, nil
 	case BuiltinDisputationChallenge:
 		options, err := parseDisputationChallengeOptions(spec.Options)
 		if err != nil {

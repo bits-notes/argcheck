@@ -25,10 +25,68 @@ type formalizedRepairDroppedEntry struct {
 	Reason      string `json:"reason"`
 }
 
-type formalizedRepairOutputValidator struct{}
+type formalizedRepairOutputOptions struct {
+	EntailmentGate bool `json:"entailment_gate"`
+}
 
-func (formalizedRepairOutputValidator) Validate(ctx context.Context, output string) (result Result) {
-	defer func() { result = captureRepairFailure(result, output) }()
+type formalizedRepairOutputValidator struct {
+	options formalizedRepairOutputOptions
+}
+
+func parseFormalizedRepairOutputOptions(raw json.RawMessage) (formalizedRepairOutputOptions, error) {
+	var options formalizedRepairOutputOptions
+	if len(raw) == 0 {
+		return options, nil
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&options); err != nil {
+		return options, fmt.Errorf("invalid formalized_repair_output options: %w", err)
+	}
+	if err := requireJSONEOF(decoder); err != nil {
+		return options, fmt.Errorf("invalid formalized_repair_output options: %w", err)
+	}
+	return options, nil
+}
+
+// The repair contract has no verdict: assembly obtains it from repair-validator.
+// Gate only opted-in IP versions; legacy versions can return uncertified repairs.
+func applyRepairEntailmentGate(result Result, enabled bool) Result {
+	if !result.Passed || !enabled {
+		return result
+	}
+	var repair formalizedRepairOutput
+	if err := json.Unmarshal(result.ParsedOutput, &repair); err != nil {
+		return Result{Message: "decode formalized repair for entailment gate: " + err.Error()}
+	}
+	report, gate := CheckEntailmentGate(*repair.Argument)
+	result.Details["entailment_gate"] = gate.Details
+	if gate.Passed {
+		return result
+	}
+	messages := make([]string, 0, 3)
+	for _, step := range report.Steps {
+		if !step.Passed {
+			messages = append(messages, fmt.Sprintf("entailment gate failed at step %d (cites %v): %s", step.Step, step.Citations, step.Mismatch))
+			if len(messages) == 3 {
+				break
+			}
+		}
+	}
+	if len(messages) == 0 {
+		messages = append(messages, "entailment gate failed: "+gate.Message)
+	}
+	result.Passed = false
+	result.ParsedOutput = nil
+	result.Message = strings.Join(messages, "; ") + ". Rephrase so each premise clause matches the clause it instantiates word-for-word, using the canonical forms (If A, then B. / Either A or B. / It is not the case that A. / Every S is P.). Do not change the argument's content."
+	result.Details["entailment_gate_message"] = result.Message
+	return result
+}
+
+func (v formalizedRepairOutputValidator) Validate(ctx context.Context, output string) (result Result) {
+	defer func() {
+		result = captureRepairFailure(applyRepairEntailmentGate(result, v.options.EntailmentGate), output)
+	}()
 	ctx, cancel := withValidationContext(ctx)
 	defer cancel()
 	if limit := checkOutputLimit(output); !limit.Passed {
@@ -151,9 +209,22 @@ func (formalizedRepairOutputValidator) Validate(ctx context.Context, output stri
 // as-found arguments embedded in the repair node's rendered prompt. This is
 // called by the LLM runner, so failures enter the ordinary paid retry path.
 // Re-validation without the original prompt remains structurally deterministic;
-// the assembly transform performs the defensive dependency-backed check.
-func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, prompt string) (result Result) {
-	defer func() { result = captureRepairFailure(result, output) }()
+// the assembly transform performs the defensive dependency-backed check. An
+// optional builtin options object enables the gate after coverage passes.
+func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, prompt string, options ...json.RawMessage) (result Result) {
+	var gateEnabled bool
+	defer func() { result = captureRepairFailure(applyRepairEntailmentGate(result, gateEnabled), output) }()
+	if len(options) > 1 {
+		return Result{Message: "formalized_repair_output accepts at most one options value"}
+	}
+	if len(options) == 1 {
+		parsed, err := parseFormalizedRepairOutputOptions(options[0])
+		if err != nil {
+			return Result{Message: err.Error()}
+		}
+		gateEnabled = parsed.EntailmentGate
+	}
+	// Defer the gate until all prompt-aware coverage checks have passed.
 	result = formalizedRepairOutputValidator{}.Validate(ctx, output)
 	if !result.Passed {
 		return result

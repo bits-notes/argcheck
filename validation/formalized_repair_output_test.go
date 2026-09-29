@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -55,11 +56,13 @@ func TestFormalizedRepairOutputValidatorAppliesNumberedArgumentSyntax(t *testing
 	}
 }
 
-func TestFormalizedRepairOutputValidatorRejectsOptions(t *testing.T) {
-	spec := BuiltinSpec(BuiltinFormalizedRepairOutput)
-	spec.Options = []byte(`{"allow_blank_lines":true}`)
-	if _, err := Compile(spec); err == nil || !strings.Contains(err.Error(), "does not support options") {
-		t.Fatalf("Compile error = %v", err)
+func TestFormalizedRepairOutputValidatorRejectsInvalidOptions(t *testing.T) {
+	for _, raw := range []string{`{"allow_blank_lines":true}`, `{"entailment_gate":"true"}`, `{"entailment_gate":true} {}`} {
+		spec := BuiltinSpec(BuiltinFormalizedRepairOutput)
+		spec.Options = []byte(raw)
+		if _, err := Compile(spec); err == nil {
+			t.Fatalf("Compile accepted options %s", raw)
+		}
 	}
 }
 
@@ -214,5 +217,73 @@ func TestRepairAnchorNormalizationPreservesCoverageChecks(t *testing.T) {
 	result = ValidateFormalizedRepairOutputWithPrompt(t.Context(), bad, prompt)
 	if result.Passed || !strings.Contains(result.Message, "coverage validation failed") || result.Details["raw_reply_excerpt"] != bad {
 		t.Fatalf("%+v", result)
+	}
+}
+
+func TestFormalizedRepairEntailmentGateOptIn(t *testing.T) {
+	failed := strings.Replace(validFormalizedRepairOutput, "2. A.", "2. Something like A.", 1)
+	for _, tc := range []struct {
+		name, options, output string
+		passed                bool
+	}{
+		{"default off", "", failed, true},
+		{"explicit off", `{"entailment_gate":false}`, failed, true},
+		{"on mismatch", `{"entailment_gate":true}`, failed, false},
+		{"on valid", `{"entailment_gate":true}`, validFormalizedRepairOutput, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			spec := BuiltinSpec(BuiltinFormalizedRepairOutput)
+			spec.Options = json.RawMessage(tc.options)
+			results := []Result{
+				Validate(t.Context(), spec, tc.output),
+				ValidateFormalizedRepairOutputWithPrompt(t.Context(), tc.output, "", spec.Options),
+			}
+			for _, result := range results {
+				if result.Passed != tc.passed {
+					t.Fatalf("result = %+v", result)
+				}
+				if tc.passed {
+					continue
+				}
+				var repair formalizedRepairOutput
+				if err := json.Unmarshal([]byte(tc.output), &repair); err != nil {
+					t.Fatal(err)
+				}
+				report, _ := CheckEntailmentGate(*repair.Argument)
+				for _, want := range []string{"entailment gate failed at step 3 (cites [1 2])", report.Steps[0].Mismatch, "If A, then B.", "Either A or B.", "It is not the case that A.", "Every S is P.", "Do not change the argument's content."} {
+					if !strings.Contains(result.Message, want) {
+						t.Fatalf("message %q missing %q", result.Message, want)
+					}
+				}
+				if result.Details["raw_reply_excerpt"] != tc.output || result.Details["entailment_gate"] == nil || result.Details["entailment_gate_message"] != result.Message {
+					t.Fatalf("details = %+v", result.Details)
+				}
+			}
+		})
+	}
+}
+
+func TestFormalizedRepairEntailmentGateLimitsFeedback(t *testing.T) {
+	output := `{"argument":"1. A.\n2. Therefore, B. [1]\n3. Therefore, C. [2]\n4. Therefore, D. [3]\n5. Therefore, E. [4]","coverage_anchor":"source","line_mapping":[{"repaired_line":1,"from_as_found_lines":[1]}],"dropped":[]}`
+	spec := BuiltinSpec(BuiltinFormalizedRepairOutput)
+	spec.Options = json.RawMessage(`{"entailment_gate":true}`)
+	result := Validate(t.Context(), spec, output)
+	if result.Passed || strings.Count(result.Message, "entailment gate failed at step") != 3 || strings.Contains(result.Message, "step 5") {
+		t.Fatalf("result = %+v", result)
+	}
+	steps := result.Details["entailment_gate"].(map[string]any)["steps"].([]EntailmentGateStepReport)
+	if len(steps) != 4 {
+		t.Fatalf("full diagnostics lost: %+v", steps)
+	}
+}
+
+func TestFormalizedRepairEntailmentGatePreservesStructuralFailure(t *testing.T) {
+	output := strings.Replace(validFormalizedRepairOutput, "3. Therefore, B.", "3. B.", 1)
+	spec := BuiltinSpec(BuiltinFormalizedRepairOutput)
+	before := Validate(t.Context(), spec, output)
+	spec.Options = json.RawMessage(`{"entailment_gate":true}`)
+	after := Validate(t.Context(), spec, output)
+	if after.Passed || before.Message != after.Message {
+		t.Fatalf("before=%+v after=%+v", before, after)
 	}
 }
