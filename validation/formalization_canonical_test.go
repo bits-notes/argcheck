@@ -168,3 +168,28 @@ func TestCanonicalContractSerialization(t *testing.T) {
 		t.Fatal("accepted inconsistent applied output")
 	}
 }
+
+func TestCanonicalUnlessPolarity(t *testing.T) {
+	original := "Under section 12, any filing received after the statutory deadline is untimely unless the court granted an extension."
+	canonical := "If a filing is received after the statutory deadline and the court did not grant an extension, then the filing is untimely."
+	if canonicalPolarity(original) != 1 || canonicalPolarity(canonical) != 1 {
+		t.Fatal("unless and not must each count as one negation")
+	}
+	flip := strings.Replace(canonical, "did not grant", "granted", 1)
+	if err := CanonicalContentCheck(original, flip); err == nil || err.Error() != "negation count changed" {
+		t.Fatalf("unless polarity flip must be rejected: %v", err)
+	}
+	if err := CanonicalContentCheck(original, canonical); err == nil || err.Error() != "number tokens changed" {
+		t.Fatalf("section 12 must still be protected: %v", err)
+	}
+	for _, tc := range []struct {
+		text string
+		want int
+	}{
+		{"A UNLESS B", 1}, {"A unless B unless C", 2}, {"A unless B is not C", 2}, {"unlessness", 0},
+	} {
+		if got := canonicalPolarity(tc.text); got != tc.want {
+			t.Errorf("%q = %d, want %d", tc.text, got, tc.want)
+		}
+	}
+}

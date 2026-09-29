@@ -213,8 +213,9 @@ func canonicalPolarity(text string) int {
 	for _, word := range sourceQuoteWords.FindAllString(text, -1) {
 		// "no one" and "it is not the case that" each contribute just
 		// their single "no" or "not" token. Contractions are expanded above.
+		// "A unless B" contributes the negation in "if not B, then A".
 		switch word {
-		case "not", "no", "never", "nothing", "none", "nobody", "nowhere", "neither", "nor", "cannot":
+		case "not", "no", "never", "nothing", "none", "nobody", "nowhere", "neither", "nor", "cannot", "unless":
 			count++
 		}
 	}
