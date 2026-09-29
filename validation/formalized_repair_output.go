@@ -65,6 +65,11 @@ func applyRepairEntailmentGate(result Result, enabled bool) Result {
 	report, gate := CheckEntailmentGate(*repair.Argument)
 	result.Details["entailment_gate"] = gate.Details
 	if gate.Passed {
+		if message := repairAssociatedConditional(*repair.Argument, *repair.LineMapping); message != "" {
+			result.Passed = false
+			result.ParsedOutput = nil
+			result.Message = message
+		}
 		return result
 	}
 	messages := make([]string, 0, 3)
@@ -84,6 +89,89 @@ func applyRepairEntailmentGate(result Result, enabled bool) Result {
 	result.Message = strings.Join(messages, "; ") + ". Rephrase so each premise clause matches the clause it instantiates word-for-word, using the canonical forms (If A, then B. / Either A or B. / It is not the case that A. / Every S is P.). Do not change the argument's content."
 	result.Details["entailment_gate_message"] = result.Message
 	return result
+}
+
+// Shared rule with web/app/_components/argumentDisplay.ts: a supplied premise
+// is padding when its antecedent is exactly the set of other cited statements
+// and its consequent is the citing conclusion. For a single other citation,
+// require a mapped premise, the FINAL conclusion, and only one supplied premise.
+// This is a repair-content check after validity passes, not a validity rule.
+func repairAssociatedConditional(text string, mappings []FormalizationLineMapping) string {
+	argument, _ := ParseNumberedArgumentAllowingNoConclusions(text)
+	mapped := make(map[int]bool)
+	for _, mapping := range mappings {
+		if len(mapping.FromAsFoundLines) > 0 || mapping.FromSourceQuote != nil {
+			mapped[mapping.RepairedLine] = true
+		}
+	}
+	byNumber := make(map[int]NumberedArgumentStep)
+	suppliedCount := 0
+	for _, step := range argument.Steps {
+		byNumber[step.Number] = step
+		if step.Kind == "premise" && !mapped[step.Number] {
+			suppliedCount++
+		}
+	}
+	for _, bridge := range argument.Steps {
+		if bridge.Kind != "premise" || mapped[bridge.Number] {
+			continue
+		}
+		for _, step := range argument.Steps {
+			citesBridge := false
+			others := make(map[string]bool)
+			otherNumbers := make(map[int]bool)
+			for _, number := range step.Citations {
+				if number == bridge.Number {
+					citesBridge = true
+				} else {
+					others[comparisonClause(byNumber[number].Statement)] = true
+					otherNumbers[number] = true
+				}
+			}
+			if !citesBridge || len(others) == 0 {
+				continue
+			}
+			if len(otherNumbers) == 1 {
+				if step.Number != argument.Steps[len(argument.Steps)-1].Number || suppliedCount != 1 {
+					continue
+				}
+				for number := range otherNumbers {
+					if !mapped[number] || byNumber[number].Kind != "premise" {
+						citesBridge = false
+					}
+				}
+				if !citesBridge {
+					continue
+				}
+			}
+			for _, conditional := range conditionalCandidates(bridge.Statement) {
+				if !equalClauses(conditional.right, step.Statement) {
+					continue
+				}
+				candidates := [][]string{{conditional.left}}
+				if len(others) > 1 {
+					candidates = conjunctiveAntecedentCandidates(conditional.left, len(others))
+				}
+				for _, parts := range candidates {
+					matched := make(map[string]bool)
+					for _, part := range parts {
+						matched[comparisonClause(part)] = true
+					}
+					if len(matched) != len(others) {
+						continue
+					}
+					equal := true
+					for part := range matched {
+						equal = equal && others[part]
+					}
+					if equal {
+						return fmt.Sprintf("step %d supplies an associated conditional (%q): its antecedent just restates the steps it is cited with and its consequent is the conclusion, so it adds no content. Supply the general principle the author relies on (a universal 'Every S is P.' or an 'If X …, then … X …' rule, S8), or omit the bridge if there is none.", bridge.Number, bridge.Statement)
+					}
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func (v formalizedRepairOutputValidator) Validate(ctx context.Context, output string) (result Result) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -388,5 +390,70 @@ func TestRepairWholeSentenceSuggestionCanFixOverlap(t *testing.T) {
 	// The suggested sentence is context, not an automatic relaxation of overlap.
 	if _, _, err := ValidateSourceQuote("When fewer people buy homes, house prices fall.", "If fewer people buy homes, then house prices will fall.", "When fewer people buy homes, house prices fall."); err == nil {
 		t.Fatal("unchanged overlap threshold accepted the homes mismatch")
+	}
+}
+
+func TestRepairAssociatedConditionals(t *testing.T) {
+	data, err := os.ReadFile("testdata/associated_conditionals.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []struct {
+		Name              string
+		Argument          string
+		Supplied, Padding []int
+		Gate              bool
+	}
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			argument, _ := ParseNumberedArgumentAllowingNoConclusions(tc.Argument)
+			mappings := []FormalizationLineMapping{}
+			for _, step := range argument.Steps {
+				if !slices.Contains(tc.Supplied, step.Number) {
+					mappings = append(mappings, FormalizationLineMapping{RepairedLine: step.Number, FromAsFoundLines: []int{step.Number}})
+				}
+			}
+			_, gate := CheckEntailmentGate(tc.Argument)
+			if gate.Passed != tc.Gate {
+				t.Fatalf("gate: %+v", gate)
+			}
+			message := repairAssociatedConditional(tc.Argument, mappings)
+			if (message != "") != (len(tc.Padding) > 0) {
+				t.Fatalf("padding: %q", message)
+			}
+			for _, enabled := range []bool{false, true} {
+				output, _ := json.Marshal(map[string]any{"argument": tc.Argument, "coverage_anchor": "as_found", "line_mapping": mappings, "dropped": []any{}})
+				spec := BuiltinSpec(BuiltinFormalizedRepairOutput)
+				spec.Options = json.RawMessage(fmt.Sprintf(`{"entailment_gate":%t}`, enabled))
+				for _, result := range []Result{Validate(t.Context(), spec, string(output)), ValidateFormalizedRepairOutputWithPrompt(t.Context(), string(output), "", spec.Options)} {
+					want := !enabled || (tc.Gate && len(tc.Padding) == 0)
+					if result.Passed != want {
+						t.Fatalf("enabled=%t: %+v", enabled, result)
+					}
+					if enabled && tc.Gate && len(tc.Padding) > 0 {
+						if result.Message != message || result.ParsedOutput != nil || result.Details["entailment_gate"] == nil {
+							t.Fatalf("retry result: %+v", result)
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestRepairPaddingSourceQuoteProvenance(t *testing.T) {
+	const argument = "1. The room is booked on Tuesday.\n2. If the room is booked on Tuesday, then the meeting is cancelled.\n3. Therefore, the meeting is cancelled. [1,2]"
+	premise := "The room is booked on Tuesday."
+	bridge := "If the room is booked on Tuesday, then the meeting is cancelled."
+	mappings := []FormalizationLineMapping{{RepairedLine: 1, FromSourceQuote: &premise}}
+	if message := repairAssociatedConditional(argument, mappings); !strings.Contains(message, "step 2 supplies an associated conditional") {
+		t.Fatalf("message: %q", message)
+	}
+	mappings = append(mappings, FormalizationLineMapping{RepairedLine: 2, FromSourceQuote: &bridge})
+	if message := repairAssociatedConditional(argument, mappings); message != "" {
+		t.Fatal(message)
 	}
 }
