@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -31,6 +33,7 @@ type formalizedRepairOutputOptions struct {
 
 type formalizedRepairOutputValidator struct {
 	options formalizedRepairOutputOptions
+	source  string // Used only to enrich early lexical-failure diagnostics.
 }
 
 func parseFormalizedRepairOutputOptions(raw json.RawMessage) (formalizedRepairOutputOptions, error) {
@@ -67,7 +70,7 @@ func applyRepairEntailmentGate(result Result, enabled bool) Result {
 	messages := make([]string, 0, 3)
 	for _, step := range report.Steps {
 		if !step.Passed {
-			messages = append(messages, fmt.Sprintf("entailment gate failed at step %d (cites %v): %s", step.Step, step.Citations, step.Mismatch))
+			messages = append(messages, fmt.Sprintf("entailment gate failed at step %d (cites %v): %s", step.Step, step.Citations, step.Mismatch)+repairClauseDiffHint(step.Mismatch))
 			if len(messages) == 3 {
 				break
 			}
@@ -158,7 +161,7 @@ func (v formalizedRepairOutputValidator) Validate(ctx context.Context, output st
 			// Without prompt context, still check length and lexical alignment. Source
 			// membership is checked by the prompt-aware validator and by assembly.
 			if _, _, err := ValidateSourceQuote(*mapping.FromSourceQuote, parsed.Steps[mapping.RepairedLine-1].Statement, *mapping.FromSourceQuote); err != nil {
-				return Result{Passed: false, Message: fmt.Sprintf("repaired line %d: %v", mapping.RepairedLine, err)}
+				return Result{Passed: false, Message: fmt.Sprintf("repaired line %d: %v", mapping.RepairedLine, err) + sourceQuoteSentenceSuggestion(v.source, *mapping.FromSourceQuote)}
 			}
 		}
 		seenSources := make(map[int]bool, len(mapping.FromAsFoundLines))
@@ -225,11 +228,11 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 		gateEnabled = parsed.EntailmentGate
 	}
 	// Defer the gate until all prompt-aware coverage checks have passed.
-	result = formalizedRepairOutputValidator{}.Validate(ctx, output)
+	source, sourceOK := formalizedRepairTaggedValue(prompt, "source_material")
+	result = formalizedRepairOutputValidator{source: source}.Validate(ctx, output)
 	if !result.Passed {
 		return result
 	}
-	source, sourceOK := formalizedRepairTaggedValue(prompt, "source_material")
 	asFound, asFoundOK := formalizedRepairTaggedValue(prompt, "as_found_argument")
 
 	var repair formalizedRepairOutput
@@ -276,7 +279,7 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 			continue
 		}
 		if formalizedRepairStatementPresent(step.Statement, source) || formalizedRepairStatementPresent(step.Statement, asFound) {
-			return Result{Passed: false, Message: fmt.Sprintf("repaired premise line %d is present in the source/as-found input and must be mapped", step.Number)}
+			return Result{Passed: false, Message: unmappedRepairMessage(step, source, asFound, expectedAnchor)}
 		}
 		suppliedLines = append(suppliedLines, step.Number)
 	}
@@ -439,4 +442,76 @@ func extractRepairJSONObject(output string) (string, string, error) {
 		normalization = "extracted_fenced_json"
 	}
 	return object, normalization, nil
+}
+
+func unmappedRepairMessage(step NumberedArgumentStep, source, asFound, anchor string) string {
+	// A source-numbered anchor changes what from_as_found_lines indexes.
+	anchorText, label := asFound, "as-found"
+	if anchor == FormalizationCoverageAnchorSource {
+		anchorText, label = source, "source"
+	}
+	if parsed, result := ParseNumberedArgumentAllowingNoConclusions(anchorText); result.Passed {
+		for _, original := range parsed.Steps {
+			if formalizedRepairStatementPresent(step.Statement, original.Statement) {
+				return fmt.Sprintf("repaired premise line %d restates part of %s line %d (%q); add %d to its from_as_found_lines (a split premise may map to several repaired lines)", step.Number, label, original.Number, original.Statement, original.Number)
+			}
+		}
+	}
+	for _, sentence := range sourceSentences(source) {
+		if formalizedRepairStatementPresent(step.Statement, sentence) {
+			return fmt.Sprintf("repaired premise line %d restates part of a source sentence; add from_source_quote: %q", step.Number, sentence)
+		}
+	}
+	// Preserve rejection even for normalized matches spanning sentence boundaries.
+	return fmt.Sprintf("repaired premise line %d is present in the source/as-found input and must be mapped", step.Number)
+}
+
+// Gate mismatches already carry Go-quoted clauses; enrich only that diagnostic
+// shape, leaving the gate's selection and verdict completely untouched.
+var repairClauseMismatch = regexp.MustCompile(`("(?:[^"\\]|\\.)*") does not match [^"\n]+ ("(?:[^"\\]|\\.)*") verbatim`)
+
+var repairNearestClauseMismatch = regexp.MustCompile(`("(?:[^"\\]|\\.)*") is not matched verbatim by any cited premise; nearest is step [0-9]+ ("(?:[^"\\]|\\.)*")`)
+
+func repairClauseDiffHint(mismatch string) string {
+	match := repairClauseMismatch.FindStringSubmatch(mismatch)
+	if match == nil {
+		match = repairNearestClauseMismatch.FindStringSubmatch(mismatch)
+	}
+	if match == nil {
+		return ""
+	}
+	left, errLeft := strconv.Unquote(match[1])
+	right, errRight := strconv.Unquote(match[2])
+	if errLeft != nil || errRight != nil {
+		return ""
+	}
+	// Count words to retain repeated-word differences. Order-only mismatches get
+	// an explicit hint rather than an empty diff.
+	difference := func(a, b string) []string {
+		counts := map[string]int{}
+		for _, word := range strings.Fields(b) {
+			counts[word]++
+		}
+		var extra []string
+		for _, word := range strings.Fields(a) {
+			if counts[word] > 0 {
+				counts[word]--
+			} else {
+				extra = append(extra, word)
+			}
+		}
+		return extra
+	}
+	hint := fmt.Sprintf("\nfirst clause: %q\nsecond clause: %q", left, right)
+	extra, missing := difference(left, right), difference(right, left)
+	if len(extra) > 0 {
+		hint += "\nfirst clause extra: " + strings.Join(extra, ", ")
+	}
+	if len(missing) > 0 {
+		hint += "\nfirst clause missing: " + strings.Join(missing, ", ")
+	}
+	if len(extra) == 0 && len(missing) == 0 {
+		hint += "\nword order differs"
+	}
+	return hint
 }

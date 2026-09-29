@@ -72,7 +72,7 @@ func ValidateSourceQuote(source, statement, quote string) (int, int, error) {
 		return 0, 0, fmt.Errorf("from_source_quote is not an excerpt of source_material")
 	}
 	if !SourceContentAligned(statement, quote) {
-		return 0, 0, fmt.Errorf("from_source_quote does not substantially overlap the repaired line's content")
+		return 0, 0, fmt.Errorf("%s", sourceQuoteOverlapMessage(source, statement, quote))
 	}
 	start := utf8.RuneCountInString(haystack[:index])
 	end := start + utf8.RuneCountInString(normalized)
@@ -152,4 +152,61 @@ func SourceStatementAligned(source, statement string) bool {
 		start = i + 1
 	}
 	return SourceContentAligned(statement, string(runes[start:]))
+}
+
+// Diagnostics only: acceptance continues to use SourceContentAligned unchanged.
+func sourceQuoteOverlapMessage(source, statement, quote string) string {
+	message := "from_source_quote does not substantially overlap the repaired line's content"
+	present := sourceContentWords(quote)
+	content := sourceContentWords(statement)
+	missing := []string{}
+	seen := map[string]bool{}
+	diagnosticStatement := sourceQuoteCitations.ReplaceAllString(statement, " ")
+	diagnosticStatement = sourceQuoteNegatedContraction.ReplaceAllString(diagnosticStatement, " not")
+	for _, word := range sourceQuoteWords.FindAllString(cases.Fold().String(diagnosticStatement), -1) {
+		// Omit these function words from the content hint only; the overlap
+		// check still counts them exactly as before.
+		if word != "if" && word != "when" && word != "from" && content[word] && !present[word] && !seen[word] {
+			missing = append(missing, word)
+			seen[word] = true
+		}
+	}
+	if len(missing) > 0 {
+		message += "; content words missing from quote: " + strings.Join(missing, ", ")
+	}
+	return message + sourceQuoteSentenceSuggestion(source, quote)
+}
+
+func sourceSentences(source string) []string {
+	runes := []rune(source)
+	start := 0
+	var sentences []string
+	for i, r := range runes {
+		if (r == '.' || r == '!' || r == '?') && (i+1 == len(runes) || unicode.IsSpace(runes[i+1])) {
+			if sentence := strings.TrimSpace(string(runes[start : i+1])); sentence != "" {
+				sentences = append(sentences, sentence)
+			}
+			start = i + 1
+		}
+	}
+	if sentence := strings.TrimSpace(string(runes[start:])); sentence != "" {
+		sentences = append(sentences, sentence)
+	}
+	return sentences
+}
+
+func sourceQuoteSentenceSuggestion(source, quote string) string {
+	normalized, _ := normalizeSourceQuote(quote)
+	normalized = strings.TrimRightFunc(normalized, func(r rune) bool { return unicode.IsPunct(r) || unicode.IsSpace(r) })
+	if normalized == "" {
+		return ""
+	}
+	for _, sentence := range sourceSentences(source) {
+		whole, _ := normalizeSourceQuote(sentence)
+		trimmed := strings.TrimRightFunc(whole, func(r rune) bool { return unicode.IsPunct(r) || unicode.IsSpace(r) })
+		if strings.Contains(whole, normalized) && trimmed != normalized {
+			return fmt.Sprintf("; quote the whole source sentence: %q", sentence)
+		}
+	}
+	return ""
 }
