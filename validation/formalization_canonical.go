@@ -211,7 +211,10 @@ func canonicalPolarity(text string) int {
 	text = sourceQuoteNegatedContraction.ReplaceAllString(strings.ToLower(text), " not")
 	count := 0
 	for _, word := range sourceQuoteWords.FindAllString(text, -1) {
-		if word == "not" || word == "no" || word == "never" {
+		// "no one" and "it is not the case that" each contribute just
+		// their single "no" or "not" token. Contractions are expanded above.
+		switch word {
+		case "not", "no", "never", "nothing", "none", "nobody", "nowhere", "neither", "nor", "cannot":
 			count++
 		}
 	}
@@ -238,6 +241,14 @@ func CanonicalContentCheck(original, canonical string) error {
 		if words["no"] {
 			delete(words, "no")
 			words["not"] = true
+		}
+		// Polarity is checked separately above; these share the same content
+		// in rewrites such as "heard nothing" -> "not ... heard anything".
+		for _, word := range []string{"anything", "nothing"} {
+			if words[word] {
+				delete(words, word)
+				words["something"] = true
+			}
 		}
 	}
 	shared := 0

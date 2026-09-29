@@ -10,6 +10,32 @@ const canonicalTestOriginal = "1. When interest rates rise, mortgages become mor
 const canonicalTestOutput = `{"lines":[{"line":1,"canonical":"If interest rates rise, then mortgages become more expensive."},{"line":2,"canonical":"The central bank has just raised interest rates."},{"line":3,"canonical":"Therefore, house prices will fall. [1,2]"}]}`
 const canonicalTestJudge = `{"pairs":[{"line":1,"same":true,"reason":"Conditional equivalence"},{"line":2,"same":true,"reason":"Unchanged"},{"line":3,"same":true,"reason":"Unchanged"}]}`
 
+func TestCanonicalPolarity(t *testing.T) {
+	for _, marker := range []string{"not", "no", "never", "nothing", "none", "nobody", "no one", "nowhere", "neither", "nor", "don't", "isn’t", "cannot", "it is not the case that"} {
+		t.Run(marker, func(t *testing.T) {
+			if got := canonicalPolarity(strings.ToUpper(marker)); got != 1 {
+				t.Fatalf("marker count = %d, want 1", got)
+			}
+		})
+	}
+	for _, tc := range []struct {
+		text string
+		want int
+	}{
+		{"The guard heard something.", 0},
+		{"The guard heard nothing.", 1},
+		{"It is not the case that the guard heard anything.", 1},
+		{"It is not the case that the guard heard nothing.", 2},
+		{"Neither the guard nor the captain heard anything.", 2},
+		{"No one never heard nothing.", 3},
+		{"notable northern nonetheless", 0},
+	} {
+		if got := canonicalPolarity(tc.text); got != tc.want {
+			t.Errorf("%q: marker count = %d, want %d", tc.text, got, tc.want)
+		}
+	}
+}
+
 func TestCanonicalOutputContracts(t *testing.T) {
 	prompt := "<as_found_argument>" + canonicalTestOriginal + "</as_found_argument>"
 	for _, tc := range []struct {
@@ -88,6 +114,11 @@ func TestApplyCanonicalization(t *testing.T) {
 		{"double negation", "It is not the case that banks do not raise rates.", "Banks do not raise rates.", true, false},
 		{"normalized negation", "Banks don't raise interest rates.", "It is not the case that banks do raise interest rates.", true, true},
 		{"no equals not", "Banks have no cash reserves.", "It is not the case that banks have cash reserves.", true, true},
+		{"nothing equals not anything", "The guard heard nothing.", "It is not the case that the guard heard anything.", true, true},
+		{"nothing equals not something", "The guard heard nothing.", "It is not the case that the guard heard something.", true, true},
+		{"added negation", "The guard heard something.", "It is not the case that the guard heard something.", true, false},
+		{"removed negative quantifier", "The guard heard nothing.", "The guard heard something.", true, false},
+		{"added negation to negative quantifier", "The guard heard nothing.", "It is not the case that the guard heard nothing.", true, false},
 		{"unchanged ignores judge", "Banks raise interest rates.", "Banks raise interest rates.", false, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
