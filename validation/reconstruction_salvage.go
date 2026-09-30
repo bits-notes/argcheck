@@ -77,7 +77,9 @@ func SalvageReconstruction(reply, source string) (SalvagedReconstruction, error)
 			}
 			antecedents := make([]string, 0, len(refs))
 			for _, ref := range refs {
-				antecedents = append(antecedents, byNumber[ref].Statement)
+				// The gate compares clauses case-insensitively; lower-case each
+				// conjunct's ordinary leading word so the bridge reads as prose.
+				antecedents = append(antecedents, lowercaseLeadingOrdinaryWord(byNumber[ref].Statement, original.Argument))
 			}
 			bridge, _ := FallbackBridge(strings.Join(antecedents, " and "), step.Statement, original.Argument)
 			assumption := NumberedArgumentStep{Number: step.Number, Kind: "premise", Statement: bridge}

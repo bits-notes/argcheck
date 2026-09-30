@@ -7,8 +7,9 @@ import (
 )
 
 func TestCatalogV9Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v9" {
-		t.Fatalf("catalog = %q, want v9", EntailmentGateCatalogVersion)
+	// v10 (2026-09-30) adds n-ary conjunction introduction; v9 forms still hold.
+	if EntailmentGateCatalogVersion != "v10" {
+		t.Fatalf("catalog = %q, want v10", EntailmentGateCatalogVersion)
 	}
 }
 

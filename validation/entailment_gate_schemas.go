@@ -66,6 +66,7 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "biconditional elimination", arity: 1, match: matchBiconditionalElimination},
 	{name: "biconditional modus ponens", arity: 2, match: matchBiconditionalModusPonens},
 	{name: "conjunction introduction", arity: 2, match: matchConjunctionIntroduction},
+	{name: "n-ary conjunction introduction", arity: variableArity, match: matchNaryConjunctionIntroduction},
 	{name: "conjunction elimination", arity: 1, match: matchConjunctionElimination},
 	{name: "disjunction introduction", arity: 1, match: matchDisjunctionIntroduction},
 	{name: "disjunctive syllogism", arity: 2, match: matchDisjunctiveSyllogism},
@@ -1917,4 +1918,47 @@ func wordSet(value string) map[string]bool {
 		words[word] = true
 	}
 	return words
+}
+
+// matchNaryConjunctionIntroduction (catalog v10) certifies a conclusion that is
+// literally the conjunction of all of its three or more cited premises, in any
+// order: "A, B, and C", "A, B and C" or "A and B and C". The comparison is on
+// whole normalized clauses, so no conjunct is split or reinterpreted.
+func matchNaryConjunctionIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if len(premises) < 3 || len(premises) > 6 {
+		return schemaMatchOutcome{}
+	}
+	target := comparisonClause(conclusion.Statement)
+	parts := make([]string, len(premises))
+	for i, premise := range premises {
+		parts[i] = comparisonClause(premise.Statement)
+	}
+	matched := false
+	permuteClauses(parts, 0, func(order []string) bool {
+		last := len(order) - 1
+		listed := strings.Join(order[:last], " ") + " and " + order[last]
+		chained := strings.Join(order, " and ")
+		matched = target == listed || target == chained
+		return matched
+	})
+	if matched {
+		return schemaMatchOutcome{matched: true, score: len(premises), traction: true}
+	}
+	return schemaMatchOutcome{mismatch: fmt.Sprintf("conclusion %d is not exactly the conjunction of its cited premises", conclusion.Number)}
+}
+
+// permuteClauses visits orderings of parts; visit returns true to stop.
+func permuteClauses(parts []string, from int, visit func([]string) bool) bool {
+	if from == len(parts) {
+		return visit(parts)
+	}
+	for i := from; i < len(parts); i++ {
+		parts[from], parts[i] = parts[i], parts[from]
+		stop := permuteClauses(parts, from+1, visit)
+		parts[from], parts[i] = parts[i], parts[from]
+		if stop {
+			return true
+		}
+	}
+	return false
 }

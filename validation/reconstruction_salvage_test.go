@@ -37,7 +37,7 @@ func TestSalvageReconstructionBridgeAndRenumber(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "1. If A, then B.\n2. A.\n3. If If A, then B and A, then C.\n4. Therefore, C. [1,2,3]\n5. Therefore, C or D. [4]"
+	want := "1. If A, then B.\n2. A.\n3. If If A, then B and a, then C.\n4. Therefore, C. [1,2,3]\n5. Therefore, C or D. [4]"
 	if got.Reconstruction.Argument != want {
 		t.Fatalf("got:\n%s\nwant:\n%s", got.Reconstruction.Argument, want)
 	}
@@ -61,7 +61,7 @@ func TestSalvageReconstructionRemovesPadding(t *testing.T) {
 	if !reflect.DeepEqual(got.AssumedLines, []int{3}) || !reflect.DeepEqual(got.FailingSteps, []int{4}) {
 		t.Fatalf("provenance: %#v", got)
 	}
-	if strings.Count(got.Reconstruction.Argument, "If A and B, then C") != 1 || !got.Reconstruction.Lines[2].Assumed {
+	if strings.Count(got.Reconstruction.Argument, "If a and B, then C") != 1 || !got.Reconstruction.Lines[2].Assumed {
 		t.Fatalf("padding not replaced: %#v", got)
 	}
 }
