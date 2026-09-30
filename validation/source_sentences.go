@@ -40,7 +40,9 @@ func SegmentSourceSentences(source string) []SourceSentenceRange {
 			start = i + 1
 			continue
 		}
-		if r != '.' && r != '!' && r != '?' {
+		// Full-width CJK terminators end a sentence without a following space.
+		fullWidth := r == '。' || r == '！' || r == '？'
+		if r != '.' && r != '!' && r != '?' && !fullWidth {
 			continue
 		}
 		if r == '.' && skipDot(runes, i) {
@@ -50,7 +52,7 @@ func SegmentSourceSentences(source string) []SourceSentenceRange {
 		for end < len(runes) && isCloser(runes[end]) {
 			end++
 		}
-		if end < len(runes) && !unicode.IsSpace(runes[end]) {
+		if !fullWidth && end < len(runes) && !unicode.IsSpace(runes[end]) {
 			continue
 		}
 		if bareListMarkerRange(runes, start, end) {
@@ -131,7 +133,7 @@ func isAbbreviationDot(runes []rune, dot int) bool {
 
 func isCloser(r rune) bool {
 	switch r {
-	case '"', '\'', '”', '’', ')', ']', '}', '»':
+	case '"', '\'', '”', '’', ')', ']', '}', '»', '」', '』', '）':
 		return true
 	default:
 		return false
