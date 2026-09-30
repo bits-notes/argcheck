@@ -103,6 +103,9 @@ func TestApplyCanonicalization(t *testing.T) {
 		same                      bool
 		accepted                  bool
 	}{
+		{"stemmed holder", "Imani holds a badge.", "Imani is a badge holder.", true, true},
+		{"fellowship accepted at exactly 80 percent retention despite losing rules and make", "The rules make winning last year's departmental prize sufficient for eligibility for the fellowship.", "If a person wins last year's departmental prize, then that person is eligible for the fellowship.", true, true},
+		{"far remains content", "The reservoir is below the red mark.", "The reservoir is far below the red mark.", true, false},
 		{"judge no", "When interest rates rise, mortgages become more expensive.", "If interest rates rise, then mortgages become more expensive.", false, false},
 		{"negation", "The central bank will not raise interest rates.", "The central bank will raise interest rates.", true, false},
 		{"new content", "The central bank will raise interest rates.", "The central bank will sharply raise interest rates.", true, false},

@@ -204,7 +204,17 @@ func canonicalMarkers(original, canonical string) error {
 	return nil
 }
 
-var canonicalFormWords = map[string]bool{"if": true, "then": true, "either": true, "or": true, "not": true, "case": true, "it": true, "is": true, "the": true, "that": true, "every": true, "all": true, "no": true}
+// Closed vocabulary for generic subjects, quantifiers, and logical form. These
+// words carry no lexical weight here; polarity still uses the surface tokens.
+var canonicalFormWords = map[string]bool{
+	"person": true, "thing": true, "someone": true, "something": true,
+	"anyone": true, "anything": true, "it": true, "that": true,
+	"if": true, "then": true, "either": true, "or": true, "case": true,
+	"sufficient": true, "necessary": true, "suffices": true,
+	"every": true, "all": true, "no": true, "each": true,
+	"not": true, "is": true, "the": true,
+}
+
 var canonicalNumber = regexp.MustCompile(`[+-]?[0-9]+(?:[.,][0-9]+)*`)
 
 func canonicalPolarity(text string) int {
@@ -235,28 +245,12 @@ func CanonicalContentCheck(original, canonical string) error {
 	if strings.Join(canonicalNumber.FindAllString(aText, -1), "|") != strings.Join(canonicalNumber.FindAllString(bText, -1), "|") {
 		return fmt.Errorf("number tokens changed")
 	}
-	a, b := sourceContentWords(aText), sourceContentWords(bText)
-	// Normalize the equivalent polarity spellings without weakening the shared
-	// source-quote checker. Counts above retain repeated and double negation.
-	for _, words := range []map[string]bool{a, b} {
-		if words["no"] {
-			delete(words, "no")
-			words["not"] = true
-		}
-		// Polarity is checked separately above; these share the same content
-		// in rewrites such as "heard nothing" -> "not ... heard anything".
-		for _, word := range []string{"anything", "nothing"} {
-			if words[word] {
-				delete(words, word)
-				words["something"] = true
-			}
-		}
-	}
+	a, b := canonicalContentStems(aText), canonicalContentStems(bText)
 	shared := 0
 	var introduced []string
 	for word := range b {
-		if !a[word] && !canonicalFormWords[word] {
-			introduced = append(introduced, word)
+		if _, present := a[word]; !present {
+			introduced = append(introduced, b[word])
 		}
 	}
 	if len(introduced) > 0 {
@@ -264,7 +258,7 @@ func CanonicalContentCheck(original, canonical string) error {
 		return fmt.Errorf("new content words: %s", strings.Join(introduced, ", "))
 	}
 	for word := range a {
-		if b[word] {
+		if _, present := b[word]; present {
 			shared++
 		}
 	}
