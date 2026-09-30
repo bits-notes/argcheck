@@ -18,6 +18,7 @@ type FormalizedReconstructionOutput struct {
 type ReconstructionLine struct {
 	Line      int   `json:"line"`
 	Sentences []int `json:"sentences"`
+	Assumed   bool  `json:"assumed,omitempty"`
 }
 
 type formalizedReconstructionOutputValidator struct{ options formalizedRepairOutputOptions }
@@ -56,7 +57,12 @@ func ValidateFormalizedReconstructionSource(ctx context.Context, output, source 
 	return validateReconstruction(ctx, output, &n, false)
 }
 
-func validateReconstruction(ctx context.Context, output string, sentenceCount *int, gate bool) (result Result) {
+func validateReconstruction(ctx context.Context, output string, sentenceCount *int, gate bool) Result {
+	return validateReconstructionChecks(ctx, output, sentenceCount, gate, true)
+}
+
+// validateReconstructionChecks shares all writer structure checks with salvage.
+func validateReconstructionChecks(ctx context.Context, output string, sentenceCount *int, gate, padding bool) (result Result) {
 	defer func() { result = captureRepairFailure(result, output) }()
 	ctx, cancel := withValidationContext(ctx)
 	defer cancel()
@@ -80,6 +86,18 @@ func validateReconstruction(ctx context.Context, output string, sentenceCount *i
 	}
 	if err := requireJSONEOF(decoder); err != nil {
 		return Result{Message: "return only one reconstruction JSON object"}
+	}
+	// assumed is reserved for deterministic recovery, even when explicitly false.
+	var fields struct {
+		Lines []map[string]json.RawMessage `json:"lines"`
+	}
+	_ = json.Unmarshal([]byte(extracted), &fields)
+	for _, line := range fields.Lines {
+		for field := range line {
+			if strings.EqualFold(field, "assumed") {
+				return Result{Message: "writer reconstruction must not set assumed"}
+			}
+		}
 	}
 	syntax := numberedArgumentSyntaxValidator{}.Validate(ctx, reconstruction.Argument)
 	if !syntax.Passed {
@@ -138,8 +156,10 @@ func validateReconstruction(ctx context.Context, output string, sentenceCount *i
 	if !grounded {
 		return Result{Message: "every premise line is supplied; add source sentence references to at least one premise line"}
 	}
-	if message := repairAssociatedConditional(reconstruction.Argument, mappings); message != "" {
-		return Result{Message: message}
+	if padding {
+		if message := repairAssociatedConditional(reconstruction.Argument, mappings); message != "" {
+			return Result{Message: message}
+		}
 	}
 	sort.Slice(reconstruction.Lines, func(i, j int) bool { return reconstruction.Lines[i].Line < reconstruction.Lines[j].Line })
 	normalized, _ := json.Marshal(reconstruction)

@@ -196,9 +196,9 @@ func TestRepairExtractionStringAware(t *testing.T) {
 }
 
 func TestRepairFailureExcerptUsesCharacters(t *testing.T) {
-	output := strings.Repeat("界", 4100)
+	output := strings.Repeat("界", 64100)
 	result := ValidateFormalizedRepairOutputWithPrompt(t.Context(), output, "")
-	if result.Passed || result.Details["raw_reply_chars"] != 4100 || result.Details["raw_reply_excerpt"] != strings.Repeat("界", 4000) {
+	if result.Passed || result.Details["raw_reply_chars"] != 64100 || result.Details["raw_reply_excerpt"] != strings.Repeat("界", 64000) {
 		t.Fatalf("excerpt length/count incorrect")
 	}
 }

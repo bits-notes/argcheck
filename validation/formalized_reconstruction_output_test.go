@@ -49,7 +49,7 @@ func TestFormalizedReconstructionOutput(t *testing.T) {
 		}, want: "do not support"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := FormalizedReconstructionOutput{Argument: reconstructionTestArgument, Lines: []ReconstructionLine{{1, []int{1}}, {2, []int{2}}, {3, []int{3}}}}
+			r := FormalizedReconstructionOutput{Argument: reconstructionTestArgument, Lines: []ReconstructionLine{{Line: 1, Sentences: []int{1}}, {Line: 2, Sentences: []int{2}}, {Line: 3, Sentences: []int{3}}}}
 			if tc.change != nil {
 				tc.change(&r)
 			}
@@ -157,7 +157,7 @@ func TestLegacyCoverageIgnoresSentenceMappings(t *testing.T) {
 func TestReconstructionUnsourcedIntermediateConclusion(t *testing.T) {
 	r := FormalizedReconstructionOutput{
 		Argument: "1. If Milo is a cat, then Milo is an animal.\n2. Milo is a cat.\n3. Therefore, Milo is an animal. [1,2]\n4. If Milo is an animal, then Milo is alive.\n5. Therefore, Milo is alive. [3,4]",
-		Lines:    []ReconstructionLine{{1, []int{}}, {2, []int{1}}, {3, []int{}}, {4, []int{2}}, {5, []int{3}}},
+		Lines:    []ReconstructionLine{{Line: 1, Sentences: []int{}}, {Line: 2, Sentences: []int{1}}, {Line: 3, Sentences: []int{}}, {Line: 4, Sentences: []int{2}}, {Line: 5, Sentences: []int{3}}},
 	}
 	raw, _ := json.Marshal(r)
 	result := ValidateFormalizedReconstructionOutputWithPrompt(t.Context(), string(raw), reconstructionTestPrompt, json.RawMessage(`{"entailment_gate":true}`))

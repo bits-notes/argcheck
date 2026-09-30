@@ -101,6 +101,14 @@ func applyArgumentEntailmentGate(result Result, argument string, mappings []Form
 // require a mapped premise, the FINAL conclusion, and only one supplied premise.
 // This is a repair-content check after validity passes, not a validity rule.
 func repairAssociatedConditional(text string, mappings []FormalizationLineMapping) string {
+	for _, bridge := range repairAssociatedConditionalSteps(text, mappings) {
+		return fmt.Sprintf("step %d supplies an associated conditional (%q): its antecedent just restates the steps it is cited with and its consequent is the conclusion, so it adds no content. Supply the general principle the author relies on (a universal 'Every S is P.' or an 'If X …, then … X …' rule, S8), or omit the bridge if there is none.", bridge.Number, bridge.Statement)
+	}
+	return ""
+}
+
+func repairAssociatedConditionalSteps(text string, mappings []FormalizationLineMapping) []NumberedArgumentStep {
+	var found []NumberedArgumentStep
 	argument, _ := ParseNumberedArgumentAllowingNoConclusions(text)
 	mapped := make(map[int]bool)
 	for _, mapping := range mappings {
@@ -116,6 +124,7 @@ func repairAssociatedConditional(text string, mappings []FormalizationLineMappin
 			suppliedCount++
 		}
 	}
+bridges:
 	for _, bridge := range argument.Steps {
 		if bridge.Kind != "premise" || mapped[bridge.Number] {
 			continue
@@ -169,13 +178,14 @@ func repairAssociatedConditional(text string, mappings []FormalizationLineMappin
 						equal = equal && others[part]
 					}
 					if equal {
-						return fmt.Sprintf("step %d supplies an associated conditional (%q): its antecedent just restates the steps it is cited with and its consequent is the conclusion, so it adds no content. Supply the general principle the author relies on (a universal 'Every S is P.' or an 'If X …, then … X …' rule, S8), or omit the bridge if there is none.", bridge.Number, bridge.Statement)
+						found = append(found, bridge)
+						continue bridges
 					}
 				}
 			}
 		}
 	}
-	return ""
+	return found
 }
 
 func (v formalizedRepairOutputValidator) Validate(ctx context.Context, output string) (result Result) {
@@ -460,7 +470,7 @@ func RawReplyDetails(output string) map[string]any {
 	excerpt := output
 	count := 0
 	for i := range output {
-		if count == 4000 {
+		if count == 64000 {
 			excerpt = output[:i]
 			break
 		}
