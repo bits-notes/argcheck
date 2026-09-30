@@ -6,17 +6,19 @@ import (
 )
 
 const (
-	DroppedContentKindPremise          = "premise"
-	DroppedContentKindConclusion       = "conclusion"
-	DroppedContentKindCitation         = "citation"
-	FormalizationCoverageAnchorSource  = "source"
-	FormalizationCoverageAnchorAsFound = "as_found"
+	DroppedContentKindPremise                  = "premise"
+	DroppedContentKindConclusion               = "conclusion"
+	DroppedContentKindCitation                 = "citation"
+	FormalizationCoverageAnchorSourceSentences = "source_sentences"
+	FormalizationCoverageAnchorSource          = "source"
+	FormalizationCoverageAnchorAsFound         = "as_found"
 )
 
 type FormalizationLineMapping struct {
-	RepairedLine     int     `json:"repaired_line"`
-	FromAsFoundLines []int   `json:"from_as_found_lines"`
-	FromSourceQuote  *string `json:"from_source_quote,omitempty"`
+	RepairedLine        int     `json:"repaired_line"`
+	FromAsFoundLines    []int   `json:"from_as_found_lines"`
+	FromSourceQuote     *string `json:"from_source_quote,omitempty"`
+	FromSourceSentences []int   `json:"from_source_sentences,omitempty"`
 }
 
 type FormalizationDroppedContent struct {

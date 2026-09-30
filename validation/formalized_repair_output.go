@@ -62,10 +62,14 @@ func applyRepairEntailmentGate(result Result, enabled bool) Result {
 	if err := json.Unmarshal(result.ParsedOutput, &repair); err != nil {
 		return Result{Message: "decode formalized repair for entailment gate: " + err.Error()}
 	}
-	report, gate := CheckEntailmentGate(*repair.Argument)
+	return applyArgumentEntailmentGate(result, *repair.Argument, *repair.LineMapping)
+}
+
+func applyArgumentEntailmentGate(result Result, argument string, mappings []FormalizationLineMapping) Result {
+	report, gate := CheckEntailmentGate(argument)
 	result.Details["entailment_gate"] = gate.Details
 	if gate.Passed {
-		if message := repairAssociatedConditional(*repair.Argument, *repair.LineMapping); message != "" {
+		if message := repairAssociatedConditional(argument, mappings); message != "" {
 			result.Passed = false
 			result.ParsedOutput = nil
 			result.Message = message

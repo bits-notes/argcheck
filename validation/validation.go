@@ -16,14 +16,15 @@ const (
 	KindRegexMatch = "regex_match"
 	KindLineRules  = "line_rules"
 
-	BuiltinNone                     = "none"
-	BuiltinNonEmpty                 = "non_empty"
-	BuiltinNumberedArgumentSyntax   = "numbered_argument_syntax"
-	BuiltinEntailmentGate           = "entailment_gate"
-	BuiltinFormalizedRepairOutput   = "formalized_repair_output"
-	BuiltinDisputationChallenge     = "disputation_challenge"
-	BuiltinDisputationProseResponse = "disputation_prose_response"
-	BuiltinConditionalityPreserve   = "conditionality_preservation"
+	BuiltinNone                           = "none"
+	BuiltinNonEmpty                       = "non_empty"
+	BuiltinNumberedArgumentSyntax         = "numbered_argument_syntax"
+	BuiltinEntailmentGate                 = "entailment_gate"
+	BuiltinFormalizedReconstructionOutput = "formalized_reconstruction_output"
+	BuiltinFormalizedRepairOutput         = "formalized_repair_output"
+	BuiltinDisputationChallenge           = "disputation_challenge"
+	BuiltinDisputationProseResponse       = "disputation_prose_response"
+	BuiltinConditionalityPreserve         = "conditionality_preservation"
 
 	defaultMaxOutputBytes = 128 * 1024
 	defaultDeadline       = 250 * time.Millisecond
@@ -76,8 +77,8 @@ func LegacyKindSpec(kind string) Spec {
 		return BuiltinSpec(BuiltinEntailmentGate)
 	case BuiltinFormalizationCanonicalizeOutput, BuiltinFormalizationLineEquivalenceOutput:
 		return BuiltinSpec(strings.TrimSpace(kind))
-	case BuiltinFormalizedRepairOutput:
-		return BuiltinSpec(BuiltinFormalizedRepairOutput)
+	case BuiltinFormalizedRepairOutput, BuiltinFormalizedReconstructionOutput:
+		return BuiltinSpec(strings.TrimSpace(kind))
 	case BuiltinDisputationChallenge:
 		return BuiltinSpec(BuiltinDisputationChallenge)
 	case BuiltinDisputationProseResponse:
@@ -111,7 +112,7 @@ func Normalize(spec Spec) Spec {
 	if spec.SchemaVersion == "" {
 		spec.SchemaVersion = SchemaVersionV1
 	}
-	if spec.Kind == BuiltinFormalizationCanonicalizeOutput || spec.Kind == BuiltinFormalizationLineEquivalenceOutput || spec.Kind == BuiltinNonEmpty || spec.Kind == BuiltinNone || spec.Kind == BuiltinNumberedArgumentSyntax || spec.Kind == BuiltinEntailmentGate || spec.Kind == BuiltinFormalizedRepairOutput || spec.Kind == BuiltinDisputationChallenge || spec.Kind == BuiltinDisputationProseResponse || spec.Kind == BuiltinConditionalityPreserve {
+	if spec.Kind == BuiltinFormalizationCanonicalizeOutput || spec.Kind == BuiltinFormalizationLineEquivalenceOutput || spec.Kind == BuiltinNonEmpty || spec.Kind == BuiltinNone || spec.Kind == BuiltinNumberedArgumentSyntax || spec.Kind == BuiltinEntailmentGate || spec.Kind == BuiltinFormalizedRepairOutput || spec.Kind == BuiltinFormalizedReconstructionOutput || spec.Kind == BuiltinDisputationChallenge || spec.Kind == BuiltinDisputationProseResponse || spec.Kind == BuiltinConditionalityPreserve {
 		spec.Name = spec.Kind
 		spec.Kind = KindBuiltin
 	}
@@ -177,6 +178,12 @@ func compileBuiltin(spec Spec) (OutputValidator, error) {
 			return nil, fmt.Errorf("validator %q does not support options", spec.Name)
 		}
 		return canonicalOutputValidator{name: spec.Name}, nil
+	case BuiltinFormalizedReconstructionOutput:
+		options, err := parseFormalizedRepairOutputOptions(spec.Options)
+		if err != nil {
+			return nil, fmt.Errorf("%s", strings.ReplaceAll(err.Error(), BuiltinFormalizedRepairOutput, BuiltinFormalizedReconstructionOutput))
+		}
+		return formalizedReconstructionOutputValidator{options: options}, nil
 	case BuiltinFormalizedRepairOutput:
 		options, err := parseFormalizedRepairOutputOptions(spec.Options)
 		if err != nil {
