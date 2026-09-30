@@ -73,10 +73,14 @@ func TestSalvageReconstructionLimits(t *testing.T) {
 		n := 2 + i*2
 		lines = append(lines, fmt.Sprintf("%d. Therefore, B%d. [%d]", n, i, n-1), fmt.Sprintf("%d. Therefore, B%d or D. [%d]", n+1, i, n))
 	}
-	for _, argument := range []string{strings.Join(lines, "\n"), "1. A.\n2. Therefore, B. [1]"} {
-		if _, err := SalvageReconstruction(salvageReply(t, argument), "A source sentence."); err == nil || !strings.Contains(err.Error(), "too many") {
-			t.Fatalf("expected bridge limit, got %v", err)
-		}
+	if _, err := SalvageReconstruction(salvageReply(t, strings.Join(lines, "\n")), "A source sentence."); err == nil || !strings.Contains(err.Error(), "too many") {
+		t.Fatalf("expected bridge limit, got %v", err)
+	}
+	// A lone failing inference is always bridged, so a short invalid argument is
+	// shown as "doesn't follow" on its faithful reconstruction.
+	single, err := SalvageReconstruction(salvageReply(t, "1. A.\n2. Therefore, B. [1]"), "A source sentence.")
+	if err != nil || len(single.AssumedLines) != 1 {
+		t.Fatalf("single failing step must salvage with one bridge: %+v %v", single, err)
 	}
 }
 

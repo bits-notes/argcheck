@@ -69,8 +69,11 @@ func SalvageReconstruction(reply, source string) (SalvagedReconstruction, error)
 		}
 		step.Citations = refs
 		if step.Kind == "conclusion" && !gateConclusionStep(step, byNumber).Passed {
-			if len(result.AssumedLines) >= 3 || (len(result.AssumedLines)+1)*2 > conclusionCount {
-				return SalvagedReconstruction{}, fmt.Errorf("too many deterministic bridges: maximum three and half of conclusion steps")
+			// One bridge is always allowed: a short argument whose only inference
+			// fails is shown as "doesn't follow" on its faithful reconstruction.
+			bridges := len(result.AssumedLines) + 1
+			if bridges > 3 || (bridges > 1 && bridges*2 > conclusionCount) {
+				return SalvagedReconstruction{}, fmt.Errorf("too many deterministic bridges: maximum three, and more than one only up to half of conclusion steps")
 			}
 			if len(refs) == 0 {
 				return SalvagedReconstruction{}, fmt.Errorf("step %d has no remaining antecedents", old)
