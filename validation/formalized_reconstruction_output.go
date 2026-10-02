@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
 // FormalizedReconstructionOutput records one-based source sentence references.
@@ -16,9 +17,10 @@ type FormalizedReconstructionOutput struct {
 }
 
 type ReconstructionLine struct {
-	Line      int   `json:"line"`
-	Sentences []int `json:"sentences"`
-	Assumed   bool  `json:"assumed,omitempty"`
+	Line      int    `json:"line"`
+	Sentences []int  `json:"sentences"`
+	Assumed   bool   `json:"assumed,omitempty"`
+	Hedge     string `json:"hedge,omitempty"`
 }
 
 type formalizedReconstructionOutputOptions struct {
@@ -47,8 +49,8 @@ type formalizedReconstructionOutputValidator struct {
 }
 
 func (v formalizedReconstructionOutputValidator) Validate(ctx context.Context, output string) Result {
-	// Promptless validation checks structure; source bounds are checked by the
-	// prompt-aware runner and again by assembly against its source envelope.
+	// Promptless validation checks structure; source bounds and hedge matches are
+	// checked by the prompt-aware runner and assembly against the source envelope.
 	return validateReconstruction(ctx, output, nil, v.options.EntailmentGate)
 }
 
@@ -75,8 +77,7 @@ func ValidateFormalizedReconstructionOutputForAttempt(ctx context.Context, outpu
 	if !ok {
 		return Result{Message: "rendered prompt must contain <source_material>…</source_material> for sentence references"}
 	}
-	n := len(SegmentSourceSentences(source))
-	result = validateReconstruction(ctx, output, &n, parsed.EntailmentGate)
+	result = validateReconstruction(ctx, output, &source, parsed.EntailmentGate)
 	if result.Passed || !parsed.SalvageFinalAttempt || maxAttempts <= 0 || attemptNumber < maxAttempts || ctx.Err() != nil {
 		return result
 	}
@@ -87,7 +88,7 @@ func ValidateFormalizedReconstructionOutputForAttempt(ctx context.Context, outpu
 		return result
 	}
 	normalized, _ := json.Marshal(salvaged.Reconstruction)
-	checked := validateReconstructionOutput(ctx, string(normalized), &n, parsed.EntailmentGate, true, false)
+	checked := validateReconstructionOutput(ctx, string(normalized), &source, parsed.EntailmentGate, true, false)
 	if !checked.Passed {
 		return result
 	}
@@ -98,17 +99,16 @@ func ValidateFormalizedReconstructionOutputForAttempt(ctx context.Context, outpu
 // ValidateFormalizedReconstructionSource checks a writer reply directly against
 // its source, without reparsing prompt tags. Writer-set assumed remains forbidden.
 func ValidateFormalizedReconstructionSource(ctx context.Context, output, source string) Result {
-	n := len(SegmentSourceSentences(source))
-	return validateReconstruction(ctx, output, &n, false)
+	return validateReconstruction(ctx, output, &source, false)
 }
 
-func validateReconstruction(ctx context.Context, output string, sentenceCount *int, gate bool) Result {
-	return validateReconstructionChecks(ctx, output, sentenceCount, gate, true)
+func validateReconstruction(ctx context.Context, output string, source *string, gate bool) Result {
+	return validateReconstructionChecks(ctx, output, source, gate, true)
 }
 
 // validateReconstructionChecks shares all writer structure checks with salvage.
-func validateReconstructionChecks(ctx context.Context, output string, sentenceCount *int, gate, padding bool) Result {
-	return validateReconstructionOutput(ctx, output, sentenceCount, gate, padding, true)
+func validateReconstructionChecks(ctx context.Context, output string, source *string, gate, padding bool) Result {
+	return validateReconstructionOutput(ctx, output, source, gate, padding, true)
 }
 
 // ValidateNormalizedReconstructionOutput accepts tool-owned assumed markers in
@@ -128,13 +128,12 @@ func ValidateNormalizedReconstructionOutput(ctx context.Context, output string, 
 	return validateReconstructionOutput(ctx, output, nil, parsed.EntailmentGate, true, false)
 }
 
-// ValidateNormalizedReconstructionSource also checks source sentence bounds.
+// ValidateNormalizedReconstructionSource also checks source sentence bounds and hedge matches.
 func ValidateNormalizedReconstructionSource(ctx context.Context, output, source string) Result {
-	n := len(SegmentSourceSentences(source))
-	return validateReconstructionOutput(ctx, output, &n, false, true, false)
+	return validateReconstructionOutput(ctx, output, &source, false, true, false)
 }
 
-func validateReconstructionOutput(ctx context.Context, output string, sentenceCount *int, gate, padding, writer bool) (result Result) {
+func validateReconstructionOutput(ctx context.Context, output string, source *string, gate, padding, writer bool) (result Result) {
 	defer func() { result = captureRepairFailure(result, output) }()
 	ctx, cancel := withValidationContext(ctx)
 	defer cancel()
@@ -145,6 +144,16 @@ func validateReconstructionOutput(ctx context.Context, output string, sentenceCo
 	case <-ctx.Done():
 		return Result{Message: "validation timed out"}
 	default:
+	}
+	var sentenceCount *int
+	var sourceSentences []string
+	if source != nil {
+		runes := []rune(*source)
+		for _, sentence := range SegmentSourceSentences(*source) {
+			sourceSentences = append(sourceSentences, string(runes[sentence.Start:sentence.End]))
+		}
+		n := len(sourceSentences)
+		sentenceCount = &n
 	}
 	extracted, normalization, err := extractRepairJSONObject(output)
 	if err != nil {
@@ -164,8 +173,14 @@ func validateReconstructionOutput(ctx context.Context, output string, sentenceCo
 		Lines []map[string]json.RawMessage `json:"lines"`
 	}
 	_ = json.Unmarshal([]byte(extracted), &fields)
-	for _, line := range fields.Lines {
-		for field := range line {
+	for i, line := range fields.Lines {
+		for field, raw := range line {
+			if strings.EqualFold(field, "hedge") {
+				var hedge string
+				if string(raw) == "null" || json.Unmarshal(raw, &hedge) != nil || strings.TrimSpace(hedge) == "" {
+					return Result{Message: fmt.Sprintf("line %d hedge must be a non-empty string; omit hedge if there is no author hedge", reconstruction.Lines[i].Line)}
+				}
+			}
 			if writer && strings.EqualFold(field, "assumed") {
 				return Result{Message: "writer reconstruction must not set assumed"}
 			}
@@ -207,6 +222,30 @@ func validateReconstructionOutput(ctx context.Context, output string, sentenceCo
 				return Result{Message: fmt.Sprintf("line %d repeats sentence %d; remove the duplicate", line.Line, n)}
 			}
 			sentenceSeen[n] = true
+		}
+		if line.Hedge != "" {
+			if line.Assumed {
+				return Result{Message: fmt.Sprintf("line %d is assumed; remove its hedge", line.Line)}
+			}
+			if utf8.RuneCountInString(line.Hedge) > 80 {
+				return Result{Message: fmt.Sprintf("line %d hedge must be at most 80 characters; quote only the author's hedge words", line.Line)}
+			}
+			if len(line.Sentences) == 0 {
+				return Result{Message: fmt.Sprintf("line %d has a hedge; cite at least one source sentence containing it", line.Line)}
+			}
+			if source != nil {
+				found := false
+				labels := []string{}
+				for _, n := range line.Sentences {
+					labels = append(labels, fmt.Sprintf("S%d", n))
+					if strings.Contains(normalizeAuthorHedge(sourceSentences[n-1]), normalizeAuthorHedge(line.Hedge)) {
+						found = true
+					}
+				}
+				if !found {
+					return Result{Message: fmt.Sprintf("line %d hedge %q does not appear in its cited sentences %s; quote hedge words from a cited sentence or correct the citations", line.Line, line.Hedge, strings.Join(labels, ","))}
+				}
+			}
 		}
 		if line.Assumed {
 			if len(line.Sentences) > 0 || argument.Steps[line.Line-1].Kind != "premise" {
@@ -250,4 +289,10 @@ func validateReconstructionOutput(ctx context.Context, output string, sentenceCo
 		result = applyArgumentEntailmentGate(result, reconstruction.Argument, mappings)
 	}
 	return result
+}
+
+// Match only typography, whitespace and case differences; keep the quoted words.
+func normalizeAuthorHedge(text string) string {
+	text = strings.NewReplacer("‘", "'", "’", "'", "“", "\"", "”", "\"").Replace(text)
+	return strings.ToLower(strings.Join(strings.Fields(text), " "))
 }

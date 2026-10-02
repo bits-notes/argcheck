@@ -165,3 +165,66 @@ func TestReconstructionUnsourcedIntermediateConclusion(t *testing.T) {
 		t.Fatal(result.Message)
 	}
 }
+
+func TestReconstructionAuthorHedge(t *testing.T) {
+	for _, tc := range []struct {
+		name, hedge, source, want string
+		sentences                 []int
+		assumed                   bool
+	}{
+		{name: "valid", hedge: `"I think"`, source: "Every cat is an animal. “I think” Milo is a cat. Milo is an animal.", sentences: []int{2}},
+		{name: "normalization", hedge: `i'M “Fairly”   sure`, source: "Every cat is an animal. I’m \"fairly\" sure Milo is a cat. Milo is an animal.", sentences: []int{2}},
+		{name: "any cited sentence", hedge: "I think", source: "Every cat is an animal. I think Milo is a cat. Milo is an animal.", sentences: []int{1, 2}},
+		{name: "wrong sentence", hedge: "I think", source: "I think every cat is an animal. Milo is a cat. Milo is an animal.", sentences: []int{2}, want: `line 2 hedge "I think" does not appear in its cited sentences S2`},
+		{name: "unsourced", hedge: "I think", sentences: []int{}, want: "cite at least one"},
+		{name: "assumed", hedge: "I think", sentences: []int{}, assumed: true, want: "is assumed; remove its hedge"},
+		{name: "blank", hedge: "   ", sentences: []int{2}, want: "non-empty string"},
+		{name: "too long", hedge: strings.Repeat("é", 81), sentences: []int{2}, want: "at most 80"},
+		{name: "80 unicode characters", hedge: strings.Repeat("é", 80), source: "Every cat is an animal. " + strings.Repeat("é", 80) + " Milo is a cat. Milo is an animal.", sentences: []int{2}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := FormalizedReconstructionOutput{Argument: reconstructionTestArgument, Lines: []ReconstructionLine{{Line: 1, Sentences: []int{1}}, {Line: 2, Sentences: tc.sentences, Hedge: tc.hedge, Assumed: tc.assumed}, {Line: 3, Sentences: []int{3}}}}
+			raw, _ := json.Marshal(r)
+			source := tc.source
+			if source == "" {
+				source = "Every cat is an animal. Milo is a cat. Milo is an animal."
+			}
+			results := []Result{ValidateNormalizedReconstructionSource(t.Context(), string(raw), source)}
+			if !tc.assumed {
+				results = append(results, ValidateFormalizedReconstructionOutputWithPrompt(t.Context(), string(raw), "<source_material>"+source+"</source_material>"))
+			}
+			for _, got := range results {
+				if tc.want == "" {
+					if !got.Passed {
+						t.Fatal(got.Message)
+					}
+					var normalized FormalizedReconstructionOutput
+					_ = json.Unmarshal(got.ParsedOutput, &normalized)
+					if normalized.Lines[1].Hedge != tc.hedge {
+						t.Fatal("hedge lost")
+					}
+				} else if got.Passed || !strings.Contains(got.Message, tc.want) {
+					t.Fatalf("got %v %s; want %s", got.Passed, got.Message, tc.want)
+				}
+			}
+		})
+	}
+	for _, value := range []string{`""`, "null", "false"} {
+		raw := strings.Replace(salvageReply(t, reconstructionTestArgument), `"line":1`, `"line":1,"hedge":`+value, 1)
+		if got := ValidateNormalizedReconstructionOutput(t.Context(), raw); got.Passed {
+			t.Fatalf("accepted hedge %s", value)
+		}
+	}
+}
+
+func TestSalvagePreservesAuthorHedge(t *testing.T) {
+	raw := salvageReply(t, "1. A.\n2. Therefore, B. [1]")
+	raw = strings.Replace(raw, `"line":2`, `"line":2,"hedge":"I think"`, 1)
+	got, err := SalvageReconstruction(raw, "I think A and B.")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.AssumedLines) != 1 || got.Reconstruction.Lines[2].Hedge != "I think" || got.Reconstruction.Lines[1].Hedge != "" {
+		t.Fatalf("hedge lost on renumbering: %+v", got)
+	}
+}

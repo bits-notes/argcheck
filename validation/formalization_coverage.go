@@ -15,6 +15,7 @@ const (
 )
 
 type FormalizationLineMapping struct {
+	AuthorHedge         string  `json:"author_hedge,omitempty"`
 	RepairedLine        int     `json:"repaired_line"`
 	FromAsFoundLines    []int   `json:"from_as_found_lines"`
 	FromSourceQuote     *string `json:"from_source_quote,omitempty"`

@@ -22,8 +22,7 @@ type SalvagedReconstruction struct {
 // SalvageReconstruction keeps a structurally sound, sentence-linked reply and
 // supplies at most three explicit connecting assumptions for isolated failures.
 func SalvageReconstruction(reply, source string) (SalvagedReconstruction, error) {
-	n := len(SegmentSourceSentences(source))
-	checked := validateReconstructionChecks(context.Background(), reply, &n, false, false)
+	checked := validateReconstructionChecks(context.Background(), reply, &source, false, false)
 	if !checked.Passed {
 		return SalvagedReconstruction{}, fmt.Errorf("reconstruction structure: %s", checked.Message)
 	}
