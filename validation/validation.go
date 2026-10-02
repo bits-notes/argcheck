@@ -179,9 +179,9 @@ func compileBuiltin(spec Spec) (OutputValidator, error) {
 		}
 		return canonicalOutputValidator{name: spec.Name}, nil
 	case BuiltinFormalizedReconstructionOutput:
-		options, err := parseFormalizedRepairOutputOptions(spec.Options)
+		options, err := parseFormalizedReconstructionOutputOptions(spec.Options)
 		if err != nil {
-			return nil, fmt.Errorf("%s", strings.ReplaceAll(err.Error(), BuiltinFormalizedRepairOutput, BuiltinFormalizedReconstructionOutput))
+			return nil, err
 		}
 		return formalizedReconstructionOutputValidator{options: options}, nil
 	case BuiltinFormalizedRepairOutput:

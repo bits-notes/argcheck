@@ -21,7 +21,30 @@ type ReconstructionLine struct {
 	Assumed   bool  `json:"assumed,omitempty"`
 }
 
-type formalizedReconstructionOutputValidator struct{ options formalizedRepairOutputOptions }
+type formalizedReconstructionOutputOptions struct {
+	EntailmentGate      bool `json:"entailment_gate"`
+	SalvageFinalAttempt bool `json:"salvage_final_attempt"`
+}
+
+func parseFormalizedReconstructionOutputOptions(raw json.RawMessage) (formalizedReconstructionOutputOptions, error) {
+	var options formalizedReconstructionOutputOptions
+	if len(raw) == 0 {
+		return options, nil
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&options); err != nil {
+		return options, fmt.Errorf("invalid formalized_reconstruction_output options: %w", err)
+	}
+	if err := requireJSONEOF(decoder); err != nil {
+		return options, fmt.Errorf("invalid formalized_reconstruction_output options: %w", err)
+	}
+	return options, nil
+}
+
+type formalizedReconstructionOutputValidator struct {
+	options formalizedReconstructionOutputOptions
+}
 
 func (v formalizedReconstructionOutputValidator) Validate(ctx context.Context, output string) Result {
 	// Promptless validation checks structure; source bounds are checked by the
@@ -29,17 +52,23 @@ func (v formalizedReconstructionOutputValidator) Validate(ctx context.Context, o
 	return validateReconstruction(ctx, output, nil, v.options.EntailmentGate)
 }
 
-func ValidateFormalizedReconstructionOutputWithPrompt(ctx context.Context, output, prompt string, options ...json.RawMessage) (result Result) {
+func ValidateFormalizedReconstructionOutputWithPrompt(ctx context.Context, output, prompt string, options ...json.RawMessage) Result {
+	return ValidateFormalizedReconstructionOutputForAttempt(ctx, output, prompt, 0, 0, options...)
+}
+
+// ValidateFormalizedReconstructionOutputForAttempt validates the raw writer reply.
+// Attempt numbers are one-based; absent attempt information never enables salvage.
+func ValidateFormalizedReconstructionOutputForAttempt(ctx context.Context, output, prompt string, attemptNumber, maxAttempts int, options ...json.RawMessage) (result Result) {
 	defer func() { result = captureRepairFailure(result, output) }()
 	if len(options) > 1 {
 		return Result{Message: "formalized_reconstruction_output accepts at most one options value"}
 	}
-	var parsed formalizedRepairOutputOptions
+	var parsed formalizedReconstructionOutputOptions
 	if len(options) == 1 {
 		var err error
-		parsed, err = parseFormalizedRepairOutputOptions(options[0])
+		parsed, err = parseFormalizedReconstructionOutputOptions(options[0])
 		if err != nil {
-			return Result{Message: strings.ReplaceAll(err.Error(), BuiltinFormalizedRepairOutput, BuiltinFormalizedReconstructionOutput)}
+			return Result{Message: err.Error()}
 		}
 	}
 	source, ok := formalizedRepairTaggedValue(prompt, "source_material")
@@ -47,11 +76,27 @@ func ValidateFormalizedReconstructionOutputWithPrompt(ctx context.Context, outpu
 		return Result{Message: "rendered prompt must contain <source_material>…</source_material> for sentence references"}
 	}
 	n := len(SegmentSourceSentences(source))
-	return validateReconstruction(ctx, output, &n, parsed.EntailmentGate)
+	result = validateReconstruction(ctx, output, &n, parsed.EntailmentGate)
+	if result.Passed || !parsed.SalvageFinalAttempt || maxAttempts <= 0 || attemptNumber < maxAttempts || ctx.Err() != nil {
+		return result
+	}
+	// Salvage independently checks all writer structure and provenance constraints,
+	// skipping only associated-conditional padding and the entailment gate.
+	salvaged, err := SalvageReconstruction(output, source)
+	if err != nil {
+		return result
+	}
+	normalized, _ := json.Marshal(salvaged.Reconstruction)
+	checked := validateReconstructionOutput(ctx, string(normalized), &n, parsed.EntailmentGate, true, false)
+	if !checked.Passed {
+		return result
+	}
+	checked.Details["salvaged"] = map[string]any{"assumed_lines": salvaged.AssumedLines, "failing_steps": salvaged.FailingSteps}
+	return checked
 }
 
-// ValidateFormalizedReconstructionSource checks a normalized workflow artifact
-// directly against its source, without reparsing prompt tags.
+// ValidateFormalizedReconstructionSource checks a writer reply directly against
+// its source, without reparsing prompt tags. Writer-set assumed remains forbidden.
 func ValidateFormalizedReconstructionSource(ctx context.Context, output, source string) Result {
 	n := len(SegmentSourceSentences(source))
 	return validateReconstruction(ctx, output, &n, false)
@@ -62,7 +107,34 @@ func validateReconstruction(ctx context.Context, output string, sentenceCount *i
 }
 
 // validateReconstructionChecks shares all writer structure checks with salvage.
-func validateReconstructionChecks(ctx context.Context, output string, sentenceCount *int, gate, padding bool) (result Result) {
+func validateReconstructionChecks(ctx context.Context, output string, sentenceCount *int, gate, padding bool) Result {
+	return validateReconstructionOutput(ctx, output, sentenceCount, gate, padding, true)
+}
+
+// ValidateNormalizedReconstructionOutput accepts tool-owned assumed markers in
+// downstream workflow artifacts. Never use this entry point for writer replies.
+func ValidateNormalizedReconstructionOutput(ctx context.Context, output string, options ...json.RawMessage) Result {
+	if len(options) > 1 {
+		return Result{Message: "formalized_reconstruction_output accepts at most one options value"}
+	}
+	var parsed formalizedReconstructionOutputOptions
+	if len(options) == 1 {
+		var err error
+		parsed, err = parseFormalizedReconstructionOutputOptions(options[0])
+		if err != nil {
+			return Result{Message: err.Error()}
+		}
+	}
+	return validateReconstructionOutput(ctx, output, nil, parsed.EntailmentGate, true, false)
+}
+
+// ValidateNormalizedReconstructionSource also checks source sentence bounds.
+func ValidateNormalizedReconstructionSource(ctx context.Context, output, source string) Result {
+	n := len(SegmentSourceSentences(source))
+	return validateReconstructionOutput(ctx, output, &n, false, true, false)
+}
+
+func validateReconstructionOutput(ctx context.Context, output string, sentenceCount *int, gate, padding, writer bool) (result Result) {
 	defer func() { result = captureRepairFailure(result, output) }()
 	ctx, cancel := withValidationContext(ctx)
 	defer cancel()
@@ -94,7 +166,7 @@ func validateReconstructionChecks(ctx context.Context, output string, sentenceCo
 	_ = json.Unmarshal([]byte(extracted), &fields)
 	for _, line := range fields.Lines {
 		for field := range line {
-			if strings.EqualFold(field, "assumed") {
+			if writer && strings.EqualFold(field, "assumed") {
 				return Result{Message: "writer reconstruction must not set assumed"}
 			}
 		}
@@ -135,6 +207,13 @@ func validateReconstructionChecks(ctx context.Context, output string, sentenceCo
 				return Result{Message: fmt.Sprintf("line %d repeats sentence %d; remove the duplicate", line.Line, n)}
 			}
 			sentenceSeen[n] = true
+		}
+		if line.Assumed {
+			if len(line.Sentences) > 0 || argument.Steps[line.Line-1].Kind != "premise" {
+				return Result{Message: fmt.Sprintf("assumed line %d must be an unsourced premise", line.Line)}
+			}
+			// Tool-owned bridges are explicitly disclosed, not writer padding.
+			mappings = append(mappings, FormalizationLineMapping{RepairedLine: line.Line, FromAsFoundLines: []int{line.Line}})
 		}
 		if len(line.Sentences) > 0 {
 			// Use the legacy detector's mapped-line interface without changing its

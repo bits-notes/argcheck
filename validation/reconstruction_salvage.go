@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+// FallbackPremiseNote discloses a tool-added connecting premise.
+const FallbackPremiseNote = "We added this premise ourselves so the listed premises lead to the conclusion. It is the minimal connecting step, not a reconstruction of the author's reasoning."
+
 // SalvagedReconstruction identifies deterministic assumptions separately from
 // writer-supplied premises. FailingSteps uses the writer's original numbering.
 type SalvagedReconstruction struct {
