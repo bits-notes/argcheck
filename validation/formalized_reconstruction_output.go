@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -26,6 +27,10 @@ type ReconstructionLine struct {
 type formalizedReconstructionOutputOptions struct {
 	EntailmentGate      bool `json:"entailment_gate"`
 	SalvageFinalAttempt bool `json:"salvage_final_attempt"`
+	// SalvageOnNoProgress treats a retry that fails on the same steps, at the same
+	// stage, as the previous attempt as final: invalid-as-written and evidential
+	// arguments cannot be fixed by more retries, which only re-think for minutes.
+	SalvageOnNoProgress bool `json:"salvage_on_no_progress"`
 }
 
 func parseFormalizedReconstructionOutputOptions(raw json.RawMessage) (formalizedReconstructionOutputOptions, error) {
@@ -60,7 +65,13 @@ func ValidateFormalizedReconstructionOutputWithPrompt(ctx context.Context, outpu
 
 // ValidateFormalizedReconstructionOutputForAttempt validates the raw writer reply.
 // Attempt numbers are one-based; absent attempt information never enables salvage.
-func ValidateFormalizedReconstructionOutputForAttempt(ctx context.Context, output, prompt string, attemptNumber, maxAttempts int, options ...json.RawMessage) (result Result) {
+func ValidateFormalizedReconstructionOutputForAttempt(ctx context.Context, output, prompt string, attemptNumber, maxAttempts int, options ...json.RawMessage) Result {
+	return ValidateFormalizedReconstructionOutputForRetry(ctx, output, prompt, attemptNumber, maxAttempts, "", options...)
+}
+
+// ValidateFormalizedReconstructionOutputForRetry also receives the previous
+// attempt's validation message, for salvage_on_no_progress.
+func ValidateFormalizedReconstructionOutputForRetry(ctx context.Context, output, prompt string, attemptNumber, maxAttempts int, previousMessage string, options ...json.RawMessage) (result Result) {
 	defer func() { result = captureRepairFailure(result, output) }()
 	if len(options) > 1 {
 		return Result{Message: "formalized_reconstruction_output accepts at most one options value"}
@@ -78,7 +89,11 @@ func ValidateFormalizedReconstructionOutputForAttempt(ctx context.Context, outpu
 		return Result{Message: "rendered prompt must contain <source_material>…</source_material> for sentence references"}
 	}
 	result = validateReconstruction(ctx, output, &source, parsed.EntailmentGate)
-	if result.Passed || !parsed.SalvageFinalAttempt || maxAttempts <= 0 || attemptNumber < maxAttempts || ctx.Err() != nil {
+	if result.Passed || !parsed.SalvageFinalAttempt || maxAttempts <= 0 || ctx.Err() != nil {
+		return result
+	}
+	noProgress := parsed.SalvageOnNoProgress && attemptNumber > 1 && attemptNumber < maxAttempts && sameSalvageableFailure(result.Message, previousMessage)
+	if attemptNumber < maxAttempts && !noProgress {
 		return result
 	}
 	// Salvage independently checks all writer structure and provenance constraints,
@@ -92,8 +107,42 @@ func ValidateFormalizedReconstructionOutputForAttempt(ctx context.Context, outpu
 	if !checked.Passed {
 		return result
 	}
-	checked.Details["salvaged"] = map[string]any{"assumed_lines": salvaged.AssumedLines, "failing_steps": salvaged.FailingSteps}
+	provenance := map[string]any{"assumed_lines": salvaged.AssumedLines, "failing_steps": salvaged.FailingSteps}
+	if noProgress {
+		provenance["reason"] = "no_progress"
+	}
+	checked.Details["salvaged"] = provenance
 	return checked
+}
+
+var failureStepPattern = regexp.MustCompile(`\bstep (\d+)\b`)
+
+// sameSalvageableFailure reports whether two gate or padding failures name the
+// same stage and the same failing step numbers. Any difference counts as progress.
+func sameSalvageableFailure(current, previous string) bool {
+	stage := func(message string) string {
+		switch {
+		case strings.Contains(message, "entailment gate failed"):
+			return "gate"
+		case strings.Contains(message, "supplies an associated conditional"):
+			return "padding"
+		}
+		return ""
+	}
+	steps := func(message string) string {
+		seen := map[string]bool{}
+		var out []string
+		for _, m := range failureStepPattern.FindAllStringSubmatch(message, -1) {
+			if !seen[m[1]] {
+				seen[m[1]] = true
+				out = append(out, m[1])
+			}
+		}
+		sort.Strings(out)
+		return strings.Join(out, ",")
+	}
+	st := stage(current)
+	return st != "" && st == stage(previous) && steps(current) != "" && steps(current) == steps(previous)
 }
 
 // ValidateFormalizedReconstructionSource checks a writer reply directly against

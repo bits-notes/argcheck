@@ -117,3 +117,41 @@ func TestReconstructionSalvageOptionParsing(t *testing.T) {
 		}
 	}
 }
+
+func TestReconstructionSalvageOnNoProgress(t *testing.T) {
+	source := "A source sentence."
+	prompt := "<source_material>" + source + "</source_material>"
+	reply := salvageReply(t, "1. A.\n2. Therefore, B. [1]")
+	on := json.RawMessage(`{"entailment_gate":true,"salvage_final_attempt":true,"salvage_on_no_progress":true}`)
+	first := ValidateFormalizedReconstructionOutputForRetry(t.Context(), reply, prompt, 1, 3, "", on)
+	if first.Passed {
+		t.Fatal("first attempt salvaged")
+	}
+	for _, tc := range []struct {
+		name     string
+		attempt  int
+		previous string
+		options  json.RawMessage
+		pass     bool
+	}{
+		{"same failure on retry", 2, first.Message, on, true},
+		{"different step", 2, strings.Replace(first.Message, "step 2", "step 3", 1), on, false},
+		{"different stage", 2, "step 2 supplies an associated conditional (\"If A, then B\")", on, false},
+		{"no previous", 2, "", on, false},
+		{"first attempt", 1, first.Message, on, false},
+		{"option off", 2, first.Message, json.RawMessage(`{"entailment_gate":true,"salvage_final_attempt":true}`), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := ValidateFormalizedReconstructionOutputForRetry(t.Context(), reply, prompt, tc.attempt, 3, tc.previous, tc.options)
+			if got.Passed != tc.pass {
+				t.Fatalf("passed=%v: %s", got.Passed, got.Message)
+			}
+			if tc.pass {
+				salvaged, _ := got.Details["salvaged"].(map[string]any)
+				if salvaged["reason"] != "no_progress" {
+					t.Fatalf("missing no_progress provenance: %v", got.Details["salvaged"])
+				}
+			}
+		})
+	}
+}
