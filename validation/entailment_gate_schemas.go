@@ -83,6 +83,10 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "existential introduction", arity: variableArityAtLeastTwo, match: matchExistentialIntroduction},
 	{name: "existential counterexample", arity: 1, match: matchExistentialCounterexample},
 	{name: "necessity elimination", arity: 1, match: matchNecessityElimination},
+	{name: "existential syllogism", arity: 2, match: matchExistentialSyllogism},
+	{name: "existential negative syllogism", arity: 2, match: matchExistentialNegativeSyllogism},
+	{name: "schematic existential introduction", arity: 1, match: matchSchematicExistentialIntroduction},
+	{name: "identity substitution", arity: 2, match: matchIdentitySubstitution},
 }
 
 func normalizeClause(value string) string {
@@ -1424,6 +1428,9 @@ func matchUniversalInstantiation(premises []NumberedArgumentStep, conclusion Num
 	best := schemaMatchOutcome{}
 	for _, universal := range universalCandidates(premises[0].Statement) {
 		for _, instance := range instanceCandidates(premises[1].Statement) {
+			if quantifiedInstanceSubject(instance.left) {
+				continue
+			}
 			for _, result := range instanceCandidates(conclusion.Statement) {
 				candidate := schemaMatchOutcome{}
 				appendOutcome(&candidate, evaluateTermIdentities(
@@ -1519,6 +1526,9 @@ func matchUniversalNegativeSyllogism(premises []NumberedArgumentStep, conclusion
 func matchUniversalNegativeInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, instance := range instanceCandidates(premises[0].Statement) {
+		if quantifiedInstanceSubject(instance.left) {
+			continue
+		}
 		for _, negative := range universalNegativeCandidates(premises[1].Statement) {
 			for _, result := range negativeInstanceCandidates(conclusion.Statement) {
 				candidate := schemaMatchOutcome{}
