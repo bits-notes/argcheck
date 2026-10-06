@@ -87,6 +87,9 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "existential negative syllogism", arity: 2, match: matchExistentialNegativeSyllogism},
 	{name: "schematic existential introduction", arity: 1, match: matchSchematicExistentialIntroduction},
 	{name: "identity substitution", arity: 2, match: matchIdentitySubstitution},
+	{name: "constructive dilemma", arity: variableArity, match: matchConstructiveDilemma},
+	{name: "simple dilemma", arity: variableArity, match: matchSimpleDilemma},
+	{name: "destructive dilemma", arity: variableArity, match: matchDestructiveDilemma},
 }
 
 func normalizeClause(value string) string {
