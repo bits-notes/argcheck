@@ -1975,3 +1975,13 @@ func permuteClauses(parts []string, from int, visit func([]string) bool) bool {
 	}
 	return false
 }
+
+// EntailmentGateForms lists the names of the accepted inference forms in
+// match order, for tools that describe the catalog.
+func EntailmentGateForms() []string {
+	names := make([]string, 0, len(entailmentSchemas))
+	for _, schema := range entailmentSchemas {
+		names = append(names, schema.name)
+	}
+	return names
+}
