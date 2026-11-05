@@ -238,3 +238,33 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 	}
 	t.Logf("ledger: %d rejection rows (intentional boundaries, adversarial controls and the three-place gap), %d accepted rows", gaps, accepted)
 }
+
+// v19 intentional rejections are invalid in VW, not missing material rules.
+func TestEntailmentGateV19GapLedger(t *testing.T) {
+	for _, tc := range append(append([]v19GateCase{}, v19AcceptedCases...), v19RejectedCases...) {
+		t.Run(tc.name, func(t *testing.T) {
+			report, result := CheckEntailmentGate(tc.argument)
+			if len(report.Steps) == 0 {
+				t.Fatal(result.Message)
+			}
+			last := report.Steps[len(report.Steps)-1]
+			if tc.form != "" && (!report.Passed || last.Form != tc.form) {
+				t.Fatalf("accepted v19 form: %+v", report)
+			}
+			if tc.form == "" && last.Passed {
+				t.Fatalf("intentional rejection passed: %+v", last)
+			}
+		})
+	}
+	t.Run("counterfactual subproofs known gap v2", func(t *testing.T) {
+		// RCK needs a restricted import discipline, not ordinary conditional proof.
+		argument := `1. If the match had been struck, then the match would have lit and the room would have warmed.
+| 2. Suppose, counterfactually, that the match was struck.
+| 3. Therefore, the match lit and the room warmed. [1,2]
+| 4. Therefore, the room warmed. [3]
+5. Therefore, if the match had been struck, then the room would have warmed. [2-4]`
+		if report, _ := CheckEntailmentGate(argument); report.Passed {
+			t.Fatal("v2 subproof gap silently closed")
+		}
+	})
+}

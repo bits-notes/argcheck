@@ -43,6 +43,7 @@ type entailmentSchema struct {
 }
 
 type schemaMatchOutcome struct {
+	refusal  bool // a matched material schema blocked by counterfactual polarity
 	matched  bool
 	score    int
 	traction bool
@@ -119,6 +120,15 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "relational existential generalization", arity: 2, match: matchRelationalExistentialGeneralization},
 	{name: "relational universal negative instantiation", arity: 2, match: matchRelationalNegativeInstantiation},
 	{name: "relational scope conversion", arity: 1, match: matchRelationalScope},
+	// v19: VW counterfactuals are separate from every material rule above.
+	{name: "counterfactual modus ponens", arity: 2, match: matchCounterfactualMP},
+	{name: "counterfactual modus tollens", arity: 2, match: matchCounterfactualMT},
+	{name: "counterfactual to material", arity: 1, match: matchCounterfactualMaterial},
+	{name: "counterfactual consequent conjunction", arity: 2, match: matchCounterfactualConjunction},
+	{name: "counterfactual consequent conjunction elimination", arity: 1, match: matchCounterfactualConjunctionElimination},
+	{name: "counterfactual consequent disjunction introduction", arity: 1, match: matchCounterfactualDisjunction},
+	{name: "counterfactual dilemma", arity: variableArity, match: matchCounterfactualDilemma},
+	{name: "counterfactual reflexivity", arity: 1, match: matchCounterfactualReflexivity},
 }
 
 // normalizeClause is the gate's only clause normalization: contractions, case,

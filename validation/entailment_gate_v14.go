@@ -45,9 +45,17 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 		r := c.Ranges[0]
 		first, last := steps[r[0]], steps[r[1]]
 		if first.Kind == numberedArgumentStepAssumption {
+			if reason := v19PolarityFailure(nil, c); reason != "" {
+				report.NearestForm = "conditional proof"
+				report.Mismatch = "conditional proof refused: " + reason + ". " + counterfactualAvailable
+				// Reductio below may still establish this whole proposition; it
+				// does not interpret the counterfactual as a material conditional.
+			}
 			for _, pair := range v13Pairs("conditional", c.Statement) {
 				if equalClauses(first.Statement, pair.left) && equalClauses(last.Statement, pair.right) {
-					return accept("conditional proof")
+					if v19PolarityFailure(nil, c) == "" {
+						return accept("conditional proof")
+					}
 				}
 			}
 			if normalizeClause(last.Statement) == "contradiction" {

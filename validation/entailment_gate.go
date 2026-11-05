@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v18"
+const EntailmentGateCatalogVersion = "v19"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -248,6 +248,7 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 		premises = append(premises, premise)
 	}
 
+	var refusedForm, refusedNote string
 	for _, set := range gateCandidateSets(premises, conclusion) {
 		for _, schema := range entailmentSchemas {
 			if !schemaAcceptsPremiseCount(schema, len(set.premises)) {
@@ -255,6 +256,9 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 			}
 			for _, ordered := range orderedPremiseSelections(set.premises, schema.arity) {
 				outcome := schema.match(ordered, set.conclusion)
+				if outcome.refusal && refusedNote == "" {
+					refusedForm, refusedNote = schema.name, outcome.mismatch
+				}
 				if outcome.matched {
 					report.Passed = true
 					report.Form = schema.name + set.formSuffix
@@ -262,6 +266,16 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 				}
 			}
 		}
+	}
+
+	if refusedNote != "" {
+		report.NearestForm, report.Mismatch = refusedForm, refusedNote
+		return report
+	}
+
+	if form, note := counterfactualFailure(premises, conclusion); note != "" {
+		report.NearestForm, report.Mismatch = form, note
+		return report
 	}
 
 	if len(premises) < 3 {

@@ -62,13 +62,16 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v18", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v19", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
 		"negated conditional", "identity symmetry", "quantifier negation", "conversion",
 		"universal modus tollens", "possibility introduction",
 		"identity reflexivity", "modal duality", "modal distribution",
+		"counterfactual modus ponens", "counterfactual modus tollens", "counterfactual to material",
+		"counterfactual consequent conjunction", "counterfactual consequent conjunction elimination",
+		"counterfactual consequent disjunction introduction", "counterfactual dilemma", "counterfactual reflexivity",
 	} {
 		if !strings.Contains(out, name) {
 			t.Errorf("--forms missing %q:\n%s", name, out)
@@ -127,6 +130,36 @@ func TestArgcheckConsistentClauseScope(t *testing.T) {
 			code, out := runArgcheck(t, input, args...)
 			if code != exitValid || strings.Contains(out, "ambiguity_note") {
 				t.Fatalf("%d %s", code, out)
+			}
+		}
+	}
+}
+
+func TestArgcheckCounterfactualNotes(t *testing.T) {
+	for _, tc := range []struct{ argument, note string }{
+		{"1. If the match had been struck, then the match would light.\n2. The match was struck.\n3. Therefore, the match lights. [1,2]", "visible bridging premise"},
+		{"1. If the match had been struck, then the match would have lit.\n2. Therefore, if the match had not lit, then the match would not have been struck. [1]", "contraposition"},
+	} {
+		for _, jsonOutput := range []bool{false, true} {
+			var args []string
+			if jsonOutput {
+				args = []string{"--json"}
+			}
+			code, out := runArgcheck(t, tc.argument, args...)
+			if code != exitInvalid {
+				t.Fatalf("exit %d: %s", code, out)
+			}
+			if jsonOutput {
+				var v verdict
+				if err := json.Unmarshal([]byte(out), &v); err != nil {
+					t.Fatal(err)
+				}
+				steps := stepsOf(v.Entailment)
+				if len(steps) != 1 || !strings.Contains(steps[0].Mismatch, tc.note) {
+					t.Fatalf("missing JSON note %q: %s", tc.note, out)
+				}
+			} else if !strings.Contains(out, tc.note) {
+				t.Fatalf("missing plain note %q: %s", tc.note, out)
 			}
 		}
 	}

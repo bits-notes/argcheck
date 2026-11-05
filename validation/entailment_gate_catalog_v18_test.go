@@ -6,12 +6,6 @@ import "testing"
 // leading "it is the case that" is the ordinary wrapper and may precede it;
 // "it holds that" is ordinary text with no special meaning.
 
-func TestCatalogV18Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v18" {
-		t.Fatalf("catalog = %q, want v18", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestCatalogV18ParenthesizedBiconditionalSides(t *testing.T) {
 	tests := []struct {
 		name, argument, wantForm string
