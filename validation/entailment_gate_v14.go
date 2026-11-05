@@ -25,6 +25,12 @@ func matchContradiction(p []NumberedArgumentStep, c NumberedArgumentStep) schema
 
 func fitchAssumptionStatement(s NumberedArgumentStep) string {
 	if s.Kind == numberedArgumentStepArbitrary {
+		if m := arbitraryPropertyPattern.FindStringSubmatch(s.Statement); m != nil {
+			if propertyBearer(m[2]) {
+				return m[2] + " has " + m[1]
+			}
+			return s.Statement
+		}
 		if m := arbitraryNamePattern.FindStringSubmatch(s.Statement); m != nil {
 			return m[1] + " is a " + m[2]
 		}
@@ -72,6 +78,15 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 			}
 		}
 		if first.Kind == numberedArgumentStepArbitrary {
+			if arbitraryPropertyPattern.MatchString(first.Statement) {
+				report.NearestForm = "property generalization"
+				ok, reason := propertyGeneralization(first, last, c, steps)
+				if ok {
+					return accept("property generalization")
+				}
+				report.Mismatch = reason
+				return report
+			}
 			report.NearestForm = "universal generalization"
 			m := arbitraryNamePattern.FindStringSubmatch(first.Statement)
 			if m != nil && v13PlainClause(m[2]) {

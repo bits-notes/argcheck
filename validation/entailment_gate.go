@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v19"
+const EntailmentGateCatalogVersion = "v20"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -251,6 +251,9 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 	var refusedForm, refusedNote string
 	for _, set := range gateCandidateSets(premises, conclusion) {
 		for _, schema := range entailmentSchemas {
+			if set.formSuffix != "" && v20PropertyForm(schema.name) {
+				continue
+			}
 			if !schemaAcceptsPremiseCount(schema, len(set.premises)) {
 				continue
 			}

@@ -129,6 +129,13 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "counterfactual consequent disjunction introduction", arity: 1, match: matchCounterfactualDisjunction},
 	{name: "counterfactual dilemma", arity: variableArity, match: matchCounterfactualDilemma},
 	{name: "counterfactual reflexivity", arity: 1, match: matchCounterfactualReflexivity},
+	// v20: typed property quantification, with verbatim predicate content.
+	{name: "property abstraction", arity: 1, match: matchPropertyAbstraction},
+	{name: "property concretion", arity: 1, match: matchPropertyConcretion},
+	{name: "property instantiation", arity: 2, match: matchPropertyInstantiation},
+	{name: "property existential", arity: 1, match: matchPropertyExistential},
+	{name: "shared property", arity: 2, match: matchSharedProperty},
+	{name: "indiscernibility of identicals", arity: 1, match: matchIndiscernibilityOfIdenticals},
 }
 
 // normalizeClause is the gate's only clause normalization: contractions, case,
@@ -2061,11 +2068,19 @@ func permuteClauses(parts []string, from int, visit func([]string) bool) bool {
 }
 
 // EntailmentGateForms lists the names of the accepted inference forms in
-// match order, for tools that describe the catalog.
+// append-only catalog order, for tools that describe the catalog.
 func EntailmentGateForms() []string {
 	names := make([]string, 0, len(entailmentSchemas))
 	for _, schema := range entailmentSchemas {
-		names = append(names, schema.name)
+		if !v20PropertyForm(schema.name) {
+			names = append(names, schema.name)
+		}
 	}
-	return append(names, fitchForms...)
+	names = append(names, fitchForms...)
+	for _, schema := range entailmentSchemas {
+		if v20PropertyForm(schema.name) {
+			names = append(names, schema.name)
+		}
+	}
+	return append(names, "property generalization")
 }

@@ -178,9 +178,6 @@ var v19RejectedCases = []v19GateCase{
 }
 
 func TestCatalogV19(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v19" {
-		t.Fatalf("catalog = %s", EntailmentGateCatalogVersion)
-	}
 	for _, tc := range append(append([]v19GateCase{}, v19AcceptedCases...), v19RejectedCases...) {
 		t.Run(tc.name, func(t *testing.T) {
 			report, result := CheckEntailmentGate(tc.argument)

@@ -204,6 +204,9 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 4. Therefore, either it is not the case that it rains or it is not the case that it snows. [1,2,3]`, "destructive dilemma"},
 	}
 	tests = append(tests, catalogV16GapCases...)
+	for _, tc := range append(append([]v20GateCase{}, v20AcceptedCases[:9]...), v20KeptGaps...) {
+		tests = append(tests, struct{ name, argument, wantForm string }{"v20 " + tc.name, tc.argument, tc.wantForm})
+	}
 	gaps, accepted := 0, 0
 	for _, tc := range tests {
 		if tc.wantForm == "" {

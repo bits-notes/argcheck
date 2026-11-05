@@ -62,7 +62,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v19", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v20", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -72,6 +72,8 @@ func TestArgcheckForms(t *testing.T) {
 		"counterfactual modus ponens", "counterfactual modus tollens", "counterfactual to material",
 		"counterfactual consequent conjunction", "counterfactual consequent conjunction elimination",
 		"counterfactual consequent disjunction introduction", "counterfactual dilemma", "counterfactual reflexivity",
+		"property abstraction", "property concretion", "property instantiation", "property existential",
+		"shared property", "indiscernibility of identicals", "property generalization",
 	} {
 		if !strings.Contains(out, name) {
 			t.Errorf("--forms missing %q:\n%s", name, out)
