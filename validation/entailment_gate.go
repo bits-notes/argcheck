@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v20"
+const EntailmentGateCatalogVersion = "v21"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -251,7 +251,7 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 	var refusedForm, refusedNote string
 	for _, set := range gateCandidateSets(premises, conclusion) {
 		for _, schema := range entailmentSchemas {
-			if set.formSuffix != "" && v20PropertyForm(schema.name) {
+			if set.formSuffix != "" && (v20PropertyForm(schema.name) || v21PropertyForm(schema.name)) {
 				continue
 			}
 			if !schemaAcceptsPremiseCount(schema, len(set.premises)) {
@@ -259,6 +259,9 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 			}
 			for _, ordered := range orderedPremiseSelections(set.premises, schema.arity) {
 				outcome := schema.match(ordered, set.conclusion)
+				if schema.matchScoped != nil {
+					outcome = schema.matchScoped(ordered, set.conclusion, steps)
+				}
 				if outcome.refusal && refusedNote == "" {
 					refusedForm, refusedNote = schema.name, outcome.mismatch
 				}
@@ -296,6 +299,9 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 			selections := orderedPremiseSelections(set.premises, schema.arity)
 			for _, ordered := range selections {
 				outcome := schema.match(ordered, set.conclusion)
+				if schema.matchScoped != nil {
+					outcome = schema.matchScoped(ordered, set.conclusion, steps)
+				}
 				if !schemaAcceptsPremiseCount(schema, len(set.premises)) {
 					outcome.traction = false
 				}

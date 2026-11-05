@@ -58,6 +58,13 @@ func (f *propertyOracleFormula) eval(m propertyOracleModel, eigenproperty int) b
 			}
 		}
 		return false
+	case "distinguishing":
+		for p := 0; p < 1<<m.n; p++ {
+			if member(f.a, p) && !member(f.b, p) {
+				return true
+			}
+		}
+		return false
 	case "shared":
 		for p := 0; p < 1<<m.n; p++ {
 			if member(f.a, p) && member(f.b, p) {
@@ -105,6 +112,8 @@ func (f *propertyOracleFormula) english() string {
 		return a + " has every property that " + b + " has"
 	case "exists":
 		return a + " has some property"
+	case "distinguishing":
+		return a + " has some property that " + b + " lacks"
 	case "shared":
 		return a + " shares some property with " + b
 	case "not":
@@ -122,12 +131,14 @@ func (f *propertyOracleFormula) english() string {
 }
 
 type propertyOracleCandidate struct {
-	name       string
-	premises   []*propertyOracleFormula
-	conclusion *propertyOracleFormula
-	argument   string
-	wantForm   string
-	mustAccept bool
+	name          string
+	premises      []*propertyOracleFormula
+	conclusion    *propertyOracleFormula
+	argument      string
+	wantForm      string
+	mustAccept    bool
+	targetStep    int  // zero means the final conclusion
+	allProperties bool // enumerate every eigenproperty extension
 }
 
 func (c propertyOracleCandidate) text() string {
@@ -163,6 +174,20 @@ func propertyOracleCandidates() []propertyOracleCandidate {
 					add("shared property", poAtom("shared", a, b, 0), prop, other)
 					add("indiscernibility of identicals", poAtom("inclusion", a, b, 0), poAtom("identity", a, b, 0))
 				}
+				difference := poAtom("distinguishing", a, b, 0)
+				add("distinguishing property", difference, prop, poNot(other))
+				add("distinguishing property nonidentity", poNot(poAtom("identity", a, b, 0)), difference)
+				add("distinguishing property non-inclusion", poNot(poAtom("inclusion", b, a, 0)), difference)
+				if a != b {
+					for _, bad := range []propertyOracleCandidate{
+						{name: "distinguishing mismatched F", premises: []*propertyOracleFormula{prop, poNot(poAtom("possession", b, 0, (f+1)%3))}, conclusion: difference},
+						{name: "distinguishing wrong bearer", premises: []*propertyOracleFormula{prop, poNot(other)}, conclusion: poAtom("distinguishing", a, 3-a-b, 0)},
+						{name: "distinguishing positive identity", premises: []*propertyOracleFormula{difference}, conclusion: poAtom("identity", a, b, 0)},
+						{name: "distinguishing positive inclusion", premises: []*propertyOracleFormula{difference}, conclusion: poAtom("inclusion", b, a, 0)},
+					} {
+						result = append(result, bad)
+					}
+				}
 				add("property existential", poAtom("exists", a, 0, 0), prop)
 				for _, bad := range []*propertyOracleFormula{poNot(prop), poAtom("possession", a, 0, (f+1)%3)} {
 					result = append(result, propertyOracleCandidate{name: "invalid abstraction mutation", premises: []*propertyOracleFormula{pred}, conclusion: bad})
@@ -176,6 +201,14 @@ func propertyOracleCandidates() []propertyOracleCandidate {
 	universal := &propertyOracleFormula{op: "forall property", left: poBin("if", vpB, vpA)}
 	result = append(result, propertyOracleCandidate{name: "UG semantic discharge", premises: []*propertyOracleFormula{universal}, conclusion: poAtom("inclusion", 0, 1, 0), argument: v20UG, wantForm: "property generalization", mustAccept: true})
 	result = append(result, propertyOracleCandidate{name: "UG full derivation", premises: []*propertyOracleFormula{poAtom("identity", 0, 1, 0)}, conclusion: poAtom("inclusion", 0, 1, 0), argument: v20UG, wantForm: "property generalization", mustAccept: true})
+	result = append(result,
+		propertyOracleCandidate{name: "property transitivity", premises: []*propertyOracleFormula{poAtom("inclusion", 1, 0, 0), poAtom("inclusion", 2, 1, 0)}, conclusion: poAtom("inclusion", 2, 0, 0), argument: v21Trans, wantForm: "property generalization", mustAccept: true},
+		propertyOracleCandidate{name: "arbitrary instantiation assumption", premises: []*propertyOracleFormula{poAtom("inclusion", 1, 0, 0), vpA}, conclusion: vpB, argument: v21Trans, targetStep: 4, allProperties: true, wantForm: "property instantiation (arbitrary property)", mustAccept: true},
+		propertyOracleCandidate{name: "arbitrary instantiation derived", premises: []*propertyOracleFormula{poAtom("inclusion", 2, 1, 0), vpB}, conclusion: poAtom("variable possession", 2, 0, 0), argument: v21Trans, targetStep: 5, allProperties: true, wantForm: "property instantiation (arbitrary property)", mustAccept: true},
+		propertyOracleCandidate{name: "arbitrary distinguishing", premises: []*propertyOracleFormula{vpA, poNot(vpB)}, conclusion: poAtom("distinguishing", 0, 1, 0), argument: v21ArbitraryDiffer, targetStep: 3, allProperties: true, wantForm: "distinguishing property", mustAccept: true},
+		propertyOracleCandidate{name: "arbitrary wrong bearer", premises: []*propertyOracleFormula{poAtom("inclusion", 1, 2, 0), vpA}, conclusion: vpB, argument: strings.Replace(v21Trans, "Plato has every property that Socrates has", "Plato has every property that Aristotle has", 1), targetStep: 4, allProperties: true},
+		propertyOracleCandidate{name: "arbitrary distinguishing polarity", premises: []*propertyOracleFormula{vpA, vpB}, conclusion: poAtom("distinguishing", 0, 1, 0), argument: strings.ReplaceAll(v21ArbitraryDiffer, "It is not the case that Plato has P", "Plato has P"), targetStep: 3, allProperties: true},
+	)
 	// A free property condition does NOT suffice for generalization.
 	result = append(result, propertyOracleCandidate{name: "invalid free property generalization", premises: []*propertyOracleFormula{poBin("if", poAtom("possession", 1, 0, 0), poAtom("possession", 0, 0, 0))}, conclusion: poAtom("inclusion", 0, 1, 0)})
 	result = append(result, propertyOracleCandidate{name: "identity of indiscernibles", premises: []*propertyOracleFormula{poAtom("inclusion", 0, 1, 0)}, conclusion: poAtom("identity", 0, 1, 0), argument: v20IdentityOfIndiscernibles, wantForm: "property concretion", mustAccept: true})
@@ -307,10 +340,25 @@ func TestEntailmentGatePropertyOracle(t *testing.T) {
 	for i, c := range candidates {
 		report, result := CheckEntailmentGate(c.text())
 		accepted[i] = report.Passed
+		form := ""
+		if len(report.Steps) > 0 {
+			form = report.Steps[len(report.Steps)-1].Form
+		}
+		if c.targetStep != 0 {
+			found := false
+			for _, step := range report.Steps {
+				if step.Step == c.targetStep {
+					accepted[i], form, found = step.Passed, step.Form, true
+				}
+			}
+			if !found {
+				t.Fatalf("missing target step for %s: %s", c.name, result.Message)
+			}
+		}
 		if c.mustAccept && !report.Passed {
 			t.Fatalf("%s refused: %s\n%s", c.name, result.Message, c.text())
 		}
-		if c.wantForm != "" && report.Steps[len(report.Steps)-1].Form != c.wantForm {
+		if c.wantForm != "" && form != c.wantForm {
 			t.Fatalf("%s: %+v", c.name, report)
 		}
 		for _, step := range report.Steps {
@@ -330,18 +378,24 @@ func TestEntailmentGatePropertyOracle(t *testing.T) {
 								m := propertyOracleModel{size, [3]int{a, b, c}, [3]int{f, g, h}}
 								models++
 								for i, candidate := range candidates {
-									premisesTrue := true
-									for _, p := range candidate.premises {
-										if !p.eval(m, 0) {
-											premisesTrue = false
-											break
-										}
+									extensions := 1
+									if candidate.allProperties {
+										extensions = 1 << size
 									}
-									if premisesTrue && !candidate.conclusion.eval(m, 0) {
-										counterexamples[i] = true
-										// Unconditional: any acceptance is checked, including mutated cases.
-										if accepted[i] {
-											t.Fatalf("unsound %s in %+v\n%s", candidate.name, m, candidate.text())
+									for eigen := 0; eigen < extensions; eigen++ {
+										premisesTrue := true
+										for _, p := range candidate.premises {
+											if !p.eval(m, eigen) {
+												premisesTrue = false
+												break
+											}
+										}
+										if premisesTrue && !candidate.conclusion.eval(m, eigen) {
+											counterexamples[i] = true
+											// Unconditional: any acceptance is checked, including mutated cases.
+											if accepted[i] {
+												t.Fatalf("unsound %s in %+v\n%s", candidate.name, m, candidate.text())
+											}
 										}
 									}
 								}
@@ -361,7 +415,7 @@ func TestEntailmentGatePropertyOracle(t *testing.T) {
 			}
 		}
 	}
-	for _, name := range []string{"property abstraction", "property concretion", "property instantiation", "property existential", "shared property", "indiscernibility of identicals", "property generalization"} {
+	for _, name := range []string{"property abstraction", "property concretion", "property instantiation", "property existential", "shared property", "indiscernibility of identicals", "property generalization", "property instantiation (arbitrary property)", "distinguishing property", "distinguishing property nonidentity", "distinguishing property non-inclusion"} {
 		if byForm[name] == 0 {
 			t.Fatalf("uncovered form %s", name)
 		}

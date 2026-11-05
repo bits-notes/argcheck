@@ -83,7 +83,7 @@ func checkV20Case(t *testing.T, tc v20GateCase) {
 }
 
 func TestCatalogV20(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v20" {
+	if EntailmentGateCatalogVersion != "v21" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range append(append([]v20GateCase{}, v20AcceptedCases...), v20KeptGaps...) {
@@ -164,7 +164,7 @@ func TestCatalogV20FormsAppendOnly(t *testing.T) {
 	names := EntailmentGateForms()
 	const oldCount = 74
 	const oldDigest = "e3189c4796b5b03ca3493b3a1a08b9ec3c429801f684a44741d64ad9781e7c61"
-	if len(names) != oldCount+7 {
+	if len(names) < oldCount+7 {
 		t.Fatalf("form count %d", len(names))
 	}
 	// Frozen SHA-256 of the v19 public list, joined by newlines. It includes
@@ -173,7 +173,7 @@ func TestCatalogV20FormsAppendOnly(t *testing.T) {
 		t.Fatalf("v19 catalog prefix changed: %s", got)
 	}
 	want := "property abstraction|property concretion|property instantiation|property existential|shared property|indiscernibility of identicals|property generalization"
-	if got := strings.Join(names[oldCount:], "|"); got != want {
+	if got := strings.Join(names[oldCount:oldCount+7], "|"); got != want {
 		t.Fatalf("v20 forms: %s", got)
 	}
 }

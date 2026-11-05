@@ -207,6 +207,9 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 	for _, tc := range append(append([]v20GateCase{}, v20AcceptedCases[:9]...), v20KeptGaps...) {
 		tests = append(tests, struct{ name, argument, wantForm string }{"v20 " + tc.name, tc.argument, tc.wantForm})
 	}
+	for _, tc := range v21AcceptedCases[:4] {
+		tests = append(tests, struct{ name, argument, wantForm string }{"v21 " + tc.name, tc.argument, tc.wantForm})
+	}
 	gaps, accepted := 0, 0
 	for _, tc := range tests {
 		if tc.wantForm == "" {
@@ -270,4 +273,32 @@ func TestEntailmentGateV19GapLedger(t *testing.T) {
 			t.Fatal("v2 subproof gap silently closed")
 		}
 	})
+}
+
+// Scoped rows name the newly supported inner form, rather than only the
+// pre-existing discharge form at the end of the complete proof.
+func TestEntailmentGateV21PropertyGapLedger(t *testing.T) {
+	for _, tc := range []struct {
+		name, argument, wantForm string
+		target                   int
+	}{
+		{"arbitrary-property instantiation", v21Trans, "property instantiation (arbitrary property)", 4},
+		{"distinguishing property", v21Differ, "distinguishing property", 3},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			report, result := CheckEntailmentGate(tc.argument)
+			if !report.Passed {
+				t.Fatalf("expected accepted gap: %s", result.Message)
+			}
+			for _, step := range report.Steps {
+				if step.Step == tc.target {
+					if !step.Passed || step.Form != tc.wantForm {
+						t.Fatalf("want %s: %+v", tc.wantForm, step)
+					}
+					return
+				}
+			}
+			t.Fatalf("missing target step %d", tc.target)
+		})
+	}
 }

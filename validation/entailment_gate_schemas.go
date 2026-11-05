@@ -37,9 +37,10 @@ type clausePair struct {
 }
 
 type entailmentSchema struct {
-	name  string
-	arity int
-	match func([]NumberedArgumentStep, NumberedArgumentStep) schemaMatchOutcome
+	name        string
+	arity       int
+	match       func([]NumberedArgumentStep, NumberedArgumentStep) schemaMatchOutcome
+	matchScoped func([]NumberedArgumentStep, NumberedArgumentStep, map[int]NumberedArgumentStep) schemaMatchOutcome
 }
 
 type schemaMatchOutcome struct {
@@ -136,6 +137,11 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "property existential", arity: 1, match: matchPropertyExistential},
 	{name: "shared property", arity: 2, match: matchSharedProperty},
 	{name: "indiscernibility of identicals", arity: 1, match: matchIndiscernibilityOfIdenticals},
+	// v21: scope-bound property names and distinguishing properties.
+	{name: "property instantiation (arbitrary property)", arity: 2, match: matchNoPropertyScope, matchScoped: matchArbitraryPropertyInstantiation},
+	{name: "distinguishing property", arity: 2, match: matchDistinguishingProperty, matchScoped: matchScopedDistinguishingProperty},
+	{name: "distinguishing property nonidentity", arity: 1, match: matchDistinguishingPropertyNonidentity},
+	{name: "distinguishing property non-inclusion", arity: 1, match: matchDistinguishingPropertyNonInclusion},
 }
 
 // normalizeClause is the gate's only clause normalization: contractions, case,
@@ -2072,7 +2078,7 @@ func permuteClauses(parts []string, from int, visit func([]string) bool) bool {
 func EntailmentGateForms() []string {
 	names := make([]string, 0, len(entailmentSchemas))
 	for _, schema := range entailmentSchemas {
-		if !v20PropertyForm(schema.name) {
+		if !v20PropertyForm(schema.name) && !v21PropertyForm(schema.name) {
 			names = append(names, schema.name)
 		}
 	}
@@ -2082,5 +2088,11 @@ func EntailmentGateForms() []string {
 			names = append(names, schema.name)
 		}
 	}
-	return append(names, "property generalization")
+	names = append(names, "property generalization")
+	for _, schema := range entailmentSchemas {
+		if v21PropertyForm(schema.name) {
+			names = append(names, schema.name)
+		}
+	}
+	return names
 }
