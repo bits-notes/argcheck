@@ -183,6 +183,9 @@ func conditionalCandidatesWithNormalizer(statement string, normalize func(string
 
 func biconditionalCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
+	if strings.HasPrefix(statement, biconditionalSidePrefix) {
+		return scaffoldedBiconditionalCandidates(statement)
+	}
 	const connective = " if and only if "
 	if strings.Count(statement, connective) != 1 {
 		return nil
@@ -507,12 +510,14 @@ func instanceCandidates(statement string) []clausePair {
 	return result
 }
 
-// groundInstanceCandidates narrows instanceCandidates to an unquantified
-// witness with its first copula as the subject/predicate boundary. This keeps
-// the existential forms from importing existence from universals or treating
-// an embedded copula as a second, invented witness.
+// groundInstanceCandidates enumerates copulas for an unquantified witness.
+// Callers must share the entire subject verbatim across witness premises and
+// any ground conclusion; a suffix inside a noun phrase is never a new witness.
 func groundInstanceCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
+	if hasOuterGateOperator(statement) || quantifiedInstanceSubject(statement) {
+		return nil
+	}
 	for _, prefix := range []string{
 		"a ", "an ", "all ", "any ", "each ", "every ", "everything ", "everyone ",
 		"few ", "if ", "it is not the case", "many ", "most ", "necessarily ",
@@ -524,21 +529,16 @@ func groundInstanceCandidates(statement string) []clausePair {
 		}
 	}
 
-	candidates := instanceCandidates(statement)
-	if len(candidates) == 0 {
-		return nil
-	}
-	shortestSubject := len(statement) + 1
-	for _, candidate := range candidates {
-		if len(candidate.left) < shortestSubject {
-			shortestSubject = len(candidate.left)
+	result := make([]clausePair, 0)
+	for _, candidate := range instanceCandidates(statement) {
+		// A later copula can delimit a whole that-clause noun phrase, but
+		// cannot promote an embedded assertion or modal report to a witness.
+		if strings.Contains(candidate.left, " that ") || len(instanceCandidates(candidate.left)) > 0 {
+			if !wholeTermContext(statement, candidate.left) {
+				continue
+			}
 		}
-	}
-	result := make([]clausePair, 0, 1)
-	for _, candidate := range candidates {
-		if len(candidate.left) == shortestSubject {
-			result = append(result, candidate)
-		}
+		result = append(result, candidate)
 	}
 	return result
 }
@@ -1579,6 +1579,21 @@ func matchUniversalNegativeSyllogism(premises []NumberedArgumentStep, conclusion
 // as clauses. The conclusion alone may add an indefinite article before G.
 func matchUniversalNegativeInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
+	for _, negated := range negationCandidates(conclusion.Statement) {
+		for _, instance := range groundInstanceCandidates(premises[0].Statement) {
+			for _, result := range groundInstanceCandidates(negated) {
+				for _, negative := range universalNegativeCandidates(premises[1].Statement) {
+					for _, direction := range []clausePair{negative, {left: negative.right, right: negative.left}} {
+						if equalClauses(instance.left, result.left) &&
+							equalClausesWithOptionalIndefiniteArticle(instance.right, direction.left) &&
+							equalClausesWithOptionalIndefiniteArticle(result.right, direction.right) {
+							return schemaMatchOutcome{matched: true, traction: true, score: 3}
+						}
+					}
+				}
+			}
+		}
+	}
 	for _, instance := range instanceCandidates(premises[0].Statement) {
 		if quantifiedInstanceSubject(instance.left) {
 			continue

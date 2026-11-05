@@ -262,17 +262,13 @@ func matchSchematicExistentialIntroduction(premises []NumberedArgumentStep, conc
 		outcome.mismatch = fmt.Sprintf("premise %d contains a standalone placeholder", premises[0].Number)
 		return outcome
 	}
-	transparent, hasQuantifier := transparentContext(premiseText)
-	if !transparent {
-		outcome.mismatch = fmt.Sprintf("premise %d is an opaque (intensional, modal, existence or quoted) context", premises[0].Number)
-		return outcome
-	}
 
 	marker := string(schematicVariableMarkers[variable])
 	outcome.mismatch = fmt.Sprintf("conclusion %d matrix is not premise %d with every occurrence of one singular term replaced by %c", conclusion.Number, premises[0].Number, variable)
 	for _, substitution := range unifySchematicTemplate(template, premiseText, nil) {
 		term := substitution[variable]
-		if !referringTerm(term, hasQuantifier) {
+		transparent, hasQuantifier := substitutionContext(premiseText, term)
+		if !transparent || !substitutionTerm(term, hasQuantifier) {
 			continue
 		}
 		replaced, count, ok := replaceTermOccurrences(premiseText, term, marker)
@@ -298,19 +294,16 @@ func matchIdentitySubstitution(premises []NumberedArgumentStep, conclusion Numbe
 	}
 	premiseText := normalizeClausePreservingCase(premises[1].Statement)
 	outcome := schemaMatchOutcome{traction: true}
-	transparent, premiseQuantifier := transparentContext(premiseText)
-	conclusionTransparent, conclusionQuantifier := transparentContext(normalizeClausePreservingCase(conclusion.Statement))
-	if !transparent || !conclusionTransparent {
-		outcome.mismatch = fmt.Sprintf("premise %d or conclusion %d is an opaque (intensional, modal, existence or quoted) context", premises[1].Number, conclusion.Number)
-		return outcome
-	}
-	hasQuantifier := premiseQuantifier || conclusionQuantifier
+
 	outcome.mismatch = fmt.Sprintf("conclusion %d is not premise %d with every occurrence of one identical term replaced by the other", conclusion.Number, premises[1].Number)
 	for _, identity := range identities {
-		if !referringTerm(identity.left, hasQuantifier) || !referringTerm(identity.right, hasQuantifier) {
-			continue
-		}
 		for _, direction := range [][2]string{{identity.left, identity.right}, {identity.right, identity.left}} {
+			transparent, premiseQuantifier := substitutionContext(premiseText, direction[0])
+			conclusionTransparent, conclusionQuantifier := substitutionContext(normalizeClausePreservingCase(conclusion.Statement), direction[1])
+			hasQuantifier := premiseQuantifier || conclusionQuantifier
+			if !transparent || !conclusionTransparent || !substitutionTerm(identity.left, hasQuantifier) || !substitutionTerm(identity.right, hasQuantifier) {
+				continue
+			}
 			replaced, count, ok := replaceTermOccurrences(premiseText, direction[0], direction[1])
 			if !ok || count == 0 {
 				continue

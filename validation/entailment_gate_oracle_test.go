@@ -62,7 +62,8 @@ func (f *gateOracleFormula) literal() bool {
 // Render bounded formulas with explicit scope. Conjunctions containing any
 // compound child use the both-that scaffold; a negated conjunction does too.
 // Either joins literals or atomic conjunctions; nested conditionals occur only
-// in consequents. No ambiguous flattened and/or tree or compound iff is emitted.
+// in consequents. Compound iff sides use the parenthesized v16 scaffold; no ambiguous
+// flattened and/or tree is emitted.
 func (f *gateOracleFormula) english() (string, bool) {
 	if f.depth() > 2 {
 		return "", false
@@ -104,6 +105,7 @@ func (f *gateOracleFormula) english() (string, bool) {
 		if f.left.op == "atom" && f.right.op == "atom" {
 			return left + " if and only if " + right, true
 		}
+		return "it holds that (" + left + ") if and only if (" + right + ")", true
 	}
 	return "", false
 }
@@ -198,6 +200,16 @@ func gateOracleCandidates(pool []*gateOracleFormula) []gateOracleCandidate {
 		for _, q := range atoms {
 			for _, r := range atoms {
 				seeds := []gateOracleCandidate{
+					// v16: (P -> Q) <-> R, its valid uses and invalid projections.
+					{[]*gateOracleFormula{iff(implies(p, q), r), not(r)}, not(implies(p, q))},
+					{[]*gateOracleFormula{iff(implies(p, q), r), not(implies(p, q))}, not(r)},
+					{[]*gateOracleFormula{iff(implies(p, q), r), iff(r, p)}, iff(implies(p, q), p)},
+					{[]*gateOracleFormula{iff(implies(p, q), r), r}, implies(p, q)},
+					{[]*gateOracleFormula{iff(implies(p, q), r), implies(p, q)}, r},
+					{[]*gateOracleFormula{iff(implies(p, q), r)}, iff(r, implies(p, q))},
+					{[]*gateOracleFormula{iff(implies(p, q), r)}, p},
+					{[]*gateOracleFormula{iff(implies(p, q), r)}, q},
+					{[]*gateOracleFormula{iff(implies(p, q), r)}, r},
 					// Scope controls: a nested connective is not a top-level one.
 					{[]*gateOracleFormula{q}, not(or(p, q))},
 					{[]*gateOracleFormula{q}, and(p, or(r, q))},

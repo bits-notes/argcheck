@@ -6,12 +6,6 @@ import (
 	"testing"
 )
 
-func TestCatalogV15Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v15" {
-		t.Fatalf("catalog = %q, want v15", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestEntailmentGateCatalogV15(t *testing.T) {
 	for _, tc := range []struct{ name, premise, conclusion, form string }{
 		{"reflexivity", "Socrates is a man", "Socrates is identical to Socrates", "identity reflexivity"},

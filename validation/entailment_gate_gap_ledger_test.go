@@ -186,6 +186,7 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 3. either it is not the case that it snows or it is not the case that the street is wet.
 4. Therefore, either it is not the case that it rains or it is not the case that it snows. [1,2,3]`, "destructive dilemma"},
 	}
+	tests = append(tests, catalogV16GapCases...)
 	gaps, accepted := 0, 0
 	for _, tc := range tests {
 		if tc.wantForm == "" {
@@ -218,5 +219,5 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 			}
 		})
 	}
-	t.Logf("ledger: %d rejection rows (three intentionally rejected plus one relation boundary), %d accepted rows", gaps, accepted)
+	t.Logf("ledger: %d rejection rows (intentional boundaries and adversarial controls), %d accepted rows", gaps, accepted)
 }
