@@ -58,7 +58,7 @@ func v13Pairs(op, statement string) []clausePair {
 		}
 	case "biconditional":
 		pairs := biconditionalCandidates(s)
-		if len(pairs) > 0 && (strings.HasPrefix(s, biconditionalSidePrefix) || (v13PlainClause(pairs[0].left) && v13PlainClause(pairs[0].right))) {
+		if len(pairs) > 0 && (isScaffoldedBiconditional(s) || (v13PlainClause(pairs[0].left) && v13PlainClause(pairs[0].right))) {
 			return pairs
 		}
 	case "disjunction":

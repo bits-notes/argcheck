@@ -141,12 +141,6 @@ func TestEntailmentGateV17AmbiguityNote(t *testing.T) {
 	}
 }
 
-func TestCatalogV17Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v17" {
-		t.Fatalf("catalog = %q, want v17", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestEntailmentGateV17ConsistentScopeOccurrences(t *testing.T) {
 	report, r := CheckEntailmentGate(relationArgument([]string{"Every student admires some teacher"}, "Every student admires some teacher"))
 	if !r.Passed || len(report.Steps) != 1 || report.Steps[0].Form != "self-entailment" || report.Steps[0].AmbiguityNote != "" {

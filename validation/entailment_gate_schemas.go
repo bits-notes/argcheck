@@ -188,8 +188,8 @@ func conditionalCandidatesWithNormalizer(statement string, normalize func(string
 
 func biconditionalCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
-	if strings.HasPrefix(statement, biconditionalSidePrefix) {
-		return scaffoldedBiconditionalCandidates(statement)
+	if scaffold, ok := scaffoldedBiconditional(statement); ok {
+		return scaffoldedBiconditionalCandidates(scaffold)
 	}
 	const connective = " if and only if "
 	if strings.Count(statement, connective) != 1 {

@@ -2,12 +2,22 @@ package validation
 
 import "strings"
 
-// Parentheses delimit both sides, even when either contains another scaffold.
-// The prefix is deliberately distinct from the stripped "it is the case that".
-const biconditionalSidePrefix = "it holds that "
+// Parentheses alone delimit both sides of a scaffolded biconditional, even when
+// either side contains another scaffold: "(X) if and only if (Y)". A leading
+// "it is the case that" is the ordinary clause wrapper and is stripped first, so
+// "It is the case that (X) if and only if (Y)" is the same clause. No other
+// prefix is special: "it holds that" is ordinary text (catalog v18).
+func scaffoldedBiconditional(statement string) (string, bool) {
+	s := stripClauseWrappers(normalizeClause(statement))
+	return s, strings.HasPrefix(s, "(")
+}
+
+func isScaffoldedBiconditional(statement string) bool {
+	_, ok := scaffoldedBiconditional(statement)
+	return ok
+}
 
 func scaffoldedBiconditionalCandidates(s string) []clausePair {
-	s = strings.TrimPrefix(s, biconditionalSidePrefix)
 	group := func(s string) (string, string, bool) {
 		if !strings.HasPrefix(s, "(") {
 			return "", "", false

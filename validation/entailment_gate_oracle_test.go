@@ -105,7 +105,7 @@ func (f *gateOracleFormula) english() (string, bool) {
 		if f.left.op == "atom" && f.right.op == "atom" {
 			return left + " if and only if " + right, true
 		}
-		return "it holds that (" + left + ") if and only if (" + right + ")", true
+		return "(" + left + ") if and only if (" + right + ")", true
 	}
 	return "", false
 }

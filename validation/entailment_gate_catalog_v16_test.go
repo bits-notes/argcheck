@@ -8,7 +8,7 @@ import (
 // Included in the central gap ledger so accepted and refused boundaries remain
 // visible there, rather than only in this version's regression tests.
 var catalogV16GapCases = []struct{ name, argument, wantForm string }{
-	{"v16 compound biconditional elimination", `1. It holds that (If it rains, then the street is wet) if and only if (The city is prepared).
+	{"v16 compound biconditional elimination", `1. (If it rains, then the street is wet) if and only if (The city is prepared).
 2. Therefore, If If it rains, then the street is wet, then The city is prepared. [1]`, "biconditional elimination"},
 	{"v16 embedded copula existential introduction", `1. The claim that the store is nearby is false.
 2. The claim that the store is nearby is a claim.
@@ -80,7 +80,7 @@ var catalogV16GapCases = []struct{ name, argument, wantForm string }{
 	{"v16 whole term possessive not entire object", `1. The claim that the store is nearby is identical to Ngo's claim.
 2. Ada repeats The claim that the store is nearby's wording.
 3. Therefore, Ada repeats Ngo's claim's wording. [1,2]`, ""},
-	{"v16 lexical drift", `1. It holds that (If it rains, then the street is wet) if and only if (The city is prepared).
+	{"v16 lexical drift", `1. (If it rains, then the street is wet) if and only if (The city is prepared).
 2. The city is prepared.
 3. Therefore, If it rains, then the road is wet. [1,2]`, ""},
 	{"v16 unscaffolded conditional remains outer", `1. If it rains, then the street is wet if and only if the city is prepared.
@@ -107,7 +107,7 @@ var catalogV16GapCases = []struct{ name, argument, wantForm string }{
 }
 
 func TestCatalogV16BiconditionalCompoundSides(t *testing.T) {
-	iff := func(p, q string) string { return "It holds that (" + p + ") if and only if (" + q + ")" }
+	iff := func(p, q string) string { return "(" + p + ") if and only if (" + q + ")" }
 	neg := func(p string) string { return "It is not the case that " + p }
 	cond := func(p, q string) string { return "If " + p + ", then " + q }
 	compounds := []string{
@@ -166,12 +166,12 @@ func TestCatalogV16BiconditionalCompoundSides(t *testing.T) {
 
 func TestCatalogV16MalformedScaffold(t *testing.T) {
 	for _, s := range []string{
-		"It holds that () if and only if (it rains)",
-		"It holds that (it rains) if and only if ()",
-		"It holds that (it rains if and only if (it snows)",
-		"It holds that (it rains) if and only if (it snows))",
-		"It holds that (it rains) if and only if (it snows) and it hails",
-		"It holds that it rains if and only if it snows",
+		"() if and only if (it rains)",
+		"(it rains) if and only if ()",
+		"(it rains if and only if (it snows)",
+		"(it rains) if and only if (it snows))",
+		"(it rains) if and only if (it snows) and it hails",
+		"It is the case that () if and only if (it rains)",
 	} {
 		if got := biconditionalCandidates(s); len(got) != 0 {
 			t.Errorf("malformed scaffold parsed: %s: %+v", s, got)
