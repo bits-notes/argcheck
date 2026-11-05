@@ -5,12 +5,6 @@ import (
 	"testing"
 )
 
-func TestCatalogV16Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v16" {
-		t.Fatalf("catalog = %q, want v16", EntailmentGateCatalogVersion)
-	}
-}
-
 // Included in the central gap ledger so accepted and refused boundaries remain
 // visible there, rather than only in this version's regression tests.
 var catalogV16GapCases = []struct{ name, argument, wantForm string }{

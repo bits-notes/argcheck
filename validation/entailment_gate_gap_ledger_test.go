@@ -23,6 +23,23 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 	tests := []struct {
 		name, argument, wantForm string
 	}{
+		// v17 relational additions; these rows were absent in the v15 base ledger.
+		{"relational UI", `1. Alice admires every teacher.
+2. Bob is a teacher.
+3. Therefore, Alice admires Bob. [1,2]`, "non-copular universal instantiation"},
+		{"relational EG", `1. Alice admires Bob.
+2. Bob is a teacher.
+3. Therefore, Alice admires some teacher. [1,2]`, "relational existential generalization"},
+		{"mixed quantifiers", `1. Every student admires some teacher.
+2. Alice is a student.
+3. Therefore, Alice admires some teacher. [1,2]`, "non-copular universal instantiation"},
+		{"scope flip intentional rejection", `1. Every student admires some teacher.
+2. Therefore, Some teacher is such that every student admires that teacher. [1]`, ""},
+		{"passive conversion intentional rejection", `1. Alice admires Bob.
+2. Therefore, Bob is admired by Alice. [1]`, ""},
+		{"three-place known gap", `1. Every student gives every teacher some book.
+2. Alice is a student.
+3. Therefore, Alice gives every teacher some book. [1,2]`, ""},
 		// Remaining relation boundary: an arbitrary relation need not be transitive.
 		{"relation transitivity without premise", `1. Ada admires Ben.
 2. Ben admires Cy.
@@ -219,5 +236,5 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 			}
 		})
 	}
-	t.Logf("ledger: %d rejection rows (intentional boundaries and adversarial controls), %d accepted rows", gaps, accepted)
+	t.Logf("ledger: %d rejection rows (intentional boundaries, adversarial controls and the three-place gap), %d accepted rows", gaps, accepted)
 }

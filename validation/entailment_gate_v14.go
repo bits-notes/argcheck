@@ -9,7 +9,7 @@ import (
 // Scoped schemas consume ranges, never a flattened collection of their lines.
 // The parser establishes ownership; GateNumberedArgument checks it again for
 // callers constructing an AST directly. Inner conclusions are gated normally.
-var fitchForms = []string{"conditional proof", "reductio", "proof by cases", "universal generalization", "existential elimination"}
+var fitchForms = []string{"conditional proof", "reductio", "proof by cases", "universal generalization", "existential elimination", "relational universal generalization", "relational existential elimination"}
 
 func matchContradiction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	if normalizeClause(c.Statement) != "contradiction" {
@@ -71,6 +71,9 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 					report.Mismatch = reason
 					return report
 				}
+				if matchRelationalUG(last, c, m[1], m[2]) {
+					return accept("relational universal generalization")
+				}
 				// The eigenname must be the verbatim subject, not merely an occurrence
 				// somewhere inside a copular clause or a case-normalized substitute.
 				prefix := m[1] + " is "
@@ -120,6 +123,13 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 		r := c.Ranges[0]
 		first, last := steps[r[0]], steps[r[1]]
 		if first.Kind == numberedArgumentStepAssumption && equalClauses(last.Statement, c.Statement) {
+			if name := relationalEEName(first, steps[c.Citations[0]]); name != "" {
+				if reason := fitchFreshName(name, first.Number, c, steps); reason != "" {
+					report.Mismatch = reason
+					return report
+				}
+				return accept("relational existential elimination")
+			}
 			// Reuse the existing existential introduction grammar in reverse: the
 			// assumption supplies exactly the witness's membership and predicates.
 			for _, pair := range conjunctionCandidates(first.Statement) {

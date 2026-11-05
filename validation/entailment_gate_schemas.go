@@ -114,6 +114,11 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "identity reflexivity", arity: 1, match: matchIdentityReflexivity},
 	{name: "modal duality", arity: 1, match: matchModalDuality},
 	{name: "modal distribution", arity: 1, match: matchModalDistribution},
+	// v17 forms are appended to make the parallel v16 rebase mechanical.
+	{name: "relational universal instantiation", arity: 2, match: matchRelationalUniversalInstantiation},
+	{name: "relational existential generalization", arity: 2, match: matchRelationalExistentialGeneralization},
+	{name: "relational universal negative instantiation", arity: 2, match: matchRelationalNegativeInstantiation},
+	{name: "relational scope conversion", arity: 1, match: matchRelationalScope},
 }
 
 // normalizeClause is the gate's only clause normalization: contractions, case,
@@ -1430,6 +1435,9 @@ func matchIdentityTransitivity(premises []NumberedArgumentStep, conclusion Numbe
 // coordinated/conditional predicates. Predicate agreement is exact: no verb
 // inflection or termCandidates tolerance is applied to the verb phrase.
 func matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if outcome := matchRelationalUniversalInstantiation(premises, conclusion); outcome.matched {
+		return outcome
+	}
 	statement := normalizeClause(premises[0].Statement)
 	remainder := ""
 	for _, prefix := range []string{"all ", "every "} {

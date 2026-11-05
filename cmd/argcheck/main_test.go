@@ -62,7 +62,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v16", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v17", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -94,6 +94,40 @@ func TestArgcheckFitch(t *testing.T) {
 	for _, name := range []string{"conditional proof", "reductio", "contradiction introduction", "proof by cases", "universal generalization", "existential elimination"} {
 		if code != 0 || !strings.Contains(out, name) {
 			t.Fatalf("missing %s: %s", name, out)
+		}
+	}
+}
+
+func TestArgcheckRelationalAmbiguity(t *testing.T) {
+	const input = "1. Every student admires some teacher.\n2. Therefore, Some teacher is such that every student admires that teacher. [1]"
+	for _, args := range [][]string{nil, {"--json"}} {
+		code, out := runArgcheck(t, input, args...)
+		if code != exitInvalid || !strings.Contains(out, "has two scope readings") || !strings.Contains(out, "some teacher is admired by every student") {
+			t.Fatalf("%d %s", code, out)
+		}
+		if len(args) > 0 {
+			var v verdict
+			if err := json.Unmarshal([]byte(out), &v); err != nil {
+				t.Fatal(err)
+			}
+			steps := v.Entailment.Details["steps"].([]any)
+			if note, ok := steps[0].(map[string]any)["ambiguity_note"].(string); !ok || !strings.Contains(note, "Some teacher is such that") {
+				t.Fatalf("missing note: %s", out)
+			}
+		}
+	}
+}
+
+func TestArgcheckConsistentClauseScope(t *testing.T) {
+	for _, input := range []string{
+		"1. Every student admires some teacher.\n2. Therefore, every student admires some teacher. [1]",
+		"1. If every student admires some teacher, then the school thrives.\n2. Every student admires some teacher.\n3. Therefore, the school thrives. [1,2]",
+	} {
+		for _, args := range [][]string{nil, {"--json"}} {
+			code, out := runArgcheck(t, input, args...)
+			if code != exitValid || strings.Contains(out, "ambiguity_note") {
+				t.Fatalf("%d %s", code, out)
+			}
 		}
 	}
 }

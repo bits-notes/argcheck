@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v16"
+const EntailmentGateCatalogVersion = "v17"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -26,14 +26,15 @@ type EntailmentGateReport struct {
 // EntailmentGateStepReport records the matched schema or nearest failed form
 // for one conclusion step.
 type EntailmentGateStepReport struct {
-	Step        int      `json:"step"`
-	Depth       int      `json:"depth,omitempty"`
-	Ranges      [][2]int `json:"ranges,omitempty"`
-	Citations   []int    `json:"citations"`
-	Passed      bool     `json:"passed"`
-	Form        string   `json:"form,omitempty"`
-	NearestForm string   `json:"nearest_form,omitempty"`
-	Mismatch    string   `json:"mismatch,omitempty"`
+	Step          int      `json:"step"`
+	Depth         int      `json:"depth,omitempty"`
+	Ranges        [][2]int `json:"ranges,omitempty"`
+	Citations     []int    `json:"citations"`
+	Passed        bool     `json:"passed"`
+	Form          string   `json:"form,omitempty"`
+	NearestForm   string   `json:"nearest_form,omitempty"`
+	Mismatch      string   `json:"mismatch,omitempty"`
+	AmbiguityNote string   `json:"ambiguity_note,omitempty"`
 }
 
 // InertCitationReport identifies a conclusion whose full citation set fails
@@ -183,6 +184,16 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 				if !schema.match(selection, conclusion).matched {
 					continue
 				}
+				// A direct schema match is only a candidate certificate: v17
+				// must also certify every independent quantifier scope.
+				subsetConclusion := conclusion
+				subsetConclusion.Citations = make([]int, len(selection))
+				for i, premise := range selection {
+					subsetConclusion.Citations[i] = premise.Number
+				}
+				if !gateConclusionStep(subsetConclusion, stepsByNumber).Passed {
+					continue
+				}
 				used := make(map[int]bool, len(selection))
 				usedCitations := make([]int, 0, len(selection))
 				for _, premise := range selection {
@@ -212,6 +223,10 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 }
 
 func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	return gateRelationalScopes(conclusion, steps)
+}
+
+func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	report := EntailmentGateStepReport{
 		Step:      conclusion.Number,
 		Depth:     conclusion.Depth,
