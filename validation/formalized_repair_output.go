@@ -109,7 +109,7 @@ func repairAssociatedConditional(text string, mappings []FormalizationLineMappin
 
 func repairAssociatedConditionalSteps(text string, mappings []FormalizationLineMapping) []NumberedArgumentStep {
 	var found []NumberedArgumentStep
-	argument, _ := ParseNumberedArgumentAllowingNoConclusions(text)
+	argument, _ := ParseFlatNumberedArgumentAllowingNoConclusions(text)
 	mapped := make(map[int]bool)
 	for _, mapping := range mappings {
 		if len(mapping.FromAsFoundLines) > 0 || mapping.FromSourceQuote != nil {
@@ -240,6 +240,9 @@ func (v formalizedRepairOutputValidator) Validate(ctx context.Context, output st
 			Details: map[string]any{"argument_validation": argumentResult.Details},
 		}
 	}
+	if _, flat := ParseFlatNumberedArgumentAllowingNoConclusions(*repair.Argument); !flat.Passed {
+		return flat
+	}
 	if len(*repair.LineMapping) == 0 {
 		return Result{Passed: false, Message: "formalized repair line_mapping must contain at least one entry"}
 	}
@@ -259,7 +262,7 @@ func (v formalizedRepairOutputValidator) Validate(ctx context.Context, output st
 			return Result{Passed: false, Message: fmt.Sprintf("line_mapping[%d].from_as_found_lines must contain at least one line", index)}
 		}
 		if mapping.FromSourceQuote != nil {
-			parsed, _ := ParseNumberedArgumentAllowingNoConclusions(*repair.Argument)
+			parsed, _ := ParseFlatNumberedArgumentAllowingNoConclusions(*repair.Argument)
 			// Without prompt context, still check length and lexical alignment. Source
 			// membership is checked by the prompt-aware validator and by assembly.
 			if _, _, err := ValidateSourceQuote(*mapping.FromSourceQuote, parsed.Steps[mapping.RepairedLine-1].Statement, *mapping.FromSourceQuote); err != nil {
@@ -349,7 +352,7 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 	}
 	expectedAnchor := FormalizationCoverageAnchorAsFound
 	anchorArgument := asFound
-	if _, parsed := ParseNumberedArgumentAllowingNoConclusions(source); parsed.Passed {
+	if _, parsed := ParseFlatNumberedArgumentAllowingNoConclusions(source); parsed.Passed {
 		expectedAnchor = FormalizationCoverageAnchorSource
 		anchorArgument = source
 	}
@@ -371,7 +374,7 @@ func ValidateFormalizedRepairOutputWithPrompt(ctx context.Context, output, promp
 		dropped[index] = FormalizationDroppedContent{AsFoundLine: entry.AsFoundLine, Kind: entry.Kind, Reason: entry.Reason}
 	}
 
-	repairedArgument, parsed := ParseNumberedArgumentAllowingNoConclusions(*repair.Argument)
+	repairedArgument, parsed := ParseFlatNumberedArgumentAllowingNoConclusions(*repair.Argument)
 	if !parsed.Passed {
 		return Result{Passed: false, Message: "parse formalized repair argument for coverage: " + parsed.Message}
 	}
@@ -552,7 +555,7 @@ func unmappedRepairMessage(step NumberedArgumentStep, source, asFound, anchor st
 	if anchor == FormalizationCoverageAnchorSource {
 		anchorText, label = source, "source"
 	}
-	if parsed, result := ParseNumberedArgumentAllowingNoConclusions(anchorText); result.Passed {
+	if parsed, result := ParseFlatNumberedArgumentAllowingNoConclusions(anchorText); result.Passed {
 		for _, original := range parsed.Steps {
 			if formalizedRepairStatementPresent(step.Statement, original.Statement) {
 				return fmt.Sprintf("repaired premise line %d restates part of %s line %d (%q); add %d to its from_as_found_lines (a split premise may map to several repaired lines)", step.Number, label, original.Number, original.Statement, original.Number)

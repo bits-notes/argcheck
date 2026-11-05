@@ -407,3 +407,96 @@ func TestGateOracleTruthSemantics(t *testing.T) {
 		}
 	}
 }
+
+// Wrap every existing one-step candidate in a conditional proof, and derive
+// reductios by contradicting its conclusion. The expected semantics use only
+// the oracle AST; neither acceptance nor a presumed valid inner schema filters
+// candidates. Wrong endpoints and wrong reductio conclusions are also tested.
+func TestEntailmentGateFitchTruthTableOracle(t *testing.T) {
+	pool := gateOraclePool()
+	total, valid, accepted := 0, 0, 0
+	byForm := map[string]int{}
+	check := func(argument string, premises []*gateOracleFormula, conclusion *gateOracleFormula) {
+		t.Helper()
+		if _, r := ParseNumberedArgument(argument, numberedArgumentOptions{}); !r.Passed {
+			t.Fatalf("oracle syntax: %s\n%s", r.Message, argument)
+		}
+		report, result := CheckEntailmentGate(argument)
+		if report.Passed != result.Passed {
+			t.Fatal("inconsistent gate result")
+		}
+		counterexample := (gateOracleCandidate{premises: premises, conclusion: conclusion}).counterexample()
+		total++
+		if counterexample == -1 {
+			valid++
+		}
+		if report.Passed {
+			accepted++
+			byForm[report.Steps[len(report.Steps)-1].Form]++
+			if counterexample != -1 {
+				t.Errorf("UNSOUND Fitch valuation=%d\n%s", counterexample, argument)
+			}
+		}
+	}
+	for _, inner := range gateOracleCandidates(pool) {
+		// Bounded inner derivations use the same 1..3-premise candidate pool.
+		n := len(inner.premises)
+		if n < 1 || n > 3 {
+			continue
+		}
+		var prefix strings.Builder
+		for i, p := range inner.premises[1:] {
+			text, _ := p.english()
+			fmt.Fprintf(&prefix, "%d. %s.\n", i+1, text)
+		}
+		assumption, _ := inner.premises[0].english()
+		end, _ := inner.conclusion.english()
+		refs := make([]string, n)
+		for i := range refs {
+			refs[i] = fmt.Sprint(i + 1)
+		}
+		body := fmt.Sprintf("%s| %d. Suppose %s.\n| %d. Therefore, %s. [%s]\n", prefix.String(), n, assumption, n+1, end, strings.Join(refs, ","))
+		for _, target := range []*gateOracleFormula{inner.conclusion, pool[0]} {
+			final := gateOracleBinary("if", inner.premises[0], target)
+			text, ok := final.english()
+			if !ok {
+				continue
+			}
+			argument := body + fmt.Sprintf("%d. Therefore, %s. [%d-%d]", n+2, text, n, n+1)
+			check(argument, inner.premises[1:], final)
+		}
+		// Outer premises include not Q. Within P, infer Q and contradiction;
+		// discharge P to not P. Its classical reverse starts with not P seeds.
+		negEnd := gateOracleNot(inner.conclusion)
+		negText, ok := negEnd.english()
+		if !ok {
+			continue
+		}
+		var outer strings.Builder
+		outer.WriteString(prefix.String())
+		fmt.Fprintf(&outer, "%d. %s.\n", n, negText)
+		refs[n-1] = fmt.Sprint(n + 1)
+		reductioBody := fmt.Sprintf("%s| %d. Suppose %s.\n| %d. Therefore, %s. [%s]\n| %d. Therefore, contradiction. [%d,%d]\n", outer.String(), n+1, assumption, n+2, end, strings.Join(refs, ","), n+3, n, n+2)
+		targets := []*gateOracleFormula{gateOracleNot(inner.premises[0]), pool[0]}
+		if inner.premises[0].op == "not" {
+			targets = append(targets, inner.premises[0].left)
+		}
+		for _, target := range targets {
+			text, ok := target.english()
+			if !ok {
+				continue
+			}
+			premises := append(append([]*gateOracleFormula(nil), inner.premises[1:]...), negEnd)
+			check(reductioBody+fmt.Sprintf("%d. Therefore, %s. [%d-%d]", n+4, text, n+1, n+3), premises, target)
+		}
+	}
+	for _, form := range []string{"conditional proof", "reductio"} {
+		if byForm[form] == 0 {
+			t.Errorf("no accepted %s", form)
+		}
+	}
+	if total == valid {
+		t.Fatal("oracle needs invalid controls")
+	}
+	t.Logf("Fitch oracle: formulas=%d candidates=%d valid=%d accepted=%d invalid=%d forms=%v", len(pool), total, valid, accepted, total-valid, byForm)
+}

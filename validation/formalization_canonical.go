@@ -163,7 +163,7 @@ func canonicalStatementShape(text string) error {
 // Canonical text includes its terminal period, Therefore marker, and citations,
 // but excludes the numbered-line prefix. Keep citation spelling byte-identical.
 func CanonicalOriginalLines(original string) ([]string, error) {
-	argument, result := ParseNumberedArgumentAllowingNoConclusions(original)
+	argument, result := ParseFlatNumberedArgumentAllowingNoConclusions(original)
 	if !result.Passed {
 		return nil, fmt.Errorf("as-found argument: %s", result.Message)
 	}

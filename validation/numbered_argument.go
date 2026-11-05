@@ -12,13 +12,15 @@ import (
 const (
 	maxNumberedArgumentLines       = 2000
 	maxCitationsPerConclusion      = 100
+	numberedArgumentStepAssumption = "assumption"
+	numberedArgumentStepArbitrary  = "arbitrary"
 	numberedArgumentStepPremise    = "premise"
 	numberedArgumentStepConclusion = "conclusion"
 )
 
 var (
 	premiseLinePattern      = regexp.MustCompile(`^([1-9][0-9]*)\. (.+)\.$`)
-	conclusionLinePattern   = regexp.MustCompile(`^([1-9][0-9]*)\. Therefore, (.+)\. \[([1-9][0-9]*(?:,[1-9][0-9]*)*)\]$`)
+	conclusionLinePattern   = regexp.MustCompile(`^([1-9][0-9]*)\. Therefore, (.+)\. \[([1-9][0-9]*(?:-[1-9][0-9]*)?(?:,[1-9][0-9]*(?:-[1-9][0-9]*)?)*)\]$`)
 	terminalCitationPattern = regexp.MustCompile(`\. \[[1-9][0-9]*(?:,[1-9][0-9]*)*\]$`)
 	bracketReferencePattern = regexp.MustCompile(`\[([^\]]+)\]`)
 	numericReferencePattern = regexp.MustCompile(`^[1-9][0-9]*(?:,[1-9][0-9]*)*$`)
@@ -31,11 +33,13 @@ type NumberedArgument struct {
 }
 
 type NumberedArgumentStep struct {
-	Number    int    `json:"number"`
-	Kind      string `json:"kind"`
-	Statement string `json:"statement"`
-	Citations []int  `json:"citations,omitempty"`
-	Line      string `json:"line"`
+	Number    int      `json:"number"`
+	Kind      string   `json:"kind"`
+	Statement string   `json:"statement"`
+	Citations []int    `json:"citations,omitempty"`
+	Line      string   `json:"line"`
+	Depth     int      `json:"depth,omitempty"`
+	Ranges    [][2]int `json:"ranges,omitempty"`
 }
 
 type numberedArgumentOptions struct {
@@ -162,14 +166,14 @@ func ParseNumberedArgument(output string, options numberedArgumentOptions) (Numb
 		}
 		if step.Kind == numberedArgumentStepConclusion {
 			seenConclusion = true
-			if len(step.Citations) == 0 {
+			if len(step.Citations)+len(step.Ranges) == 0 {
 				return NumberedArgument{}, Result{
 					Passed:  false,
 					Message: fmt.Sprintf("step %d conclusion must cite at least one prior step", step.Number),
 					Details: map[string]any{"line": lineNumber, "step": step.Number},
 				}
 			}
-			if len(step.Citations) > maxCitationsPerConclusion {
+			if len(step.Citations)+len(step.Ranges) > maxCitationsPerConclusion {
 				return NumberedArgument{}, Result{
 					Passed:  false,
 					Message: fmt.Sprintf("step %d exceeds %d citation validation limit", step.Number, maxCitationsPerConclusion),
@@ -194,7 +198,7 @@ func ParseNumberedArgument(output string, options numberedArgumentOptions) (Numb
 	if len(argument.Steps) < 2 {
 		return NumberedArgument{}, Result{Passed: false, Message: "numbered argument must contain at least two steps"}
 	}
-	if !seenPremise {
+	if !seenPremise && !argument.HasSubproofs() {
 		return NumberedArgument{}, Result{Passed: false, Message: "numbered argument must contain at least one premise"}
 	}
 	if !seenConclusion && !options.allowNoConclusions {
@@ -203,13 +207,28 @@ func ParseNumberedArgument(output string, options numberedArgumentOptions) (Numb
 	if seenConclusion && argument.Steps[len(argument.Steps)-1].Kind != numberedArgumentStepConclusion {
 		return NumberedArgument{}, Result{Passed: false, Message: "final step must be a conclusion"}
 	}
+	if result := checkNumberedArgumentScope(argument); !result.Passed {
+		return NumberedArgument{}, result
+	}
 	return argument, Result{Passed: true}
 }
 
 // ParseNumberedArgumentAllowingNoConclusions applies the numbered-argument
 // parser while permitting a premise-only argument. All other syntax and
-// structural checks remain unchanged.
+// structural checks remain unchanged. It accepts flat arguments only: its
+// callers predate Fitch subproofs and drop scope and discharge edges. Use
+// ParseScopedNumberedArgumentAllowingNoConclusions where subproofs are handled.
 func ParseNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
+	arg, result := ParseScopedNumberedArgumentAllowingNoConclusions(output)
+	if result.Passed && arg.HasSubproofs() {
+		return NumberedArgument{}, Result{Passed: false, Message: "Fitch subproofs are not supported by this flat-argument transformation"}
+	}
+	return arg, result
+}
+
+// ParseScopedNumberedArgumentAllowingNoConclusions is
+// ParseNumberedArgumentAllowingNoConclusions with Fitch subproofs permitted.
+func ParseScopedNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
 	return ParseNumberedArgument(output, numberedArgumentOptions{allowNoConclusions: true})
 }
 
@@ -237,9 +256,32 @@ func unwrapOptionalFence(output string, options numberedArgumentOptions) (string
 }
 
 func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentStep, Result) {
+	original := line
+	depth := 0
+	for strings.HasPrefix(line, "| ") {
+		depth++
+		line = strings.TrimPrefix(line, "| ")
+	}
+	step, result := parseNumberedArgumentBareLine(line, lineNumber)
+	if !result.Passed {
+		return step, result
+	}
+	step.Depth, step.Line = depth, original
+	if step.Kind == numberedArgumentStepPremise {
+		if strings.HasPrefix(step.Statement, "Suppose ") {
+			step.Kind = numberedArgumentStepAssumption
+			step.Statement = strings.TrimPrefix(step.Statement, "Suppose ")
+		} else if arbitraryNamePattern.MatchString(step.Statement) {
+			step.Kind = numberedArgumentStepArbitrary
+		}
+	}
+	return step, result
+}
+
+func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumentStep, Result) {
 	if matches := conclusionLinePattern.FindStringSubmatch(line); matches != nil {
 		number, _ := strconv.Atoi(matches[1])
-		citations, err := parseCitations(matches[3])
+		citations, ranges, err := parseTerminalCitations(matches[3])
 		if err != nil {
 			return NumberedArgumentStep{}, Result{
 				Passed:  false,
@@ -263,6 +305,7 @@ func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentSte
 			Kind:      numberedArgumentStepConclusion,
 			Statement: statement,
 			Citations: citations,
+			Ranges:    ranges,
 			Line:      line,
 		}, Result{Passed: true}
 	}
@@ -291,7 +334,7 @@ func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentSte
 				Details: map[string]any{"line": lineNumber},
 			}
 		}
-		if result := validateStatementBracketReferences(statement, lineNumber, number); !result.Passed {
+		if result := validateStatementBracketReferences(strings.TrimPrefix(statement, "Suppose "), lineNumber, number); !result.Passed {
 			return NumberedArgumentStep{}, result
 		}
 		return NumberedArgumentStep{

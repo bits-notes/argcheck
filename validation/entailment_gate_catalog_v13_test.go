@@ -5,12 +5,6 @@ import (
 	"testing"
 )
 
-func TestCatalogV13Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v13" {
-		t.Fatalf("catalog = %q, want v13", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestCatalogV13Forms(t *testing.T) {
 	tests := []struct {
 		form, name, argument string

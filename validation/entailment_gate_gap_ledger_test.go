@@ -18,9 +18,7 @@ import "testing"
 // "admires", correct): a transitivity premise is required. It is retained as
 // the requested boundary case, not counted as a valid missing inference.
 //
-// Subproof-requiring rules: conditional proof, reductio, existential
-// elimination, and universal generalization are not representable in the
-// current format; they deliberately have no rows here.
+// v14 adds scoped derivations, including a premise-free classical theorem.
 func TestEntailmentGateGapLedger(t *testing.T) {
 	tests := []struct {
 		name, argument, wantForm string
@@ -35,6 +33,12 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 3. Therefore, it snows. [1,2]`, ""},
 		{"excluded middle from anything", `1. the street is wet.
 2. Therefore, either it rains or it is not the case that it rains. [1]`, ""},
+		{"conditional proof", fitchCP, "conditional proof"},
+		{"reductio", fitchRAA, "reductio"},
+		{"proof by cases", fitchCases, "proof by cases"},
+		{"universal generalization", fitchUG, "universal generalization"},
+		{"existential elimination", fitchEE, "existential elimination"},
+		{"excluded middle without premises", fitchExcludedMiddle, "reductio"},
 		// Accepted v13 additions (formerly known gaps).
 		{"contraposition", `1. if it rains, then it snows.
 2. Therefore, if it is not the case that it snows, then it is not the case that it rains. [1]`, "contraposition"},
@@ -173,10 +177,10 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 				t.Fatalf("invalid ledger fixture: %s\n%s", parsed.Message, tc.argument)
 			}
 			report, result := CheckEntailmentGate(tc.argument)
-			if len(report.Steps) != 1 {
-				t.Fatalf("want exactly one gated step: %s %+v", result.Message, report)
+			if len(report.Steps) < 1 {
+				t.Fatalf("want at least one gated step: %s %+v", result.Message, report)
 			}
-			step := report.Steps[0]
+			step := report.Steps[len(report.Steps)-1]
 			t.Logf("accepted=%v form=%q", report.Passed, step.Form)
 			if tc.wantForm == "" {
 				if report.Passed || result.Passed || step.Passed {

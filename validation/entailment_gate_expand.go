@@ -85,12 +85,20 @@ func ExpandNumberedArgumentBridges(arg NumberedArgument) (NumberedArgument, []Br
 }
 
 func numberedArgumentStepLine(step NumberedArgumentStep) string {
+	prefix := strings.Repeat("| ", step.Depth)
 	if step.Kind == numberedArgumentStepConclusion {
 		citations := make([]string, len(step.Citations))
 		for index, citation := range step.Citations {
 			citations[index] = fmt.Sprintf("%d", citation)
 		}
-		return fmt.Sprintf("%d. Therefore, %s. [%s]", step.Number, step.Statement, strings.Join(citations, ","))
+		for _, r := range step.Ranges {
+			citations = append(citations, fmt.Sprintf("%d-%d", r[0], r[1]))
+		}
+		return prefix + fmt.Sprintf("%d. Therefore, %s. [%s]", step.Number, step.Statement, strings.Join(citations, ","))
 	}
-	return fmt.Sprintf("%d. %s.", step.Number, step.Statement)
+	statement := step.Statement
+	if step.Kind == numberedArgumentStepAssumption {
+		statement = "Suppose " + statement
+	}
+	return prefix + fmt.Sprintf("%d. %s.", step.Number, statement)
 }

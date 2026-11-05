@@ -68,11 +68,11 @@ func ValidateFormalizationCoverageAnchored(
 	if anchorName != FormalizationCoverageAnchorSource && anchorName != FormalizationCoverageAnchorAsFound {
 		return nil, false, fmt.Errorf("unsupported coverage anchor %q", anchorName)
 	}
-	anchor, parsed := ParseNumberedArgumentAllowingNoConclusions(anchorArgument)
+	anchor, parsed := ParseFlatNumberedArgumentAllowingNoConclusions(anchorArgument)
 	if !parsed.Passed {
 		return nil, false, fmt.Errorf("parse %s argument: %s", formalizationCoverageAnchorLabel(anchorName), parsed.Message)
 	}
-	repaired, parsed := ParseNumberedArgumentAllowingNoConclusions(repairedArgument)
+	repaired, parsed := ParseFlatNumberedArgumentAllowingNoConclusions(repairedArgument)
 	if !parsed.Passed {
 		return nil, false, fmt.Errorf("parse repaired argument: %s", parsed.Message)
 	}

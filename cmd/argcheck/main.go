@@ -42,10 +42,11 @@ type check struct {
 
 // verdict mirrors api.FormalizerMCPValidation plus provenance.
 type verdict struct {
-	Valid      bool   `json:"valid"`
-	Syntax     check  `json:"syntax"`
-	Entailment *check `json:"entailment,omitempty"`
-	Catalog    string `json:"entailment_catalog"`
+	Valid      bool                         `json:"valid"`
+	Argument   *validation.NumberedArgument `json:"argument,omitempty"`
+	Syntax     check                        `json:"syntax"`
+	Entailment *check                       `json:"entailment,omitempty"`
+	Catalog    string                       `json:"entailment_catalog"`
 	// Inert lists conclusions whose full citation set fails but a proper
 	// subset passes a known form. Local backend only; advisory.
 	Inert   []validation.InertCitationReport `json:"inert_citations,omitempty"`
@@ -128,6 +129,10 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
 			return exitError
 		}
 	} else {
+		if strings.Contains(argument, "| ") {
+			fmt.Fprintln(stdout, argument)
+			fmt.Fprintln(stdout)
+		}
 		for index, v := range verdicts {
 			if index > 0 {
 				fmt.Fprintln(stdout)
@@ -171,6 +176,9 @@ func checkLocal(argument string) verdict {
 	if !syntax.Passed {
 		return result
 	}
+	if parsed, r := validation.ParseScopedNumberedArgumentAllowingNoConclusions(argument); r.Passed && parsed.HasSubproofs() {
+		result.Argument = &parsed
+	}
 	_, entailment := validation.CheckEntailmentGate(argument)
 	result.Entailment = &check{Passed: entailment.Passed, Message: entailment.Message, Details: entailment.Details}
 	result.Valid = entailment.Passed
@@ -181,7 +189,7 @@ func checkLocal(argument string) verdict {
 }
 
 func inertCitations(argument string) []validation.InertCitationReport {
-	parsed, parse := validation.ParseNumberedArgumentAllowingNoConclusions(argument)
+	parsed, parse := validation.ParseScopedNumberedArgumentAllowingNoConclusions(argument)
 	if !parse.Passed {
 		return nil
 	}
@@ -311,12 +319,14 @@ func entailmentMessage(v verdict) string {
 // stepReport is decoded from Details["steps"], which arrives either as typed
 // structs (local) or as JSON maps (prod).
 type stepReport struct {
-	Step        int    `json:"step"`
-	Citations   []int  `json:"citations"`
-	Passed      bool   `json:"passed"`
-	Form        string `json:"form"`
-	NearestForm string `json:"nearest_form"`
-	Mismatch    string `json:"mismatch"`
+	Step        int      `json:"step"`
+	Depth       int      `json:"depth,omitempty"`
+	Ranges      [][2]int `json:"ranges,omitempty"`
+	Citations   []int    `json:"citations"`
+	Passed      bool     `json:"passed"`
+	Form        string   `json:"form"`
+	NearestForm string   `json:"nearest_form"`
+	Mismatch    string   `json:"mismatch"`
 }
 
 func stepsOf(c *check) []stepReport {
@@ -356,6 +366,12 @@ func printVerdict(w io.Writer, v verdict) {
 	}
 	for _, step := range steps {
 		cites := joinInts(step.Citations)
+		for _, r := range step.Ranges {
+			if cites != "" {
+				cites += ","
+			}
+			cites += fmt.Sprintf("%d-%d", r[0], r[1])
+		}
 		if step.Passed {
 			fmt.Fprintf(w, "step %d [%s]: ok: %s\n", step.Step, cites, step.Form)
 			continue

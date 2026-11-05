@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v13"
+const EntailmentGateCatalogVersion = "v14"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -26,12 +26,14 @@ type EntailmentGateReport struct {
 // EntailmentGateStepReport records the matched schema or nearest failed form
 // for one conclusion step.
 type EntailmentGateStepReport struct {
-	Step        int    `json:"step"`
-	Citations   []int  `json:"citations"`
-	Passed      bool   `json:"passed"`
-	Form        string `json:"form,omitempty"`
-	NearestForm string `json:"nearest_form,omitempty"`
-	Mismatch    string `json:"mismatch,omitempty"`
+	Step        int      `json:"step"`
+	Depth       int      `json:"depth,omitempty"`
+	Ranges      [][2]int `json:"ranges,omitempty"`
+	Citations   []int    `json:"citations"`
+	Passed      bool     `json:"passed"`
+	Form        string   `json:"form,omitempty"`
+	NearestForm string   `json:"nearest_form,omitempty"`
+	Mismatch    string   `json:"mismatch,omitempty"`
 }
 
 // InertCitationReport identifies a conclusion whose full citation set fails
@@ -127,6 +129,9 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 // GateNumberedArgument checks every conclusion step of an already-expanded
 // numbered argument.
 func GateNumberedArgument(arg NumberedArgument) EntailmentGateReport {
+	if result := checkNumberedArgumentScope(arg); !result.Passed {
+		return EntailmentGateReport{Passed: false, Steps: []EntailmentGateStepReport{{NearestForm: "scope", Mismatch: result.Message}}}
+	}
 	stepsByNumber := make(map[int]NumberedArgumentStep, len(arg.Steps))
 	for _, step := range arg.Steps {
 		stepsByNumber[step.Number] = step
@@ -159,7 +164,7 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 
 	reports := make([]InertCitationReport, 0)
 	for _, conclusion := range arg.Steps {
-		if conclusion.Kind != numberedArgumentStepConclusion || len(conclusion.Citations) < 2 {
+		if conclusion.Kind != numberedArgumentStepConclusion || len(conclusion.Ranges) > 0 || len(conclusion.Citations) < 2 {
 			continue
 		}
 		if gateConclusionStep(conclusion, stepsByNumber).Passed {
@@ -209,7 +214,12 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	report := EntailmentGateStepReport{
 		Step:      conclusion.Number,
+		Depth:     conclusion.Depth,
+		Ranges:    conclusion.Ranges,
 		Citations: append([]int(nil), conclusion.Citations...),
+	}
+	if len(conclusion.Ranges) > 0 {
+		return gateFitchConclusion(conclusion, steps)
 	}
 	premises := make([]NumberedArgumentStep, 0, len(conclusion.Citations))
 	for _, citation := range conclusion.Citations {
@@ -219,6 +229,7 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 			report.Mismatch = fmt.Sprintf("cited step %d is unavailable for conclusion step %d", citation, conclusion.Number)
 			return report
 		}
+		premise.Statement = fitchAssumptionStatement(premise)
 		premises = append(premises, premise)
 	}
 

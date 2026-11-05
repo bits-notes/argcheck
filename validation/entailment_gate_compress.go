@@ -1,5 +1,7 @@
 package validation
 
+import "fmt"
+
 // BridgeCompressionEntry records whether one bracket-bridge premise is
 // removable: whether the conclusion that cites it still gate-certifies when
 // cited directly on the remaining premises. Removable bridges are pure
@@ -32,6 +34,9 @@ func CheckBridgeCompression(output string) ([]BridgeCompressionEntry, Result) {
 // unexpanded argument; gating runs against the expanded statements, so a
 // conclusion citing several bridges is tested one removal at a time.
 func NumberedArgumentBridgeCompression(arg NumberedArgument) ([]BridgeCompressionEntry, error) {
+	if arg.HasSubproofs() {
+		return nil, fmt.Errorf("Fitch subproofs are not supported by bridge compression")
+	}
 	bridgeSteps := make(map[int]bool)
 	for _, step := range arg.Steps {
 		if step.Kind == numberedArgumentStepConclusion {

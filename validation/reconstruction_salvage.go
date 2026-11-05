@@ -30,7 +30,7 @@ func SalvageReconstruction(reply, source string) (SalvagedReconstruction, error)
 	if err := json.Unmarshal(checked.ParsedOutput, &original); err != nil {
 		return SalvagedReconstruction{}, err
 	}
-	argument, _ := ParseNumberedArgumentAllowingNoConclusions(original.Argument)
+	argument, _ := ParseFlatNumberedArgumentAllowingNoConclusions(original.Argument)
 	mappings := []FormalizationLineMapping{}
 	conclusionCount := 0
 	for _, line := range original.Lines {

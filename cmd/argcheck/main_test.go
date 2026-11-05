@@ -62,7 +62,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v13", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v14", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -71,6 +71,28 @@ func TestArgcheckForms(t *testing.T) {
 	} {
 		if !strings.Contains(out, name) {
 			t.Errorf("--forms missing %q:\n%s", name, out)
+		}
+	}
+}
+
+func TestArgcheckFitch(t *testing.T) {
+	const text = "1. If it rains, then it snows.\n| 2. Suppose it rains.\n| 3. Therefore, it snows. [1,2]\n4. Therefore, if it rains, then it snows. [2-3]"
+	code, out := runArgcheck(t, text)
+	if code != 0 || !strings.Contains(out, "| 2. Suppose it rains.") || !strings.Contains(out, "step 4 [2-3]: ok: conditional proof") {
+		t.Fatalf("%d %s", code, out)
+	}
+	code, out = runArgcheck(t, text, "--json")
+	if code != 0 || !strings.Contains(out, `"depth": 1`) || !strings.Contains(out, `"ranges":`) {
+		t.Fatalf("%d %s", code, out)
+	}
+	code, out = runArgcheck(t, strings.Replace(text, "[2-3]", "[3]", 1))
+	if code != 1 || !strings.Contains(out, "step 4 cites 3, which is inside the closed subproof 2-3") {
+		t.Fatalf("%d %s", code, out)
+	}
+	code, out = runArgcheck(t, "", "--forms")
+	for _, name := range []string{"conditional proof", "reductio", "contradiction introduction", "proof by cases", "universal generalization", "existential elimination"} {
+		if code != 0 || !strings.Contains(out, name) {
+			t.Fatalf("missing %s: %s", name, out)
 		}
 	}
 }

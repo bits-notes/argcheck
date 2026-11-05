@@ -109,6 +109,7 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "conversion", arity: 1, match: matchConversion},
 	{name: "universal modus tollens", arity: 2, match: matchUniversalModusTollens},
 	{name: "possibility introduction", arity: 1, match: matchPossibilityIntroduction},
+	{name: "contradiction introduction", arity: 2, match: matchContradiction},
 }
 
 func normalizeClause(value string) string {
@@ -509,7 +510,7 @@ func groundInstanceCandidates(statement string) []clausePair {
 		"no ", "no one ", "nothing ", "several ", "some ", "someone ", "something ",
 		"there ", "at least ", "at most ",
 	} {
-		if strings.HasPrefix(statement, prefix) {
+		if strings.HasPrefix(statement, prefix) && !(prefix == "a " && strings.HasPrefix(statement, "a is ")) {
 			return nil
 		}
 	}
@@ -2024,5 +2025,5 @@ func EntailmentGateForms() []string {
 	for _, schema := range entailmentSchemas {
 		names = append(names, schema.name)
 	}
-	return names
+	return append(names, fitchForms...)
 }

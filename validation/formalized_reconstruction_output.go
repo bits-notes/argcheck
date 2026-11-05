@@ -239,7 +239,10 @@ func validateReconstructionOutput(ctx context.Context, output string, source *st
 	if !syntax.Passed {
 		return Result{Message: "reconstruction argument failed numbered_argument_syntax: " + syntax.Message, Details: map[string]any{"argument_validation": syntax.Details}}
 	}
-	argument, _ := ParseNumberedArgumentAllowingNoConclusions(reconstruction.Argument)
+	argument, flat := ParseFlatNumberedArgumentAllowingNoConclusions(reconstruction.Argument)
+	if !flat.Passed {
+		return flat
+	}
 	final := argument.Steps[len(argument.Steps)-1]
 	if final.Kind != "conclusion" {
 		return Result{Message: fmt.Sprintf("line %d must be the overall conclusion; add a conclusion marker and citations", final.Number)}
