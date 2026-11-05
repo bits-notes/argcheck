@@ -86,9 +86,14 @@ func v13MatchPattern(pattern v13Pattern, statement, label string, bindings map[s
 		return schemaMatchOutcome{matched: true, traction: true}
 	}
 	var parts []string
-	if pattern.op == "negation" {
+	switch pattern.op {
+	case "negation":
 		parts = negationCandidates(statement)
-	} else {
+	case "necessity":
+		parts = necessityCandidates(statement)
+	case "possibility":
+		parts = possibilityCandidates(statement)
+	default:
 		pairs := v13Pairs(pattern.op, statement)
 		if len(pairs) > 0 {
 			parts = []string{pairs[0].left, pairs[0].right}

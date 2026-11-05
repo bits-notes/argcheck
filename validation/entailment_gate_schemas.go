@@ -110,6 +110,10 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "universal modus tollens", arity: 2, match: matchUniversalModusTollens},
 	{name: "possibility introduction", arity: 1, match: matchPossibilityIntroduction},
 	{name: "contradiction introduction", arity: 2, match: matchContradiction},
+	// v15 forms follow every existing one-step entry.
+	{name: "identity reflexivity", arity: 1, match: matchIdentityReflexivity},
+	{name: "modal duality", arity: 1, match: matchModalDuality},
+	{name: "modal distribution", arity: 1, match: matchModalDistribution},
 }
 
 func normalizeClause(value string) string {

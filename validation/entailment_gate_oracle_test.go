@@ -500,3 +500,124 @@ func TestEntailmentGateFitchTruthTableOracle(t *testing.T) {
 	}
 	t.Logf("Fitch oracle: formulas=%d candidates=%d valid=%d accepted=%d invalid=%d forms=%v", len(pool), total, valid, accepted, total-valid, byForm)
 }
+
+// A separate modal AST interprets formulas on all three-world reflexive
+// frames, including non-transitive and non-Euclidean frames. It shares no
+// parsing or matching code with the gate. This is bounded soundness coverage.
+type gateModalOracleFormula struct {
+	op          string
+	left, right *gateModalOracleFormula
+}
+
+func (f *gateModalOracleFormula) english() string {
+	switch f.op {
+	case "p":
+		return "it rains"
+	case "q":
+		return "it snows"
+	case "not":
+		return "it is not the case that " + f.left.english()
+	case "box":
+		return "necessarily, " + f.left.english()
+	case "diamond":
+		return "possibly, " + f.left.english()
+	case "if":
+		return "if " + f.left.english() + ", then " + f.right.english()
+	case "and":
+		return "it is the case both that " + f.left.english() + ", and that " + f.right.english()
+	default:
+		panic(f.op)
+	}
+}
+
+func (f *gateModalOracleFormula) eval(world, frame, valuation int) bool {
+	switch f.op {
+	case "p":
+		return valuation&(1<<world) != 0
+	case "q":
+		return valuation&(1<<(world+3)) != 0
+	case "not":
+		return !f.left.eval(world, frame, valuation)
+	case "if":
+		return !f.left.eval(world, frame, valuation) || f.right.eval(world, frame, valuation)
+	case "and":
+		return f.left.eval(world, frame, valuation) && f.right.eval(world, frame, valuation)
+	case "box", "diamond":
+		for next := 0; next < 3; next++ {
+			if frame&(1<<(3*world+next)) == 0 {
+				continue
+			}
+			truth := f.left.eval(next, frame, valuation)
+			if f.op == "box" && !truth {
+				return false
+			}
+			if f.op == "diamond" && truth {
+				return true
+			}
+		}
+		return f.op == "box"
+	default:
+		panic(f.op)
+	}
+}
+
+func TestEntailmentGateV15ModalOracle(t *testing.T) {
+	p, q := &gateModalOracleFormula{op: "p"}, &gateModalOracleFormula{op: "q"}
+	unary := func(op string, a *gateModalOracleFormula) *gateModalOracleFormula {
+		return &gateModalOracleFormula{op: op, left: a}
+	}
+	box := func(a *gateModalOracleFormula) *gateModalOracleFormula { return unary("box", a) }
+	diamond := func(a *gateModalOracleFormula) *gateModalOracleFormula { return unary("diamond", a) }
+	not := func(a *gateModalOracleFormula) *gateModalOracleFormula { return unary("not", a) }
+	imp := func(a, b *gateModalOracleFormula) *gateModalOracleFormula {
+		return &gateModalOracleFormula{op: "if", left: a, right: b}
+	}
+	and := func(a, b *gateModalOracleFormula) *gateModalOracleFormula {
+		return &gateModalOracleFormula{op: "and", left: a, right: b}
+	}
+	for _, tc := range []struct {
+		name     string
+		from, to *gateModalOracleFormula
+		valid    bool
+	}{
+		{"duality box forward", not(diamond(not(p))), box(p), true},
+		{"duality box reverse", box(p), not(diamond(not(p))), true},
+		{"duality diamond forward", not(box(not(p))), diamond(p), true},
+		{"duality diamond reverse", diamond(p), not(box(not(p))), true},
+		{"K", box(imp(p, q)), imp(box(p), box(q)), true},
+		{"possibility monotonicity", box(imp(p, q)), imp(diamond(p), diamond(q)), true},
+		{"conjunction forward", box(and(p, q)), and(box(p), box(q)), true},
+		{"conjunction reverse", and(box(p), box(q)), box(and(p, q)), true},
+		{"converse K", imp(box(p), box(q)), box(imp(p, q)), false},
+		{"S4", box(p), box(box(p)), false},
+		{"S5", diamond(p), box(diamond(p)), false},
+		{"possibility to necessity", diamond(p), box(p), false},
+		{"possible conditional", diamond(imp(p, q)), imp(diamond(p), diamond(q)), false},
+		{"missing inner negation", not(diamond(p)), box(p), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			counterexamples := 0
+			const reflexive = 1<<0 | 1<<4 | 1<<8
+			for frame := 0; frame < 1<<9; frame++ {
+				if frame&reflexive != reflexive {
+					continue
+				}
+				for valuation := 0; valuation < 1<<6; valuation++ {
+					for world := 0; world < 3; world++ {
+						if tc.from.eval(world, frame, valuation) && !tc.to.eval(world, frame, valuation) {
+							counterexamples++
+						}
+					}
+				}
+			}
+			if (counterexamples == 0) != tc.valid {
+				t.Fatalf("valid=%v counterexamples=%d", tc.valid, counterexamples)
+			}
+			argument := fmt.Sprintf("1. %s.\n2. Therefore, %s. [1]", tc.from.english(), tc.to.english())
+			report, result := CheckEntailmentGate(argument)
+			if report.Passed != tc.valid || result.Passed != tc.valid {
+				t.Fatalf("valid=%v: %s %+v", tc.valid, result.Message, report)
+			}
+		})
+	}
+}

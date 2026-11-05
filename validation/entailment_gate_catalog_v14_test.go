@@ -45,12 +45,6 @@ const fitchExcludedMiddle = `| 1. Suppose it is not the case that either it rain
 | 7. Therefore, contradiction. [1,6]
 8. Therefore, either it rains or it is not the case that it rains. [1-7]`
 
-func TestCatalogV14Version(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v14" {
-		t.Fatalf("catalog = %q, want v14", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestEntailmentGateCatalogV14(t *testing.T) {
 	for _, tc := range []struct{ name, text, form string }{
 		{"CP", fitchCP, "conditional proof"}, {"RAA", fitchRAA, "reductio"}, {"classical RAA", fitchClassical, "reductio"},

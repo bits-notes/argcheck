@@ -39,6 +39,28 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 		{"universal generalization", fitchUG, "universal generalization"},
 		{"existential elimination", fitchEE, "existential elimination"},
 		{"excluded middle without premises", fitchExcludedMiddle, "reductio"},
+		// Outside system T: S4 requires transitivity of accessibility.
+		{"S4 outside system T", `1. necessarily, it rains.
+2. Therefore, necessarily, necessarily, it rains. [1]`, ""},
+		// Accepted v15 additions.
+		{"identity reflexivity", `1. Socrates is a man.
+2. Therefore, Socrates is identical to Socrates. [1]`, "identity reflexivity"},
+		{"modal duality necessity forward", `1. it is not the case that possibly, it is not the case that it rains.
+2. Therefore, necessarily, it rains. [1]`, "modal duality"},
+		{"modal duality necessity reverse", `1. necessarily, it rains.
+2. Therefore, it is not the case that possibly, it is not the case that it rains. [1]`, "modal duality"},
+		{"modal duality possibility forward", `1. it is not the case that necessarily, it is not the case that it rains.
+2. Therefore, possibly, it rains. [1]`, "modal duality"},
+		{"modal duality possibility reverse", `1. possibly, it rains.
+2. Therefore, it is not the case that necessarily, it is not the case that it rains. [1]`, "modal duality"},
+		{"modal distribution K", `1. necessarily, if it rains, then it snows.
+2. Therefore, if necessarily, it rains, then necessarily, it snows. [1]`, "modal distribution"},
+		{"modal distribution possibility", `1. necessarily, if it rains, then it snows.
+2. Therefore, if possibly, it rains, then possibly, it snows. [1]`, "modal distribution"},
+		{"modal distribution conjunction forward", `1. necessarily, it rains and it snows.
+2. Therefore, it is the case both that necessarily, it rains, and that necessarily, it snows. [1]`, "modal distribution"},
+		{"modal distribution conjunction reverse", `1. it is the case both that necessarily, it rains, and that necessarily, it snows.
+2. Therefore, necessarily, it rains and it snows. [1]`, "modal distribution"},
 		// Accepted v13 additions (formerly known gaps).
 		{"contraposition", `1. if it rains, then it snows.
 2. Therefore, if it is not the case that it snows, then it is not the case that it rains. [1]`, "contraposition"},
@@ -196,5 +218,5 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 			}
 		})
 	}
-	t.Logf("ledger: %d rejection rows (two intentionally rejected plus one relation boundary), %d accepted rows", gaps, accepted)
+	t.Logf("ledger: %d rejection rows (three intentionally rejected plus one relation boundary), %d accepted rows", gaps, accepted)
 }
