@@ -116,6 +116,11 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "modal distribution", arity: 1, match: matchModalDistribution},
 }
 
+// normalizeClause is the gate's only clause normalization: contractions, case,
+// whitespace and edge punctuation. Never extend it toward paraphrase matching
+// (synonyms, stemming, similarity, LLM equivalence). Equating two wordings is a
+// premise the argument must state visibly. See the "Non-goal: paraphrase
+// matching" section of repo_wiki/concepts/arguments/entailment-gate-spec.md.
 func normalizeClause(value string) string {
 	value = expandGateContractions(value)
 	value = strings.Join(strings.Fields(value), " ")

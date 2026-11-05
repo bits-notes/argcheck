@@ -74,6 +74,10 @@ Reads a numbered argument (file, or stdin) in the gate's format:
   2. Another premise.
   3. Therefore, conclusion. [1,2]
 
+Clauses must match word for word (after case and whitespace normalization).
+This is deliberate and will not change: if two wordings mean the same thing,
+state that as a premise.
+
 Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
 		flags.PrintDefaults()
 	}
