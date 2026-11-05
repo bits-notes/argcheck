@@ -58,7 +58,19 @@ func TestArgcheckEmptyInput(t *testing.T) {
 
 func TestArgcheckForms(t *testing.T) {
 	code, out := runArgcheck(t, "", "--forms")
-	if code != exitValid || !strings.Contains(out, "modus tollens") || !strings.Contains(out, "destructive dilemma") {
+	if code != exitValid {
 		t.Fatalf("exit %d, output:\n%s", code, out)
+	}
+	for _, name := range []string{
+		"entailment gate catalog v13", "modus tollens", "destructive dilemma",
+		"contraposition", "De Morgan", "commutation", "exportation", "importation",
+		"material implication", "distribution", "absorption", "double negation introduction",
+		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
+		"negated conditional", "identity symmetry", "quantifier negation", "conversion",
+		"universal modus tollens", "possibility introduction",
+	} {
+		if !strings.Contains(out, name) {
+			t.Errorf("--forms missing %q:\n%s", name, out)
+		}
 	}
 }

@@ -59,18 +59,10 @@ func (f *gateOracleFormula) literal() bool {
 	return f.op == "atom" || (f.op == "not" && f.left.op == "atom")
 }
 
-// Render only shapes with explicit scope boundaries. In particular:
-//   - negation scopes over an atom or another negation only;
-//   - plain "and" joins atoms; negated conjuncts use the gate's explicit
-//     "it is the case both that ..., and that ..." scaffold;
-//   - "either" joins literals, with "or" delimiting the alternatives;
-//   - a conditional's antecedent ends at ", then" and may contain a depth-one
-//     conjunction/disjunction; its consequent is a literal;
-//   - iff joins atoms only.
-//
-// Nested and/or trees, conditional-in-conditional, negated binary formulas,
-// and compound sides of iff are skipped, not assigned a guessed precedence.
-// Thus the pool has genuine depth-two formulas without ambiguous flattening.
+// Render bounded formulas with explicit scope. Conjunctions containing any
+// compound child use the both-that scaffold; a negated conjunction does too.
+// Either joins literals or atomic conjunctions; nested conditionals occur only
+// in consequents. No ambiguous flattened and/or tree or compound iff is emitted.
 func (f *gateOracleFormula) english() (string, bool) {
 	if f.depth() > 2 {
 		return "", false
@@ -83,8 +75,10 @@ func (f *gateOracleFormula) english() (string, bool) {
 		return "", false
 	}
 	if f.op == "not" {
-		if f.left.op != "atom" && f.left.op != "not" {
-			return "", false
+		if f.left.op == "and" {
+			l, _ := f.left.left.english()
+			r, _ := f.left.right.english()
+			left = "it is the case both that " + l + ", and that " + r
 		}
 		return "it is not the case that " + left, true
 	}
@@ -94,19 +88,16 @@ func (f *gateOracleFormula) english() (string, bool) {
 	}
 	switch f.op {
 	case "and":
-		if !f.left.literal() || !f.right.literal() {
-			return "", false
-		}
 		if f.left.op == "atom" && f.right.op == "atom" {
 			return left + " and " + right, true
 		}
 		return "it is the case both that " + left + ", and that " + right, true
 	case "or":
-		if f.left.literal() && f.right.literal() {
+		if (f.left.literal() || f.left.op == "and") && (f.right.literal() || f.right.op == "and") {
 			return "either " + left + " or " + right, true
 		}
 	case "if":
-		if (f.left.literal() || f.left.op == "and" || f.left.op == "or") && f.right.literal() {
+		if (f.left.literal() || f.left.op == "and" || f.left.op == "or") && (f.right.literal() || f.right.op == "if" || f.right.op == "and") {
 			return "if " + left + ", then " + right, true
 		}
 	case "iff":
@@ -207,6 +198,35 @@ func gateOracleCandidates(pool []*gateOracleFormula) []gateOracleCandidate {
 		for _, q := range atoms {
 			for _, r := range atoms {
 				seeds := []gateOracleCandidate{
+					// Scope controls: a nested connective is not a top-level one.
+					{[]*gateOracleFormula{q}, not(or(p, q))},
+					{[]*gateOracleFormula{q}, and(p, or(r, q))},
+					{[]*gateOracleFormula{implies(p, and(q, r))}, r},
+					{[]*gateOracleFormula{or(p, and(q, r))}, r},
+					{[]*gateOracleFormula{implies(p, q)}, implies(not(q), not(p))},
+					{[]*gateOracleFormula{implies(not(q), not(p))}, implies(p, q)},
+					{[]*gateOracleFormula{not(and(p, q))}, or(not(p), not(q))},
+					{[]*gateOracleFormula{or(not(p), not(q))}, not(and(p, q))},
+					{[]*gateOracleFormula{not(or(p, q))}, and(not(p), not(q))},
+					{[]*gateOracleFormula{and(not(p), not(q))}, not(or(p, q))},
+					{[]*gateOracleFormula{and(p, q)}, and(q, p)},
+					{[]*gateOracleFormula{or(p, q)}, or(q, p)},
+					{[]*gateOracleFormula{implies(and(p, q), r)}, implies(p, implies(q, r))},
+					{[]*gateOracleFormula{implies(p, implies(q, r))}, implies(and(p, q), r)},
+					{[]*gateOracleFormula{implies(p, q)}, or(not(p), q)},
+					{[]*gateOracleFormula{or(not(p), q)}, implies(p, q)},
+					{[]*gateOracleFormula{and(p, or(q, r))}, or(and(p, q), and(p, r))},
+					{[]*gateOracleFormula{or(and(p, q), and(p, r))}, and(p, or(q, r))},
+					{[]*gateOracleFormula{or(p, and(q, r))}, and(or(p, q), or(p, r))},
+					{[]*gateOracleFormula{and(or(p, q), or(p, r))}, or(p, and(q, r))},
+					{[]*gateOracleFormula{or(p, and(p, q))}, p},
+					{[]*gateOracleFormula{implies(p, q)}, implies(p, and(p, q))},
+					{[]*gateOracleFormula{iff(p, q), not(q)}, not(p)},
+					{[]*gateOracleFormula{iff(p, q), not(p)}, not(q)},
+					{[]*gateOracleFormula{iff(p, q), iff(q, r)}, iff(p, r)},
+					{[]*gateOracleFormula{iff(p, q)}, iff(q, p)},
+					{[]*gateOracleFormula{not(implies(p, q))}, p},
+					{[]*gateOracleFormula{not(implies(p, q))}, not(q)},
 					{[]*gateOracleFormula{implies(p, q), p}, q},
 					{[]*gateOracleFormula{implies(p, q), not(q)}, not(p)},
 					{[]*gateOracleFormula{implies(p, q), implies(q, r)}, implies(p, r)},
@@ -307,6 +327,18 @@ func TestEntailmentGateTruthTableOracle(t *testing.T) {
 				t.Errorf("UNSOUND form=%q valuation=(rains=%t, snows=%t, wet=%t)\n%s", report.Steps[0].Form,
 					counterexample&1 != 0, counterexample&2 != 0, counterexample&4 != 0, argument)
 			}
+		}
+	}
+	// Coverage is a separate requirement from the unconditional soundness
+	// assertion above. Every new propositional matcher must actually fire.
+	for _, form := range []string{
+		"contraposition", "De Morgan", "commutation", "exportation", "importation",
+		"material implication", "distribution", "absorption", "double negation introduction",
+		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
+		"negated conditional",
+	} {
+		if byForm[form] == 0 {
+			t.Errorf("oracle did not exercise new form %q", form)
 		}
 	}
 	if total.accepted == 0 || total.valid == total.total {

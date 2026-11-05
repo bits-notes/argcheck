@@ -25,74 +25,76 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 	tests := []struct {
 		name, argument, wantForm string
 	}{
-		// Known gaps (including the explicitly qualified relation boundary).
-		{"contraposition", `1. if it rains, then it snows.
-2. Therefore, if it is not the case that it snows, then it is not the case that it rains. [1]`, ""},
-		{"De Morgan and forward", `1. it is not the case that it is the case both that it rains, and that it snows.
-2. Therefore, either it is not the case that it rains or it is not the case that it snows. [1]`, ""},
-		{"De Morgan and reverse", `1. either it is not the case that it rains or it is not the case that it snows.
-2. Therefore, it is not the case that it is the case both that it rains, and that it snows. [1]`, ""},
-		{"De Morgan or forward", `1. it is not the case that either it rains or it snows.
-2. Therefore, it is the case both that it is not the case that it rains, and that it is not the case that it snows. [1]`, ""},
-		{"De Morgan or reverse", `1. it is the case both that it is not the case that it rains, and that it is not the case that it snows.
-2. Therefore, it is not the case that either it rains or it snows. [1]`, ""},
-		{"and commutation", `1. it rains and it snows.
-2. Therefore, it snows and it rains. [1]`, ""},
-		{"or commutation", `1. either it rains or it snows.
-2. Therefore, either it snows or it rains. [1]`, ""},
-		{"exportation", `1. if it rains and it snows, then the street is wet.
-2. Therefore, if it rains, then if it snows, then the street is wet. [1]`, ""},
-		{"importation", `1. if it rains, then if it snows, then the street is wet.
-2. Therefore, if it rains and it snows, then the street is wet. [1]`, ""},
-		{"material implication forward", `1. if it rains, then it snows.
-2. Therefore, either it is not the case that it rains or it snows. [1]`, ""},
-		{"material implication reverse", `1. either it is not the case that it rains or it snows.
-2. Therefore, if it rains, then it snows. [1]`, ""},
-		{"and distribution", `1. it is the case both that it rains, and that either it snows or the street is wet.
-2. Therefore, either it rains and it snows or it rains and the street is wet. [1]`, ""},
-		{"or distribution", `1. either it rains or it snows and the street is wet.
-2. Therefore, it is the case both that either it rains or it snows, and that either it rains or the street is wet. [1]`, ""},
-		{"absorption", `1. either it rains or it rains and it snows.
-2. Therefore, it rains. [1]`, ""},
-		{"conditional absorption", `1. if it rains, then it snows.
-2. Therefore, if it rains, then it rains and it snows. [1]`, ""},
-		{"double negation introduction", `1. it rains.
-2. Therefore, it is not the case that it is not the case that it rains. [1]`, ""},
-		{"biconditional modus tollens", `1. it rains if and only if it snows.
-2. it is not the case that it snows.
-3. Therefore, it is not the case that it rains. [1,2]`, ""},
-		{"biconditional chaining", `1. it rains if and only if it snows.
-2. it snows if and only if the street is wet.
-3. Therefore, it rains if and only if the street is wet. [1,2]`, ""},
-		{"biconditional commutation", `1. it rains if and only if it snows.
-2. Therefore, it snows if and only if it rains. [1]`, ""},
-		{"negated conditional antecedent", `1. it is not the case that if it rains, then it snows.
-2. Therefore, it rains. [1]`, ""},
-		{"negated conditional negated consequent", `1. it is not the case that if it rains, then it snows.
-2. Therefore, it is not the case that it snows. [1]`, ""},
-		{"identity symmetry", `1. Ada is identical to Ben.
-2. Therefore, Ben is identical to Ada. [1]`, ""},
-		{"quantifier negation universal", `1. it is not the case that every man is mortal.
-2. Therefore, some man is not mortal. [1]`, ""},
-		{"quantifier negation existential", `1. it is not the case that some man is immortal.
-2. Therefore, no man is immortal. [1]`, ""},
-		{"existential conversion", `1. some poet is a sailor.
-2. Therefore, some sailor is a poet. [1]`, ""},
-		{"universal negative conversion", `1. no poet is a sailor.
-2. Therefore, no sailor is a poet. [1]`, ""},
-		{"universal modus tollens", `1. every man is mortal.
-2. it is not the case that Zeus is mortal.
-3. Therefore, it is not the case that Zeus is a man. [1,2]`, ""},
-		{"necessity implies possibility", `1. necessarily, it rains.
-2. Therefore, possibly, it rains. [1]`, ""},
+		// Remaining relation boundary: an arbitrary relation need not be transitive.
+		{"relation transitivity without premise", `1. Ada admires Ben.
+2. Ben admires Cy.
+3. Therefore, Ada admires Cy. [1,2]`, ""},
+		// Intentionally rejected: contradictory or irrelevant premises must not certify arbitrary conclusions.
 		{"explosion", `1. it rains.
 2. it is not the case that it rains.
 3. Therefore, it snows. [1,2]`, ""},
 		{"excluded middle from anything", `1. the street is wet.
 2. Therefore, either it rains or it is not the case that it rains. [1]`, ""},
-		{"relation transitivity without premise", `1. Ada admires Ben.
-2. Ben admires Cy.
-3. Therefore, Ada admires Cy. [1,2]`, ""},
+		// Accepted v13 additions (formerly known gaps).
+		{"contraposition", `1. if it rains, then it snows.
+2. Therefore, if it is not the case that it snows, then it is not the case that it rains. [1]`, "contraposition"},
+		{"De Morgan and forward", `1. it is not the case that it is the case both that it rains, and that it snows.
+2. Therefore, either it is not the case that it rains or it is not the case that it snows. [1]`, "De Morgan"},
+		{"De Morgan and reverse", `1. either it is not the case that it rains or it is not the case that it snows.
+2. Therefore, it is not the case that it is the case both that it rains, and that it snows. [1]`, "De Morgan"},
+		{"De Morgan or forward", `1. it is not the case that either it rains or it snows.
+2. Therefore, it is the case both that it is not the case that it rains, and that it is not the case that it snows. [1]`, "De Morgan"},
+		{"De Morgan or reverse", `1. it is the case both that it is not the case that it rains, and that it is not the case that it snows.
+2. Therefore, it is not the case that either it rains or it snows. [1]`, "De Morgan"},
+		{"and commutation", `1. it rains and it snows.
+2. Therefore, it snows and it rains. [1]`, "commutation"},
+		{"or commutation", `1. either it rains or it snows.
+2. Therefore, either it snows or it rains. [1]`, "commutation"},
+		{"exportation", `1. if it rains and it snows, then the street is wet.
+2. Therefore, if it rains, then if it snows, then the street is wet. [1]`, "exportation"},
+		{"importation", `1. if it rains, then if it snows, then the street is wet.
+2. Therefore, if it rains and it snows, then the street is wet. [1]`, "importation"},
+		{"material implication forward", `1. if it rains, then it snows.
+2. Therefore, either it is not the case that it rains or it snows. [1]`, "material implication"},
+		{"material implication reverse", `1. either it is not the case that it rains or it snows.
+2. Therefore, if it rains, then it snows. [1]`, "material implication"},
+		{"and distribution", `1. it is the case both that it rains, and that either it snows or the street is wet.
+2. Therefore, either it rains and it snows or it rains and the street is wet. [1]`, "distribution"},
+		{"or distribution", `1. either it rains or it snows and the street is wet.
+2. Therefore, it is the case both that either it rains or it snows, and that either it rains or the street is wet. [1]`, "distribution"},
+		{"absorption", `1. either it rains or it rains and it snows.
+2. Therefore, it rains. [1]`, "absorption"},
+		{"conditional absorption", `1. if it rains, then it snows.
+2. Therefore, if it rains, then it rains and it snows. [1]`, "absorption"},
+		{"double negation introduction", `1. it rains.
+2. Therefore, it is not the case that it is not the case that it rains. [1]`, "double negation introduction"},
+		{"biconditional modus tollens", `1. it rains if and only if it snows.
+2. it is not the case that it snows.
+3. Therefore, it is not the case that it rains. [1,2]`, "biconditional modus tollens"},
+		{"biconditional chaining", `1. it rains if and only if it snows.
+2. it snows if and only if the street is wet.
+3. Therefore, it rains if and only if the street is wet. [1,2]`, "biconditional chaining"},
+		{"biconditional commutation", `1. it rains if and only if it snows.
+2. Therefore, it snows if and only if it rains. [1]`, "biconditional commutation"},
+		{"negated conditional antecedent", `1. it is not the case that if it rains, then it snows.
+2. Therefore, it rains. [1]`, "negated conditional"},
+		{"negated conditional negated consequent", `1. it is not the case that if it rains, then it snows.
+2. Therefore, it is not the case that it snows. [1]`, "negated conditional"},
+		{"identity symmetry", `1. Ada is identical to Ben.
+2. Therefore, Ben is identical to Ada. [1]`, "identity symmetry"},
+		{"quantifier negation universal", `1. it is not the case that every man is mortal.
+2. Therefore, some man is not mortal. [1]`, "quantifier negation"},
+		{"quantifier negation existential", `1. it is not the case that some man is immortal.
+2. Therefore, no man is immortal. [1]`, "quantifier negation"},
+		{"existential conversion", `1. some poet is a sailor.
+2. Therefore, some sailor is a poet. [1]`, "conversion"},
+		{"universal negative conversion", `1. no poet is a sailor.
+2. Therefore, no sailor is a poet. [1]`, "conversion"},
+		{"universal modus tollens", `1. every man is mortal.
+2. it is not the case that Zeus is mortal.
+3. Therefore, it is not the case that Zeus is a man. [1,2]`, "universal modus tollens"},
+		{"necessity implies possibility", `1. necessarily, it rains.
+2. Therefore, possibly, it rains. [1]`, "possibility introduction"},
 		// Currently accepted forms, across the major catalog families.
 		{"modus ponens", `1. if it rains, then it snows.
 2. it rains.
@@ -190,5 +192,5 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 			}
 		})
 	}
-	t.Logf("ledger: %d rejection rows (%d valid gaps plus one relation boundary), %d accepted rows", gaps, gaps-1, accepted)
+	t.Logf("ledger: %d rejection rows (two intentionally rejected plus one relation boundary), %d accepted rows", gaps, accepted)
 }

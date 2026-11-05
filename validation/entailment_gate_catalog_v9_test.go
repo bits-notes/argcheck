@@ -6,16 +6,6 @@ import (
 	"testing"
 )
 
-func TestCatalogV9Version(t *testing.T) {
-	// v10 (2026-09-30) adds n-ary conjunction introduction; v11 (2026-10-05)
-	// adds existential syllogisms, schematic existential introduction and
-	// identity substitution; v12 (2026-10-05) adds constructive, simple and
-	// destructive dilemmas. v9 forms still hold.
-	if EntailmentGateCatalogVersion != "v12" {
-		t.Fatalf("catalog = %q, want v12", EntailmentGateCatalogVersion)
-	}
-}
-
 func TestCatalogV9SurfaceForms(t *testing.T) {
 	tests := []struct {
 		name, argument string

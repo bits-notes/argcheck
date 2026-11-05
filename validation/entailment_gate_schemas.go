@@ -90,6 +90,25 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "constructive dilemma", arity: variableArity, match: matchConstructiveDilemma},
 	{name: "simple dilemma", arity: variableArity, match: matchSimpleDilemma},
 	{name: "destructive dilemma", arity: variableArity, match: matchDestructiveDilemma},
+	// v13 forms follow all prior entries to preserve reported form names.
+	{name: "contraposition", arity: 1, match: matchContraposition},
+	{name: "De Morgan", arity: 1, match: matchDeMorgan},
+	{name: "commutation", arity: 1, match: matchCommutation},
+	{name: "exportation", arity: 1, match: matchExportation},
+	{name: "importation", arity: 1, match: matchImportation},
+	{name: "material implication", arity: 1, match: matchMaterialImplication},
+	{name: "distribution", arity: 1, match: matchDistribution},
+	{name: "absorption", arity: 1, match: matchAbsorption},
+	{name: "double negation introduction", arity: 1, match: matchDoubleNegationIntroduction},
+	{name: "biconditional modus tollens", arity: 2, match: matchBiconditionalModusTollens},
+	{name: "biconditional chaining", arity: 2, match: matchBiconditionalChaining},
+	{name: "biconditional commutation", arity: 1, match: matchBiconditionalCommutation},
+	{name: "negated conditional", arity: 1, match: matchNegatedConditional},
+	{name: "identity symmetry", arity: 1, match: matchIdentitySymmetry},
+	{name: "quantifier negation", arity: 1, match: matchQuantifierNegation},
+	{name: "conversion", arity: 1, match: matchConversion},
+	{name: "universal modus tollens", arity: 2, match: matchUniversalModusTollens},
+	{name: "possibility introduction", arity: 1, match: matchPossibilityIntroduction},
 }
 
 func normalizeClause(value string) string {
@@ -200,6 +219,18 @@ func negationCandidates(statement string) []string {
 		return nil
 	}
 	return []string{remainder}
+}
+
+// hasOuterGateOperator recognizes explicit scopes which must not be split
+// at an embedded and/or. Bare legacy conjunction/disjunction spellings remain
+// supported; explicit either/both scaffolds are handled by their own splitters.
+func hasOuterGateOperator(statement string) bool {
+	for _, prefix := range []string{"if ", "it is not the case that ", "necessarily, ", "necessarily ", "possibly, ", "possibly "} {
+		if strings.HasPrefix(statement, prefix) {
+			return true
+		}
+	}
+	return strings.Contains(statement, " if and only if ") && !strings.HasPrefix(statement, "it is the case both that")
 }
 
 func conjunctionCandidates(statement string) []clausePair {
@@ -330,6 +361,9 @@ func splitPreservingCase(statement, separator string) []string {
 
 func disjunctionCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
+	if hasOuterGateOperator(statement) || strings.HasPrefix(statement, "it is the case both that") {
+		return nil
+	}
 	statement = strings.TrimPrefix(statement, "either ")
 	return appendSplitCandidates(nil, statement, " or ", false)
 }
@@ -1274,6 +1308,13 @@ func matchConjunctionIntroduction(premises []NumberedArgumentStep, conclusion Nu
 }
 
 func matchConjunctionElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	// Raw conjunction candidates also serve bridge antecedents, where cited
+	// clauses disambiguate scope. Elimination has no such evidence: an outer
+	// negation, conditional, disjunction or modal must remain intact.
+	statement := normalizeClause(premises[0].Statement)
+	if hasOuterGateOperator(statement) || strings.HasPrefix(statement, "either ") {
+		return schemaMatchOutcome{}
+	}
 	best := schemaMatchOutcome{}
 	for _, conjunction := range conjunctionCandidates(premises[0].Statement) {
 		for _, part := range []struct {
