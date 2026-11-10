@@ -1,0 +1,179 @@
+{
+  "case_set_version": "2.0",
+  "source_experiment_id": "20260721T141248Z-1fea5e2d",
+  "source_suite": "argument-verification-rev2-v2-development",
+  "source_variant": "sonnet-4.6-baseline",
+  "source_repetitions": 3,
+  "notes": "Development-only standalone entailments delivered to the strict judge in the frozen battery-v2 incumbent baseline. Gold statuses were stable across all source repetitions and must be reviewed by construction before candidate runs.",
+  "cases": [
+    {
+      "id": "V2-D-INV-copper-superlative-s2",
+      "partition": "development",
+      "parent_case": "V2-D-INV-copper-superlative",
+      "source_step": 2,
+      "gold_status": "invalid",
+      "input": "1. The copper specimen conducted electric current under the specified test conditions.\n2. Therefore, copper has greater electrical conductivity than every other metal. [1]",
+      "baseline_run_ids": [
+        "f7665a44-aaad-435a-b574-96afea0d1ed3",
+        "cc3844f6-4533-46f8-8cfb-036fb316f879",
+        "9e6f4565-3520-498d-b7b2-2033bc71fb08"
+      ]
+    },
+    {
+      "id": "V2-D-INV-intermediate-causal-label-s3",
+      "partition": "development",
+      "parent_case": "V2-D-INV-intermediate-causal-label",
+      "source_step": 3,
+      "gold_status": "transparently_valid",
+      "input": "1. Every certified sample in this assay turns the reagent blue when the control solution is added.\n2. Sample R is certified for this assay.\n3. Therefore, sample R turned the reagent blue when the control solution was added. [1,2]",
+      "baseline_run_ids": [
+        "c1f6ef23-afda-4a06-aeec-e1e0c18223d3",
+        "74367ca5-cfb4-4f57-8ca2-ea4650b93f6c",
+        "c8462d10-9e67-45e8-b4fe-25e1874436df"
+      ]
+    },
+    {
+      "id": "V2-D-INV-intermediate-causal-label-s5",
+      "partition": "development",
+      "parent_case": "V2-D-INV-intermediate-causal-label",
+      "source_step": 5,
+      "gold_status": "invalid",
+      "input": "1. sample R turned the reagent blue when the control solution was added.\n2. Sample R's storage vial has a triangular label.\n3. Therefore, the reagent's blue color caused the storage vial to have a triangular label. [1,2]",
+      "baseline_run_ids": [
+        "c1f6ef23-afda-4a06-aeec-e1e0c18223d3",
+        "74367ca5-cfb4-4f57-8ca2-ea4650b93f6c",
+        "c8462d10-9e67-45e8-b4fe-25e1874436df"
+      ]
+    },
+    {
+      "id": "V2-D-INV-reminder-bundle-narrowing-s3",
+      "partition": "development",
+      "parent_case": "V2-D-INV-reminder-bundle-narrowing",
+      "source_step": 3,
+      "gold_status": "opaquely_valid",
+      "input": "1. Students were randomly assigned either to standard study materials or to a support bundle containing a progress dashboard, weekly coaching, and automated reminder messages.\n2. Random assignment made the two groups equivalent on average in all pre-intervention characteristics relevant to the measured outcome.\n3. Therefore, the support bundle was the only factor that differed systematically between the two groups. [1,2]",
+      "baseline_run_ids": [
+        "4cac3f7b-25be-4f59-b0ba-49c9ae9f750a",
+        "1e7ba96d-5e19-4852-a8fd-b7443bc08ae1",
+        "00e24c80-c056-4083-ab88-03b6082be24a"
+      ]
+    },
+    {
+      "id": "V2-D-INV-reminder-bundle-narrowing-s6",
+      "partition": "development",
+      "parent_case": "V2-D-INV-reminder-bundle-narrowing",
+      "source_step": 6,
+      "gold_status": "opaquely_valid",
+      "input": "1. the support bundle was the only factor that differed systematically between the two groups.\n2. The support-bundle group completed significantly more practice problems than the standard-materials group.\n3. If two groups are equivalent in all relevant respects except one intervention bundle and their outcomes differ systematically, then that intervention bundle caused the outcome difference.\n4. Therefore, the support bundle caused the increase in completed practice problems. [1,2,3]",
+      "baseline_run_ids": [
+        "4cac3f7b-25be-4f59-b0ba-49c9ae9f750a",
+        "1e7ba96d-5e19-4852-a8fd-b7443bc08ae1",
+        "00e24c80-c056-4083-ab88-03b6082be24a"
+      ]
+    },
+    {
+      "id": "V2-D-INV-reminder-bundle-narrowing-s7",
+      "partition": "development",
+      "parent_case": "V2-D-INV-reminder-bundle-narrowing",
+      "source_step": 7,
+      "gold_status": "invalid",
+      "input": "1. the support bundle caused the increase in completed practice problems.\n2. Therefore, the automated reminder messages alone caused the increase in completed practice problems. [1]",
+      "baseline_run_ids": [
+        "4cac3f7b-25be-4f59-b0ba-49c9ae9f750a",
+        "1e7ba96d-5e19-4852-a8fd-b7443bc08ae1",
+        "00e24c80-c056-4083-ab88-03b6082be24a"
+      ]
+    },
+    {
+      "id": "V2-D-INV-volunteer-schedule-cause-s4",
+      "partition": "development",
+      "parent_case": "V2-D-INV-volunteer-schedule-cause",
+      "source_step": 4,
+      "gold_status": "invalid",
+      "input": "1. Employees at one factory were allowed to volunteer for a new four-day schedule, and the volunteers produced twelve percent more units during the following quarter than employees who retained the old schedule.\n2. The volunteers had, on average, longer tenure and stronger prior performance reviews than the employees who retained the old schedule.\n3. The reported regression adjusted for recorded tenure but did not measure or adjust for motivation, team assignment, or supervisor support.\n4. Therefore, adopting the four-day schedule caused the volunteers' increase in production. [1,2,3]",
+      "baseline_run_ids": [
+        "17eb267b-2b95-448f-ad54-919f6f3be564",
+        "fdf79589-8270-4c7e-adbf-8aeaaabd5186",
+        "13584266-ef65-4e8e-867b-6afd8f18839f"
+      ]
+    },
+    {
+      "id": "V2-D-OP-pyrexia-threshold-s3",
+      "partition": "development",
+      "parent_case": "V2-D-OP-pyrexia-threshold",
+      "source_step": 3,
+      "gold_status": "opaquely_valid",
+      "input": "1. Two calibrated oral thermometers recorded the patient's temperature as 38.4 degrees Celsius within five minutes of admission.\n2. Neither measurement was taken immediately after hot or cold fluid intake, and the two readings differed by less than the devices' stated measurement tolerance.\n3. Therefore, the patient had pyrexia at admission. [1,2]",
+      "baseline_run_ids": [
+        "17ce8973-dacd-4804-ac76-5918f500f01a",
+        "ffa5a208-7721-44ca-a15a-507ac515d232",
+        "f9605f24-e469-40b6-a189-a8c1e40db2ff"
+      ]
+    },
+    {
+      "id": "V2-D-OP-retrograde-label-s4",
+      "partition": "development",
+      "parent_case": "V2-D-OP-retrograde-label",
+      "source_step": 4,
+      "gold_status": "opaquely_valid",
+      "input": "1. Across the complete observing interval, the moon's position advanced eastward relative to the fixed background stars.\n2. Across that same interval, identifiable surface features on the planet moved westward relative to the fixed background stars as the planet rotated.\n3. If one body's motion is eastward and another body's motion is westward relative to the same fixed reference, then their directions of motion are opposite.\n4. Therefore, the moon's orbital motion is opposite the planet's rotational motion. [1,2,3]",
+      "baseline_run_ids": [
+        "a4251d5d-7ff8-41ff-bcd6-4080f7da0219",
+        "83f74530-1a2a-4a19-b584-d1352554c5d9",
+        "1fd2a0b3-a0ad-44ae-9f5c-607f2d37d449"
+      ]
+    },
+    {
+      "id": "V2-D-OP-retrograde-label-s5",
+      "partition": "development",
+      "parent_case": "V2-D-OP-retrograde-label",
+      "source_step": 5,
+      "gold_status": "opaquely_valid",
+      "input": "1. the moon's orbital motion is opposite the planet's rotational motion.\n2. Therefore, the moon follows a retrograde orbit around the planet. [1]",
+      "baseline_run_ids": [
+        "a4251d5d-7ff8-41ff-bcd6-4080f7da0219",
+        "83f74530-1a2a-4a19-b584-d1352554c5d9",
+        "1fd2a0b3-a0ad-44ae-9f5c-607f2d37d449"
+      ]
+    },
+    {
+      "id": "V2-D-OP-standard-atmosphere-label-s3",
+      "partition": "development",
+      "parent_case": "V2-D-OP-standard-atmosphere-label",
+      "source_step": 3,
+      "gold_status": "opaquely_valid",
+      "input": "1. After thermal equilibration and correction for the instrument's certified zero offset, the chamber's calibrated pressure transducer reported a stable absolute pressure of 101.325 kilopascals for the entire ten-minute sampling window.\n2. The calibration certificate was current, the transducer remained within its stated operating range, and no pressure transient larger than the instrument's resolution occurred during that sampling window.\n3. Therefore, throughout the sampling window, the chamber was at one standard atmosphere of pressure. [1,2]",
+      "baseline_run_ids": [
+        "2e4def59-8e66-418e-9e8d-ddb74dbf2308",
+        "b4ff8207-1d20-465a-acdd-8b6f6d5ce213",
+        "2a103f4c-49ce-42f6-a0c7-818b5ca09a3d"
+      ]
+    },
+    {
+      "id": "V2-D-TV-explicit-cargo-rule-s3",
+      "partition": "development",
+      "parent_case": "V2-D-TV-explicit-cargo-rule",
+      "source_step": 3,
+      "gold_status": "transparently_valid",
+      "input": "1. Under the port's published hazardous-material rule, every sealed container that carries more than two thousand kilograms of Class 8 corrosive material requires a red handling permit before it may enter the transfer yard.\n2. Container K-17 is sealed and carries more than two thousand kilograms of Class 8 corrosive material.\n3. Therefore, container K-17 requires a red handling permit before it may enter the transfer yard. [1,2]",
+      "baseline_run_ids": [
+        "50a0922d-105e-4934-af32-dde96a6e9d16",
+        "7dbcb516-45f0-4131-a2a4-d6a0ac2c397f",
+        "a4e4507e-f71a-4f5a-911e-c78689fec84a"
+      ]
+    },
+    {
+      "id": "V2-D-TV-two-explicit-conclusions-s3",
+      "partition": "development",
+      "parent_case": "V2-D-TV-two-explicit-conclusions",
+      "source_step": 3,
+      "gold_status": "transparently_valid",
+      "input": "1. If the backup sensor is receiving power, then its green indicator is illuminated.\n2. The backup sensor is receiving power.\n3. Therefore, the backup sensor's green indicator is illuminated. [1,2]",
+      "baseline_run_ids": [
+        "a17730b6-4711-4840-84cb-9453a588cb0b",
+        "6f000c47-b0a2-45d5-a8eb-9e07df3b7392",
+        "8ba378b7-0f7d-4a79-899e-80621ee4278e"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,256 @@
+[
+  {
+    "id": "TV-kripke-3", "gold": "transparently_valid", "domain": "epidemiology",
+    "seed": "study-eval/kripke-2002 step 3 [1,2]",
+    "argument": "1. In the Cancer Prevention Study II, self-reported habitual sleep duration and 6-year all-cause mortality were recorded for more than 1.1 million adults.\n2. In Cox proportional-hazards models adjusting for demographics, health habits, pre-existing conditions, and medication use, mortality hazard was lowest near 7 hours of sleep and higher for both shorter and longer durations.\n3. Therefore, in this cohort, self-reported sleep duration has a U-shaped statistical association with subsequent all-cause mortality, minimized near 7 hours. [1,2]",
+    "note": "Naming a min-at-interior/rises-both-directions pattern as 'U-shaped' follows immediately."
+  },
+  {
+    "id": "TV-kripke-6", "gold": "transparently_valid", "domain": "epidemiology",
+    "seed": "study-eval/kripke-2002 step 6 [3,4,5]",
+    "argument": "1. In this cohort, self-reported sleep duration has a U-shaped statistical association with all-cause mortality, minimized near 7 hours.\n2. An observational exposure-mortality association that survives adjustment for measured covariates still does not establish that the exposure causes the mortality difference, because residual confounding and reverse causation remain possible.\n3. Reverse causation is specifically live here: undiagnosed illness can both shift habitual sleep and raise mortality, and adjustment on measured health factors cannot fully remove it.\n4. Therefore, the observed U-shaped association does not by itself establish that short sleep or long sleep causally affects mortality. [1,2,3]",
+    "note": "The association plus the stated principle that observational associations don't establish causation yields the no-causal-license conclusion."
+  },
+  {
+    "id": "TV-kripke-7", "gold": "transparently_valid", "domain": "epidemiology",
+    "seed": "study-eval/kripke-2002 step 7 [3,6]",
+    "argument": "1. In this cohort, self-reported sleep duration has a U-shaped statistical association with all-cause mortality, minimized near 7 hours.\n2. The observed U-shaped association does not by itself establish that short sleep or long sleep causally affects mortality.\n3. Therefore, this study licenses the claim that sleep duration is associated with all-cause mortality in a U-shaped pattern minimized near 7 hours, but does not license the claim that short sleep causally shortens lifespan. [1,2]",
+    "note": "Combines the association with the denial of causal licensing."
+  },
+  {
+    "id": "TV-placebo-3", "gold": "transparently_valid", "domain": "psychology",
+    "seed": "study-eval/placebo-sleep step 3 [1,2]",
+    "argument": "1. 164 participants were randomly assigned to be told either that they had above-average sleep quality or below-average sleep quality, following a sham measurement that did not alter their actual sleep.\n2. Random assignment ensures the two groups were equivalent, on average, in actual prior sleep quality and all other relevant characteristics before the manipulation.\n3. Therefore, the only factor that differed systematically between the two groups was the experimentally assigned belief about their sleep quality. [1,2]",
+    "note": "Random assignment + one manipulated factor yields 'only that factor differs'."
+  },
+  {
+    "id": "TV-placebo-6-bridge", "gold": "transparently_valid", "domain": "psychology",
+    "seed": "study-eval/placebo-sleep step 6 [3,4,5] WITH its bridge premise 4 present",
+    "argument": "1. The only factor that differed systematically between the two groups was the experimentally assigned belief about their sleep quality.\n2. If two groups are equivalent in all relevant respects except a single factor, then any systematic difference in an outcome between the groups was caused by that factor.\n3. Participants told they had above-average sleep quality performed significantly better on the cognitive tasks than participants told they had below-average sleep quality.\n4. Therefore, the systematic difference in cognitive performance between the groups was caused by the experimentally assigned belief about sleep quality, and not by any difference in actual sleep quality. [1,2,3]",
+    "note": "With the causal bridge (premise 2) explicit, the conclusion follows immediately. Contrast OP-placebo-6-nobridge."
+  },
+  {
+    "id": "TV-placebo-8", "gold": "transparently_valid", "domain": "psychology",
+    "seed": "study-eval/placebo-sleep step 8 [6,7]",
+    "argument": "1. The systematic difference in cognitive performance between the groups was caused by the experimentally assigned belief about sleep quality, and not by any difference in actual sleep quality.\n2. A manipulated belief that causally affects an outcome, without that effect running through the actual state the belief is about, is a placebo effect with respect to that state.\n3. Therefore, in this experiment, a manipulated belief about one's own sleep quality causally affected cognitive performance independently of actual sleep quality, a placebo sleep effect. [1,2]",
+    "note": "Instantiates the placebo-effect definition against the established causal finding."
+  },
+  {
+    "id": "TV-moulage-8", "gold": "transparently_valid", "domain": "nursing-education",
+    "seed": "study-eval/moulage step 8 [5,6,7]",
+    "argument": "1. The two groups differed systematically only in whether their skills practice used the moulage-equipped transparent-lung task trainer or the low-fidelity simulator.\n2. If two groups are equivalent in all relevant respects except a single factor, then any systematic difference in an outcome measured after that factor is applied was caused by that factor.\n3. After training, the experimental group scored significantly higher than the control group on the post-test knowledge test and the skill checklist.\n4. Therefore, the experimental group's higher post-test scores were caused by practicing with the moulage-equipped transparent-lung task trainer rather than the low-fidelity simulator. [1,2,3]",
+    "note": "Causal bridge is explicit (premise 2); the attribution to the practice setup (as a bundle) follows."
+  },
+  {
+    "id": "TV-sids-7", "gold": "transparently_valid", "domain": "vaccine-safety",
+    "seed": "study-eval/sids-vaers step 7 [5,6] (note: 'suggestive of causal', not 'causes')",
+    "argument": "1. There is a genuine temporal association between infant vaccination and infant death, with reported deaths concentrated shortly after vaccination and more frequent nearer in time to it, not attributable to chance.\n2. When reported deaths are concentrated shortly after an exposure and become more frequent nearer in time to it, and this concentration is not attributable to chance, the temporal pattern is highly suggestive of a causal relationship.\n3. Therefore, the temporal association between infant vaccination and infant death is highly suggestive of a causal relationship between infant vaccines and infant deaths. [1,2]",
+    "note": "Modus ponens on the stated 'suggestive-of-causal' rule; the hedge 'suggestive' is preserved, so no overreach."
+  },
+  {
+    "id": "TV-square", "gold": "transparently_valid", "domain": "geometry",
+    "seed": "closure benchmark A1 (analytic)",
+    "argument": "1. All squares have four sides.\n2. This figure is a square.\n3. Therefore, this figure has four sides. [1,2]",
+    "note": "Universal instantiation; analytic."
+  },
+  {
+    "id": "TV-bachelor", "gold": "transparently_valid", "domain": "language",
+    "seed": "closure benchmark A2 (analytic)",
+    "argument": "1. No bachelor is married.\n2. Tom is a bachelor.\n3. Therefore, Tom is not married. [1,2]",
+    "note": "Analytic; direct instantiation."
+  },
+  {
+    "id": "TV-divisible", "gold": "transparently_valid", "domain": "arithmetic",
+    "seed": "closure benchmark A3 (analytic)",
+    "argument": "1. Any whole number divisible by six is divisible by three.\n2. 42 is divisible by six.\n3. Therefore, 42 is divisible by three. [1,2]",
+    "note": "Instantiation of a stated arithmetical rule."
+  },
+  {
+    "id": "TV-datum-report", "gold": "transparently_valid", "domain": "finance",
+    "seed": "closure benchmark D1 (datum available)",
+    "argument": "1. Acme Corp's 2023 annual report states net revenue of 4.2 billion dollars.\n2. Therefore, the reported 2023 net revenue figure is 4.2 billion dollars. [1]",
+    "note": "The conclusion is about what the report states; it restates the cited datum."
+  },
+  {
+    "id": "TV-parsimony", "gold": "transparently_valid", "domain": "epistemics",
+    "seed": "closure benchmark M1 (methodological primitive)",
+    "argument": "1. Other things equal, the hypothesis positing fewer unobserved entities is to be preferred.\n2. Hypothesis A posits fewer unobserved entities than B, other things equal.\n3. Therefore, A is to be preferred over B. [1,2]",
+    "note": "Instantiation of a stated parsimony principle."
+  },
+  {
+    "id": "TV-maria-bridge", "gold": "transparently_valid", "domain": "everyday",
+    "seed": "formalize-argument worked example (explicit bridge). Kept as a known model-stumble case.",
+    "argument": "1. Every student who completes the practice set passes the final.\n2. Maria completed the practice set.\n3. If [1,2], then Maria will pass the final.\n4. Therefore, Maria will pass the final. [1,2,3]",
+    "note": "Explicit, cited bridge; should be transparent. Both Sonnet and Haiku mislabeled it in the pilot -> retained as an informative edge case (explicit-bridge handling)."
+  },
+  {
+    "id": "TV-restaurant", "gold": "transparently_valid", "domain": "everyday",
+    "seed": "formalize-argument worked example",
+    "argument": "1. The restaurant lost its health permit last month.\n2. Any restaurant without a valid health permit is required to close.\n3. Therefore, the restaurant is required to close. [1,2]",
+    "note": "Modus ponens on a stated general rule."
+  },
+
+  {
+    "id": "OP-sids-5", "gold": "opaquely_valid", "domain": "vaccine-safety",
+    "seed": "study-eval/sids step 5 [2,3,4]. RELABELED from transparently_valid: both models flagged opaque in the pilot.",
+    "argument": "1. Among 2,605 reported infant deaths, 58% occurred within 3 days of vaccination and 78.3% within 7 days, so reported deaths were concentrated in the days immediately after vaccination and more frequent nearer in time to it.\n2. If vaccination and infant death were unrelated, reported deaths would be distributed evenly across the days following vaccination rather than concentrated in the first few days.\n3. Measured against that even-distribution expectation, the observed concentration is an excess that is statistically significant (p < 0.00001) and too large to attribute to chance.\n4. Therefore, the concentration of reported infant deaths in the days immediately following vaccination, decreasing with time since vaccination, is a genuine temporal association rather than an artifact of chance. [1,2,3]",
+    "note": "Moving from 'statistically significant excess vs the chance null' to 'genuine temporal association' needs a suppressed bridge (rejecting chance => a real association); valid but not immediate -> opaque."
+  },
+  {
+    "id": "OP-moulage-5", "gold": "opaquely_valid", "domain": "nursing-education",
+    "seed": "study-eval/moulage step 5 [1,2,3,4]. RELABELED from transparently_valid: the study itself derives step 5 via a separate identification argument (section 2b), evidence it needs an unstated bridge.",
+    "argument": "1. 77 nursing intern students were randomly assigned to an experimental arm (moulage-equipped transparent-lung task trainer) or a control arm (low-fidelity simulator).\n2. Both groups received identical didactic content: the same 2-hour theoretical course and the same 4 hours of skills training.\n3. Random assignment ensures the two groups were equivalent, on average, in prior knowledge, prior skill, and all other relevant characteristics before training.\n4. Pre-test knowledge scores were statistically similar between the groups, confirming an equivalent knowledge baseline.\n5. Therefore, the two groups differed systematically only in whether their skills practice used the moulage-equipped transparent-lung task trainer or the low-fidelity simulator. [1,2,3,4]",
+    "note": "The 'only the practice setup differs' conclusion needs a suppressed exhaustiveness premise (these factors are all the relevant ones); the study wrote a whole identification argument for it -> opaque."
+  },
+  {
+    "id": "OP-socrates", "gold": "opaquely_valid", "domain": "language",
+    "seed": "classic enthymeme (suppressed major premise)",
+    "argument": "1. Socrates is a man.\n2. Therefore, Socrates is mortal. [1]",
+    "note": "Follows only via the unstated bridge 'all men are mortal' -> opaque."
+  },
+  {
+    "id": "OP-placebo-6-nobridge", "gold": "opaquely_valid", "domain": "psychology",
+    "seed": "study-eval/placebo-sleep step 6 with bridge premise 4 REMOVED (by construction)",
+    "argument": "1. The only factor that differed systematically between the two groups was the experimentally assigned belief about their sleep quality.\n2. Participants told they had above-average sleep quality performed significantly better on the cognitive tasks than participants told they had below-average sleep quality.\n3. Therefore, the systematic difference in cognitive performance between the groups was caused by the experimentally assigned belief about sleep quality. [1,2]",
+    "note": "The causal leap needs the suppressed bridge 'if groups differ in only one factor, any outcome difference was caused by that factor'. Removed here -> opaque. Contrast TV-placebo-6-bridge."
+  },
+  {
+    "id": "OP-moulage-inc-nobridge", "gold": "opaquely_valid", "domain": "nursing-education",
+    "seed": "moulage step 12 with the norm premise removed",
+    "argument": "1. Practicing with moulage improves nursing students' endotracheal-suctioning knowledge and skill relative to standard low-fidelity simulation.\n2. Therefore, moulage should be incorporated into endotracheal-suctioning skills training. [1]",
+    "note": "Is->ought needs the suppressed norm 'a method that improves skill relative to standard should be incorporated'. Valid via that bridge -> opaque."
+  },
+  {
+    "id": "OP-fever", "gold": "opaquely_valid", "domain": "medicine",
+    "seed": "constructed enthymeme",
+    "argument": "1. The patient's temperature at admission was 39.1 degrees Celsius.\n2. Therefore, the patient had a fever at admission. [1]",
+    "note": "Needs suppressed bridge '39.1C is a fever'. Valid via it -> opaque."
+  },
+  {
+    "id": "OP-permit", "gold": "opaquely_valid", "domain": "everyday",
+    "seed": "restaurant example with the general rule suppressed",
+    "argument": "1. The restaurant lost its health permit last month.\n2. Therefore, the restaurant is required to close. [1]",
+    "note": "Needs the suppressed rule 'any restaurant without a valid permit must close'. Contrast TV-restaurant."
+  },
+  {
+    "id": "OP-rain-wet", "gold": "opaquely_valid", "domain": "everyday",
+    "seed": "constructed enthymeme (valid direction of the conditional)",
+    "argument": "1. It rained heavily last night.\n2. Therefore, the ground is wet this morning. [1]",
+    "note": "Needs the suppressed conditional 'if it rains heavily, the ground gets wet'. Valid via it -> opaque. Contrast IV-affirm-consequent."
+  },
+  {
+    "id": "OP-divisible-hidden", "gold": "opaquely_valid", "domain": "arithmetic",
+    "seed": "closure A3 with the divisibility rule suppressed",
+    "argument": "1. 42 is divisible by six.\n2. Therefore, 42 is divisible by three. [1]",
+    "note": "Needs the suppressed rule 'any number divisible by six is divisible by three'. Contrast TV-divisible."
+  },
+  {
+    "id": "OP-market", "gold": "opaquely_valid", "domain": "epidemiology",
+    "seed": "formalize-argument COVID example with the linking principle suppressed",
+    "argument": "1. The earliest known COVID cases cluster tightly on the Huanan market, which sold live susceptible mammals.\n2. Therefore, the market is the most likely origin of the outbreak. [1]",
+    "note": "Needs the suppressed principle 'if earliest cases concentrate where susceptible animals were sold, that place is the most likely origin'. Valid via it -> opaque."
+  },
+
+  {
+    "id": "IV-kripke-causal", "gold": "invalid", "domain": "epidemiology",
+    "seed": "study-eval/kripke: the causal reading the study explicitly refuses",
+    "argument": "1. In this cohort, self-reported sleep duration has a U-shaped statistical association with all-cause mortality, minimized near 7 hours.\n2. Therefore, sleeping fewer than 7 hours causally shortens lifespan. [1]",
+    "note": "Correlation->causation. Does not follow from an association alone -> invalid."
+  },
+  {
+    "id": "IV-moulage-narrowing", "gold": "invalid", "domain": "nursing-education",
+    "seed": "study-eval/moulage: the unlicensed bundle->single-feature narrowing flagged in the study",
+    "argument": "1. Practicing with the moulage-equipped transparent-lung task trainer (which differs from the control in three co-varying features: moulage, transparent lungs, and trainer fidelity) improved post-test knowledge and skill scores.\n2. Therefore, moulage improves nursing students' knowledge and skill. [1]",
+    "note": "Narrows a bundled cause to one of three co-varying features with no premise isolating moulage -> invalid."
+  },
+  {
+    "id": "IV-sids-causes", "gold": "invalid", "domain": "vaccine-safety",
+    "seed": "study-eval/sids: flat causal claim from a temporal association (study says 'suggestive', not 'causes')",
+    "argument": "1. There is a genuine temporal association between infant vaccination and infant death, with reported deaths concentrated shortly after vaccination.\n2. Therefore, infant vaccines cause infant deaths. [1]",
+    "note": "A temporal association does not by itself establish causation (reporting bias, baseline SIDS age window) -> invalid."
+  },
+  {
+    "id": "IV-sids-quant-overreach", "gold": "invalid", "domain": "vaccine-safety",
+    "seed": "unsupported quantitative qualifier",
+    "argument": "1. Among reported infant deaths in the database, most occurred within 7 days of a vaccination.\n2. Therefore, vaccines cause the majority of infant deaths. [1]",
+    "note": "Conflates 'most reported-and-vaccinated deaths were recent' with 'vaccines cause most infant deaths' (selection + causation) -> invalid."
+  },
+  {
+    "id": "IV-square-dropcite", "gold": "invalid", "domain": "geometry",
+    "seed": "closure A1 with the minor premise deleted (drop load-bearing premise)",
+    "argument": "1. All squares have four sides.\n2. Therefore, this figure has four sides. [1]",
+    "note": "Nothing states 'this figure is a square'; does not follow from [1] alone -> invalid."
+  },
+  {
+    "id": "IV-moulage-dropcite", "gold": "invalid", "domain": "nursing-education",
+    "seed": "outcome premise miscited to support a design-attribution conclusion",
+    "argument": "1. After training, the experimental group scored higher than the control group on the post-test.\n2. Therefore, the two groups differed only in whether their practice used the moulage-equipped trainer. [1]",
+    "note": "A post-test outcome difference does not establish the pre-registered design attribution; conclusion doesn't follow from the cited premise -> invalid."
+  },
+  {
+    "id": "IV-affirm-consequent", "gold": "invalid", "domain": "logic",
+    "seed": "affirming the consequent",
+    "argument": "1. If it rained last night, then the ground is wet.\n2. The ground is wet.\n3. Therefore, it rained last night. [1,2]",
+    "note": "Formal fallacy; the ground could be wet for other reasons -> invalid."
+  },
+  {
+    "id": "IV-deny-antecedent", "gold": "invalid", "domain": "logic",
+    "seed": "denying the antecedent",
+    "argument": "1. If the alarm is set, the light blinks.\n2. The alarm is not set.\n3. Therefore, the light does not blink. [1,2]",
+    "note": "Formal fallacy; the light could blink for another reason -> invalid."
+  },
+  {
+    "id": "IV-illicit-conversion", "gold": "invalid", "domain": "logic",
+    "seed": "illicit conversion of a universal",
+    "argument": "1. All squares are rectangles.\n2. Therefore, all rectangles are squares. [1]",
+    "note": "Converting 'all A are B' to 'all B are A' is invalid."
+  },
+  {
+    "id": "IV-quantifier-scope", "gold": "invalid", "domain": "logic",
+    "seed": "quantifier-scope swap",
+    "argument": "1. Everyone loves someone.\n2. Therefore, there is someone whom everyone loves. [1]",
+    "note": "Swapping the order of the existential and universal quantifiers is invalid."
+  },
+  {
+    "id": "IV-affirm-disjunct", "gold": "invalid", "domain": "logic",
+    "seed": "affirming a disjunct",
+    "argument": "1. The server is down or the network is congested.\n2. The server is down.\n3. Therefore, the network is not congested. [1,2]",
+    "note": "Inclusive 'or' allows both disjuncts; affirming one does not deny the other -> invalid."
+  },
+  {
+    "id": "IV-base-rate", "gold": "invalid", "domain": "statistics",
+    "seed": "base-rate neglect",
+    "argument": "1. A screening test for a rare disease is 99 percent accurate, and Bob tested positive.\n2. Therefore, Bob probably has the disease. [1]",
+    "note": "With a low base rate, most positives are false positives; the conclusion does not follow -> invalid."
+  },
+  {
+    "id": "IV-hasty-generalization", "gold": "invalid", "domain": "reasoning",
+    "seed": "hasty generalization",
+    "argument": "1. The three swans I saw yesterday were white.\n2. Therefore, all swans are white. [1]",
+    "note": "A small sample does not support a universal claim -> invalid."
+  },
+  {
+    "id": "IV-composition", "gold": "invalid", "domain": "reasoning",
+    "seed": "fallacy of composition",
+    "argument": "1. Each part of the machine is lightweight.\n2. Therefore, the whole machine is lightweight. [1]",
+    "note": "Properties of parts do not automatically transfer to the whole -> invalid."
+  },
+  {
+    "id": "IV-confounding-icecream", "gold": "invalid", "domain": "statistics",
+    "seed": "confounded correlation",
+    "argument": "1. Across months, ice cream sales and drowning deaths rise and fall together.\n2. Therefore, buying ice cream increases the risk of drowning. [1]",
+    "note": "A common cause (warm weather) confounds the correlation; causation does not follow -> invalid."
+  },
+  {
+    "id": "IV-miscite", "gold": "invalid", "domain": "language",
+    "seed": "closure A2 with a wrong citation set",
+    "argument": "1. No bachelor is married.\n2. Tom is a bachelor.\n3. The meeting starts at noon.\n4. Therefore, Tom is not married. [1,3]",
+    "note": "Cites [1,3]; step 3 is irrelevant and the needed step 2 is uncited -> not supported by the cited set -> invalid."
+  },
+  {
+    "id": "IV-converse-bachelor", "gold": "invalid", "domain": "language",
+    "seed": "affirming the consequent via a definition",
+    "argument": "1. All bachelors are unmarried men.\n2. Tom is an unmarried man.\n3. Therefore, Tom is a bachelor. [1,2]",
+    "note": "Only if 'bachelor' and 'unmarried man' are stated as equivalent does this follow; from 'all bachelors are unmarried men' alone it is illicit conversion -> invalid."
+  }
+]

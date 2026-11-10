@@ -1,0 +1,98 @@
+[
+  {
+    "id": "A1", "gold_verdict": "terminal", "gold_type": "analytic",
+    "premise": "All squares have four sides.",
+    "argument": "1. All squares have four sides.\n2. This figure is a square.\n3. Therefore, this figure has four sides. [1,2]",
+    "premise_number": 1,
+    "available_information": "standard geometric definitions.",
+    "note": "True by definition of 'square'."
+  },
+  {
+    "id": "A2", "gold_verdict": "terminal", "gold_type": "analytic",
+    "premise": "No bachelor is married.",
+    "argument": "1. No bachelor is married.\n2. Tom is a bachelor.\n3. Therefore, Tom is not married. [1,2]",
+    "premise_number": 1,
+    "available_information": "ordinary meanings of English words.",
+    "note": "Analytic; 'bachelor' means unmarried man."
+  },
+  {
+    "id": "A3", "gold_verdict": "terminal", "gold_type": "analytic",
+    "premise": "Any whole number divisible by six is divisible by three.",
+    "argument": "1. Any whole number divisible by six is divisible by three.\n2. 42 is divisible by six.\n3. Therefore, 42 is divisible by three. [1,2]",
+    "premise_number": 1,
+    "available_information": "elementary arithmetic.",
+    "note": "Follows from the meaning of divisibility (6 = 2x3)."
+  },
+  {
+    "id": "D1", "gold_verdict": "terminal", "gold_type": "datum_available",
+    "premise": "Acme Corp's 2023 annual report states net revenue of 4.2 billion dollars.",
+    "argument": "1. Acme Corp's 2023 annual report states net revenue of 4.2 billion dollars.\n2. Therefore, the reported 2023 net revenue figure is 4.2 billion dollars. [1]",
+    "premise_number": 1,
+    "available_information": "the full text of Acme Corp's 2023 annual report is in hand.",
+    "note": "A recorded figure stated in an available document (claim is about what the report states, not whether it is accurate)."
+  },
+  {
+    "id": "D2", "gold_verdict": "terminal", "gold_type": "datum_available",
+    "premise": "The patient's temperature recorded at admission was 39.1 degrees Celsius.",
+    "argument": "1. The patient's temperature recorded at admission was 39.1 degrees Celsius.\n2. 39.1 degrees Celsius is a fever.\n3. Therefore, the patient had a fever at admission. [1,2]",
+    "premise_number": 1,
+    "available_information": "the patient's medical chart with the admission vitals is available.",
+    "note": "A recorded measurement in an available record."
+  },
+  {
+    "id": "I1", "gold_verdict": "terminal", "gold_type": "information_bounded",
+    "premise": "The exact contents of the sealed diplomatic cable are favorable to the plaintiff.",
+    "argument": "1. The exact contents of the sealed diplomatic cable are favorable to the plaintiff.\n2. Therefore, the cable supports the plaintiff's case. [1]",
+    "premise_number": 1,
+    "available_information": "the cable exists but is classified and permanently sealed; its contents are inaccessible to this inquiry.",
+    "note": "The deciding information exists but is stated inaccessible."
+  },
+  {
+    "id": "I2", "gold_verdict": "terminal", "gold_type": "information_bounded",
+    "premise": "The number of unreported safety incidents at the plant last year is greater than five.",
+    "argument": "1. The number of unreported safety incidents at the plant last year is greater than five.\n2. Therefore, the plant had a poor safety year. [1]",
+    "premise_number": 1,
+    "available_information": "the plant's internal incident logs are not disclosed and cannot be obtained.",
+    "note": "Deciding record exists but is inaccessible."
+  },
+  {
+    "id": "M1", "gold_verdict": "terminal", "gold_type": "methodological_primitive",
+    "premise": "Other things equal, the hypothesis positing fewer unobserved entities is to be preferred.",
+    "argument": "1. Other things equal, the hypothesis positing fewer unobserved entities is to be preferred.\n2. Hypothesis A posits fewer unobserved entities than B, other things equal.\n3. Therefore, A is to be preferred over B. [1,2]",
+    "premise_number": 1,
+    "available_information": "general standards of inference.",
+    "note": "A parsimony principle adopted as a methodological standard; reasonable inquirers may weight it differently."
+  },
+  {
+    "id": "M2", "gold_verdict": "terminal", "gold_type": "methodological_primitive",
+    "premise": "A claim that contradicts a large body of established evidence requires correspondingly strong evidence to accept.",
+    "argument": "1. A claim that contradicts a large body of established evidence requires correspondingly strong evidence to accept.\n2. This claim contradicts a large body of established evidence and has only weak support.\n3. Therefore, this claim should not yet be accepted. [1,2]",
+    "premise_number": 1,
+    "available_information": "general standards of evidence.",
+    "note": "An evidential standard adopted as a principle."
+  },
+  {
+    "id": "X1", "gold_verdict": "decomposable", "gold_type": null,
+    "premise": "The 2016 minimum-wage increase reduced employment among teenage workers.",
+    "argument": "1. The 2016 minimum-wage increase reduced employment among teenage workers.\n2. Therefore, the increase harmed the group it aimed to help. [1]",
+    "premise_number": 1,
+    "available_information": "published econometric studies of the 2016 increase and their methods.",
+    "note": "A contested econometric causal claim; rests on identification strategy, controls, sample."
+  },
+  {
+    "id": "X2", "gold_verdict": "decomposable", "gold_type": null,
+    "premise": "The defendant was near the warehouse at 10 p.m. on the night of the fire.",
+    "argument": "1. The defendant was near the warehouse at 10 p.m. on the night of the fire.\n2. The fire started around 10 p.m.\n3. Therefore, the defendant had opportunity. [1,2]",
+    "premise_number": 1,
+    "available_information": "a single eyewitness statement and no corroborating records.",
+    "note": "Rests on eyewitness reliability; decomposable into the reliability sub-argument."
+  },
+  {
+    "id": "X3", "gold_verdict": "decomposable", "gold_type": null,
+    "premise": "The new teaching method improves standardized test scores by about twenty percent.",
+    "argument": "1. The new teaching method improves standardized test scores by about twenty percent.\n2. Therefore, schools should adopt it. [1]",
+    "premise_number": 1,
+    "available_information": "one published study reporting the result, with its stated design.",
+    "note": "A study result / effect-size estimate; decomposable into study-validity sub-argument."
+  }
+]

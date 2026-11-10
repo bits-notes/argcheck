@@ -1,0 +1,82 @@
+{
+  "case_set_version": "1.2",
+  "frozen": "2026-07-17",
+  "source_experiment_id": "20260717T125823Z-df79e44e",
+  "notes": "Development-only standalone entailments captured from the canonical production compound validator. Inputs are exactly the arguments delivered to the inner validator in the source experiment; gold labels derive from the frozen parent cases, not the observed candidate outputs. v1.1 (2026-07-17): re-baselined to the strict concept-containment / exact-wording transparency rule (pb-adjudicated). W-TV-kripke-s3, W-TV-kripke-s7, and W-INV-kripke-causal-s3 corrected transparently_valid -> opaquely_valid: labeling a described pattern ('U-shaped statistical association') or applying an epistemic-warrant term ('licenses the claim') introduces a concept not in the cited premises, so it is opaque, not transparent.",
+  "cases": [
+    {
+      "id": "W-TV-kripke-s3",
+      "partition": "development",
+      "parent_case": "W-TV-kripke",
+      "source_step": 3,
+      "gold_status": "opaquely_valid",
+      "input": "1. In the Cancer Prevention Study II, self-reported habitual sleep duration and 6-year all-cause mortality were recorded for more than 1.1 million adults aged 30 to 102.\n2. In Cox proportional-hazards models adjusting for demographics, health habits, pre-existing health conditions, and medication use, mortality hazard was lowest for participants reporting about 7 hours of sleep and was higher for those reporting both shorter and longer sleep, with the excess exceeding 15 percent at the extremes.\n3. Therefore, in this cohort, self-reported sleep duration has a U-shaped statistical association with subsequent all-cause mortality, minimized near 7 hours. [1,2]"
+    },
+    {
+      "id": "W-TV-kripke-s6",
+      "partition": "development",
+      "parent_case": "W-TV-kripke",
+      "source_step": 6,
+      "gold_status": "opaquely_valid",
+      "input": "1. in this cohort, self-reported sleep duration has a U-shaped statistical association with subsequent all-cause mortality, minimized near 7 hours.\n2. An observational exposure-mortality association that survives adjustment for measured covariates still does not establish that the exposure causes the mortality difference, because residual confounding and reverse causation remain possible.\n3. Reverse causation is specifically live here: undiagnosed or pre-existing illness can both shorten or lengthen habitual sleep and raise mortality, and covariate adjustment on measured health factors cannot fully remove it.\n4. Therefore, the observed U-shaped association does not by itself establish that short sleep or long sleep causally affects mortality. [1,2,3]",
+      "gate_correction": "v1.2: gold transparently_valid -> opaquely_valid. The gate (deterministic) flagged this as non-transparent: the conclusion applies premise 2's general no-causation principle to premise 1's specific association with no explicit bridge premise, and the instance does not verbatim-restate the class term (observational exposure-mortality association surviving adjustment). Opaque under exact-wording concept-containment, same rule that flipped siblings s3/s7; the manual re-baseline missed it."
+    },
+    {
+      "id": "W-TV-kripke-s7",
+      "partition": "development",
+      "parent_case": "W-TV-kripke",
+      "source_step": 7,
+      "gold_status": "opaquely_valid",
+      "input": "1. in this cohort, self-reported sleep duration has a U-shaped statistical association with subsequent all-cause mortality, minimized near 7 hours.\n2. the observed U-shaped association does not by itself establish that short sleep or long sleep causally affects mortality.\n3. Therefore, this study licenses the claim that self-reported sleep duration is associated with all-cause mortality in a U-shaped pattern minimized near 7 hours, but does not license the claim that short sleep causally shortens lifespan. [1,2]"
+    },
+    {
+      "id": "W-OP-fever-s2",
+      "partition": "development",
+      "parent_case": "W-OP-fever",
+      "source_step": 2,
+      "gold_status": "opaquely_valid",
+      "input": "1. The patient's temperature recorded at admission was 39.1 degrees Celsius.\n2. Therefore, the patient had a fever at admission. [1]"
+    },
+    {
+      "id": "W-INV-kripke-causal-s3",
+      "partition": "development",
+      "parent_case": "W-INV-kripke-causal",
+      "source_step": 3,
+      "gold_status": "opaquely_valid",
+      "input": "1. In the Cancer Prevention Study II, self-reported habitual sleep duration and 6-year all-cause mortality were recorded for more than 1.1 million adults.\n2. In Cox proportional-hazards models adjusting for demographics, health habits, pre-existing conditions, and medication use, mortality hazard was lowest near 7 hours of sleep and higher for both shorter and longer durations.\n3. Therefore, in this cohort, self-reported sleep duration has a U-shaped statistical association with subsequent all-cause mortality, minimized near 7 hours. [1,2]"
+    },
+    {
+      "id": "W-INV-kripke-causal-s4",
+      "partition": "development",
+      "parent_case": "W-INV-kripke-causal",
+      "source_step": 4,
+      "gold_status": "invalid",
+      "input": "1. In this cohort, self-reported sleep duration has a U-shaped statistical association with subsequent all-cause mortality, minimized near 7 hours.\n2. Therefore, sleeping fewer than 7 hours per night causally shortens a person's lifespan. [1]"
+    },
+    {
+      "id": "D-TV-uncle-explicit-s4",
+      "partition": "development",
+      "parent_case": "D-TV-uncle-explicit",
+      "source_step": 4,
+      "gold_status": "transparently_valid",
+      "input": "1. Dana is Pat's mother.\n2. Lee is Dana's brother.\n3. Any brother of a person's parent is that person's uncle.\n4. Therefore, Lee is Pat's uncle. [1,2,3]",
+      "catalog_gap": "relational-instantiation"
+    },
+    {
+      "id": "D-OP-uncle-hidden-s3",
+      "partition": "development",
+      "parent_case": "D-OP-uncle-hidden",
+      "source_step": 3,
+      "gold_status": "opaquely_valid",
+      "input": "1. Dana is Pat's mother.\n2. Lee is Dana's brother.\n3. Therefore, Lee is Pat's uncle. [1,2]"
+    },
+    {
+      "id": "D-INV-uncle-converse-s2",
+      "partition": "development",
+      "parent_case": "D-INV-uncle-converse",
+      "source_step": 2,
+      "gold_status": "invalid",
+      "input": "1. Lee is Pat's uncle.\n2. Therefore, Lee is Pat's mother's brother. [1]"
+    }
+  ]
+}

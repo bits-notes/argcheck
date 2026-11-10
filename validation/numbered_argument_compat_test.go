@@ -37,7 +37,7 @@ func TestNumberedArgumentFlatJSONCompatibility(t *testing.T) {
 			}
 		}
 	}
-	err := filepath.WalkDir("../..", func(path string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir("testdata", func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ func TestNumberedArgumentFlatJSONCompatibility(t *testing.T) {
 			}
 			return nil
 		}
-		if filepath.Ext(path) != ".json" || !(d.Name() == "battery.json" || d.Name() == "cases.json" || strings.Contains(path, "/testdata/")) {
+		if filepath.Ext(path) != ".json" {
 			return nil
 		}
 		b, err := os.ReadFile(path)

@@ -1,10 +1,9 @@
 // Command argcheck reports whether a numbered argument has syntactically
-// transparent validity under the Argument Formalizer's deterministic gate.
+// transparent validity under the deterministic entailment gate.
 //
-// The local backend runs the same two checks as the prod formalizer.validate
-// MCP tool (numbered_argument_syntax, then the entailment gate), so a binary
-// built at the commit prod runs gives the same verdict. --prod asks prod
-// through the local MCP proxy instead; --both runs each and flags divergence.
+// The local backend checks numbered_argument_syntax, then the entailment gate.
+// --prod asks a remote validate endpoint (MCP) instead; --both runs each
+// and flags divergence.
 package main
 
 import (
@@ -33,14 +32,14 @@ const (
 	defaultProxyURL = "http://127.0.0.1:17779/mcp"
 )
 
-// check mirrors api.FormalizerMCPValidationCheck.
+// check mirrors a check in the remote validate endpoint response.
 type check struct {
 	Passed  bool           `json:"passed"`
 	Message string         `json:"message"`
 	Details map[string]any `json:"details,omitempty"`
 }
 
-// verdict mirrors api.FormalizerMCPValidation plus provenance.
+// verdict mirrors the remote validate endpoint response shape plus provenance.
 type verdict struct {
 	Valid      bool                         `json:"valid"`
 	Argument   *validation.NumberedArgument `json:"argument,omitempty"`
@@ -62,10 +61,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("argcheck", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	jsonOut := flags.Bool("json", false, "print machine-readable JSON")
-	prod := flags.Bool("prod", false, "check against prod formalizer.validate via the MCP proxy")
+	prod := flags.Bool("prod", false, "check against the remote validate endpoint (MCP)")
 	both := flags.Bool("both", false, "check locally and on prod; exit 3 if they disagree")
 	forms := flags.Bool("forms", false, "list the accepted inference forms and exit")
-	proxyURL := flags.String("proxy", defaultProxyURL, "argcheck MCP proxy URL")
+	proxyURL := flags.String("proxy", defaultProxyURL, "remote validate endpoint (MCP) URL")
 	flags.Usage = func() {
 		fmt.Fprintln(stderr, `usage: argcheck [--json] [--prod|--both] [file|-]
 
@@ -167,7 +166,7 @@ func readInput(path string, stdin io.Reader) (string, error) {
 	return string(data), err
 }
 
-// checkLocal follows formalizer.JobHTTP.ValidateMCP step for step.
+// checkLocal runs syntax validation before checking transparent entailment.
 func checkLocal(argument string) verdict {
 	ctx := context.Background()
 	syntax := validation.Validate(ctx, validation.BuiltinSpec(validation.BuiltinNumberedArgumentSyntax), argument)
@@ -258,7 +257,7 @@ func checkProd(proxyURL, argument string) (verdict, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	response, err := client.Do(request)
 	if err != nil {
-		return verdict{}, fmt.Errorf("%w (is the argcheck MCP proxy running? see the mcp-proxy skill)", err)
+		return verdict{}, fmt.Errorf("%w (is the remote validate endpoint reachable?)", err)
 	}
 	defer response.Body.Close()
 	raw, err := io.ReadAll(response.Body)
@@ -295,7 +294,7 @@ func checkProd(proxyURL, argument string) (verdict, error) {
 		for _, item := range envelope.Result.Content {
 			texts = append(texts, item.Text)
 		}
-		return verdict{}, fmt.Errorf("formalizer.validate error: %s (token may lack formalizer:run scope)", strings.Join(texts, " "))
+		return verdict{}, fmt.Errorf("remote validate endpoint error: %s (token may lack the required scope)", strings.Join(texts, " "))
 	}
 	var result verdict
 	if err := json.Unmarshal(envelope.Result.StructuredContent, &result); err != nil {

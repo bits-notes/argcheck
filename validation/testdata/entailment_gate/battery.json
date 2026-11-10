@@ -1,0 +1,173 @@
+{
+  "battery_version": "1.6",
+  "frozen": "2026-08-03",
+  "validator": {
+    "name": "numbered-argument-entailment-validator-gated",
+    "workflow_draft_id": "ca04eca6-2c1d-4210-b756-f42bd1940c96",
+    "expected_revision": 2
+  },
+  "verdict_space": [
+    "transparently_valid",
+    "has_opaque_entailments",
+    "invalid",
+    "malformed",
+    "failed"
+  ],
+  "notes": "Frozen standing battery for the argument-validation IP. Six prod-anchored study/closure cases (W-*, carried verbatim from bench/compound/cases.json, baseline 2026-07-14), nine clean-gold logic/textbook cases (L-*), and a three-case development-only uncle-relation contrast set (D-*). Gold labels are by-construction or clear-case. W-OP-placebo-nobridge relabeled invalid: the 2026-07-14 baseline established prod's 'invalid' as the defensible reading (the missing causal-inference bridge is substantive, not analytic), and the old 'opaque' gold was the weak link. v1.3 (2026-07-17): GATE-AWARE re-baseline. Validator pointer moved to the authoritative gated compound (ca04eca6, gate->strict-judge-fallback). Transparency is now gate-decidable: every gold transparently_valid case (except flagged catalog_gap cases) gate-passes deterministically, and every opaque/invalid case gate-fails -- enforced in CI by TestBatteryGoldIsGateConsistent (Go, no LLM). D-TV-uncle-explicit is flagged catalog_gap=relational-instantiation: transparent to a reader (explicit cited bridge) but not gate-certifiable, so it legitimately gate-fails; it stays gold-transparent and is excluded from the transparent<=>gate-pass invariant. Prior v1.2 (2026-07-17): re-baselined to the strict concept-containment / exact-wording transparency rule (pb-adjudicated), and validator pointer moved to rev 9 (deterministic decomposition transform). W-TV-kripke and W-TV-placebo corrected transparently_valid -> has_opaque_entailments: each contains a sub-conclusion that applies a label/characterization ('U-shaped statistical association', 'licenses the claim', 'a placebo sleep effect') or rewords a cited premise, which is opaque, not transparent, under exact-wording concept containment. v1.4 (2026-07-18): added structural connectivity cases \u2014 S-INV-dead-premise (uncited premise, must be rejected) and S-TV-two-conclusions (valid multi-conclusion guard). The gate-invariant test now also asserts every gold argument is connectivity-clean (no dead premises). v1.5 (2026-07-18): added S-INV-inert-citation, which pins the gate intrinsic 'a gate-pass implies every cited premise participates in the matched schema.' The inert premise IS cited (so connectivity is clean and cannot catch it), but the conclusion over-cites it, so the gate must reject the step. This is the used-in-entailment property: it is already enforced structurally by the gate (fixed-arity schemas accept exactly their arity of premises; conjunctive modus ponens requires every cited premise to fill the antecedent), so no separate checker exists \u2014 the case locks the property against a future schema/arity refactor silently reintroducing the hole. NB: the guarantee holds only on the gate path; a judge-certified step carries no such structural guarantee. v1.6 (2026-08-03): added three form-pinned catalog-v6 biconditional gold cases (introduction, elimination, and modus ponens); the invariant now verifies each case's reported gate form. Standing clarification (pb, 2026-07-19): gate-decidable transparency is a property of this curated battery, not of validation generally -- in the deployed compound the LLM judge still adjudicates every gate-fail step (the majority of real-world steps), so Go-only validation is not up to standard and we have NOT switched to a non-LLM validity checker.",
+  "cases": [
+    {
+      "id": "W-TV-kripke",
+      "gold_status": "has_opaque_entailments",
+      "domain": "epidemiology",
+      "seed": "study-eval/kripke-2002 full argument. Prod-validated transparently_valid (run a239ec64), 3/3 entailments transparent.",
+      "argument": "1. In the Cancer Prevention Study II, self-reported habitual sleep duration and 6-year all-cause mortality were recorded for more than 1.1 million adults aged 30 to 102.\n2. In Cox proportional-hazards models adjusting for demographics, health habits, pre-existing health conditions, and medication use, mortality hazard was lowest for participants reporting about 7 hours of sleep and was higher for those reporting both shorter and longer sleep, with the excess exceeding 15 percent at the extremes.\n3. Therefore, in this cohort, self-reported sleep duration has a U-shaped statistical association with subsequent all-cause mortality, minimized near 7 hours. [1,2]\n4. An observational exposure-mortality association that survives adjustment for measured covariates still does not establish that the exposure causes the mortality difference, because residual confounding and reverse causation remain possible.\n5. Reverse causation is specifically live here: undiagnosed or pre-existing illness can both shorten or lengthen habitual sleep and raise mortality, and covariate adjustment on measured health factors cannot fully remove it.\n6. Therefore, the observed U-shaped association does not by itself establish that short sleep or long sleep causally affects mortality. [3,4,5]\n7. Therefore, this study licenses the claim that self-reported sleep duration is associated with all-cause mortality in a U-shaped pattern minimized near 7 hours, but does not license the claim that short sleep causally shortens lifespan. [3,6]"
+    },
+    {
+      "id": "W-TV-placebo",
+      "gold_status": "has_opaque_entailments",
+      "domain": "psychology",
+      "seed": "study-eval/placebo-sleep full argument (bridge premises 4 and 7 explicit).",
+      "argument": "1. In the study, 164 college-student participants were randomly assigned to be told either that they had achieved above-average sleep quality or below-average sleep quality, following a sham physiological measurement that did not alter their actual sleep.\n2. Random assignment ensures that the two groups were equivalent, on average, in their actual prior sleep quality and in all other relevant characteristics before the manipulation.\n3. Therefore, the only factor that differed systematically between the two groups was the experimentally assigned belief about their sleep quality. [1,2]\n4. If two groups are equivalent in all relevant respects except a single factor, then any systematic difference in an outcome between the groups was caused by that factor.\n5. Participants told they had above-average sleep quality performed significantly better on the cognitive tasks than participants told they had below-average sleep quality.\n6. Therefore, the systematic difference in cognitive performance between the groups was caused by the experimentally assigned belief about sleep quality, and not by any difference in actual sleep quality. [3,4,5]\n7. A manipulated belief that causally affects an outcome, without that effect running through the actual state the belief is about, is a placebo effect with respect to that state.\n8. Therefore, in this experiment, a manipulated belief about one's own sleep quality causally affected cognitive performance independently of actual sleep quality, a placebo sleep effect. [6,7]"
+    },
+    {
+      "id": "W-OP-fever",
+      "gold_status": "has_opaque_entailments",
+      "domain": "medicine",
+      "seed": "single-enthymeme whole argument; the one conclusion needs a suppressed bridge (39.1C = fever).",
+      "argument": "1. The patient's temperature recorded at admission was 39.1 degrees Celsius.\n2. Therefore, the patient had a fever at admission. [1]"
+    },
+    {
+      "id": "W-OP-placebo-nobridge",
+      "gold_status": "invalid",
+      "domain": "psychology",
+      "seed": "study-eval/placebo with the causal bridge premise (4) DELETED, renumbered. Step 5 makes an unbridged correlation->causation leap.",
+      "note": "Relabeled from has_opaque_entailments to invalid per 2026-07-14 baseline: prod's gpt-5.5 judge calls the missing causal-inference principle substantive (not analytic), so the leap does not follow deductively. Kept as the opaque<->invalid boundary anchor.",
+      "argument": "1. In the study, participants were randomly assigned to be told either that they had above-average sleep quality or below-average sleep quality, following a sham measurement that did not alter their actual sleep.\n2. Random assignment ensures the two groups were equivalent, on average, in actual prior sleep quality and all other relevant characteristics before the manipulation.\n3. Therefore, the only factor that differed systematically between the two groups was the experimentally assigned belief about their sleep quality. [1,2]\n4. Participants told they had above-average sleep quality performed significantly better on the cognitive tasks than participants told they had below-average sleep quality.\n5. Therefore, the systematic difference in cognitive performance between the groups was caused by the experimentally assigned belief about sleep quality. [3,4]"
+    },
+    {
+      "id": "W-INV-kripke-causal",
+      "gold_status": "invalid",
+      "domain": "epidemiology",
+      "seed": "study-eval/kripke steps 1-3 (valid) then a corrupted final conclusion making the correlation->causation leap the study refuses.",
+      "argument": "1. In the Cancer Prevention Study II, self-reported habitual sleep duration and 6-year all-cause mortality were recorded for more than 1.1 million adults.\n2. In Cox proportional-hazards models adjusting for demographics, health habits, pre-existing conditions, and medication use, mortality hazard was lowest near 7 hours of sleep and higher for both shorter and longer durations.\n3. Therefore, in this cohort, self-reported sleep duration has a U-shaped statistical association with subsequent all-cause mortality, minimized near 7 hours. [1,2]\n4. Therefore, sleeping fewer than 7 hours per night causally shortens a person's lifespan. [3]"
+    },
+    {
+      "id": "W-INV-moulage-narrowing",
+      "gold_status": "invalid",
+      "domain": "nursing-education",
+      "seed": "study-eval/moulage: contains the unlicensed bundle->single-feature narrowing the study flags (step 6 narrows a 3-feature bundle to 'moulage').",
+      "argument": "1. 77 nursing intern students were randomly assigned to an experimental arm using a moulage-equipped transparent-lung task trainer or a control arm using a low-fidelity simulator, with identical didactic content.\n2. Random assignment makes the two arms equivalent, on average, in all pre-training characteristics.\n3. Therefore, the two arms differed systematically only in whether their skills practice used the moulage-equipped transparent-lung task trainer, which differs from the control in three co-varying features at once: the moulage, the transparent lungs, and the higher trainer fidelity. [1,2]\n4. If two groups differ in only one respect and their outcomes differ, that respect caused the outcome difference.\n5. After training, the experimental arm scored significantly higher than the control arm on the post-test knowledge and skill measures.\n6. Therefore, the experimental arm's higher scores were caused by the moulage-equipped transparent-lung task trainer as a whole. [3,4,5]\n7. Therefore, moulage improves nursing students' suctioning knowledge and skill. [6]"
+    },
+    {
+      "id": "L-TV-barbara",
+      "gold_status": "transparently_valid",
+      "domain": "logic",
+      "seed": "Textbook Barbara syllogism. Purely analytic transparent validity.",
+      "argument": "1. All humans are mortal.\n2. Socrates is a human.\n3. Therefore, Socrates is mortal. [1,2]"
+    },
+    {
+      "id": "L-TV-modus-ponens",
+      "gold_status": "transparently_valid",
+      "domain": "logic",
+      "seed": "Textbook modus ponens. Purely analytic transparent validity.",
+      "argument": "1. If it is raining, then the ground is wet.\n2. It is raining.\n3. Therefore, the ground is wet. [1,2]"
+    },
+    {
+      "id": "L-TV-biconditional-introduction",
+      "gold_status": "transparently_valid",
+      "expected_gate_form": "biconditional introduction",
+      "domain": "logic",
+      "seed": "Catalog v6 gold case: exact-wording biconditional introduction from both directions.",
+      "argument": "1. If the switch is up, then the lamp is lit.\n2. If the lamp is lit, then the switch is up.\n3. Therefore, the switch is up if and only if the lamp is lit. [1,2]"
+    },
+    {
+      "id": "L-TV-biconditional-elimination",
+      "gold_status": "transparently_valid",
+      "expected_gate_form": "biconditional elimination",
+      "domain": "logic",
+      "seed": "Catalog v6 gold case: exact-wording biconditional elimination to one conditional direction.",
+      "argument": "1. The switch is up if and only if the lamp is lit.\n2. Therefore, if the lamp is lit, then the switch is up. [1]"
+    },
+    {
+      "id": "L-TV-biconditional-modus-ponens",
+      "gold_status": "transparently_valid",
+      "expected_gate_form": "biconditional modus ponens",
+      "domain": "logic",
+      "seed": "Catalog v6 gold case: exact-wording biconditional modus ponens.",
+      "argument": "1. The switch is up if and only if the lamp is lit.\n2. The switch is up.\n3. Therefore, the lamp is lit. [1,2]"
+    },
+    {
+      "id": "L-INV-affirming-consequent",
+      "gold_status": "invalid",
+      "domain": "logic",
+      "seed": "Textbook affirming-the-consequent fallacy.",
+      "argument": "1. If it is raining, then the ground is wet.\n2. The ground is wet.\n3. Therefore, it is raining. [1,2]"
+    },
+    {
+      "id": "L-INV-undistributed-middle",
+      "gold_status": "invalid",
+      "domain": "logic",
+      "seed": "Textbook undistributed-middle fallacy.",
+      "argument": "1. All cats are mammals.\n2. All dogs are mammals.\n3. Therefore, all cats are dogs. [1,2]"
+    },
+    {
+      "id": "L-OP-hypertension",
+      "gold_status": "has_opaque_entailments",
+      "domain": "medicine",
+      "seed": "Same shape as W-OP-fever: single-step measurement->threshold category with a suppressed clinical-threshold bridge.",
+      "argument": "1. The patient's systolic blood pressure at admission was 185 mmHg.\n2. Therefore, the patient had hypertension at admission. [1]"
+    },
+    {
+      "id": "L-INV-nonsequitur-prime",
+      "gold_status": "invalid",
+      "domain": "mathematics",
+      "seed": "Valid arithmetic chain (steps 1-3) then a clear non-sequitur final conclusion (step 4).",
+      "argument": "1. Every prime number greater than 2 is odd.\n2. The number 17 is a prime number greater than 2.\n3. Therefore, 17 is odd. [1,2]\n4. Therefore, 17 is the largest odd prime. [3]"
+    },
+    {
+      "id": "D-TV-uncle-explicit",
+      "gold_status": "transparently_valid",
+      "domain": "everyday-relations",
+      "seed": "Development contrast: the kinship bridge is explicit and cited, so the inference is transparent to a reader. CATALOG GAP: the gate cannot certify it because relational/variable-binding instantiation (Dana=parent, Lee=brother of parent -> Lee=uncle) is not in the v1 schema catalog; it gate-fails while the judge correctly calls it transparent. This is the 'immediate but not formal' case (Anders's fork), retained gold-transparent and flagged; feeds the v1.x relational-instantiation schema queue.",
+      "argument": "1. Dana is Pat's mother.\n2. Lee is Dana's brother.\n3. Any brother of a person's parent is that person's uncle.\n4. Therefore, Lee is Pat's uncle. [1,2,3]",
+      "catalog_gap": "relational-instantiation+taxonomic-bridge"
+    },
+    {
+      "id": "D-OP-uncle-hidden",
+      "gold_status": "has_opaque_entailments",
+      "domain": "everyday-relations",
+      "seed": "Development contrast: the familiar kinship definition is suppressed, making this a clear enthymeme.",
+      "argument": "1. Dana is Pat's mother.\n2. Lee is Dana's brother.\n3. Therefore, Lee is Pat's uncle. [1,2]"
+    },
+    {
+      "id": "D-INV-uncle-converse",
+      "gold_status": "invalid",
+      "domain": "everyday-relations",
+      "seed": "Development contrast: affirming a narrower converse is invalid because an uncle need not be the mother's brother.",
+      "argument": "1. Lee is Pat's uncle.\n2. Therefore, Lee is Pat's mother's brother. [1]"
+    },
+    {
+      "id": "S-INV-dead-premise",
+      "gold_status": "invalid",
+      "structural_defect": "unused_premise",
+      "domain": "logic",
+      "seed": "A clean modus ponens with an extra premise (step 3) that no conclusion cites. The conclusion gate-passes, but the argument is invalid at the recording standard because the inert premise entails nothing.",
+      "argument": "1. If it is the case that it rains, then the ground is wet.\n2. It rains.\n3. The moon orbits the Earth.\n4. Therefore, the ground is wet. [1,2]"
+    },
+    {
+      "id": "S-TV-two-conclusions",
+      "gold_status": "transparently_valid",
+      "domain": "logic",
+      "seed": "Two independent conclusions, each a clean modus ponens; every premise is used even though the first conclusion (3) does not feed the last (6). Guards the connectivity check against wrongly flagging valid multi-conclusion arguments.",
+      "argument": "1. If it is the case that it rains, then the ground is wet.\n2. It rains.\n3. Therefore, the ground is wet. [1,2]\n4. If it is the case that the sun shines, then the sky is bright.\n5. The sun shines.\n6. Therefore, the sky is bright. [4,5]"
+    },
+    {
+      "id": "S-INV-inert-citation",
+      "gold_status": "invalid",
+      "structural_defect": "inert_citation",
+      "domain": "logic",
+      "seed": "A clean modus ponens whose conclusion over-cites: premise 3 is inert but appears in the conclusion's citation bracket [1,2,3]. Connectivity is clean (every premise is cited), so the connectivity check cannot catch it \u2014 the gate must, because the cited set does not instantiate any schema (arity-2 modus ponens accepts exactly two premises; conjunctive modus ponens requires every cited premise to fill the antecedent). Pins the gate intrinsic 'gate-pass implies every cited premise participates in the matched schema.'",
+      "argument": "1. If it is the case that it rains, then the ground is wet.\n2. It rains.\n3. The moon orbits the Earth.\n4. Therefore, the ground is wet. [1,2,3]"
+    }
+  ]
+}

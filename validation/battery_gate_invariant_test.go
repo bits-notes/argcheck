@@ -122,9 +122,9 @@ func assertGoldGateConsistent(t *testing.T, path string) {
 }
 
 func TestBatteryGoldIsGateConsistent(t *testing.T) {
-	assertGoldGateConsistent(t, "../../bench/argbench/battery.json")
+	assertGoldGateConsistent(t, "testdata/entailment_gate/battery.json")
 }
 
 func TestAtomicVerificationGoldIsGateConsistent(t *testing.T) {
-	assertGoldGateConsistent(t, "../../bench/suites/argument-verification-atomic/cases.json")
+	assertGoldGateConsistent(t, "testdata/entailment_gate/atomic-verification-cases.json")
 }

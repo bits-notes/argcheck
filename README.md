@@ -1,0 +1,259 @@
+# argcheck
+
+argcheck checks the syntactically transparent validity of numbered arguments.
+It runs deterministic syntax and entailment checks in Go, with no LLM and no
+network access in local mode. Each conclusion must match an accepted inference
+form using its cited steps. The current catalog is v21; `argcheck --forms` lists
+its forms.
+
+A passing result establishes validity under that catalog. It does not establish
+that premises are true, that an argument faithfully represents a source, or that
+an unstated assumption is justified. This is not a general theorem prover:
+inferences outside the catalog can fail even when they are logically valid.
+
+## Install
+
+Requires Go 1.25.0 or later. From a checkout:
+
+```sh
+./install-argcheck.sh
+```
+
+The script installs to `$HOME/.local/bin`; set `BIN_DIR` to override it. It stamps
+the binary with the current commit and adds `-dirty` when `cmd/argcheck` or
+`validation` has uncommitted changes. Put the destination on your `PATH`.
+
+Alternatively, from the checkout, install the latest published module version
+(the module path is read from `go.mod`):
+
+```sh
+go install "$(go list -m)/cmd/argcheck@latest"
+```
+
+This uses Go's usual `GOBIN` or `GOPATH/bin` destination. Access to the module and
+a published version are required. The script is preferable when you need an
+explicit commit stamp.
+
+## Numbered input format
+
+```text
+1. If it rains, then the street is wet.
+2. It rains.
+3. Therefore, the street is wet. [1,2]
+```
+
+- A premise is one line ending in a period, without `Therefore,` or citations.
+- A conclusion uses `Therefore,` and citations after the period: `[1,2]`.
+  Citations refer only to earlier steps.
+- Number steps sequentially from 1. Do not include blank lines, leading spaces,
+  code fences, or commentary in the argument. The final step is the conclusion.
+- Every premise and intermediate conclusion must be cited by a later step.
+- A bridge premise such as `If [1,2], then C.` expands those numbered steps into
+  its antecedent. Such a bridge is an explicit assumption, not evidence for it.
+
+Fitch subproofs use one `| ` prefix per depth level. `Suppose X.` opens an
+assumption; discharge cites the entire subproof as `[i-j]`. For example:
+
+```text
+1. If it rains, then the street is wet.
+2. If the street is wet, then the cars slow.
+| 3. Suppose it rains.
+| 4. Therefore, the street is wet. [1,3]
+| 5. Therefore, the cars slow. [2,4]
+6. Therefore, if it rains, then the cars slow. [3-5]
+```
+
+A step cannot cite into a closed subproof. Reductio subproofs end with
+`Therefore, contradiction. [i,j]`. The catalog also supports proof by cases,
+universal generalization (`Let a be an arbitrary F.`), and existential
+elimination with fresh-name checks.
+
+## CLI usage
+
+```sh
+argcheck argument.txt
+argcheck < argument.txt
+cat argument.txt | argcheck -
+argcheck --json argument.txt
+argcheck --forms
+```
+
+Text output reports `VALID` or `INVALID`, the catalog and build stamp
+(`gate catalog v21; local argcheck@<commit>`), and each conclusion's matched
+form or mismatch. Fitch input is echoed before the verdict. An inert-citation
+hint identifies extra citations whose removal would let a known form pass.
+`--json` returns structured checks, details, and provenance.
+
+Remote comparison is opt-in:
+
+```sh
+argcheck --prod argument.txt
+argcheck --both argument.txt
+argcheck --both --proxy http://127.0.0.1:17779/mcp argument.txt
+```
+
+`--prod` calls the remote validate endpoint (MCP); `--both` runs local and remote
+checks and flags disagreement. The default endpoint is the localhost URL above.
+It must be running and provide the expected validation tool. Remote results can
+differ when the endpoint uses another catalog or implementation revision.
+
+Exit codes: 0 valid, 1 invalid, 2 operational or input error, 3 local/remote
+divergence. Put flags before the filename.
+
+## Using the validation package from Go
+
+Run syntax validation first, then the entailment gate, as the CLI does:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/bits-notes/argcheck/validation"
+)
+
+func main() {
+    argument := "1. If it rains, then the street is wet.\n" +
+        "2. It rains.\n" +
+        "3. Therefore, the street is wet. [1,2]"
+    syntax := validation.Validate(context.Background(),
+        validation.BuiltinSpec(validation.BuiltinNumberedArgumentSyntax), argument)
+    if !syntax.Passed {
+        fmt.Println(syntax.Message)
+        return
+    }
+    report, result := validation.CheckEntailmentGate(argument)
+    fmt.Println(result.Passed, result.Message)
+    fmt.Println(report)
+}
+```
+
+`EntailmentGateCatalogVersion` exposes the catalog version;
+`EntailmentGateForms()` lists accepted form names. `CheckEntailmentGate` returns
+both a step report and a validation result. Package calls do not contact a remote
+service.
+
+## Writing so the gate can see the inference
+
+Clauses match word for word after limited normalization, including case,
+whitespace, contractions, and optional `then`. Synonym and paraphrase tolerance
+are deliberately outside the gate. If two wordings should count as equivalent,
+state the connection as a visible identity or conditional premise.
+
+- Repeat clauses exactly: `the street is wet` does not become `the road is wet`.
+- Use canonical negation: `It is not the case that X.` For modus tollens,
+  `The street is not wet` does not substitute for the canonical negation of
+  `the street is wet`.
+- For instantiation, use `Every man is mortal.` with `The traveler is a man.`
+  `All men are mortal.` does not match the singular `a man`.
+  For class syllogisms, use `All A are B.` and `All B are C.`
+- Write disjunction as `Either X or Y.` and conjunction as `X and Y.`
+  A conditional with a conjoined antecedent can use the separately cited
+  conjuncts in conjunctive modus ponens.
+- Make one inference hop per conclusion. Cite exactly the premises the form
+  uses; extra citations can cause rejection.
+- Copular parsing splits at the first ` is `. Give a short name to a subject
+  containing an embedded `is`, then use that name consistently.
+- An `and` inside a predicate can be parsed as conjunction. Examples appended
+  with `such as` can prevent placeholder binding; keep examples outside the
+  numbered argument unless they are separate premises.
+
+When a step fails, inspect the quoted mismatch, correct wording or citations,
+and rerun. Test an unfamiliar shape in a small argument first. Do not silently
+drop qualifiers or change a source's meaning to obtain a pass. Any supplied
+inferential link should be a visible premise.
+
+### Toolkit for general rules
+
+Schematic conditionals can bind `X`, `Y`, and `Z` to terms or whole clauses:
+`If X depends on a prior, then X is unfit for science.` instantiates against
+`Bayesian inference depends on a prior.` Possessives (`X's`), conjunctive
+antecedents, and nested conditionals work. Placeholders must agree in number
+with their bindings: use `If X are fixed...` for a plural subject.
+
+Universal syllogisms accept `Every A is a B.` plus `Every B is C.`, including
+negative variants such as `No B is C.` Relative clauses and internal commas
+can occur, but the repeated terms must match verbatim.
+
+Existential introduction needs copular predicates: `J is preferable to M.`
+and `J is an E.` can yield `Some E is preferable to M.` Non-copular verbs do
+not fit that form. Use a definite or bare individual subject, rather than
+`A ...`. `Some A is a B.` plus `No B is C.` can yield `Some A is not C.`
+
+To conclude one alternative rather than another, state the dichotomy
+(`Either we should use X or we should use Y.`), refute one side, and apply
+disjunctive syllogism. The dichotomy is a substantive premise to justify.
+Likewise, a bridge saying that exactly these premises imply exactly this
+conclusion can pass while carrying all the argument's disputed weight. Prefer
+to state and instantiate the general rule that actually supports the inference.
+
+### Catalog forms and scope
+
+The catalog includes modus ponens and tollens, hypothetical and disjunctive
+syllogism, conjunction introduction and elimination, identity substitution,
+biconditionals, and dilemmas. v13 added forms including contraposition, De Morgan,
+commutation, exportation/importation, material implication, distribution,
+absorption, double-negation introduction, biconditional tollens and chaining,
+negated conditional, identity symmetry, quantifier negation, conversion,
+universal modus tollens, and possibility introduction. Explosion and excluded
+middle from an unrelated premise are intentionally rejected. Conjunction
+elimination does not split beneath an outer operator: negating `P and Q` does
+not yield `Q`. v14 added the Fitch forms described above; flat-only package
+consumers reject scoped input. Use `--forms` for the complete current catalog,
+including modal forms.
+
+Parenthesize biconditional sides to fix their boundaries:
+`(X) if and only if (Y)`, optionally prefixed by `It is the case that`.
+This handles sides containing conditionals. `It holds that` is ordinary text.
+
+Relations use `TERM VERB TERM`, with every/some/no quantifiers in either position.
+Fitch generalization and existential elimination also work over relations.
+Sentences with two quantifiers are checked under both scope readings; a step
+that depends on just one reading fails with a note. Make scope explicit, for
+example `Some teacher is such that every student admires that teacher.`
+Active and passive clauses do not automatically match.
+
+### Counterfactuals
+
+A conditional whose consequent contains `would` is treated as counterfactual.
+Ordinary rules can use it as a premise, but cannot conclude a counterfactual or
+use one inside a negation. Counterfactual conclusions require the dedicated
+catalog forms, preventing ordinary strengthening, false-antecedent inference,
+and unsupported chaining.
+
+Counterfactual modus ponens and tollens compare mood-stripped content:
+`had been struck` can match `was struck`. Only auxiliaries are rewritten;
+`had gone` and `went` need a visible bridge. `would light` has no plain form,
+and `might` has no rules.
+
+### Properties
+
+For copular predicates, `a is F.` and `a has the property of being F.` convert
+in either direction, also under a top-level canonical negation. `F` must match
+verbatim. Property inclusion (`a has every property that b has.`) permits
+instantiation from `b has the property of being F.` The catalog also supports
+property existence, shared properties, and indiscernibility from identity.
+
+For property generalization, open a Fitch subproof with
+`Let P be an arbitrary property that b has.`, which provides `b has P.`;
+derive `a has P.` and discharge to `a has every property that b has.` v21 also
+allows property-inclusion chaining for such an arbitrary property. A property
+possessed by one individual and denied of another establishes a distinguishing
+property, supporting nonidentity or non-inclusion.
+
+Property bearers must be individuals, not quantified phrases or properties
+themselves. These conversions do not rewrite inside modals, conditionals, or
+counterfactuals. `Being F is a property that a has` remains ordinary text.
+
+## Development
+
+```sh
+go build ./...
+go vet ./...
+go test -vet=off ./...
+```
+
+Test fixtures live inside `validation/testdata`; no sibling checkout is needed.
+See `LICENSE` for the current rights notice.

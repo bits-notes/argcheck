@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Build and install argcheck, the deterministic numbered-argument gate CLI.
 # Default target is ~/.local/bin; override with BIN_DIR=. The binary reports
-# the commit it was built from, so install from master to match prod.
+# the commit it was built from.
 set -euo pipefail
 
 cd "$(dirname "$0")"
 
 bin_dir="${BIN_DIR:-$HOME/.local/bin}"
 commit="$(git rev-parse --short=7 HEAD)"
-if [[ -n "$(git status --porcelain -- cmd/argcheck internal/validation)" ]]; then
+if [[ -n "$(git status --porcelain -- cmd/argcheck validation)" ]]; then
   commit="$commit-dirty"
 fi
 

@@ -1,0 +1,44 @@
+{
+ "input": "All mammals breathe air. Whales are mammals. So whales breathe air.",
+ "output": {
+  "contract_version": "argument-formalizer-two-layer/v1",
+  "as_found": {
+   "argument": "1. All mammals breathe air.\n2. Whales are mammals.\n3. Therefore, Whales breathe air. [1,2]",
+   "verdict": "transparently_valid",
+   "gap_explanations": [],
+   "as_found_dropped": []
+  },
+  "repaired": {
+   "argument": "1. All mammals breathe air.\n2. Whales are mammals.\n3. Therefore, whales breathe air. [1,2]",
+   "verdict": "transparently_valid",
+   "supplied_premises": [],
+   "coverage_anchor": "as_found",
+   "line_mapping": [
+    {
+     "repaired_line": 1,
+     "from_as_found_lines": [
+      1
+     ]
+    },
+    {
+     "repaired_line": 2,
+     "from_as_found_lines": [
+      2
+     ]
+    },
+    {
+     "repaired_line": 3,
+     "from_as_found_lines": [
+      3
+     ]
+    }
+   ],
+   "dropped": [],
+   "dropped_conclusion": false
+  },
+  "fidelity": {
+   "verdict": "faithful",
+   "explanation": "The only difference is capitalization of 'Whales' vs. 'whales' in the conclusion, which carries no truth-conditional weight. The regimented argument is faithful."
+  }
+ }
+}

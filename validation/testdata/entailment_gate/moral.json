@@ -1,0 +1,65 @@
+{
+ "input": "Factory farming causes enormous suffering to animals that can feel pain. Causing unnecessary suffering is wrong, and most of this suffering is unnecessary because people can eat well without meat. We should therefore stop supporting factory farming.",
+ "output": {
+  "contract_version": "argument-formalizer-two-layer/v1",
+  "as_found": {
+   "argument": "1. Factory farming causes enormous suffering to animals that can feel pain.\n2. Causing unnecessary suffering is wrong.\n3. Most of the suffering caused by factory farming is unnecessary because people can eat well without meat.\n4. Therefore, we should stop supporting factory farming. [1,2,3]",
+   "verdict": "non_atomic",
+   "gap_explanations": [
+    "atomicity precondition failed closed: conclusion depends on non-atomic or uncertain steps [3]"
+   ],
+   "as_found_dropped": []
+  },
+  "repaired": {
+   "argument": "1. Factory farming causes enormous suffering to animals that can feel pain.\n2. People can eat well without meat.\n3. If people can eat well without meat, then most of the suffering caused by factory farming is unnecessary.\n4. Therefore, most of the suffering caused by factory farming is unnecessary. [2,3]\n5. Causing unnecessary suffering is wrong.\n6. If factory farming causes enormous suffering to animals that can feel pain and most of the suffering caused by factory farming is unnecessary and causing unnecessary suffering is wrong, then we should stop supporting factory farming.\n7. Therefore, we should stop supporting factory farming. [1,4,5,6]",
+   "verdict": "transparently_valid",
+   "supplied_premises": [
+    {
+     "premise_number": 3,
+     "kind": "bridge_conditional",
+     "statement": "If people can eat well without meat, then most of the suffering caused by factory farming is unnecessary",
+     "note": "Conditional consequent matches conclusion step 4 under structural_v1 normalization."
+    },
+    {
+     "premise_number": 6,
+     "kind": "bridge_conditional",
+     "statement": "If factory farming causes enormous suffering to animals that can feel pain and most of the suffering caused by factory farming is unnecessary and causing unnecessary suffering is wrong, then we should stop supporting factory farming",
+     "note": "Conditional consequent matches conclusion step 7 under structural_v1 normalization."
+    }
+   ],
+   "coverage_anchor": "as_found",
+   "line_mapping": [
+    {
+     "repaired_line": 1,
+     "from_as_found_lines": [
+      1
+     ]
+    },
+    {
+     "repaired_line": 5,
+     "from_as_found_lines": [
+      2
+     ]
+    },
+    {
+     "repaired_line": 2,
+     "from_as_found_lines": [
+      3
+     ]
+    },
+    {
+     "repaired_line": 7,
+     "from_as_found_lines": [
+      4
+     ]
+    }
+   ],
+   "dropped": [],
+   "dropped_conclusion": false
+  },
+  "fidelity": {
+   "verdict": "faithful",
+   "explanation": "All splits and added bridge premises are explicitations of inferences the original relied on. No substance is added, lost, or shifted. The conclusion is identical."
+  }
+ }
+}
