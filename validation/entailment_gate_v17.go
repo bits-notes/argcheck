@@ -558,7 +558,13 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 			}
 		}
 	}
-	if len(choices) == 0 {
+	// Schematic conjunctive MP already supplies a uniform certificate: every
+	// antecedent is matched verbatim under one consistent substitution, and
+	// that same substitution produces the consequent. This proof does not
+	// inspect any quantifier's scope. Keep its case-sensitive templates intact;
+	// scope rewriting would turn X/Y/Z into constants and independently
+	// rename a template clause and its instantiated occurrence.
+	if len(choices) == 0 || raw.Passed && raw.Form == "schematic conjunctive modus ponens" {
 		return raw
 	}
 	local := make(map[int]NumberedArgumentStep, len(steps))

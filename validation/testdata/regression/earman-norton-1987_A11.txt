@@ -1,0 +1,11 @@
+1. The hole-related models differ from one another only within the hole by diffeomorphic mathematical description.
+2. Leibniz equivalence holds that diffeomorphic models represent the same physical situation.
+3. The hole-related models are models of a local spacetime theory.
+4. Leibniz equivalence is a principle of physical equivalence.
+5. If X is a principle of physical equivalence and Y are models of a local spacetime theory and X holds that diffeomorphic models represent the same physical situation and Y differ from one another only within the hole by diffeomorphic mathematical description, then under X Y represent the same physical situation.
+6. Therefore, under Leibniz equivalence the hole-related models represent the same physical situation. [1,2,3,4,5]
+7. The radical local indeterminism arises from treating the hole-related models as representing distinct physical situations.
+8. If X is a principle of physical equivalence and Y are models of a local spacetime theory and under X Y represent the same physical situation and the radical local indeterminism arises from treating Y as representing distinct physical situations, then accepting X transforms the radical local indeterminism into an underdetermination of mathematical description with no corresponding underdetermination of the physical situation.
+9. Therefore, accepting Leibniz equivalence transforms the radical local indeterminism into an underdetermination of mathematical description with no corresponding underdetermination of the physical situation. [3,4,6,7,8]
+10. If X is a principle of physical equivalence and accepting X transforms the radical local indeterminism into an underdetermination of mathematical description with no corresponding underdetermination of the physical situation, then accepting X removes the radical local indeterminism.
+11. Therefore, accepting Leibniz equivalence removes the radical local indeterminism. [4,9,10]

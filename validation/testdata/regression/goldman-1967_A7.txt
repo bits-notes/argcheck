@@ -1,0 +1,20 @@
+1. Clark requires every belief in a subject’s chain of grounds to be true.
+2. Smith implicitly relies on the belief that Jones’s owning a Ford yesterday would result in Jones’s owning a Ford now.
+3. The implicit linking belief is false in the Saunders–Champawat case.
+4. If Clark requires every ground to be true and Smith has a false linking ground, then Clark’s analysis says that Smith does not know that Jones owns a Ford now.
+5. Clark is an analyst of knowledge.
+6. If X is an analyst of knowledge and X requires every belief in a subject’s chain of grounds to be true, then X requires every ground to be true.
+7. Therefore, Clark requires every ground to be true. [1,5,6]
+8. Smith is a subject of a knowledge claim.
+9. If X is a subject of a knowledge claim and X implicitly relies on the belief that Jones’s owning a Ford yesterday would result in Jones’s owning a Ford now and the implicit linking belief is false in the Saunders–Champawat case, then X has a false linking ground.
+10. Therefore, Smith has a false linking ground. [2,3,8,9]
+11. Therefore, Clark’s analysis says that Smith does not know that Jones owns a Ford now. [4,7,10]
+12. Clark’s analysis denies knowledge on account of Smith’s false linking ground.
+13. Clark’s analysis is a theory of knowledge.
+14. If X is a theory of knowledge and X denies knowledge on account of Smith’s false linking ground, then supplementing the description with that ground blocks the putative counterexample to X.
+15. Therefore, supplementing the description with that ground blocks the putative counterexample to Clark’s analysis. [12,13,14]
+16. The putative counterexample to Clark’s analysis is identical to the Saunders–Champawat putative counterexample to Clark.
+17. The putative counterexample to Clark’s analysis is an objection to a theory of knowledge.
+18. If X is an objection to a theory of knowledge and X is identical to Y and supplementing the description with that ground blocks X, then Y is blocked by supplementing the description with that ground.
+19. Therefore, the Saunders–Champawat putative counterexample to Clark is blocked by supplementing the description with that ground. [15,16,17,18]
+20. Therefore, Clark’s analysis says that Smith does not know that Jones owns a Ford now and the Saunders–Champawat putative counterexample to Clark is blocked by supplementing the description with that ground. [11,19]

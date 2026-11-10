@@ -2,6 +2,7 @@ package validation
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -34,16 +35,9 @@ func TestEntailmentGateV16AcceptedCompatibility(t *testing.T) {
 		t.Fatalf("unexpected baseline %s, %d cases", golden.Baseline, len(golden.Cases))
 	}
 	for i, tc := range golden.Cases {
-		got := GateNumberedArgument(tc.Argument)
-		if !got.Passed || len(got.Steps) != len(tc.Forms) {
-			t.Errorf("v16 case %d (%v) regressed: %+v", i, tc.Sources, got)
-			continue
-		}
-		for j, form := range tc.Forms {
-			if got.Steps[j].Form != form {
-				t.Errorf("v16 case %d (%v), step %d form %q, want %q", i, tc.Sources, got.Steps[j].Step, got.Steps[j].Form, form)
-			}
-		}
+		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
+			assertAcceptedStepParity(t, tc.Argument, tc.Forms)
+		})
 	}
 	t.Logf("all %d accepted v16 arguments retain their per-step form names", len(golden.Cases))
 }
