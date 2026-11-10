@@ -37,9 +37,12 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 2. Therefore, Some teacher is such that every student admires that teacher. [1]`, ""},
 		{"passive conversion intentional rejection", `1. Alice admires Bob.
 2. Therefore, Bob is admired by Alice. [1]`, ""},
-		{"three-place known gap", `1. Every student gives every teacher some book.
+		{"three-place scope strengthening rejected", `1. Every student gives every teacher some book.
 2. Alice is a student.
 3. Therefore, Alice gives every teacher some book. [1,2]`, ""},
+		// v22 closes the position gap while retaining the scope boundary above.
+		{"three-place recipient introduction", v22A1, "relational existential generalization"},
+		{"three-place multiple instantiation", v22A3, "relational universal instantiation"},
 		// Remaining relation boundary: an arbitrary relation need not be transitive.
 		{"relation transitivity without premise", `1. Ada admires Ben.
 2. Ben admires Cy.
@@ -242,7 +245,7 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 			}
 		})
 	}
-	t.Logf("ledger: %d rejection rows (intentional boundaries, adversarial controls and the three-place gap), %d accepted rows", gaps, accepted)
+	t.Logf("ledger: %d rejection rows (intentional boundaries, adversarial controls and three-place scope strengthening), %d accepted rows", gaps, accepted)
 }
 
 // v19 intentional rejections are invalid in VW, not missing material rules.

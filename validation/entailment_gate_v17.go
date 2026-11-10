@@ -2,11 +2,12 @@ package validation
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 )
 
-// A relation has exactly two argument slots. Prefix entries bind slots, never
+// A relation has an ordered sequence of argument slots. Prefix entries bind slots, never
 // substrings of the opaque verb. No predicate-logic engine or model search is
 // used by the gate: the rules below are restricted quantifier proof rules.
 type relationTerm struct{ quant, text string }
@@ -15,14 +16,16 @@ type relationQuantifier struct {
 	slot        int
 }
 type relationClause struct {
-	terms              [2]relationTerm
+	terms              []relationTerm
 	verb               string
 	order              []int
 	outerNot, innerNot bool
 	scaffold           bool
+	separators         []string
+	boundCount         int
 }
 type relationNormal struct {
-	names    [2]string
+	names    []string
 	verb     string
 	prefix   []relationQuantifier
 	negative bool
@@ -76,6 +79,9 @@ func relationVerb(s string) bool {
 }
 
 func relationCandidates(statement string) []relationClause {
+	if out := nplaceCandidates(statement); len(out) > 0 {
+		return out
+	}
 	s := normalizeClause(statement)
 	outerNot := false
 	for strings.HasPrefix(s, "it is not the case that ") {
@@ -113,7 +119,7 @@ func relationCandidates(statement string) []relationClause {
 			if !relationVerb(verb) {
 				continue
 			}
-			r := relationClause{verb: verb, outerNot: outerNot, innerNot: innerNot, scaffold: scaffold}
+			r := relationClause{terms: make([]relationTerm, 2), verb: verb, outerNot: outerNot, innerNot: innerNot, scaffold: scaffold}
 			boundSlot := -1
 			valid := true
 			for slot, piece := range pieces {
@@ -149,13 +155,10 @@ func relationCandidates(statement string) []relationClause {
 	return out
 }
 func (r relationClause) readings() []relationNormal {
-	orders := [][]int{r.order}
-	if !r.scaffold && len(r.order) == 2 {
-		orders = append(orders, []int{1, 0})
-	}
+	orders := relationOrders(r)
 	var out []relationNormal
 	for _, order := range orders {
-		n := relationNormal{verb: r.verb, negative: r.outerNot}
+		n := relationNormal{names: make([]string, len(r.terms)), verb: r.verb, negative: r.outerNot}
 		for i, t := range r.terms {
 			if t.quant == "" {
 				n.names[i] = t.text
@@ -194,10 +197,13 @@ func (r relationClause) readings() []relationNormal {
 // inside its scope even when its class could be empty outside that scope.
 func relationEntails(a, b relationNormal) bool { return relationEntailsWithMember(a, b, clausePair{}) }
 func relationEntailsWithMember(a, b relationNormal, member clausePair) bool {
-	if a.names != b.names || a.verb != b.verb || a.negative != b.negative || len(a.prefix) != len(b.prefix) {
+	if !slices.Equal(a.names, b.names) || a.verb != b.verb || a.negative != b.negative || len(a.prefix) != len(b.prefix) {
 		return false
 	}
-	type prefixKey [2]relationQuantifier
+	type prefixKey [4]relationQuantifier
+	if len(a.prefix) > 4 {
+		return false
+	}
 	key := func(p []relationQuantifier) prefixKey { var k prefixKey; copy(k[:], p); return k }
 	target := key(b.prefix)
 	queue := []prefixKey{key(a.prefix)}
@@ -212,8 +218,12 @@ func relationEntailsWithMember(a, b relationNormal, member clausePair) bool {
 			continue
 		}
 		seen[p] = true
-		if len(a.prefix) == 2 && (p[0].kind == p[1].kind || p[0].kind == "some" && p[1].kind == "every") {
-			queue = append(queue, prefixKey{p[1], p[0]})
+		for i := 0; i+1 < len(a.prefix); i++ {
+			if p[i].kind == p[i+1].kind || p[i].kind == "some" && p[i+1].kind == "every" {
+				swapped := p
+				swapped[i], swapped[i+1] = swapped[i+1], swapped[i]
+				queue = append(queue, swapped)
+			}
 		}
 		for i := range a.prefix {
 			if p[i].kind != "every" {
@@ -234,6 +244,7 @@ func relationEntailsWithMember(a, b relationNormal, member clausePair) bool {
 }
 
 func relationRemove(n relationNormal, i int, name string) relationNormal {
+	n.names = append([]string{}, n.names...)
 	n.names[n.prefix[i].slot] = name
 	n.prefix = append(append([]relationQuantifier{}, n.prefix[:i]...), n.prefix[i+1:]...)
 	return n
@@ -263,7 +274,7 @@ func relationHasQuantifier(s string) bool {
 }
 
 func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule string) schemaMatchOutcome {
-	if !relationHasQuantifier(p[0].Statement) && !relationHasQuantifier(c.Statement) {
+	if !relationHasQuantifier(p[0].Statement) && !relationHasQuantifier(c.Statement) && len(nplaceCandidates(p[0].Statement)) == 0 && len(nplaceCandidates(c.Statement)) == 0 {
 		return schemaMatchOutcome{}
 	}
 
@@ -283,7 +294,7 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 						ok := false
 						switch rule {
 						case "scope":
-							ok = relationEntails(x, y) && (len(x.prefix) > 0 || a.scaffold || b.scaffold)
+							ok = relationEntails(x, y) && (len(x.prefix) > 0 || a.scaffold || b.scaffold || len(a.terms) > 2)
 						case "UI", "negative UI":
 							for i, q := range x.prefix {
 								if q.kind == "every" && q.class == member.right {
@@ -343,16 +354,20 @@ func (r relationClause) explicit(outer int) string {
 	}
 	return s
 }
-func relationScopeChoices(s string) [][2]string {
-	var out [][2]string
-	seen := map[[2]string]bool{}
+func relationScopeChoices(s string) [][]string {
+	if out := nplaceScopeChoices(s); len(out) > 0 {
+		return out
+	}
+	var out [][]string
+	seen := map[string]bool{}
 	for _, r := range relationCandidates(s) {
-		if r.scaffold || len(r.order) != 2 {
+		if len(r.terms) != 2 || r.scaffold || len(r.order) != 2 {
 			continue
 		}
-		variants := [2]string{r.explicit(0), r.explicit(1)}
-		if !seen[variants] {
-			seen[variants] = true
+		variants := []string{r.explicit(0), r.explicit(1)}
+		key := strings.Join(variants, "\x00")
+		if !seen[key] {
+			seen[key] = true
 			out = append(out, variants)
 		}
 	}
@@ -382,7 +397,7 @@ func relationNestedNoun(s string) bool {
 type relationScopeOccurrence struct {
 	start, end int
 	clause     string
-	variants   [][2]string
+	variants   [][]string
 }
 
 func relationScopeOccurrences(statement string) []relationScopeOccurrence {
@@ -487,7 +502,7 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 	type choice struct {
 		id       int
 		original string
-		variants [][2]string
+		variants [][]string
 	}
 	var choices []choice
 	occurrences := map[int][]relationScopeOccurrence{}
@@ -503,11 +518,11 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 		if id == c.Number {
 			s = c
 		}
-		if !relationHasQuantifier(s.Statement) {
+		if !relationHasQuantifier(s.Statement) && len(nplaceCandidates(s.Statement)) == 0 {
 			continue
 		}
 		quantifiers := 0
-		if !strings.Contains(normalizeClause(s.Statement), " is such that ") && v13PlainClause(s.Statement) {
+		if v13PlainClause(s.Statement) || strings.Contains(normalizeClause(s.Statement), " is such that ") {
 			for _, word := range strings.Fields(normalizeClause(s.Statement)) {
 				switch word {
 				case "every", "each", "some", "no":
@@ -515,11 +530,16 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 				}
 			}
 		}
-		if quantifiers > 2 {
+		for _, r := range nplaceCandidates(s.Statement) {
+			if len(r.order) > quantifiers {
+				quantifiers = len(r.order)
+			}
+		}
+		if quantifiers > 4 {
 			raw.Passed = false
 			raw.Form = ""
 			raw.NearestForm = "relational grammar"
-			raw.Mismatch = "the relational grammar supports two argument positions; three-place relations are outside this catalog"
+			raw.Mismatch = "the relational grammar supports at most four quantifiers per sentence; use separate explicit steps"
 			return raw
 		}
 		if relationNestedNoun(s.Statement) {
@@ -586,7 +606,7 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 	var failed EntailmentGateStepReport
 	var successful []string
 	selected := make([]string, len(choices))
-	parses := make([][2]string, len(choices))
+	parses := make([][]string, len(choices))
 	// Splits are existential (premise-guided); scope choices are universal.
 	// Keep a split fixed across all readings, so a proof cannot switch what its
 	// verb or noun denotes when the quantifier order changes.
@@ -663,6 +683,9 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 			raw.AmbiguityNote = fmt.Sprintf("step %d: %q has two scope readings; this step follows only under some combinations of readings. One certified combination uses these explicit scopes: %s", c.Number, normalizeClause(ch.original), strings.Join(selectedReadings, "; "))
 		}
 		raw.NearestForm = "relational scope conversion"
+		if len(nplaceCandidates(choices[0].original)) > 0 {
+			raw.AmbiguityNote = strings.ReplaceAll(raw.AmbiguityNote, "two scope readings", "multiple scope readings")
+		}
 		raw.Mismatch = raw.AmbiguityNote
 	} else if raw.NearestForm == "" {
 		raw.NearestForm = failed.NearestForm
@@ -707,6 +730,7 @@ func matchRelationalUG(last, c NumberedArgumentStep, name, class string) bool {
 							continue
 						}
 						generalized := x
+						generalized.names = append([]string{}, x.names...)
 						generalized.names[slot] = ""
 						generalized.prefix = append([]relationQuantifier{{"every", normalizeClause(class), slot}}, x.prefix...)
 						if relationEntails(generalized, y) {

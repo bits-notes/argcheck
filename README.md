@@ -3,7 +3,7 @@
 argcheck checks the syntactically transparent validity of numbered arguments.
 It runs deterministic syntax and entailment checks in Go, with no LLM and no
 network access in local mode. Each conclusion must match an accepted inference
-form using its cited steps. The current catalog is v21; `argcheck --forms` lists
+form using its cited steps. The current catalog is v22; `argcheck --forms` lists
 its forms.
 
 A passing result establishes validity under that catalog. It does not establish
@@ -79,7 +79,7 @@ argcheck --forms
 ```
 
 Text output reports `VALID` or `INVALID`, the catalog and build stamp
-(`gate catalog v21; local argcheck@<commit>`), and each conclusion's matched
+(`gate catalog v22; local argcheck@<commit>`), and each conclusion's matched
 form or mismatch. Fitch input is echoed before the verdict. An inert-citation
 hint identifies extra citations whose removal would let a known form pass.
 `--json` returns structured checks, details, and provenance.
@@ -177,9 +177,8 @@ Universal syllogisms accept `Every A is a B.` plus `Every B is C.`, including
 negative variants such as `No B is C.` Relative clauses and internal commas
 can occur, but the repeated terms must match verbatim.
 
-Existential introduction needs copular predicates: `J is preferable to M.`
-and `J is an E.` can yield `Some E is preferable to M.` Non-copular verbs do
-not fit that form. Use a definite or bare individual subject, rather than
+Copular existential introduction accepts: `J is preferable to M.`
+and `J is an E.` can yield `Some E is preferable to M.` Non-copular verbs use the relational forms described below. Use a definite or bare individual subject, rather than
 `A ...`. `Some A is a B.` plus `No B is C.` can yield `Some A is not C.`
 
 To conclude one alternative rather than another, state the dichotomy
@@ -214,6 +213,22 @@ Sentences with two quantifiers are checked under both scope readings; a step
 that depends on just one reading fails with a note. Make scope explicit, for
 example `Some teacher is such that every student admires that teacher.`
 Active and passive clauses do not automatically match.
+
+v22 extends relations to three or more places, including prepositional forms
+such as `Alice sends Parcel to Bob from Depot`. For example:
+
+```text
+1. Alice gave Bob a book.
+2. Bob is a child.
+3. Therefore, Alice gave some child a book. [1,2]
+```
+
+`Alice gave Bob a book` and `Alice gave a book to Bob` are the same atom:
+the double-object / `to` alternation is the only new wording equivalence.
+Argument roles, verbs, and prepositions otherwise match verbatim. All scope
+orders are checked, with at most four quantifiers per sentence. Nested
+`is such that` scaffolds fix scope. See [coverage and known limits](docs/coverage.md)
+for the supported vocabulary, examples, and restrictions.
 
 ### Counterfactuals
 

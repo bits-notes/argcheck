@@ -117,7 +117,7 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "modal duality", arity: 1, match: matchModalDuality},
 	{name: "modal distribution", arity: 1, match: matchModalDistribution},
 	// v17 forms are appended to make the parallel v16 rebase mechanical.
-	{name: "relational universal instantiation", arity: 2, match: matchRelationalUniversalInstantiation},
+	{name: "relational universal instantiation", arity: variableArityAtLeastTwo, match: matchV22RelationalInstantiation},
 	{name: "relational existential generalization", arity: 2, match: matchRelationalExistentialGeneralization},
 	{name: "relational universal negative instantiation", arity: 2, match: matchRelationalNegativeInstantiation},
 	{name: "relational scope conversion", arity: 1, match: matchRelationalScope},
