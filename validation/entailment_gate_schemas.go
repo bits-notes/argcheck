@@ -2097,5 +2097,8 @@ func EntailmentGateForms() []string {
 		}
 	}
 	names = append(names, "relative clause inference")
+	for _, form := range []string{"reiteration", "conjunction introduction", "conjunction elimination", "disjunction introduction", "modus ponens", "contradiction introduction", "contradiction elimination", "double negation", "double negation introduction", "biconditional introduction", "biconditional elimination", "universal instantiation", "existential introduction", "identity reflexivity", "identity substitution", "conditional proof", "reductio", "universal generalization", "existential elimination", "proof by cases"} {
+		names = append(names, "FOL "+form)
+	}
 	return names
 }

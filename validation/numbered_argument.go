@@ -271,7 +271,7 @@ func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentSte
 		if strings.HasPrefix(step.Statement, "Suppose ") {
 			step.Kind = numberedArgumentStepAssumption
 			step.Statement = strings.TrimPrefix(step.Statement, "Suppose ")
-		} else if arbitraryNamePattern.MatchString(step.Statement) {
+		} else if arbitraryNamePattern.MatchString(step.Statement) || arbitraryFOLPattern.MatchString(step.Statement) {
 			step.Kind = numberedArgumentStepArbitrary
 		}
 	}

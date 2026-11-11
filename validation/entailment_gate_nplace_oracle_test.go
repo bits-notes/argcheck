@@ -11,11 +11,7 @@ import (
 // finiteFormula is independent of the English grammar and the gate's prefix
 // rules. Terms starting with $ are variables; all others are constants.
 // Quantifiers are unrestricted FOL; class restrictions are ordinary formulas.
-type finiteFormula struct {
-	op, symbol string
-	terms      []string
-	children   []*finiteFormula
-}
+type finiteFormula = folFormula
 
 func foAtom(p string, ts ...string) *finiteFormula {
 	return &finiteFormula{op: "atom", symbol: p, terms: ts}
@@ -117,6 +113,15 @@ func (c *finiteCNF) ground(f *finiteFormula, size int, env map[string]int) int {
 		}
 		c.clauses = append(c.clauses, []int{lit})
 		return v
+	case "bottom":
+		v := c.fresh()
+		c.clauses = append(c.clauses, []int{-v})
+		return v
+	case "implies":
+		return c.combine("or", []int{-c.ground(f.children[0], size, env), c.ground(f.children[1], size, env)})
+	case "iff":
+		a, b := c.ground(f.children[0], size, env), c.ground(f.children[1], size, env)
+		return c.combine("and", []int{c.combine("or", []int{-a, b}), c.combine("or", []int{-b, a})})
 	case "not":
 		return -c.ground(f.children[0], size, env)
 	case "every", "some":

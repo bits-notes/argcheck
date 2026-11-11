@@ -25,6 +25,9 @@ func matchContradiction(p []NumberedArgumentStep, c NumberedArgumentStep) schema
 
 func fitchAssumptionStatement(s NumberedArgumentStep) string {
 	if s.Kind == numberedArgumentStepArbitrary {
+		if m := arbitraryFOLPattern.FindStringSubmatch(s.Statement); m != nil {
+			return m[1] + " is identical to " + m[1]
+		}
 		if m := arbitraryPropertyPattern.FindStringSubmatch(s.Statement); m != nil {
 			if propertyBearer(m[2]) {
 				return m[2] + " has " + m[1]

@@ -83,7 +83,7 @@ func checkV20Case(t *testing.T, tc v20GateCase) {
 }
 
 func TestCatalogV20(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v23" {
+	if EntailmentGateCatalogVersion != "v24" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range append(append([]v20GateCase{}, v20AcceptedCases...), v20KeptGaps...) {

@@ -45,6 +45,9 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 		{"three-place multiple instantiation", v22A3, "relational universal instantiation"},
 		// v23 decomposes relative restrictors and predicate nominals.
 		{"relative restrictor instantiation", v23A2, "relative clause inference"},
+		// v24 fixes scope and repeated variables in the explicit escape hatch.
+		{"explicit repeated-variable instantiation", `1. every x is such that x admires x.
+2. Therefore, alice admires alice. [1]`, "FOL universal instantiation"},
 		// Remaining relation boundary: an arbitrary relation need not be transitive.
 		{"relation transitivity without premise", `1. Ada admires Ben.
 2. Ben admires Cy.

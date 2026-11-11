@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v23"
+const EntailmentGateCatalogVersion = "v24"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -135,6 +135,11 @@ func GateNumberedArgument(arg NumberedArgument) EntailmentGateReport {
 	}
 	stepsByNumber := make(map[int]NumberedArgumentStep, len(arg.Steps))
 	for _, step := range arg.Steps {
+		if folExplicit(step.Statement) {
+			if _, err := parseFOL(step.Statement); err != nil {
+				return EntailmentGateReport{Passed: false, Steps: []EntailmentGateStepReport{{Step: step.Number, NearestForm: "explicit-variable FOL", Mismatch: err.Error()}}}
+			}
+		}
 		stepsByNumber[step.Number] = step
 	}
 
@@ -223,7 +228,24 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 }
 
 func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	// New explicit-variable sentences have fixed scope, never legacy scope
+	// permutations. Historical sentences retain their previous parser priority.
+	active := folExplicit(conclusion.Statement)
+	for _, id := range conclusion.Citations {
+		active = active || folExplicit(steps[id].Statement)
+	}
+	for _, span := range conclusion.Ranges {
+		active = active || folExplicit(steps[span[0]].Statement) || folExplicit(steps[span[1]].Statement)
+	}
+	if active {
+		return gateFOL(conclusion, steps)
+	}
 	report := gateRelationalScopes(conclusion, steps)
+	if !report.Passed {
+		if fallback := gateFOL(conclusion, steps); fallback.Passed {
+			return fallback
+		}
+	}
 	if !report.Passed {
 		texts := []string{conclusion.Statement}
 		for _, id := range conclusion.Citations {
