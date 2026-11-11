@@ -67,9 +67,15 @@ func parseFOL(text string) (*folFormula, error) {
 	return parseFOLScope(s, map[string]bool{}, folExplicit(s))
 }
 func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, error) {
+	return parseFOLScopeMode(s, bound, strict, true)
+}
+func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (*folFormula, error) {
 	s = folStrip(s)
 	bad := func() (*folFormula, error) {
 		return nil, fmt.Errorf("use every/some/no <variable> is such that, bind each variable once, and parenthesize compound scopes")
+	}
+	if s == "" {
+		return bad()
 	}
 	depth := 0
 	for _, c := range s {
@@ -99,7 +105,7 @@ func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, e
 			next[k] = b
 		}
 		next[v] = true
-		body, err := parseFOLScope(strings.TrimSpace(s[m[1]:]), next, true)
+		body, err := parseFOLScopeMode(strings.TrimSpace(s[m[1]:]), next, true, extended)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +118,7 @@ func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, e
 		return f, nil
 	}
 	if strings.HasPrefix(s, "it is not the case that ") {
-		f, e := parseFOLScope(strings.TrimPrefix(s, "it is not the case that "), bound, strict)
+		f, e := parseFOLScopeMode(strings.TrimPrefix(s, "it is not the case that "), bound, strict, extended)
 		if e != nil {
 			return nil, e
 		}
@@ -124,7 +130,7 @@ func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, e
 			a, b, ok = folSplit(s[3:], ", then ")
 		}
 		if ok {
-			return folParsePair("implies", strings.TrimSuffix(a, ","), b, bound, strict)
+			return folParsePair("implies", strings.TrimSuffix(a, ","), b, bound, strict, extended)
 		}
 		return bad()
 	}
@@ -134,8 +140,77 @@ func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, e
 			t = strings.TrimPrefix(t, "either ")
 		}
 		if a, b, ok := folSplit(t, p.sep); ok {
-			return folParsePair(p.op, a, b, bound, strict)
+			return folParsePair(p.op, a, b, bound, strict, extended)
 		}
+	}
+	// A historical opaque clause stays zero-place even when the narrow
+	// token parser could accidentally read its words as subject/verb/object.
+	if extended && !strings.Contains(s, " is such that ") {
+		fs, why := legacyFOLReadings(s)
+		if why == "" && len(fs) == 1 && fs[0].op == "atom" && len(fs[0].terms) == 0 {
+			usesBound := false
+			for _, word := range strings.Fields(s) {
+				usesBound = usesBound || bound[word]
+			}
+			if !usesBound {
+				return fs[0], nil
+			}
+		}
+	}
+	if f, err := parseFOLAtomCore(s, bound, strict); err == nil || !extended {
+		return f, err
+	}
+	// Share the readable lexical recognizers, including multiword names,
+	// predicates and relation separators. Do not choose among their readings.
+	if strings.Contains(s, " is such that ") {
+		return bad()
+	}
+	fs, why := legacyFOLReadings(s)
+	if why != "" || len(fs) != 1 {
+		return bad()
+	}
+	f := fs[0]
+	// An opaque proposition has no variable slots: never swallow a bound
+	// variable occurrence as text when a structured atom failed to parse.
+	if f.op == "atom" && len(f.terms) == 0 {
+		for _, word := range strings.Fields(s) {
+			if bound[word] {
+				return bad()
+			}
+		}
+	}
+	if f.op != "atom" && f.op != "equal" {
+		return bad()
+	}
+	var bind func(*folFormula) bool
+	bind = func(f *folFormula) bool {
+		for i, t := range f.terms {
+			if strings.HasPrefix(t, "\x00") {
+				return false
+			}
+			if bound[t] {
+				f.terms[i] = "$" + t
+			} else if strict && folVariable.MatchString(t) {
+				return false
+			}
+		}
+		for _, child := range f.children {
+			if !bind(child) {
+				return false
+			}
+		}
+		return true
+	}
+	if !bind(f) {
+		return bad()
+	}
+	return f, nil
+}
+
+// Keep the original explicit atom priority and scope diagnostics unchanged.
+func parseFOLAtomCore(s string, bound map[string]bool, strict bool) (*folFormula, error) {
+	bad := func() (*folFormula, error) {
+		return nil, fmt.Errorf("use every/some/no <variable> is such that, bind each variable once, and parenthesize compound scopes")
 	}
 	term := func(t string) (string, bool) {
 		t = strings.TrimSpace(t)
@@ -214,12 +289,13 @@ func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, e
 	}
 	return &folFormula{op: "atom", symbol: symbol, terms: ts}, nil
 }
-func folParsePair(op, a, b string, scope map[string]bool, strict bool) (*folFormula, error) {
-	x, e := parseFOLScope(a, scope, strict)
+
+func folParsePair(op, a, b string, scope map[string]bool, strict, extended bool) (*folFormula, error) {
+	x, e := parseFOLScopeMode(a, scope, strict, extended)
 	if e != nil {
 		return nil, e
 	}
-	y, e := parseFOLScope(b, scope, strict)
+	y, e := parseFOLScopeMode(b, scope, strict, extended)
 	if e != nil {
 		return nil, e
 	}
@@ -271,6 +347,9 @@ func (f *folFormula) renderSurface() string {
 	case "bottom":
 		return "contradiction"
 	case "atom":
+		if len(f.terms) == 0 {
+			return f.symbol
+		}
 		p := strings.Split(f.symbol, "/")
 		if len(f.terms) == 1 {
 			return term(f.terms[0]) + " is " + p[len(p)-1]
@@ -431,7 +510,26 @@ func gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) Entailm
 		return r
 	}
 	parseClosed := func(text string) (*folFormula, error) {
-		return parseFOLScope(strings.ToLower(strings.TrimSuffix(strings.TrimSpace(text), ".")), map[string]bool{}, true)
+		s := strings.ToLower(strings.TrimSuffix(strings.TrimSpace(text), "."))
+		f, err := parseFOLScope(s, map[string]bool{}, true)
+		if err != nil || folExplicit(s) {
+			return f, err
+		}
+		// Extending the atom alphabet must not let the FOL fallback choose a
+		// connective reading that the historical gate deliberately rejected.
+		if _, oldErr := parseFOLScopeMode(s, map[string]bool{}, true, false); oldErr != nil {
+			// The readable enumerator is not a precedence specification for
+			// unrestricted mixed connectives. New compound fallback inputs must
+			// use the renderer's explicit parentheses; old schemas handle prose.
+			if len(f.children) > 0 && s != f.Render() {
+				return nil, fmt.Errorf("parenthesize compound scopes for explicit FOL rules")
+			}
+			readings, why := legacyFOLReadings(s)
+			if why != "" || len(readings) != 1 || !folSame(f, readings[0]) {
+				return nil, fmt.Errorf("requires one matching readable FOL reading; parenthesize scopes or use is such that")
+			}
+		}
+		return f, nil
 	}
 	target, e := parseClosed(c.Statement)
 	if e != nil {

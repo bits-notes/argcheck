@@ -271,9 +271,23 @@ converts readable FOL phrasing to the explicit core and back. Ambiguous readings
 are refused; use `is such that` to fix scope. Existing matching forms keep their
 priority. This is grammatical conversion, not paraphrase.
 
-The legacy audit converts 815 distinct sentences in both directions. Its named
-exceptions mean the proposed single-reading FOL= completeness claim is **not
-yet fully supported**; see the coverage ledger for the precise remaining gaps.
+Opaque propositional clauses now render verbatim as zero-place atoms, including
+inside explicit-variable bodies. Multiword names and predicates and additional
+relation prepositions use the readable grammar's lexical recognizers. Distinct
+normalized clauses are distinct atoms; this adds no paraphrase matching.
+
+The legacy audit converts **3,434 of 6,386** distinct sentences both ways,
+resolving **2,619 of 2,735** lexical/opaque exceptions. Remaining: 116 named
+lexical/structural exceptions, 2,424 ambiguous and 412 non-FOL sentences.
+
+The scoped claim is that every argument whose sentences each have exactly one
+closed, function-free FOL= reading and which is valid over nonempty domains has
+a gate-accepted derivation. The remaining rendering exceptions mean that claim
+is **not yet fully established**; the coverage ledger gives the precise gaps.
+Ambiguous readings (fix scope with `is such that`), modal, counterfactual,
+property and that-clause grammar are outside it. Counting and descriptions are
+next; paraphrase remains a non-goal. Finite oracle checks are evidence, not a
+proof of unrestricted soundness or completeness.
 
 ### Counterfactuals
 

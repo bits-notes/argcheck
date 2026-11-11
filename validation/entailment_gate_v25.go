@@ -25,7 +25,7 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 	}
 	// Parenthesized structured compounds already have a fixed boundary.
 	if strings.ContainsAny(s, "()") {
-		if f, err := parseFOL(s); err == nil {
+		if f, err := parseFOLScopeMode(s, map[string]bool{}, folExplicit(s), false); err == nil {
 			return []*folFormula{f}, ""
 		}
 	}
@@ -264,50 +264,61 @@ func legacyFOLConjunction(texts []string) ([]*folFormula, string) {
 // Rendering failures remain named coverage exceptions, not alternative readings
 // to discard. In particular a one-letter legacy name is not a bound variable.
 func legacyFOLRender(f *folFormula) (string, string) {
-	var check func(*folFormula) string
-	check = func(f *folFormula) string {
-		for _, t := range f.terms {
-			if !strings.HasPrefix(t, "$") && (!folWord.MatchString(t) || folVariable.MatchString(t)) {
-				return "legacy name outside explicit token grammar"
-			}
-		}
-		if f.op == "atom" {
-			if len(f.terms) == 0 {
-				return "opaque zero-ary clause outside explicit atom grammar"
-			}
-			ps := strings.Split(f.symbol, "/")
-			if len(f.terms) == 1 {
-				if len(ps) != 2 || ps[0] != "is" || !folWord.MatchString(ps[1]) {
-					return "legacy predicate outside explicit token grammar"
-				}
-			} else {
-				if len(f.terms) > 4 || len(ps) != len(f.terms)-1 || !folWord.MatchString(ps[0]) || !relationVerb(ps[0]) {
-					return "legacy relation outside explicit atom grammar"
-				}
-				for _, p := range ps[1:] {
-					if p != "to" && p != "from" && p != "with" {
-						return "legacy preposition outside explicit atom grammar"
-					}
-				}
-			}
-		}
-		for _, c := range f.children {
-			if why := check(c); why != "" {
-				return why
-			}
-		}
-		return ""
-	}
-	if why := check(f); why != "" {
-		return "", why
-	}
 	s := f.Render()
 	got, err := parseFOLScope(s, map[string]bool{}, true)
 	if err != nil || !folSame(f, got) {
-		return "", "explicit round-trip mismatch"
+		why := legacyFOLRenderReason(folRenderNames(f, nil, 0), map[string]bool{})
+		if why == "" {
+			why = "rendered compound changes connective scope"
+		}
+		return "", why
+	}
+	readings, why := legacyFOLReadings(s)
+	if why != "" || len(readings) != 1 || !folSame(f, readings[0]) {
+		return "", "rendered surface conflicts with historical parenthesized parsing"
 	}
 	return s, ""
 }
+
+// Diagnose failures at their lexical leaf, retaining a reason on every ledger
+// row. A variable-shaped legacy constant cannot silently become a variable.
+func legacyFOLRenderReason(f *folFormula, bound map[string]bool) string {
+	for _, term := range f.terms {
+		if folVariable.MatchString(term) {
+			return "legacy constant looks like an explicit variable (requires a name escape)"
+		}
+		if strings.HasPrefix(term, "\x00") {
+			return "legacy constant uses a reserved internal marker"
+		}
+	}
+	if f.op == "every" || f.op == "some" {
+		next := map[string]bool{}
+		for k, v := range bound {
+			next[k] = v
+		}
+		next[strings.TrimPrefix(f.symbol, "$")] = true
+		return legacyFOLRenderReason(f.children[0], next)
+	}
+	for _, child := range f.children {
+		if why := legacyFOLRenderReason(child, bound); why != "" {
+			return why
+		}
+	}
+	if f.op == "atom" || f.op == "equal" {
+		got, err := parseFOLScope(f.renderSurface(), bound, true)
+		if err != nil {
+			if len(f.terms) == 0 {
+				return "opaque clause conflicts with explicit scope or connective syntax"
+			}
+			return "legacy lexical atom has no unique explicit parse"
+		}
+		if !folSame(f, got) {
+			return "rendered atom changes lexical segmentation or operator structure"
+		}
+	}
+	return ""
+}
+
 func notationEquivalence(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	r := EntailmentGateStepReport{Step: c.Number, Depth: c.Depth, Citations: c.Citations, Ranges: c.Ranges, NearestForm: "notation equivalence", Mismatch: "requires one premise and identical single readings"}
 	if len(c.Citations) != 1 || len(c.Ranges) != 0 {

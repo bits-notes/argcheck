@@ -239,26 +239,47 @@ Arbitrary-name declarations and explicit-variable sentences are excluded.
 records its sentence, source argument forms, and any named exception. Source
 forms are provenance, not independent semantic coverage of every rule.
 
-Current results: **6,386 sentences; 815 converted in both directions; zero
-conversion failures; 2,424 ambiguous sentences; 3,147 other named exceptions**.
-The conversion test directly requires the new form and separately passes each
-direction through the public gate. Conversions occur in arguments using 92
-source forms, including propositional connectives, categorical universal and
-existential rules, identity, binary and n-place relations, relative clauses,
-and Fitch discharges. The inventory records 106 source forms overall; sentences
-from modal/property arguments do not establish a FOL translation of those
-operators. Exact source-form lists and sentence-level exceptions are in the
-inventory and verbose test output.
+Current results are recorded in the table below. The conversion test directly
+requires notation equivalence and separately passes each direction through the
+public gate. Each successful rendering is checked against both the explicit
+parser and the historical reading enumerator; neither may change its meaning.
+New readable atoms cannot bypass the existing ambiguity checks through the FOL
+fallback: a newly parseable unscaffolded formula must have one matching legacy
+reading before it can be used by that fallback. Newly supported compound
+fallback inputs must also use the renderer's parentheses; readable prose keeps
+its historical one-step schemas and precedence guards.
+The inventory records 106 source forms overall. Source-form provenance from a
+modal/property argument does not establish a FOL translation of those operators.
+Exact sentence-level exceptions remain in the JSON inventory.
 
-| Named exception | Sentences | Reason |
-| --- | ---: | --- |
-| Multiple non-alpha-equivalent readings | 2,424 | Scope or grammatical candidate ambiguity; conversion must refuse |
-| Opaque zero-ary clause outside explicit atom grammar | 2,509 | Legacy propositional clauses have no lossless explicit atom spelling |
-| Non-FOL modal, counterfactual, or property grammar | 412 | These operators require their own semantics, not FOL atomization |
-| Legacy name outside explicit token grammar | 156 | Multiword or variable-shaped names cannot be rendered losslessly |
-| Legacy predicate outside explicit token grammar | 50 | Compound predicate labels exceed the core lexical grammar |
-| Legacy relation outside explicit atom grammar | 18 | Relation spelling or arity exceeds the core grammar |
-| Legacy preposition outside explicit atom grammar | 2 | Core separators are only `to`, `from`, and `with` |
+**6,386 sentences; 3,434 bidirectional conversions; zero conversion failures;
+2,424 ambiguous; 412 non-FOL; 116 remaining lexical/opaque exceptions.** All
+815 prior conversions remain; 2,619 of the 2,735 lexical/opaque exceptions are
+resolved. Successful conversions cover 96 source forms, with 171 bounded oracle
+samples (domains 1–3), plus hand-specified zero-place/multiword cases and
+propositional tautology/non-tautology checks.
+
+| Category / remaining reason | Sentences |
+| --- | ---: |
+| Converted both ways | 3,434 |
+| Multiple non-alpha-equivalent readings (unchanged) | 2,424 |
+| Non-FOL modal, counterfactual, or property grammar (unchanged) | 412 |
+| Legacy constant looks like an explicit variable; needs a name escape | 89 |
+| Lexical atom has no unique explicit parse after rendering | 13 |
+| Rendering changes lexical segmentation or operator structure | 9 |
+| Rendering conflicts with historical parenthesized parsing | 4 |
+| Opaque clause conflicts with explicit scope/connective syntax | 1 |
+
+The 89 constant cases include single-letter names such as `z`; treating them as
+bound variables would change their meaning. The 13 lexical cases include
+`works with` losing a unique argument boundary after quantifier expansion and
+readable `is such that`/that-clause expressions that are not explicit binders.
+The nine segmentation cases include that-clause subjects losing their original
+copula boundary, restricted existentials, and an opaque assertion whose surface
+contains explicit negation. The four historical-parser conflicts contain opaque
+`either ...` leaves inside parenthesized compounds. The final scope conflict is
+a nested relative-clause scaffold. Every affected sentence and its reason is
+listed in the JSON ledger; none is silently coerced to another reading.
 
 Exceptions are pinned per sentence. The test fails if any classification changes;
 `ARGCHECK_UPDATE_LEGACY=1` is an explicit ledger-update operation, not normal
@@ -283,14 +304,15 @@ may use catalog one-step forms, Fitch subproofs, notation equivalence, and
 explicit-variable intermediate lines. This is existence of a finite derivation,
 not a claim that any valid argument is accepted in one step or automatically
 found by the checker. Modal, counterfactual, and property quantification are not
-FOL= readings and are outside this claim.
+FOL= readings and are outside this claim, as is that-clause grammar.
 
 The intended proof sketch is:
 
 1. Translate each single-reading sentence to its closed FOL= formula and connect
    it to its explicit-variable rendering by notation equivalence. The legacy
-   audit and round trips supply evidence. **This step is not established for the
-   entire stated domain: the named lexical/opaque exceptions still lack a bridge.**
+   audit and round trips supply evidence. Zero-place clauses now render verbatim,
+   and multiword lexical items reuse the readable recognizers. **This step still
+   has the specifically enumerated rendering exceptions above.**
 2. Classical natural deduction with identity is complete for FOL= over nonempty
    domains, so each valid sequent has a finite derivation.
 3. Every natural-deduction rule must be available for arbitrary formulas. The
@@ -304,23 +326,23 @@ The intended proof sketch is:
 4. Every intermediate formula over the supported signature is renderable:
    indexed variables remove the finite-alphabet obstruction. Structural
    recursion renders connectives and quantifiers, with fresh binders at each
-   depth; the G1 round trips test this construction. This does **not** expand the
-   supported lexical signature or turn opaque clauses into unary predicates.
+   depth; the G1 round trips test this construction. Opaque clauses remain
+   zero-place atoms, matched only after the existing normalization. Lexical
+   collisions with variable names or structural syntax still need escapes.
 5. Once steps 1 and 3 hold for the full domain, composing the conversions and
    rule translations supplies a gate-accepted derivation.
 
-**Honest status: the scoped claim is not yet fully supported.** G1 is closed.
-G2 supplies a sound-by-identical-form conversion criterion and a tested bridge
-for the renderable fragment, but not a complete bridge for the historical
-single-reading FOL grammar. Exactly the remaining obligations are: lossless
-explicit spellings for zero-ary clauses, non-core names/predicates/relations
-(including additional prepositions); a total, fidelity-checked reading
-translation for those legacy forms; and a general implementation-level argument
-that the rule and rendering correspondence holds beyond the finite inventory.
-The 2,735 lexical/opaque exception sentences are concrete witnesses to the first
-two obligations. The 412 non-FOL exceptions and ambiguous sentences are outside
-the scoped claim, not counterexamples to it. Do not advertise the full grammar
-as complete on the strength of the finite tests.
+**Honest status: the full scoped claim is still not established.** G1 is closed,
+and the common zero-place and multiword cases now have a tested bridge. The
+remaining concrete obligations are a lossless spelling for variable-shaped
+constants; lexical boundaries that survive replacing quantified noun phrases
+with variables; preservation of opaque text that resembles connective/scope
+syntax; and reconciliation of historical parenthesized readings with explicit
+renderings. The exception ledger identifies the affected sentences. Some also
+involve that-clause grammar, which is outside the FOL scope; retaining them in
+the original lexical audit categories avoids quietly changing the denominator.
+A general implementation correspondence argument beyond finite tests remains
+necessary. The unchanged ambiguous and non-FOL categories are outside the claim.
 
 Outside the claim:
 
@@ -332,8 +354,11 @@ Outside the claim:
   is a signature restriction, not an incompleteness of that calculus.
 - Counting quantifiers and definite descriptions are planned next; neither is
   implemented here as a logical abbreviation.
-- Paraphrase remains a permanent non-goal. Verbatim opaque clauses can already
-  participate in historical propositional rules, but lack an explicit renderer.
+- Modal, counterfactual, property and that-clause grammar are outside the
+  function-free FOL claim. An opaque propositional letter carries no internal
+  modal or attitude semantics.
+- Paraphrase remains a permanent non-goal. Zero-place atoms render verbatim;
+  different normalized clauses remain independent propositional letters.
 
 Soundness evidence is bounded, **not a proof**: the finite-model oracle checks
 domains 1–3, empty predicate extensions, and co-denoting names. v24 checks a
@@ -343,6 +368,11 @@ and independently hand-built meanings for representative readable sentences,
 alongside ambiguity and near-miss rejections. The identical-AST criterion is
 sound by construction conditional on faithful parsing; the tests do not prove
 faithfulness for arbitrary English or soundness over all domain sizes.
+
+Opaque text containing an active bound-variable token is conservatively rejected
+inside that scope, so a failed structured atom cannot hide a variable occurrence.
+A literal-atom escape or a binder-freshness policy covering opaque text would be
+needed to remove that collision limit without weakening malformed-input checks.
 
 Other practical limits are the readable four-quantifier cap, explicit-variable
 intermediate lines, and ordinary finite input/stack/memory resources.
