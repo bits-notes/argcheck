@@ -215,9 +215,11 @@ func TestCatalogV25SymbolBoundaries(t *testing.T) {
 	if !folSame(fs[0], expected) {
 		t.Fatal("surface name captured as internal variable")
 	}
-	if _, why := legacyFOLRender(fs[0]); why == "" {
-		t.Fatal("non-core name rendered as bound variable")
+	rendered, why := legacyFOLRender(fs[0])
+	if why != "" {
+		t.Fatal("reserved surface name must render as a constant", why)
 	}
+	v25Conversion(t, "Every student admires $slot0", rendered)
 }
 
 func TestCatalogV25LegacyCoverage(t *testing.T) {

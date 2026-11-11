@@ -13420,8 +13420,7 @@
       "relational existential elimination",
       "relational existential generalization",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "Alice sends Parcel to Cedar",
@@ -13464,8 +13463,7 @@
       "relational existential elimination",
       "relational existential generalization",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "Alice sends every courier to every courier",
@@ -13509,8 +13507,7 @@
     "sentence": "Alice struck x",
     "forms": [
       "counterfactual modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "Alice trusts Alice",
@@ -13522,8 +13519,7 @@
     "sentence": "Alice works with some teacher",
     "forms": [
       "non-copular universal instantiation"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "All cats can sleep",
@@ -13591,8 +13587,7 @@
     "forms": [
       "property generalization",
       "property instantiation (arbitrary property)"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "Aristotle has Prop_12",
@@ -13884,8 +13879,7 @@
       "non-copular universal instantiation",
       "relational existential generalization",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "Bob is a child",
@@ -14784,8 +14778,7 @@
     "sentence": "Every hero that Sam admires is such that Pat admires every reader who visits that hero",
     "forms": [
       "relative clause inference"
-    ],
-    "exception": "opaque clause conflicts with explicit scope or connective syntax"
+    ]
   },
   {
     "sentence": "Every hunter is alert",
@@ -15069,50 +15062,43 @@
     "sentence": "I am aware of having free will",
     "forms": [
       "schematic instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "I am aware of something",
     "forms": [
       "universal negative instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "I am happy",
     "forms": [
       "counterfactual modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "I am not a physical thing",
     "forms": [
       "universal negative instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "I am not physical thing",
     "forms": [
       "universal negative instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "I am ready",
     "forms": [
       "counterfactual modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "I am wise",
     "forms": [
       "property abstraction"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "I has the property of being wise",
@@ -15629,8 +15615,7 @@
     "sentence": "If I am aware of having X, then I have X",
     "forms": [
       "schematic instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If I were ready, then I would be happy",
@@ -15734,8 +15719,7 @@
       "distinguishing property nonidentity",
       "property generalization",
       "self-entailment"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If It is not the case that Plato has the property of being just, then It is not the case that Socrates has the property of being wise",
@@ -16535,8 +16519,7 @@
     "sentence": "If X admires Y, then Y trusts X",
     "forms": [
       "schematic instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X are spacetime theories and carrying a model's tensors along by a diffeomorphism preserves the field equations of X and carrying every field of a model of X along by any diffeomorphism yields a tuple of the required form and the completeness condition of X states that every tuple of the required form that satisfies the field equations is a model of the theory, then carrying every field of a model of X along by any diffeomorphism yields another model of the same theory",
@@ -16578,8 +16561,7 @@
     "sentence": "If X is Y's mother and Z is X's brother, then Z is Y's uncle",
     "forms": [
       "schematic conjunctive modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X is a courier and X carries a parcel with no label, then X is ready",
@@ -16599,8 +16581,7 @@
     "sentence": "If X is a parent of Y, then Y is a child of X",
     "forms": [
       "schematic instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X is a principle of physical equivalence and Y are models of a local spacetime theory and X holds that diffeomorphic models represent the same physical situation and Y differ from one another only within the hole by diffeomorphic mathematical description, then under X Y represent the same physical situation",
@@ -16652,8 +16633,7 @@
       "conjunction introduction",
       "conjunctive modus ponens",
       "schematic conjunctive modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X is an analyst of knowledge and X requires every belief in a subject’s chain of grounds to be true, then X requires every ground to be true",
@@ -16677,8 +16657,7 @@
     "sentence": "If X is conceivable, then X is metaphysically possible",
     "forms": [
       "schematic instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X is ready, then if X had been struck, then X would have lit",
@@ -16691,8 +16670,7 @@
     "sentence": "If X is receiving power, then X's green indicator is illuminated",
     "forms": [
       "schematic instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X outranks Y, then Y reports to X",
@@ -16705,8 +16683,7 @@
     "sentence": "If X resembles X, then X is self-similar",
     "forms": [
       "schematic instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X smiles and X sings and X dances, then X celebrates",
@@ -16719,15 +16696,13 @@
     "sentence": "If X takes no account of distance, then if X were acted upon, even in its qualified form, our world would be changed",
     "forms": [
       "schematic instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X trusts Y and Y trusts X, then X and Y are allies",
     "forms": [
       "schematic conjunctive modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If X's computed checksum exactly matches X's publisher's signed checksum, then X is unaltered",
@@ -17242,8 +17217,7 @@
     "sentence": "If there is a permutation sigma that exchanges distributions x and y, then x is preferred to y if and only if y is preferred to x",
     "forms": [
       "modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "If unemployment has fallen this year and if the economy is growing, then unemployment falls, then the economy is growing",
@@ -17576,8 +17550,7 @@
       "distinguishing property nonidentity",
       "property generalization",
       "self-entailment"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "It is not the case that Plato has every property that Aristotle has",
@@ -17796,8 +17769,7 @@
     "sentence": "It is not the case that The claim that the store is nearby is retracted",
     "forms": [
       "universal negative instantiation"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "It is not the case that every student admires Bob",
@@ -18584,8 +18556,7 @@
       "property generalization",
       "property instantiation (arbitrary property)",
       "self-entailment"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "Plato has every property that Aristotle has",
@@ -18890,8 +18861,7 @@
       "existential elimination",
       "relative clause inference",
       "universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "Sample R is defective",
@@ -18940,8 +18910,7 @@
       "identity substitution",
       "property generalization",
       "self-entailment"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "Socrates has every property that Aristotle has",
@@ -19178,8 +19147,7 @@
     "forms": [
       "property abstraction",
       "property concretion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "Socrates is wise",
@@ -19292,8 +19260,7 @@
     "sentence": "Some student is such that it is not the case that that student admires Bob",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "Some teacher is such that every student admires that teacher",
@@ -19306,8 +19273,7 @@
     "sentence": "Some teacher is such that it is not the case that Alice admires that teacher",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "Something is false",
@@ -19385,16 +19351,14 @@
     "sentence": "The claim that the store is nearby is a claim",
     "forms": [
       "existential introduction"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "The claim that the store is nearby is a false claim",
     "forms": [
       "universal instantiation",
       "universal negative instantiation"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "The claim that the store is nearby is false",
@@ -19405,8 +19369,7 @@
       "property abstraction",
       "property concretion",
       "schematic existential introduction"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "The claim that the store is nearby is identical to Ngo's claim",
@@ -19418,22 +19381,19 @@
     "sentence": "The claim that the store is nearby is not a retracted item",
     "forms": [
       "universal negative instantiation"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "The claim that the store is nearby is retracted",
     "forms": [
       "universal instantiation"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "The completeness condition of local spacetime theories states that every tuple of the required form that satisfies the field equations is a model of the theory",
     "forms": [
       "schematic conjunctive modus ponens"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "The curve resembles the curve",
@@ -19624,8 +19584,7 @@
     "sentence": "There exist cats that are not asleep",
     "forms": [
       "existential counterexample"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "There exist healthy adults that are sleep-deprived and not impaired",
@@ -19815,8 +19774,7 @@
       "conjunction elimination",
       "existential elimination",
       "existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "a is mortal",
@@ -19826,8 +19784,7 @@
       "existential generalization",
       "universal generalization",
       "universal instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "accepting Leibniz equivalence removes the radical local indeterminism",
@@ -20055,16 +20012,14 @@
     "forms": [
       "non-copular universal instantiation",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "b admires no student",
     "forms": [
       "relational universal generalization",
       "relational universal negative instantiation"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "blair admires alice",
@@ -20248,8 +20203,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "c is a student",
@@ -20257,8 +20211,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "c is a student and c admires Bob",
@@ -20266,8 +20219,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "carrying a model's tensors along by a diffeomorphism preserves the field equations of local spacetime theories",
@@ -21238,8 +21190,7 @@
     "sentence": "either it rains and the street is wet or it is not the case that the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "rendered surface conflicts with historical parenthesized parsing"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or it rains",
@@ -21302,8 +21253,7 @@
     "sentence": "either it rains and the street is wet or the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "rendered surface conflicts with historical parenthesized parsing"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or the street is wet and it rains",
@@ -21697,8 +21647,7 @@
     "sentence": "either it snows and the street is wet or it is not the case that the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "rendered surface conflicts with historical parenthesized parsing"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or it rains",
@@ -21761,8 +21710,7 @@
     "sentence": "either it snows and the street is wet or the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "rendered surface conflicts with historical parenthesized parsing"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or the street is wet and it rains",
@@ -22678,8 +22626,7 @@
       "relational existential elimination",
       "relational existential generalization",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "every student is such that every student admires that student",
@@ -22821,8 +22768,7 @@
       "relational existential elimination",
       "relational existential generalization",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "every teacher is such that every student admires that teacher",
@@ -22888,8 +22834,7 @@
     "sentence": "everything a thing thinks of is not a physical object",
     "forms": [
       "universal negative syllogism"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "he would arrive by three",
@@ -44896,8 +44841,7 @@
       "existential elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "no student is such that every student admires that student",
@@ -44976,8 +44920,7 @@
       "existential elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "no teacher is such that every teacher admires that teacher",
@@ -45225,8 +45168,7 @@
       "existential elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "some student is such that Bob admires that student",
@@ -45258,29 +45200,25 @@
     "sentence": "some student is such that it is not the case that Alice admires that student",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "some student is such that it is not the case that Bob admires that student",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "some student is such that it is not the case that that student admires Alice",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "some student is such that it is not the case that that student admires Bob",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "some student is such that no student admires that student",
@@ -45449,8 +45387,7 @@
       "existential elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "some teacher is such that Bob admires that teacher",
@@ -45482,29 +45419,25 @@
     "sentence": "some teacher is such that it is not the case that Alice admires that teacher",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "some teacher is such that it is not the case that Bob admires that teacher",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "some teacher is such that it is not the case that that teacher admires Alice",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "some teacher is such that it is not the case that that teacher admires Bob",
     "forms": [
       "relational scope conversion"
-    ],
-    "exception": "legacy lexical atom has no unique explicit parse"
+    ]
   },
   {
     "sentence": "some teacher is such that no student admires that teacher",
@@ -46069,8 +46002,7 @@
     "sentence": "there is an X such that it is not the case that X sings",
     "forms": [
       "schematic existential introduction"
-    ],
-    "exception": "rendered atom changes lexical segmentation or operator structure"
+    ]
   },
   {
     "sentence": "there is something that is defective",
@@ -46101,8 +46033,7 @@
     "sentence": "w is strictly preferred to v if and only if v is strictly preferred to w",
     "forms": [
       "conjunctive modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "we should stop supporting factory farming",
@@ -46136,8 +46067,7 @@
     "sentence": "x is preferred to y if and only if y is preferred to x",
     "forms": [
       "modus ponens"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z admires Bob",
@@ -46147,8 +46077,7 @@
       "non-copular universal instantiation",
       "relational existential generalization",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z admires every student",
@@ -46158,8 +46087,7 @@
       "non-copular universal instantiation",
       "relational existential generalization",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z admires every teacher",
@@ -46169,8 +46097,7 @@
       "non-copular universal instantiation",
       "relational existential generalization",
       "relational universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z admires no student",
@@ -46178,8 +46105,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z admires no teacher",
@@ -46187,8 +46113,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z admires some student",
@@ -46196,8 +46121,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z admires some teacher",
@@ -46205,8 +46129,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a hero",
@@ -46215,8 +46138,7 @@
       "existential elimination",
       "relative clause inference",
       "universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a hero that Sam admires",
@@ -46224,8 +46146,7 @@
       "conjunction elimination",
       "existential elimination",
       "relative clause inference"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a hero that Sam admires and z is active",
@@ -46233,16 +46154,14 @@
       "conjunction elimination",
       "existential elimination",
       "relative clause inference"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a man",
     "forms": [
       "self-entailment",
       "universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a recipient",
@@ -46250,8 +46169,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a recipient and Alice sends Parcel to z",
@@ -46259,8 +46177,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a station",
@@ -46268,8 +46185,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a station and Alice sends Parcel to Bob from z",
@@ -46277,8 +46193,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student",
@@ -46287,8 +46202,7 @@
       "existential elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and Bob admires z",
@@ -46296,8 +46210,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and every student admires z",
@@ -46305,8 +46218,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and every teacher admires z",
@@ -46314,8 +46226,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and no student admires z",
@@ -46323,8 +46234,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and no teacher admires z",
@@ -46332,8 +46242,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and some student admires z",
@@ -46341,8 +46250,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and some teacher admires z",
@@ -46350,8 +46258,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and z admires Bob",
@@ -46359,8 +46266,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and z admires every student",
@@ -46368,8 +46274,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and z admires every teacher",
@@ -46377,8 +46282,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and z admires no student",
@@ -46386,8 +46290,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and z admires no teacher",
@@ -46395,8 +46298,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and z admires some student",
@@ -46404,8 +46306,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a student and z admires some teacher",
@@ -46413,8 +46314,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher",
@@ -46423,8 +46323,7 @@
       "existential elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and Bob admires z",
@@ -46432,8 +46331,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and every student admires z",
@@ -46441,8 +46339,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and every teacher admires z",
@@ -46450,8 +46347,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and no student admires z",
@@ -46459,8 +46355,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and no teacher admires z",
@@ -46468,8 +46363,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and some student admires z",
@@ -46477,8 +46371,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and some teacher admires z",
@@ -46486,8 +46379,7 @@
       "conjunction elimination",
       "relational existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and z admires Bob",
@@ -46495,8 +46387,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and z admires every student",
@@ -46504,8 +46395,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and z admires every teacher",
@@ -46513,8 +46403,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and z admires no student",
@@ -46522,8 +46411,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and z admires no teacher",
@@ -46531,8 +46419,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and z admires some student",
@@ -46540,8 +46427,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is a teacher and z admires some teacher",
@@ -46549,8 +46435,7 @@
       "conjunction elimination",
       "existential elimination",
       "relational existential generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   },
   {
     "sentence": "z is active",
@@ -46559,7 +46444,6 @@
       "existential elimination",
       "relative clause inference",
       "universal generalization"
-    ],
-    "exception": "legacy constant looks like an explicit variable (requires a name escape)"
+    ]
   }
 ]

@@ -206,7 +206,10 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 var fitchNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
 
 func fitchFreshName(name string, start int, conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
-	contains := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(name) + `\b`).MatchString
+	match := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(name) + `\b`).MatchString
+	contains := func(s string) bool {
+		return match(s) || match(folDecodedLiteralText(s)) || folLiteralHasName(s, strings.ToLower(name))
+	}
 	for n := 1; n < start; n++ {
 		if contains(steps[n].Statement) {
 			return fmt.Sprintf("fresh name %q at step %d already occurs in earlier step %d", name, start, n)

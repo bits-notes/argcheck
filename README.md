@@ -256,7 +256,8 @@ For nested formulas with no readable phrasing, use `every x is such that BODY`
 or `some x is such that BODY`. For example, `every x is such that every y is
 such that every z is such that if x outranks y and y outranks z then x outranks z`.
 Parentheses fix connective boundaries; variables must be bound without rebinding.
-Use multi-letter names for instantiations. The four-quantifier readable limit
+Use `name{x}` or `name{y2}` for constants spelled like variables; bare names
+outside explicit bodies keep their previous behavior. The four-quantifier readable limit
 does not apply. Indexed variables (`x1`, `x2`, `y12`) give an unbounded
 alphabet; round trips test 30–40 simultaneous binders and a 64-binder boundary.
 Indexed variables must be bound, just like bare letters, in explicit proofs.
@@ -264,7 +265,7 @@ Indexed variables must be bound, just like bare letters, in explicit proofs.
 The structured core supports propositional rules, identity substitution, and
 Fitch quantifier rules for nested formulas. `Let witness be arbitrary.` opens
 an unrestricted fresh-name subproof; the older `Let witness be an arbitrary F.`
-remains class-restricted. See [the completeness evidence and remaining gaps](docs/coverage.md#completeness-fol-with-identity).
+remains class-restricted. See [the completeness scope and evidence](docs/coverage.md#completeness-fol-with-identity).
 The new **notation equivalence** form cites one premise and requires both
 sentences to have one reading, identical up to bound-variable renaming. It
 converts readable FOL phrasing to the explicit core and back. Ambiguous readings
@@ -276,18 +277,31 @@ inside explicit-variable bodies. Multiword names and predicates and additional
 relation prepositions use the readable grammar's lexical recognizers. Distinct
 normalized clauses are distinct atoms; this adds no paraphrase matching.
 
-The legacy audit converts **3,434 of 6,386** distinct sentences both ways,
-resolving **2,619 of 2,735** lexical/opaque exceptions. Remaining: 116 named
-lexical/structural exceptions, 2,424 ambiguous and 412 non-FOL sentences.
+When ordinary phrasing cannot preserve a lexical boundary, use
+`atom{"works/with", "alice", x}`: the quoted symbol and ordered arguments specify
+one atom, quoted arguments are constants, and unquoted variables must be bound.
+`atom{"either it rains"}` has no arguments and is a zero-place proposition.
+`name{"claim that the store is nearby"}` quotes a complete name. Quoted strings
+use JSON escaping, and decoded names participate in eigenname freshness checks.
+These escapes preserve exact symbols and arity; they do not add paraphrase rules.
+The renderer uses them only when needed. Curly braces are distinct from citation
+brackets. This is still catalog **v25**, with no new inference form.
 
-The scoped claim is that every argument whose sentences each have exactly one
-closed, function-free FOL= reading and which is valid over nonempty domains has
-a gate-accepted derivation. The remaining rendering exceptions mean that claim
-is **not yet fully established**; the coverage ledger gives the precise gaps.
-Ambiguous readings (fix scope with `is such that`), modal, counterfactual,
-property and that-clause grammar are outside it. Counting and descriptions are
-next; paraphrase remains a non-goal. Finite oracle checks are evidence, not a
-proof of unrestricted soundness or completeness.
+The legacy audit converts **3,550 of 6,386** distinct sentences both ways with
+zero conversion failures. All **116** final lexical/structural residuals are
+resolved; the **2,424 ambiguous** and **412 non-FOL** sentences are unchanged.
+There are no reclassifications.
+
+The completeness verdict is **Established over the stated scope**: every valid
+finite argument with one closed, function-free FOL= reading per sentence under
+the gate's controlled grammar has some accepted derivation over nonempty domains.
+The argument uses a lossless notation bridge, structural rendering, and the
+standard completeness of natural deduction for FOL=. It does not assert that
+the checker finds proofs automatically. Fresh variable names avoid collisions
+with literal opaque text. Ambiguous readings, modal, counterfactual, property
+and that-clause semantics remain outside the claim. Bounded oracle checks are
+soundness evidence, not a soundness proof; see the coverage page for the proof
+sketch and its implementation-correspondence assumptions.
 
 ### Counterfactuals
 

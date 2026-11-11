@@ -152,6 +152,9 @@ var entailmentSchemas = []entailmentSchema{
 // premise the argument must state visibly. See the "Non-goal: paraphrase
 // matching" section of repo_wiki/concepts/arguments/entailment-gate-spec.md.
 func normalizeClause(value string) string {
+	if normalized, ok := folNormalizeLiterals(value); ok {
+		return normalized
+	}
 	value = expandGateContractions(value)
 	value = strings.Join(strings.Fields(value), " ")
 	value = strings.Trim(value, ", ")

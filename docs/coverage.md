@@ -170,8 +170,8 @@ quantifier embedded in a connective. For example:
 
 The body accepts identity, unary `NAME is PREDICATE`, verbatim binary verbs,
 and three/four-place relations with `to`, `from`, or `with` separators.
-Names and predicate words are single tokens; use names of at least two letters
-in fallback proofs. `x gave y a book` is also supported: the article contributes
+The original core uses single-token names and predicates; v25 also provides
+lossless name and atom escapes (below). `x gave y a book` is also supported: the article contributes
 an existential book restrictor, inside the explicit binders. Arbitrary English
 noun phrases, modal contexts, and relative clauses are not parsed by this core.
 Use the existing readable grammar for those forms.
@@ -196,7 +196,7 @@ optionally followed by digits (`x`, `x1`, `y12`). The renderer uses all 26 bare
 letters, then `x1`, `x2`, and so on. There is no numeric binder limit.
 Disjoint scopes may reuse variables; rebinding an enclosing variable and free
 variable occurrences remain errors. The implicit book witness also draws from
-this unbounded alphabet. Names in explicit proofs must not look like variables.
+this unbounded alphabet. Use `name{x}` for a constant whose spelling looks like a variable.
 
 For unrestricted Fitch generalization use `Let witness be arbitrary.`.
 The declaration introduces a fresh object name without a class assumption;
@@ -252,34 +252,60 @@ The inventory records 106 source forms overall. Source-form provenance from a
 modal/property argument does not establish a FOL translation of those operators.
 Exact sentence-level exceptions remain in the JSON inventory.
 
-**6,386 sentences; 3,434 bidirectional conversions; zero conversion failures;
-2,424 ambiguous; 412 non-FOL; 116 remaining lexical/opaque exceptions.** All
-815 prior conversions remain; 2,619 of the 2,735 lexical/opaque exceptions are
-resolved. Successful conversions cover 96 source forms, with 171 bounded oracle
-samples (domains 1–3), plus hand-specified zero-place/multiword cases and
-propositional tautology/non-tautology checks.
+**6,386 sentences; 3,550 bidirectional conversions; zero conversion failures;
+2,424 ambiguous; 412 non-FOL; zero remaining lexical/opaque exceptions.**
+All 3,434 prior conversions remain. The final 116 exceptions are resolved,
+without reclassifying any sentence. Successful conversions cover 96 source forms,
+with 177 bounded oracle samples (domains 1–3), plus hand-specified lexical cases
+and propositional tautology/non-tautology checks.
 
-| Category / remaining reason | Sentences |
-| --- | ---: |
-| Converted both ways | 3,434 |
-| Multiple non-alpha-equivalent readings (unchanged) | 2,424 |
-| Non-FOL modal, counterfactual, or property grammar (unchanged) | 412 |
-| Legacy constant looks like an explicit variable; needs a name escape | 89 |
-| Lexical atom has no unique explicit parse after rendering | 13 |
-| Rendering changes lexical segmentation or operator structure | 9 |
-| Rendering conflicts with historical parenthesized parsing | 4 |
-| Opaque clause conflicts with explicit scope/connective syntax | 1 |
+| Category | Before | After |
+| --- | ---: | ---: |
+| Converted both ways | 3,434 | 3,550 |
+| Multiple non-alpha-equivalent readings | 2,424 | 2,424 |
+| Non-FOL modal, counterfactual, or property grammar | 412 | 412 |
+| Variable-shaped constants | 89 | 0 |
+| Lexical atoms without a unique explicit parse | 13 | 0 |
+| Changed lexical segmentation or operator structure | 9 | 0 |
+| Historical parenthesized-parser conflicts | 4 | 0 |
+| Opaque scope/connective syntax conflict | 1 | 0 |
 
-The 89 constant cases include single-letter names such as `z`; treating them as
-bound variables would change their meaning. The 13 lexical cases include
-`works with` losing a unique argument boundary after quantifier expansion and
-readable `is such that`/that-clause expressions that are not explicit binders.
-The nine segmentation cases include that-clause subjects losing their original
-copula boundary, restricted existentials, and an opaque assertion whose surface
-contains explicit negation. The four historical-parser conflicts contain opaque
-`either ...` leaves inside parenthesized compounds. The final scope conflict is
-a nested relative-clause scaffold. Every affected sentence and its reason is
-listed in the JSON ledger; none is silently coerced to another reading.
+### Lossless lexical notation (v25 additions)
+
+`name{x}` and `name{y2}` denote constants with those spellings, even inside a
+binder using the same spelling: `every x is such that x admires name{x}`.
+Bare legacy names retain their prior behavior outside explicit bodies.
+For other lexical boundaries, `name{"claim that the store is nearby"}` quotes
+a complete name. Quoted names use JSON string escaping; decoded names are
+case-normalized. Names beginning with internal-marker characters remain constants,
+never variables; `name{"$slot0"}` does not denote a bound slot.
+
+`atom{"works/with", "alice", x}` fixes a verbatim predicate symbol and its
+ordered terms. Quoted arguments are constants; unquoted arguments must be bound
+variables. The number of arguments fixes the arity. A unary predicate uses the
+existing `is/` symbol, as in `atom{"is/red", "alice"}`. With no arguments,
+`atom{"either it rains"}` denotes exactly that normalized zero-place proposition.
+JSON quotes protect commas, parentheses, connective words and scope text from
+structural parsing. The renderer JSON-escapes brackets and repeated or non-ASCII
+whitespace so numbered-argument preprocessing cannot treat them as citations or
+collapse a literal label. Use `\u005b` / `\u005d` for literal square brackets. Curly braces keep this notation distinct from bracketed
+step citations. No natural-language meaning is assigned to a newly quoted
+predicate: the symbol and arity must match exactly.
+
+The renderer first tries ordinary phrasing and checks that its parsed AST is
+identical, including the historical parenthesized parser. When lexical boundaries
+would change, it uses the atom escape. This resolves `works with` boundaries,
+that-clause copulas, restricted-existential lexical leaves, opaque `either ...`
+leaves, and the nested-relative scaffold in the audit without changing their
+recorded readings. A scaffold represented by the legacy enumerator as an opaque
+atom stays opaque; the escape does not invent internal quantifier semantics.
+The audit still requires the public gate to accept both directions. Conversions
+of that-clause or opaque labels do not establish their intended English semantics.
+
+The escape syntax selects the explicit parser; existing prose recognizers and
+inference forms are unchanged. The catalog remains **v25**. Tests cover capture,
+arity/order distinctions, malformed/free variables, literal structural text,
+reserved names, and JSON-escaped eigenname freshness.
 
 Exceptions are pinned per sentence. The test fails if any classification changes;
 `ARGCHECK_UPDATE_LEGACY=1` is an explicit ledger-update operation, not normal
@@ -296,7 +322,7 @@ indexed binding errors, disjoint scopes, and implicit witnesses after 26 binders
 
 ## Completeness (FOL with identity)
 
-**Proposed scoped claim.** For every finite argument whose premises and conclusion
+**Scoped claim.** For every finite argument whose premises and conclusion
 are sentences of the controlled grammar, each with exactly one closed,
 function-free FOL= reading up to alpha-equivalence, if that argument is valid
 over nonempty domains, the gate accepts some derivation of it. The derivation
@@ -306,49 +332,58 @@ not a claim that any valid argument is accepted in one step or automatically
 found by the checker. Modal, counterfactual, and property quantification are not
 FOL= readings and are outside this claim, as is that-clause grammar.
 
-The intended proof sketch is:
+**Verdict: Established over the stated scope.** This is a constructive
+implementation-correspondence argument, not a machine-verified metatheorem and
+not a claim about unrestricted English. “Reading” here means the gate's own
+normalized controlled-grammar reading. The evidence comprises the round trips,
+legacy bridge audit, rule inventory, bounded oracle, and this proof sketch:
 
-1. Translate each single-reading sentence to its closed FOL= formula and connect
-   it to its explicit-variable rendering by notation equivalence. The legacy
-   audit and round trips supply evidence. Zero-place clauses now render verbatim,
-   and multiword lexical items reuse the readable recognizers. **This step still
-   has the specifically enumerated rendering exceptions above.**
-2. Classical natural deduction with identity is complete for FOL= over nonempty
-   domains, so each valid sequent has a finite derivation.
-3. Every natural-deduction rule must be available for arbitrary formulas. The
-   structured AST rules and unchanged v24 inventory provide evidence: 50 cases
-   for each of 18 rules (900 instances), including propositional introduction and
-   elimination, quantifier introduction and elimination, classical reductio,
-   reflexivity, and selective identity substitution. Fresh arbitrary-name
-   subproofs provide premise-free reflexivity; fresh eigenname renaming meets
-   the conservative Fitch freshness conditions. This remains an implementation
-   correspondence argument, not a mechanically verified theorem.
-4. Every intermediate formula over the supported signature is renderable:
-   indexed variables remove the finite-alphabet obstruction. Structural
-   recursion renders connectives and quantifiers, with fresh binders at each
-   depth; the G1 round trips test this construction. Opaque clauses remain
-   zero-place atoms, matched only after the existing normalization. Lexical
-   collisions with variable names or structural syntax still need escapes.
-5. Once steps 1 and 3 hold for the full domain, composing the conversions and
-   rule translations supplies a gate-accepted derivation.
+1. **Notation bridge.** For a sentence with one closed FOL= reading, the legacy
+   enumerator supplies its AST without discarding competing candidates.
+   `notation equivalence` compares this AST with the rendering by
+   alpha-equivalence. The literal atom notation specifies exactly a symbol,
+   arity and ordered terms; name escapes distinguish constants from variables.
+   Thus lexical segmentation and structural-looking opaque labels no longer
+   prevent rendering. The audit exercises all 3,550 single-reading FOL rows in
+   both directions, with no residual exceptions or reclassifications.
+2. **Underlying calculus.** The completeness argument relies on the standard
+   completeness of classical natural deduction for function-free FOL with
+   identity over nonempty domains. Every valid finite sequent in that language
+   therefore has a finite natural-deduction derivation.
+3. **Rule translation.** Translate that derivation to the structured AST rules:
+   conjunction/disjunction/conditional/biconditional introduction and elimination,
+   negation and classical reductio, contradiction elimination, quantifier
+   introduction/elimination, reflexivity and selective identity substitution.
+   These rules inspect AST constructors, not predicate spellings or fixed
+   quantifier depths. Fitch ranges express discharge. Fresh eigenname renaming
+   meets the conservative requirement of freshness even in earlier closed
+   subproofs; the finite derivation leaves infinitely many fresh names available.
+   The unchanged inventory checks 50 instances of each of 18 rules (900 total).
+   Decoded quoted names participate in freshness checks, so escaping cannot hide
+   an eigenname in an earlier premise or the discharged conclusion.
+4. **Intermediate formulas.** By structural induction, render every atom with
+   its exact symbol and terms, equality with escaped names where needed, each
+   connective with parenthesized children, and each quantifier with a fresh
+   indexed variable. The variable alphabet is unbounded. Each finite formula
+   has only finitely many forbidden lexical tokens; bound variables can be
+   alpha-renamed to avoid them. Parsing reconstructs the same AST up to alpha
+   renaming. Ordinary phrasing is only an optimization when the equality check
+   succeeds; literal notation supplies the general atomic construction.
+   Evidence includes the unchanged 2,000 v24 round trips, 1,000 v25 round trips
+   (200 with 30–40 simultaneous binders), and literal-boundary tests.
+5. **Composition.** Convert the premises to explicit notation, translate the
+   finite derivation rule by rule, and convert its conclusion back. This gives
+   an accepted finite derivation, not an automatic proof-search algorithm.
 
-**Honest status: the full scoped claim is still not established.** G1 is closed,
-and the common zero-place and multiword cases now have a tested bridge. The
-remaining concrete obligations are a lossless spelling for variable-shaped
-constants; lexical boundaries that survive replacing quantified noun phrases
-with variables; preservation of opaque text that resembles connective/scope
-syntax; and reconciliation of historical parenthesized readings with explicit
-renderings. The exception ledger identifies the affected sentences. Some also
-involve that-clause grammar, which is outside the FOL scope; retaining them in
-the original lexical audit categories avoids quietly changing the denominator.
-A general implementation correspondence argument beyond finite tests remains
-necessary. The unchanged ambiguous and non-FOL categories are outside the claim.
+The finite tests support this construction and catch implementation mistakes;
+they are not themselves a proof of completeness or unbounded soundness. The
+argument depends on the stated parser/AST correspondence and standard natural-
+deduction completeness, not on extrapolating a bounded oracle result.
 
 Outside the claim:
 
 - Ambiguous readable sentences retain every-reading checking. `is such that`
-  fixes quantifier scope; choosing a reading still requires a supported lexical
-  spelling to cross this bridge. It does not silently paraphrase exceptions.
+  fixes quantifier scope; the lossless lexical notation then crosses the bridge without paraphrase.
 - Function terms are absent. FOL= with names and no function symbols still has
   a complete natural-deduction calculus for that signature; omitting functions
   is a signature restriction, not an incompleteness of that calculus.
@@ -369,10 +404,15 @@ alongside ambiguity and near-miss rejections. The identical-AST criterion is
 sound by construction conditional on faithful parsing; the tests do not prove
 faithfulness for arbitrary English or soundness over all domain sizes.
 
-Opaque text containing an active bound-variable token is conservatively rejected
-inside that scope, so a failed structured atom cannot hide a variable occurrence.
-A literal-atom escape or a binder-freshness policy covering opaque text would be
-needed to remove that collision limit without weakening malformed-input checks.
+Bare opaque text containing an active bound-variable token remains conservatively
+rejected inside that scope. This does **not** block the claim: use a fresh binder.
+For example, `every x is such that x would admire alice` is rejected, whereas
+`every y is such that x would admire alice` has an opaque zero-place body and
+round-trips. Alpha-renaming preserves the formula; it does not turn the literal
+`x` in that opaque label into an individual argument. The renderer avoids such
+opaque-token collisions when selecting binders. Explicit atom quotes also mark
+literal text unambiguously. Tests cover the rejection, fresh renaming, rendering
+and public-gate instantiation.
 
 Other practical limits are the readable four-quantifier cap, explicit-variable
 intermediate lines, and ordinary finite input/stack/memory resources.

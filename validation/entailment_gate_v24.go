@@ -23,12 +23,14 @@ var folVariable = regexp.MustCompile(`^[a-z][0-9]*$`)
 var arbitraryFOLPattern = regexp.MustCompile(`^Let ([A-Za-z][A-Za-z0-9_]*) be arbitrary$`)
 var folWord = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
-func folExplicit(s string) bool { return explicitBinder.MatchString(strings.ToLower(s)) }
+func folExplicit(s string) bool {
+	return len(folLiteralSpans(s)) > 0 || explicitBinder.MatchString(strings.ToLower(s))
+}
 func folStrip(s string) string {
 	s = strings.TrimSpace(s)
 	for len(s) > 1 && s[0] == '(' && s[len(s)-1] == ')' {
 		depth, whole := 0, true
-		for i, c := range s {
+		for i, c := range folSyntax(s) {
 			if c == '(' {
 				depth++
 			}
@@ -49,14 +51,15 @@ func folStrip(s string) string {
 }
 func folSplit(s, sep string) (string, string, bool) {
 	depth := 0
-	for i, c := range s {
+	syntax := folSyntax(s)
+	for i, c := range syntax {
 		if c == '(' {
 			depth++
 		}
 		if c == ')' {
 			depth--
 		}
-		if depth == 0 && strings.HasPrefix(s[i:], sep) {
+		if depth == 0 && strings.HasPrefix(syntax[i:], sep) {
 			return s[:i], s[i+len(sep):], true
 		}
 	}
@@ -78,7 +81,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 		return bad()
 	}
 	depth := 0
-	for _, c := range s {
+	for _, c := range folSyntax(s) {
 		if c == '(' {
 			depth++
 		}
@@ -91,6 +94,9 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 	}
 	if depth != 0 {
 		return bad()
+	}
+	if strings.HasPrefix(s, "atom{") && len(folLiteralSpans(s)) == 1 && folLiteralSpans(s)[0][1] == len(s) {
+		return folLiteralAtom(s, bound)
 	}
 	if s == "contradiction" {
 		return fol("bottom"), nil
@@ -142,6 +148,50 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 		if a, b, ok := folSplit(t, p.sep); ok {
 			return folParsePair(p.op, a, b, bound, strict, extended)
 		}
+	}
+	// Name escapes are constants even when the same spelling is bound.
+	if len(folLiteralSpans(s)) > 0 {
+		replacements := map[string]string{}
+		masked := s
+		for _, span := range folLiteralSpans(s) {
+			literal := s[span[0]:span[1]]
+			name, ok := folParseName(literal)
+			if !ok {
+				return bad()
+			}
+			placeholder := fmt.Sprintf("zzfolconstant%dzz", span[0])
+			for strings.Contains(s, placeholder) || bound[placeholder] {
+				placeholder += "z"
+			}
+			replacements[placeholder] = name
+			masked = strings.Replace(masked, literal, placeholder, 1)
+		}
+		f, err := parseFOLScopeMode(masked, bound, strict, extended)
+		if err != nil {
+			return nil, err
+		}
+		for placeholder := range replacements {
+			used := false
+			for _, term := range folNames(f) {
+				used = used || term == placeholder
+			}
+			if !used || folSymbolContains(f, placeholder) {
+				return bad()
+			}
+		}
+		var restore func(*folFormula)
+		restore = func(f *folFormula) {
+			for i, t := range f.terms {
+				if name, ok := replacements[t]; ok {
+					f.terms[i] = name
+				}
+			}
+			for _, child := range f.children {
+				restore(child)
+			}
+		}
+		restore(f)
+		return f, nil
 	}
 	// A historical opaque clause stays zero-place even when the narrow
 	// token parser could accidentally read its words as subject/verb/object.
@@ -330,6 +380,11 @@ func folRenderNames(f *folFormula, env map[string]string, depth int) *folFormula
 		for k, v := range env {
 			next[k] = v
 		}
+		// Opaque text has no variable slots. Choose a binder absent from all
+		// literal words below it, so conservative opaque guards never capture it.
+		for folOpaqueWord(f.children[0], folVariableName(depth)) {
+			depth++
+		}
 		n.symbol = "$" + folVariableName(depth)
 		next[f.symbol] = n.symbol
 		n.children = []*folFormula{folRenderNames(f.children[0], next, depth+1)}
@@ -341,24 +396,21 @@ func folRenderNames(f *folFormula, env map[string]string, depth int) *folFormula
 	return &n
 }
 func (f *folFormula) renderSurface() string {
-	term := func(t string) string { return strings.TrimPrefix(t, "$") }
+	term := func(t string) string {
+		if folVariable.MatchString(t) {
+			return "name{" + t + "}"
+		}
+		if !strings.HasPrefix(t, "$") && !folWord.MatchString(t) {
+			return "name{" + folQuote(strings.TrimPrefix(t, "\x00")) + "}"
+		}
+		return strings.TrimPrefix(t, "$")
+	}
 	wrap := func(c *folFormula) string { return "(" + c.renderSurface() + ")" }
 	switch f.op {
 	case "bottom":
 		return "contradiction"
 	case "atom":
-		if len(f.terms) == 0 {
-			return f.symbol
-		}
-		p := strings.Split(f.symbol, "/")
-		if len(f.terms) == 1 {
-			return term(f.terms[0]) + " is " + p[len(p)-1]
-		}
-		s := term(f.terms[0]) + " " + p[0] + " " + term(f.terms[1])
-		for i := 2; i < len(f.terms); i++ {
-			s += " " + p[i-1] + " " + term(f.terms[i])
-		}
-		return s
+		return f.renderAtomSurface(term)
 	case "equal":
 		return term(f.terms[0]) + " is identical to " + term(f.terms[1])
 	case "not":
@@ -376,6 +428,39 @@ func (f *folFormula) renderSurface() string {
 	}
 	panic("unknown FOL operator")
 }
+func (f *folFormula) renderAtomSurface(term func(string) string) string {
+	plain := func() string {
+		if len(f.terms) == 0 {
+			return f.symbol
+		}
+		p := strings.Split(f.symbol, "/")
+		if len(p) < len(f.terms)-1 {
+			return folRenderLiteral(f)
+		}
+		if len(f.terms) == 1 {
+			return term(f.terms[0]) + " is " + p[len(p)-1]
+		}
+		s := term(f.terms[0]) + " " + p[0] + " " + term(f.terms[1])
+		for i := 2; i < len(f.terms); i++ {
+			s += " " + p[i-1] + " " + term(f.terms[i])
+		}
+		return s
+	}()
+	bound := map[string]bool{}
+	for _, t := range f.terms {
+		if strings.HasPrefix(t, "$") {
+			bound[t[1:]] = true
+		}
+	}
+	got, err := parseFOLScope(plain, bound, true)
+	// Check the old parenthesized parser too: it has different opaque priorities.
+	old, oldErr := parseFOLScopeMode(plain, bound, true, false)
+	if err == nil && folSame(f, got) && (oldErr != nil || folSame(f, old)) {
+		return plain
+	}
+	return folRenderLiteral(f)
+}
+
 func folKey(f *folFormula, env map[string]string, depth int) string {
 	if f == nil {
 		return "nil"
