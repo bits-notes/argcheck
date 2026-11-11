@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -17,7 +18,8 @@ type folFormula struct {
 
 func fol(op string, fs ...*folFormula) *folFormula { return &folFormula{op: op, children: fs} }
 
-var explicitBinder = regexp.MustCompile(`\b(every|some|no) ([a-z]) is such that\b`)
+var explicitBinder = regexp.MustCompile(`\b(every|some|no) ([a-z][0-9]*) is such that\b`)
+var folVariable = regexp.MustCompile(`^[a-z][0-9]*$`)
 var arbitraryFOLPattern = regexp.MustCompile(`^Let ([A-Za-z][A-Za-z0-9_]*) be arbitrary$`)
 var folWord = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
@@ -143,7 +145,7 @@ func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, e
 		if bound[t] {
 			return "$" + t, true
 		}
-		if strict && len(t) == 1 {
+		if strict && folVariable.MatchString(t) {
 			return "", false
 		}
 		return t, true
@@ -178,14 +180,12 @@ func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, e
 			return bad()
 		}
 		v := ""
-		for _, letter := range "abcdefghijklmnopqrstuvwxyz" {
-			if !bound[string(letter)] {
-				v = "$" + string(letter)
+		for i := 0; ; i++ {
+			name := folVariableName(i)
+			if !bound[name] {
+				v = "$" + name
 				break
 			}
-		}
-		if v == "" {
-			return bad()
 		}
 		atom := &folFormula{op: "atom", symbol: "gave/to", terms: []string{a, v, b}}
 		q := fol("some", fol("and", &folFormula{op: "atom", symbol: "is/" + w[4], terms: []string{v}}, atom))
@@ -230,6 +230,14 @@ func folParsePair(op, a, b string, scope map[string]bool, strict bool) (*folForm
 // need the explicit-variable escape hatch. Parentheses fix every body boundary.
 func (f *folFormula) Render() string { return folRenderNames(f, nil, 0).renderSurface() }
 
+// folVariableName supplies an unbounded sequence of distinct surface binders.
+func folVariableName(depth int) string {
+	if depth < 26 {
+		return string("xyzuvwabcdefghijklmnopqrst"[depth])
+	}
+	return fmt.Sprintf("x%d", depth-25)
+}
+
 // Canonical fresh binders also handle ASTs with shadowing when a closed
 // formula is inserted beneath another quantifier. The surface forbids shadowing.
 func folRenderNames(f *folFormula, env map[string]string, depth int) *folFormula {
@@ -242,14 +250,11 @@ func folRenderNames(f *folFormula, env map[string]string, depth int) *folFormula
 		}
 	}
 	if f.op == "every" || f.op == "some" {
-		if depth >= 26 {
-			panic("FOL renderer requires more than 26 simultaneous binders")
-		}
 		next := map[string]string{}
 		for k, v := range env {
 			next[k] = v
 		}
-		n.symbol = "$" + string("xyzuvwabcdefghijklmnopqrst"[depth])
+		n.symbol = "$" + folVariableName(depth)
 		next[f.symbol] = n.symbol
 		n.children = []*folFormula{folRenderNames(f.children[0], next, depth+1)}
 	} else {
@@ -296,7 +301,7 @@ func folKey(f *folFormula, env map[string]string, depth int) string {
 	if f == nil {
 		return "nil"
 	}
-	s := f.op + ":" + f.symbol
+	s := f.op + ":" + strconv.Quote(f.symbol)
 	if f.op == "every" || f.op == "some" {
 		next := map[string]string{}
 		for k, v := range env {
@@ -309,7 +314,7 @@ func folKey(f *folFormula, env map[string]string, depth int) string {
 		if v, ok := env[t]; ok {
 			s += "/$" + v
 		} else {
-			s += "/" + t
+			s += "/" + strconv.Quote(t)
 		}
 	}
 	for _, c := range f.children {

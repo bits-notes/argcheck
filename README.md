@@ -3,7 +3,7 @@
 argcheck checks the syntactically transparent validity of numbered arguments.
 It runs deterministic syntax and entailment checks in Go, with no LLM and no
 network access in local mode. Each conclusion must match an accepted inference
-form using its cited steps. The current catalog is v24; `argcheck --forms` lists
+form using its cited steps. The current catalog is v25; `argcheck --forms` lists
 its forms.
 
 A passing result establishes validity under that catalog. It does not establish
@@ -79,7 +79,7 @@ argcheck --forms
 ```
 
 Text output reports `VALID` or `INVALID`, the catalog and build stamp
-(`gate catalog v24; local argcheck@<commit>`), and each conclusion's matched
+(`gate catalog v25; local argcheck@<commit>`), and each conclusion's matched
 form or mismatch. Fitch input is echoed before the verdict. An inert-citation
 hint identifies extra citations whose removal would let a known form pass.
 `--json` returns structured checks, details, and provenance.
@@ -250,21 +250,30 @@ nouns can occur in either relation position under every/some/no, including
 Use `is such that` to delimit nested scopes. The new grammar has a bounded verb
 vocabulary; see [coverage](docs/coverage.md#v23-relative-clauses).
 
-### Explicit variables (v24)
+### Explicit variables and notation equivalence (v25)
 
 For nested formulas with no readable phrasing, use `every x is such that BODY`
 or `some x is such that BODY`. For example, `every x is such that every y is
 such that every z is such that if x outranks y and y outranks z then x outranks z`.
 Parentheses fix connective boundaries; variables must be bound without rebinding.
 Use multi-letter names for instantiations. The four-quantifier readable limit
-does not apply; eight nested quantifiers are tested. Single-letter binders still
-limit simultaneous distinct variables to 26.
+does not apply. Indexed variables (`x1`, `x2`, `y12`) give an unbounded
+alphabet; round trips test 30–40 simultaneous binders and a 64-binder boundary.
+Indexed variables must be bound, just like bare letters, in explicit proofs.
 
 The structured core supports propositional rules, identity substitution, and
 Fitch quantifier rules for nested formulas. `Let witness be arbitrary.` opens
 an unrestricted fresh-name subproof; the older `Let witness be an arbitrary F.`
 remains class-restricted. See [the completeness evidence and remaining gaps](docs/coverage.md#completeness-fol-with-identity).
-The full catalog is not yet claimed complete for unrestricted FOL with identity.
+The new **notation equivalence** form cites one premise and requires both
+sentences to have one reading, identical up to bound-variable renaming. It
+converts readable FOL phrasing to the explicit core and back. Ambiguous readings
+are refused; use `is such that` to fix scope. Existing matching forms keep their
+priority. This is grammatical conversion, not paraphrase.
+
+The legacy audit converts 815 distinct sentences in both directions. Its named
+exceptions mean the proposed single-reading FOL= completeness claim is **not
+yet fully supported**; see the coverage ledger for the precise remaining gaps.
 
 ### Counterfactuals
 

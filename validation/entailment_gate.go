@@ -3,11 +3,12 @@ package validation
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v24"
+const EntailmentGateCatalogVersion = "v25"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -238,7 +239,14 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 		active = active || folExplicit(steps[span[0]].Statement) || folExplicit(steps[span[1]].Statement)
 	}
 	if active {
-		return gateFOL(conclusion, steps)
+		report := gateFOL(conclusion, steps)
+		if !report.Passed {
+			bridge := notationEquivalence(conclusion, steps)
+			if bridge.Passed || strings.Contains(bridge.Mismatch, "ambiguous") {
+				return bridge
+			}
+		}
+		return report
 	}
 	report := gateRelationalScopes(conclusion, steps)
 	if !report.Passed {
@@ -257,6 +265,12 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 				report.Mismatch = "relative clauses require the class and the verbatim relation with the same gap role; use is such that for nesting and separate steps for unsupported grammar"
 				break
 			}
+		}
+	}
+	if !report.Passed {
+		bridge := notationEquivalence(conclusion, steps)
+		if bridge.Passed {
+			return bridge
 		}
 	}
 	return report

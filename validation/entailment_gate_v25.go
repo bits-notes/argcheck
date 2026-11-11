@@ -1,0 +1,332 @@
+package validation
+
+import (
+	"fmt"
+	"strings"
+)
+
+// legacyFOLReadings is conservative: it never drops a candidate just because
+// that candidate cannot be rendered. The old recognizers and their priority in
+// the old gate are unchanged. Non-FOL operators are not treated as FOL atoms.
+func legacyFOLReadings(text string) ([]*folFormula, string) {
+	s := folStrip(stripClauseWrappers(normalizeClause(text)))
+	if folExplicit(s) {
+		f, err := parseFOL(s)
+		if err != nil {
+			return nil, "malformed explicit scope"
+		}
+		return []*folFormula{f}, ""
+	}
+	if len(necessityCandidates(s)) > 0 || len(possibilityCandidates(s)) > 0 || len(counterfactualCandidates(s)) > 0 || strings.Contains(s, "property") {
+		return nil, "non-FOL modal, counterfactual, or property grammar"
+	}
+	if s == "contradiction" {
+		return []*folFormula{fol("bottom")}, ""
+	}
+	// Parenthesized structured compounds already have a fixed boundary.
+	if strings.ContainsAny(s, "()") {
+		if f, err := parseFOL(s); err == nil {
+			return []*folFormula{f}, ""
+		}
+	}
+	// A leading readable quantifier followed by a connective does not say
+	// whether the connective is inside or outside its scope. Never select a
+	// conjunction-first reading merely because that schema was tried first.
+	for _, prefix := range []string{"every ", "all ", "some ", "no "} {
+		if strings.HasPrefix(s, prefix) && (len(conjunctionCandidates(s)) > 0 || len(disjunctionCandidates(s)) > 0) {
+			return nil, "ambiguous readable quantifier/connective scope"
+		}
+	}
+	unique := func(fs []*folFormula) []*folFormula {
+		out := []*folFormula{}
+		seen := map[string]bool{}
+		for _, f := range fs {
+			k := folKey(f, nil, 0)
+			if !seen[k] {
+				seen[k] = true
+				out = append(out, f)
+				if len(out) == 2 {
+					return out
+				} // Two distinct readings suffice to refuse conversion.
+			}
+		}
+		return out
+	}
+	pairs := func(op string, cs []clausePair) ([]*folFormula, string) {
+		var out []*folFormula
+		for _, c := range cs {
+			as, ae := legacyFOLReadings(c.left)
+			bs, be := legacyFOLReadings(c.right)
+			if ae != "" {
+				return nil, ae
+			}
+			if be != "" {
+				return nil, be
+			}
+			for _, a := range as {
+				for _, b := range bs {
+					out = append(out, fol(op, a, b))
+				}
+			}
+			out = unique(out)
+			if len(out) > 1 {
+				return out, ""
+			}
+		}
+		return unique(out), ""
+	}
+	if ns := negationCandidates(s); len(ns) > 0 {
+		fs, why := legacyFOLReadings(ns[0])
+		if why != "" {
+			return nil, why
+		}
+		for i, f := range fs {
+			fs[i] = fol("not", f)
+		}
+		return fs, ""
+	}
+	if cs := conditionalCandidates(s); len(cs) > 0 {
+		return pairs("implies", cs)
+	}
+	if cs := biconditionalCandidates(s); len(cs) > 0 {
+		return pairs("iff", cs)
+	}
+	if cs := conjunctionCandidates(s); len(cs) > 0 && !hasOuterGateOperator(s) {
+		return pairs("and", cs)
+	}
+	if cs := disjunctionCandidates(s); len(cs) > 0 {
+		return pairs("or", cs)
+	}
+	if relativeMarker(s) && !strings.Contains(s, " is such that ") {
+		if q, ok := relativeQuant(s); ok {
+			guards, why := legacyFOLConjunction(q.guards)
+			if why != "" {
+				return nil, why
+			}
+			bodies, why := legacyFOLReadings(q.body)
+			if why != "" {
+				return nil, why
+			}
+			var out []*folFormula
+			for _, g := range guards {
+				for _, b := range bodies {
+					out = append(out, legacyFOLQuant(q.kind, "$relative", folSub(g, relativeHole, "$relative"), folSub(b, relativeHole, "$relative")))
+				}
+			}
+			return unique(out), ""
+		}
+		if facts, ok := relativeGround(s); ok && !(len(facts) == 1 && facts[0] == s) {
+			return legacyFOLConjunction(facts)
+		}
+	}
+	unary := func(pred, term string) *folFormula {
+		return &folFormula{op: "atom", symbol: "is/" + legacyFOLTerm(pred), terms: []string{term}}
+	}
+	// Preserve candidate enumeration, including embedded-copula alternatives.
+	for _, family := range []struct {
+		kind string
+		cs   []clausePair
+	}{
+		{"no", universalNegativeCandidates(s)}, {"every", universalCandidates(s)},
+		{"some-not", particularNegativeCandidates(s)}, {"some", particularAffirmativeCandidates(s)},
+	} {
+		// Bare negative instances must not be promoted to universal negatives.
+		if family.kind == "no" && !strings.HasPrefix(s, "no ") && !strings.HasPrefix(s, "every ") && !strings.HasPrefix(s, "all ") {
+			continue
+		}
+		if strings.Contains(s, " is such that ") || len(family.cs) == 0 {
+			continue
+		}
+		var out []*folFormula
+		for _, c := range family.cs {
+			b := unary(c.right, "$legacy")
+			kind := family.kind
+			if kind == "some-not" {
+				kind = "some"
+				b = fol("not", b)
+			}
+			out = append(out, legacyFOLQuant(kind, "$legacy", unary(c.left, "$legacy"), b))
+		}
+		return unique(out), ""
+	}
+	if cs := unrestrictedExistentialPredicateCandidates(s); len(cs) > 0 {
+		var out []*folFormula
+		for _, c := range cs {
+			q := fol("some", unary(c, "$legacy"))
+			q.symbol = "$legacy"
+			out = append(out, q)
+		}
+		return unique(out), ""
+	}
+	if cs := identityCandidates(s); len(cs) > 0 {
+		var out []*folFormula
+		for _, c := range cs {
+			out = append(out, &folFormula{op: "equal", terms: []string{legacyFOLTerm(c.left), legacyFOLTerm(c.right)}})
+		}
+		return unique(out), ""
+	}
+	if cs := negativeInstanceCandidates(s); len(cs) > 0 {
+		var out []*folFormula
+		for _, c := range cs {
+			out = append(out, fol("not", unary(c.right, legacyFOLTerm(c.left))))
+		}
+		return unique(out), ""
+	}
+	if cs := groundInstanceCandidates(s); len(cs) > 0 {
+		var out []*folFormula
+		for _, c := range cs {
+			out = append(out, unary(c.right, legacyFOLTerm(c.left)))
+		}
+		return unique(out), ""
+	}
+	if cs := relationCandidates(s); len(cs) > 0 {
+		var out []*folFormula
+		for _, c := range cs {
+			orders := relationOrders(c)
+			if len(orders) == 0 {
+				return nil, "readable quantifier limit"
+			}
+			for _, order := range orders {
+				terms := make([]string, len(c.terms))
+				for i, t := range c.terms {
+					terms[i] = legacyFOLTerm(t.text)
+					if t.quant != "" {
+						terms[i] = fmt.Sprintf("$slot%d", i)
+					}
+				}
+				symbol := strings.ReplaceAll(c.verb, "\x00", "/")
+				f := &folFormula{op: "atom", symbol: symbol, terms: terms}
+				for i := len(order) - 1; i >= 0; i-- {
+					if i == 0 && c.innerNot {
+						f = fol("not", f)
+					}
+					slot := order[i]
+					term := c.terms[slot]
+					f = legacyFOLQuant(term.quant, terms[slot], unary(term.text, terms[slot]), f)
+				}
+				if c.outerNot {
+					f = fol("not", f)
+				}
+				out = append(out, f)
+			}
+		}
+		return unique(out), ""
+	}
+	// Historical propositional schemas use verbatim opaque clauses. Keep them
+	// zero-ary; never invent an individual or silently change predicate arity.
+	return []*folFormula{{op: "atom", symbol: s}}, ""
+}
+
+func legacyFOLTerm(s string) string {
+	t := termCandidates(s)[0]
+	// Surface names must never collide with the AST's internal variable namespace.
+	if strings.HasPrefix(t, "$") || strings.HasPrefix(t, "\x00") {
+		return "\x00" + t
+	}
+	return t
+}
+func legacyFOLQuant(kind, v string, guard, body *folFormula) *folFormula {
+	if kind == "no" {
+		kind = "every"
+		body = fol("not", body)
+	}
+	if kind == "every" {
+		body = fol("implies", guard, body)
+	} else {
+		body = fol("and", guard, body)
+	}
+	q := fol(kind, body)
+	q.symbol = v
+	return q
+}
+func legacyFOLConjunction(texts []string) ([]*folFormula, string) {
+	var out []*folFormula
+	for _, s := range texts {
+		fs, why := legacyFOLReadings(s)
+		if why != "" {
+			return nil, why
+		}
+		if len(out) == 0 {
+			out = fs
+			continue
+		}
+		var next []*folFormula
+		for _, a := range out {
+			for _, b := range fs {
+				next = append(next, fol("and", a, b))
+			}
+		}
+		out = next
+	}
+	return out, ""
+}
+
+// Rendering failures remain named coverage exceptions, not alternative readings
+// to discard. In particular a one-letter legacy name is not a bound variable.
+func legacyFOLRender(f *folFormula) (string, string) {
+	var check func(*folFormula) string
+	check = func(f *folFormula) string {
+		for _, t := range f.terms {
+			if !strings.HasPrefix(t, "$") && (!folWord.MatchString(t) || folVariable.MatchString(t)) {
+				return "legacy name outside explicit token grammar"
+			}
+		}
+		if f.op == "atom" {
+			if len(f.terms) == 0 {
+				return "opaque zero-ary clause outside explicit atom grammar"
+			}
+			ps := strings.Split(f.symbol, "/")
+			if len(f.terms) == 1 {
+				if len(ps) != 2 || ps[0] != "is" || !folWord.MatchString(ps[1]) {
+					return "legacy predicate outside explicit token grammar"
+				}
+			} else {
+				if len(f.terms) > 4 || len(ps) != len(f.terms)-1 || !folWord.MatchString(ps[0]) || !relationVerb(ps[0]) {
+					return "legacy relation outside explicit atom grammar"
+				}
+				for _, p := range ps[1:] {
+					if p != "to" && p != "from" && p != "with" {
+						return "legacy preposition outside explicit atom grammar"
+					}
+				}
+			}
+		}
+		for _, c := range f.children {
+			if why := check(c); why != "" {
+				return why
+			}
+		}
+		return ""
+	}
+	if why := check(f); why != "" {
+		return "", why
+	}
+	s := f.Render()
+	got, err := parseFOLScope(s, map[string]bool{}, true)
+	if err != nil || !folSame(f, got) {
+		return "", "explicit round-trip mismatch"
+	}
+	return s, ""
+}
+func notationEquivalence(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	r := EntailmentGateStepReport{Step: c.Number, Depth: c.Depth, Citations: c.Citations, Ranges: c.Ranges, NearestForm: "notation equivalence", Mismatch: "requires one premise and identical single readings"}
+	if len(c.Citations) != 1 || len(c.Ranges) != 0 {
+		return r
+	}
+	a, ae := legacyFOLReadings(steps[c.Citations[0]].Statement)
+	b, be := legacyFOLReadings(c.Statement)
+	if len(a) > 1 || len(b) > 1 || strings.Contains(ae, "ambiguous") || strings.Contains(be, "ambiguous") {
+		r.Mismatch = "ambiguous sentence: use is such that to fix the reading"
+		return r
+	}
+	if ae != "" || be != "" || len(a) != 1 || len(b) != 1 {
+		return r
+	}
+	if folSame(a[0], b[0]) {
+		r.Passed = true
+		r.Form = "notation equivalence"
+		r.NearestForm = ""
+		r.Mismatch = ""
+	}
+	return r
+}

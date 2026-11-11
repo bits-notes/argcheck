@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v24)
+# Entailment Gate — Coverage and Known Limits (catalog v25)
 
 **Type:** reference
-**Status:** current as of catalog v24 (2026-11-10)
+**Status:** current as of catalog v25 (2026-11-10)
 
 
 The gate checks whether each step of a numbered argument is an instance of a
@@ -178,23 +178,25 @@ Use the existing readable grammar for those forms.
 
 Use `(A) and (B)`, `either (A) or (B)`, `if (A) then (B)`,
 `(A) if and only if (B)`, and `it is not the case that (A)` to fix boundaries.
-Quantifiers can occur anywhere in these formulas. An unbound single-letter
+Quantifiers can occur anywhere in these formulas. An unbound single-letter or indexed
 term or rebinding an enclosing variable is an error in the fallback, including
 when instantiating a quantified premise. Legacy single-letter names and
 schematic placeholders retain their historical meaning outside fallback proofs;
 they are not newly interpreted as free logical variables.
 
 Normal phrasing remains the default. Legacy sentences keep their old parser
-and schema priority. Explicit single-letter binders opt into the structured
+and schema priority. Explicit single-letter or indexed binders opt into the structured
 parser, so legacy opaque matching cannot accept a malformed binder or split
 its body into an unbound conjunct. Other structured forms are considered only
 after the historical gate rejects the step.
 
 The readable grammar retains its four-quantifier cap. The fallback does not
-use that cap or enumerate scope readings: it is uncapped up to the tested eight
-nested quantifiers, with no numeric quantifier-depth check. The finite alphabet
-and prohibition on rebinding nevertheless limit simultaneous binders to 26.
-Disjoint scopes may reuse letters.
+use that cap or enumerate scope readings. In v25 a variable is a letter
+optionally followed by digits (`x`, `x1`, `y12`). The renderer uses all 26 bare
+letters, then `x1`, `x2`, and so on. There is no numeric binder limit.
+Disjoint scopes may reuse variables; rebinding an enclosing variable and free
+variable occurrences remain errors. The implicit book witness also draws from
+this unbounded alphabet. Names in explicit proofs must not look like variables.
 
 For unrestricted Fitch generalization use `Let witness be arbitrary.`.
 The declaration introduces a fresh object name without a class assumption;
@@ -213,56 +215,134 @@ variables unchanged. It does not enter opaque or modal contexts. A cited
 `contradiction` supports contradiction elimination. This does not change the
 historical rejection of a direct two-premise explosion jump.
 
+## v25: notation equivalence and legacy audit
+
+`notation equivalence` cites exactly one premise, with no subproof ranges. Both
+sentences must have exactly one reading up to alpha-equivalence, and those
+readings must be alpha-equivalent. It works in either direction. It does not
+perform semantic-equivalence search, synonym matching, or paraphrase. Existing
+forms retain priority and therefore may still report self-entailment or FOL
+reiteration for a conversion they already accepted. The new form is append-only.
+An ambiguous conversion reports: **use is such that to fix the reading**.
+Even two universally quantified readings that commute logically are distinct
+for this test: logical equivalence is weaker than alpha-equivalence.
+The historical every-reading checks are unchanged.
+
+The audit inventory in
+[`legacy_v24_sentences.json`](../validation/testdata/legacy_v24_sentences.json)
+contains every distinct readable sentence observed in accepted arguments during
+the unchanged v24 validation suite at baseline `7636479`: fixtures, golden
+cases, catalog cases, and generated oracle cases. Capture occurs at the gate
+boundary, after expansion, so dynamically constructed arguments are included.
+Arbitrary-name declarations and explicit-variable sentences are excluded.
+`tools/capture_legacy.py` reproduces the capture in a v24 checkout. Each row
+records its sentence, source argument forms, and any named exception. Source
+forms are provenance, not independent semantic coverage of every rule.
+
+Current results: **6,386 sentences; 815 converted in both directions; zero
+conversion failures; 2,424 ambiguous sentences; 3,147 other named exceptions**.
+The conversion test directly requires the new form and separately passes each
+direction through the public gate. Conversions occur in arguments using 92
+source forms, including propositional connectives, categorical universal and
+existential rules, identity, binary and n-place relations, relative clauses,
+and Fitch discharges. The inventory records 106 source forms overall; sentences
+from modal/property arguments do not establish a FOL translation of those
+operators. Exact source-form lists and sentence-level exceptions are in the
+inventory and verbose test output.
+
+| Named exception | Sentences | Reason |
+| --- | ---: | --- |
+| Multiple non-alpha-equivalent readings | 2,424 | Scope or grammatical candidate ambiguity; conversion must refuse |
+| Opaque zero-ary clause outside explicit atom grammar | 2,509 | Legacy propositional clauses have no lossless explicit atom spelling |
+| Non-FOL modal, counterfactual, or property grammar | 412 | These operators require their own semantics, not FOL atomization |
+| Legacy name outside explicit token grammar | 156 | Multiword or variable-shaped names cannot be rendered losslessly |
+| Legacy predicate outside explicit token grammar | 50 | Compound predicate labels exceed the core lexical grammar |
+| Legacy relation outside explicit atom grammar | 18 | Relation spelling or arity exceeds the core grammar |
+| Legacy preposition outside explicit atom grammar | 2 | Core separators are only `to`, `from`, and `with` |
+
+Exceptions are pinned per sentence. The test fails if any classification changes;
+`ARGCHECK_UPDATE_LEGACY=1` is an explicit ledger-update operation, not normal
+verification. No unsupported alternative is discarded to obtain a unique
+renderable reading. The bridge enumerates candidates conservatively; two
+non-alpha-equivalent candidates suffice to refuse it.
+
+G1 evidence: the original 2,000 v24 round trips remain unchanged. A new seeded
+1,000-formula generator uses large variable sets for one fifth of its formulas:
+200 formulas bind 30–40 distinct variables, all occurring below the full prefix.
+Every formula round-trips; large formulas also pass gate reiteration and, when
+universally headed, instantiation. Separate cases test depths 26, 27, 30, and 64,
+indexed binding errors, disjoint scopes, and implicit witnesses after 26 binders.
+
 ## Completeness (FOL with identity)
 
-The intended argument has four parts:
+**Proposed scoped claim.** For every finite argument whose premises and conclusion
+are sentences of the controlled grammar, each with exactly one closed,
+function-free FOL= reading up to alpha-equivalence, if that argument is valid
+over nonempty domains, the gate accepts some derivation of it. The derivation
+may use catalog one-step forms, Fitch subproofs, notation equivalence, and
+explicit-variable intermediate lines. This is existence of a finite derivation,
+not a claim that any valid argument is accepted in one step or automatically
+found by the checker. Modal, counterfactual, and property quantification are not
+FOL= readings and are outside this claim.
 
-1. Translate controlled sentences to closed FOL= formulas and render formulas
-   back into controlled sentences, preserving alpha-equivalence. v24 shares the
-   oracle's AST and tests 2,000 seeded random formulas of depth at most five with
-   a budget of six quantifiers, including arities 1–4 and identity. Separate
-   cases pin six and eight nested binders. Every generated formula round-trips.
+The intended proof sketch is:
+
+1. Translate each single-reading sentence to its closed FOL= formula and connect
+   it to its explicit-variable rendering by notation equivalence. The legacy
+   audit and round trips supply evidence. **This step is not established for the
+   entire stated domain: the named lexical/opaque exceptions still lack a bridge.**
 2. Classical natural deduction with identity is complete for FOL= over nonempty
-   domains. Thus each valid sequent has a finite natural-deduction derivation.
-3. Translate each rule of that derivation into an accepted one-step rule or
-   Fitch discharge. The inventory tests 50 instances each of ∧I, ∧E, ∨I, ∨E,
-   →I, →E, ¬I, ¬E, ⊥E, double-negation elimination, ↔I, ↔E, ∀I, ∀E, ∃I, ∃E,
-   =I and =E: 900 instances. Nested arbitrary formulas are used, not opaque
-   propositional labels. The unrestricted declaration and selective equality
-   substitution close two gaps found during implementation. Reflexivity uses
-   a citation; a premise-free theorem can start an arbitrary-name subproof,
-   derive reflexivity, generalize, and instantiate the desired name.
-4. If every intermediate formula in the natural-deduction derivation is
-   renderable, the translation supplies a derivation accepted by the gate,
-   potentially using fallback wording for intermediate steps.
+   domains, so each valid sequent has a finite derivation.
+3. Every natural-deduction rule must be available for arbitrary formulas. The
+   structured AST rules and unchanged v24 inventory provide evidence: 50 cases
+   for each of 18 rules (900 instances), including propositional introduction and
+   elimination, quantifier introduction and elimination, classical reductio,
+   reflexivity, and selective identity substitution. Fresh arbitrary-name
+   subproofs provide premise-free reflexivity; fresh eigenname renaming meets
+   the conservative Fitch freshness conditions. This remains an implementation
+   correspondence argument, not a mechanically verified theorem.
+4. Every intermediate formula over the supported signature is renderable:
+   indexed variables remove the finite-alphabet obstruction. Structural
+   recursion renders connectives and quantifiers, with fresh binders at each
+   depth; the G1 round trips test this construction. This does **not** expand the
+   supported lexical signature or turn opaque clauses into unary predicates.
+5. Once steps 1 and 3 hold for the full domain, composing the conversions and
+   rule translations supplies a gate-accepted derivation.
 
-**This is not yet a proof of the unrestricted completeness claim.** Step 1 is
-an expressiveness statement for the tested core, not for all FOL= formulas:
-26 single-letter variables cannot express formulas needing more simultaneously
-bound distinct variables without rebinding. Step 4 therefore still needs an
-unbounded variable notation, or a separate theorem establishing that every
-relevant derivation can stay within the available variable fragment. No such
-fragment theorem is claimed here. The renderer also targets a normalized,
-function-free signature of unary predicates and relations of arity 2–4, with
-single-token names; it is not a renderer for arbitrary English grammar.
+**Honest status: the scoped claim is not yet fully supported.** G1 is closed.
+G2 supplies a sound-by-identical-form conversion criterion and a tested bridge
+for the renderable fragment, but not a complete bridge for the historical
+single-reading FOL grammar. Exactly the remaining obligations are: lossless
+explicit spellings for zero-ary clauses, non-core names/predicates/relations
+(including additional prepositions); a total, fidelity-checked reading
+translation for those legacy forms; and a general implementation-level argument
+that the rule and rendering correspondence holds beyond the finite inventory.
+The 2,735 lexical/opaque exception sentences are concrete witnesses to the first
+two obligations. The 412 non-FOL exceptions and ambiguous sentences are outside
+the scoped claim, not counterexamples to it. Do not advertise the full grammar
+as complete on the strength of the finite tests.
 
-Nor is the entire historical grammar one-to-one with closed formulas up to
-alpha-equivalence: some readable sentences admit multiple scope readings,
-and equivalent surface forms can denote the same atom. The accurate property
-for the structured core is `parse(Render(f)) ≡α f`, not a bijection for every
-legacy sentence. Connecting every legacy grammatical form to this core by
-accepted conversion steps remains unproved. The finite inventory supports the
-rule correspondence, but cannot remove these expressiveness and translation
-obligations. Do not describe the full catalog as complete for FOL= yet.
+Outside the claim:
 
-The finite oracle exhausts domains 1–3 and all interpretations, including
-empty predicate extensions and co-denoting names. It checks all fallback
-exercises, their invalid look-alikes, the full transitivity example, and a
-fixed 10/50 sample of each inventory rule, including local Fitch obligations
-with eigenname closure. It is bounded soundness evidence, not a proof for
-unbounded domains. No LLM or mechanised proof is involved.
+- Ambiguous readable sentences retain every-reading checking. `is such that`
+  fixes quantifier scope; choosing a reading still requires a supported lexical
+  spelling to cross this bridge. It does not silently paraphrase exceptions.
+- Function terms are absent. FOL= with names and no function symbols still has
+  a complete natural-deduction calculus for that signature; omitting functions
+  is a signature restriction, not an incompleteness of that calculus.
+- Counting quantifiers and definite descriptions are planned next; neither is
+  implemented here as a logical abbreviation.
+- Paraphrase remains a permanent non-goal. Verbatim opaque clauses can already
+  participate in historical propositional rules, but lack an explicit renderer.
 
-Remaining limits are verbatim matching, fallback intermediate lines, the
-readable four-quantifier cap, the variable alphabet restriction above, and
-ordinary input resource limits. Counting quantifiers and definite descriptions
-are planned as defined abbreviations; neither is implemented by v24.
+Soundness evidence is bounded, **not a proof**: the finite-model oracle checks
+domains 1–3, empty predicate extensions, and co-denoting names. v24 checks a
+fixed 10/50 sample of every inventory rule, plus exercises and local Fitch
+obligations with eigenname closure. v25 adds bidirectional conversion samples
+and independently hand-built meanings for representative readable sentences,
+alongside ambiguity and near-miss rejections. The identical-AST criterion is
+sound by construction conditional on faithful parsing; the tests do not prove
+faithfulness for arbitrary English or soundness over all domain sizes.
+
+Other practical limits are the readable four-quantifier cap, explicit-variable
+intermediate lines, and ordinary finite input/stack/memory resources.
