@@ -2105,5 +2105,6 @@ func EntailmentGateForms() []string {
 	}
 	names = append(names, "notation equivalence")
 	names = append(names, "counting definition", "counting introduction", "counting elimination", "counting contradiction", "counting uniqueness", "counting subset")
+	names = append(names, "description definition", "description substitution", "description introduction", "description elimination", "description uniqueness", "description negation")
 	return names
 }

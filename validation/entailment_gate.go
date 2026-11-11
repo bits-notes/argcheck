@@ -8,7 +8,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v26"
+const EntailmentGateCatalogVersion = "v27"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -228,7 +228,7 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 	return reports
 }
 
-func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+func gateConclusionStepV26(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	counting := countingActive(conclusion.Statement)
 	for _, id := range conclusion.Citations {
 		counting = counting || countingActive(steps[id].Statement)

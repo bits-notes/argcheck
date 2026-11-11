@@ -1,0 +1,40 @@
+The AI-2040 forecasters and FutureSearch estimate the chance of survival on Plan C mostly in the 25% to 50% range
+The absence of free will means the frustration of a person's higher-order desires concerning which first-order desire is effective
+The concept of a person, in its philosophically important sense, tracks attributes that are the subject of our most humane concern with ourselves and the source of what we regard as most important and most problematical in our lives
+In Frankfurt's identification scenario the absence of an alternative does not make the person a passive bystander to the constitution of the will
+According to Frankfurt’s account freedom of the will consists in the conformity of one's will to one's second-order volitions, not in exemption from causal determination
+Under the proposal to define truth, speakers can effectively determine the interpretation of arbitrary meaningful expressions
+A decisive identification with a first-order desire means there is no room for questions concerning the pertinence of desires or volitions of higher orders
+Inverse probability without knowledge of the parameter takes its prior from the principle of indifference
+The question of freedom of the will concerns not the relation between what a person does and what the person wants to do, but the person's desires themselves
+If X are interpreted linguistic systems, then if advances in recursive grammar can extend the structures covered by X further, then if a formal truth theory can be applied to X through canonical paraphrase, then the program of progressively theorizing X is viable
+through the formation of a second-order volition, the unwilling addict identifies himself with the desire to refrain from taking the drug and withdraws himself from the craving to take the drug
+A candidate theory must derive correct results for every sentence on the basis of structure
+If mere overlap in successful observable consequences does not support convergent epistemological realism and appealing to the successor's approximate truth cannot explain the predecessor's success, then the strategy of explaining predecessor success does not rescue convergent epistemological realism
+In the original Newcomb situation, the expected-utility principle recommends taking only the opaque box and the dominance principle recommends taking both boxes, and an adequate account must explain away the force of the opposing argument
+If X is an agent who is not a person and X may reason and deliberate about how to satisfy its strongest desires and such deliberation by X need not address whether those desires are themselves desirable or which desire should become the will, then X is a rational deliberator who lacks critical concern with the constitution of its own will
+If X is an epistemology of science and X has not established the links required by its proposed explanation of scientific success and the historical record of science contains numerous anomalies that X does not explain, then extant X has not established that it explains the success of science
+Blinding can prevent an unacceptable direct use of values in seeing a desired result and can obscure the consequence of an individual classification
+If X is a semantic theory and X maps those patterns onto the interpreter's own held-true sentences and construction of X must maximize intelligible agreement and attributed self-consistency while allowing a margin for error, then unavoidable principles of charity govern the construction of X
+selecting the preferred error balance in animal toxicology requires comparing the importance of industrial cost and public-health protection
+When the ontology of two theories differs, each theory can have true determinate consequences absent from the other
+When the absence of free will frustrates a person's higher-order desires concerning which first-order desire is effective, the person is estranged from himself or finds himself a helpless or a passive bystander to the forces that move him
+The will is the desire that effectively moves the agent to action
+The will is a notion
+If X is a person with a physiological addiction and the addiction contributes to X's taking of the drug and the identified desire contributes to X's taking of the drug, then it is not only because of X's addiction that X's desire for the drug is effective
+The physician is a physician engaged in psychotherapy with narcotics addicts
+If it rains, then the street is wet
+Freedom of the will is a form of agential freedom
+**Judge.** Two blind LLM judges (Codex and Claude Opus) classify each pair. The categories are: literal clash; clash once wording is aligned; clash once source content we omitted is added; clash via a premise the author is committed to; clash only via a contested bridge; or no clash
+The evidential meaning of outcome x in the mixture is identical to the evidential meaning of outcome y in the mixture.      ◀ S
+**No inference is in dispute.** Unlike Birnbaum's proof in the frequentism map (valid on one reading, invalid on the other), both arguments are valid with the same final rule. The disagreement is located entirely in which supposition the rule's "would" quantifies over
+For the scientific choice under consideration valuation estimates the seriousness or desirability of the consequences if the choice is wrong
+An intention at midnight to drink the toxin is a disposition to drink the toxin
+In Kavka's toxin case, the agent's later disposition about drinking the toxin is foreseeable at midnight
+A single frontier US company stopping unilaterally is a giant costly signal that the company is terrified of the risks
+**Replies.** For each crux, we searched whether the authors answered their opponents, and extended the arguments with what they said (rounds 3–5). This traced Birnbaum's proof down to "one evidential quantity or two". A gate test showed the proof is valid under one reading and invalid under the other
+Whether the principle is *true* is genuinely open. It now turns on one narrow question: is "same evidential meaning" transitive when the outcomes come from experiments with different error properties?
+If X is a theorist of justice and X did not mention sex as something one does not know behind the veil, then when Okin uses the original position to take the nonideal family into account from behind the veil, the result is not X's own view
+**Objectivity:** mostly a choice of vocabulary; the substance is captured by transparency and robustness
+The tube is a spacetime region
+it is rational to take both boxes in Newcomb's problem with the stipulated utilities, even when the predictor is known to be infallible and an act is rationally preferred to another if and only if the act maximizes U-utility, with U calculated using probabilities of counterfactuals

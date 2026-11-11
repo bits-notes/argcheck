@@ -23,6 +23,9 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 	tests := []struct {
 		name, argument, wantForm string
 	}{
+		{"description substitution", `1. The author of Waverley is Scott.
+2. The author of Waverley wrote Ivanhoe.
+3. Therefore, Scott wrote Ivanhoe. [1,2]`, "description substitution"},
 		{"counting elimination", `1. Exactly two labs are red.
 2. Therefore, at least two labs are red. [1]`, "counting definition"},
 		{"counting subset", `1. At least two labs signed the pledge.
