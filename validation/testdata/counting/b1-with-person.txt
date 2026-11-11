@@ -1,0 +1,4 @@
+1. Exactly one person wrote Waverley.
+2. Scott wrote Waverley.
+3. Scott is a person.
+4. Therefore, no person other than Scott wrote Waverley. [1,2,3]

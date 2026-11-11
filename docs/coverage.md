@@ -435,10 +435,12 @@ recognized privately; historical lexical candidate sets are unchanged. Simple
 plural classes use a final-s spelling. Other morphology, nested count phrases,
 ambiguous scope, and general arithmetic require explicit formalization.
 
-Uniqueness requires membership in the counted class. The supplied b1 lacks
+Uniqueness requires membership in the counted class. The supplied b1 is INVALID
+as originally specified: it lacks
 `Scott is a person`: a nonperson Scott and a distinct person may both write
 Waverley. The two-object countermodel forces rejection. Adding that membership
-to the cited ground conjunction yields the intended valid uniqueness step.
+as a separate cited premise (or in the cited ground conjunction) yields the
+intended VALID uniqueness step.
 The supplied b3 is supported; definite-description b2 remains unsupported.
 
 The v26 tests check accepted local and discharged proof obligations over domains
@@ -449,5 +451,6 @@ not establish unbounded soundness. Invalid exercises each require a countermodel
 
 Compatibility: existing successful proofs keep their historical schema and
 report; counting is a fallback for new inferences. Explicit out-of-range bounds
-still receive the counting-bound diagnostic. The 290-argument corpus comparison
-checks both verdicts and normalized report hashes.
+receive the counting-bound diagnostic only after historical paths decline the
+step. Non-numeric adverbial uses do not activate the counting quantifiers. The
+290-argument corpus comparison checks both verdicts and normalized report hashes.

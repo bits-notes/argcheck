@@ -238,15 +238,6 @@ func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedA
 	}
 	if counting {
 		// Keep existing successful proof recognition and reports unchanged.
-		texts := []string{conclusion.Statement}
-		for _, id := range conclusion.Citations {
-			texts = append(texts, steps[id].Statement)
-		}
-		for _, text := range texts {
-			if _, err := countParse(text); err != nil && strings.Contains(err.Error(), "bound is 5") {
-				return gateCounting(conclusion, steps)
-			}
-		}
 		old := gateConclusionStepLegacy(conclusion, steps)
 		if old.Passed {
 			return old

@@ -7,8 +7,12 @@ import (
 	"strings"
 )
 
-var countingPrefix = regexp.MustCompile(`^(at least|at most|exactly) ([a-z]+|[0-9]+) (.+)$`)
-var countingMarker = regexp.MustCompile(`\b(at least|at most|exactly) ([a-z]+|[0-9]+)\b|\bother than\b|^only `)
+// Recognize numeral tokens, not adverbs such as "at least as" or "exactly what".
+// Larger numeral words are recognized only to give the bounded-surface diagnostic.
+const countingNumeral = `(?:[0-9]+|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion)`
+
+var countingPrefix = regexp.MustCompile(`^(at least|at most|exactly) (` + countingNumeral + `) (.+)$`)
+var countingMarker = regexp.MustCompile(`\b(at least|at most|exactly) ` + countingNumeral + ` [a-z]|\bother than\b|^only `)
 
 // Counting is a conservative, private surface extension. Its only semantic
 // representation is ordinary FOL with equality, never an opaque count atom.
@@ -325,6 +329,26 @@ func countingRule(ps []*folFormula, c *folFormula) string {
 	if form := folRule(ps, c); form != "" {
 		return "definition"
 	}
+	// The counted witness may be established by separate cited ground facts.
+	// Match every remaining premise to the full instantiated body: neither
+	// missing membership nor unrelated extra citations license uniqueness.
+	if len(ps) >= 2 && c.op == "every" && c.children[0].op == "implies" {
+		b := c.children[0]
+		if eq := b.children[1]; eq.op == "equal" && eq.terms[0] == c.symbol {
+			for i, p := range ps {
+				pk, pn, pb := countInfo(p)
+				if (pk != "exactly" && pk != "at most") || pn != 1 {
+					continue
+				}
+				ground := append([]*folFormula{}, ps[:i]...)
+				ground = append(ground, ps[i+1:]...)
+				if countSameBody(pb, folSub(b.children[0], c.symbol, "$count")) &&
+					countSameBody(folSub(pb, "$count", eq.terms[1]), countAnd(ground...)) {
+					return "uniqueness"
+				}
+			}
+		}
+	}
 	ck, cn, cb := countInfo(c)
 	if len(ps) == 1 {
 		pk, pn, pb := countInfo(ps[0])
@@ -347,15 +371,6 @@ func countingRule(ps []*folFormula, c *folFormula) string {
 				}
 				if pn > qn && c.op == "bottom" {
 					return "contradiction"
-				}
-			}
-			if (pk == "exactly" || pk == "at most") && pn == 1 && c.op == "every" && c.children[0].op == "implies" {
-				b := c.children[0]
-				if b.children[1].op == "equal" {
-					eq := b.children[1]
-					if eq.terms[0] == c.symbol && countSameBody(pb, folSub(b.children[0], c.symbol, "$count")) && countSameBody(folSub(pb, "$count", eq.terms[1]), q) {
-						return "uniqueness"
-					}
 				}
 			}
 			// A class with more members than its B subset has a member outside B.
