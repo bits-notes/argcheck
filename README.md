@@ -3,7 +3,7 @@
 argcheck checks the syntactically transparent validity of numbered arguments.
 It runs deterministic syntax and entailment checks in Go, with no LLM and no
 network access in local mode. Each conclusion must match an accepted inference
-form using its cited steps. The current catalog is v25; `argcheck --forms` lists
+form using its cited steps. The current catalog is v26; `argcheck --forms` lists
 its forms.
 
 A passing result establishes validity under that catalog. It does not establish
@@ -79,7 +79,7 @@ argcheck --forms
 ```
 
 Text output reports `VALID` or `INVALID`, the catalog and build stamp
-(`gate catalog v25; local argcheck@<commit>`), and each conclusion's matched
+(`gate catalog v26; local argcheck@<commit>`), and each conclusion's matched
 form or mismatch. Fitch input is echoed before the verdict. An inert-citation
 hint identifies extra citations whose removal would let a known form pass.
 `--json` returns structured checks, details, and provenance.
@@ -345,3 +345,25 @@ go test -vet=off ./...
 
 Test fixtures live inside `validation/testdata`; no sibling checkout is needed.
 See `LICENSE` for the current rights notice.
+
+### Counting (v26)
+
+Counts one–five (also 1–5) expand into FOL with identity and distinct witnesses.
+
+```text
+1. At least two labs signed the pledge.
+2. At most one lab that signed the pledge is American.
+3. Therefore, some lab that signed the pledge is not American. [1,2]
+```
+
+```text
+1. Exactly one student admires blair.
+| 2. Suppose Ada is a student and Ada admires blair.
+| 3. Therefore, no student other than Ada admires blair. [1,2]
+4. Therefore, if Ada is a student and Ada admires blair then no student other than Ada admires blair. [2-3]
+```
+
+An exact count entails both bounds. Counting definitions convert to and from
+explicit-variable FOL. Larger bounds report the bound of 5; general arithmetic
+and definite descriptions remain unsupported. Uniqueness must establish that
+the named witness belongs to the counted class.

@@ -2104,5 +2104,6 @@ func EntailmentGateForms() []string {
 		names = append(names, "FOL "+form)
 	}
 	names = append(names, "notation equivalence")
+	names = append(names, "counting definition", "counting introduction", "counting elimination", "counting contradiction", "counting uniqueness", "counting subset")
 	return names
 }

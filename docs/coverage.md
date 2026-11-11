@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v25)
+# Entailment Gate — Coverage and Known Limits (catalog v26)
 
 **Type:** reference
-**Status:** current as of catalog v25 (2026-11-10)
+**Status:** current as of catalog v26 (2026-11-10)
 
 
 The gate checks whether each step of a numbered argument is an instance of a
@@ -387,8 +387,9 @@ Outside the claim:
 - Function terms are absent. FOL= with names and no function symbols still has
   a complete natural-deduction calculus for that signature; omitting functions
   is a signature restriction, not an incompleteness of that calculus.
-- Counting quantifiers and definite descriptions are planned next; neither is
-  implemented here as a logical abbreviation.
+- Counting bounds 1–5 are identity-based FOL abbreviations (v26). Larger bounds
+  and general arithmetic remain outside the supported surface grammar.
+  Definite descriptions remain unimplemented (v27).
 - Modal, counterfactual, property and that-clause grammar are outside the
   function-free FOL claim. An opaque propositional letter carries no internal
   modal or attitude semantics.
@@ -416,3 +417,37 @@ and public-gate instantiation.
 
 Other practical limits are the readable four-quantifier cap, explicit-variable
 intermediate lines, and ordinary finite input/stack/memory resources.
+
+## v26: counting quantifiers
+
+`At least n`, `at most n`, and `exactly n` accept digits 1–5 and words one–five.
+The private parser expands these into n existential witnesses with pairwise
+inequalities, the negation of n+1 such witnesses, or their conjunction.
+Introduction/elimination converts both ways with explicit FOL definitions.
+Other rules cover exact-count bounds, inconsistent bounds, uniqueness, and a
+larger class versus its smaller subset. These are structural rules over identity
+definitions; production never uses bounded model search for acceptance.
+Fitch discharge reuses the existing FOL checker on expanded definitions.
+
+The readable surface accepts subject counts, copular predicates, existing
+relation vocabulary, and single relative clauses. `signed` and `wrote` are
+recognized privately; historical lexical candidate sets are unchanged. Simple
+plural classes use a final-s spelling. Other morphology, nested count phrases,
+ambiguous scope, and general arithmetic require explicit formalization.
+
+Uniqueness requires membership in the counted class. The supplied b1 lacks
+`Scott is a person`: a nonperson Scott and a distinct person may both write
+Waverley. The two-object countermodel forces rejection. Adding that membership
+to the cited ground conjunction yields the intended valid uniqueness step.
+The supplied b3 is supported; definite-description b2 remains unsupported.
+
+The v26 tests check accepted local and discharged proof obligations over domains
+1–4, including empty extensions and co-denoting names, and compare all 15 count
+abbreviations against independently assembled identity formulas. Counts 4 and
+5 have vacuous lower-bound checks on smaller domains; these bounded checks do
+not establish unbounded soundness. Invalid exercises each require a countermodel.
+
+Compatibility: existing successful proofs keep their historical schema and
+report; counting is a fallback for new inferences. Explicit out-of-range bounds
+still receive the counting-bound diagnostic. The 290-argument corpus comparison
+checks both verdicts and normalized report hashes.

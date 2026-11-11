@@ -8,7 +8,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v25"
+const EntailmentGateCatalogVersion = "v26"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -229,6 +229,34 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 }
 
 func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	counting := countingActive(conclusion.Statement)
+	for _, id := range conclusion.Citations {
+		counting = counting || countingActive(steps[id].Statement)
+	}
+	for _, span := range conclusion.Ranges {
+		counting = counting || countingActive(steps[span[0]].Statement) || countingActive(steps[span[1]].Statement)
+	}
+	if counting {
+		// Keep existing successful proof recognition and reports unchanged.
+		texts := []string{conclusion.Statement}
+		for _, id := range conclusion.Citations {
+			texts = append(texts, steps[id].Statement)
+		}
+		for _, text := range texts {
+			if _, err := countParse(text); err != nil && strings.Contains(err.Error(), "bound is 5") {
+				return gateCounting(conclusion, steps)
+			}
+		}
+		old := gateConclusionStepLegacy(conclusion, steps)
+		if old.Passed {
+			return old
+		}
+		return gateCounting(conclusion, steps)
+	}
+	return gateConclusionStepLegacy(conclusion, steps)
+}
+
+func gateConclusionStepLegacy(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	// New explicit-variable sentences have fixed scope, never legacy scope
 	// permutations. Historical sentences retain their previous parser priority.
 	active := folExplicit(conclusion.Statement)

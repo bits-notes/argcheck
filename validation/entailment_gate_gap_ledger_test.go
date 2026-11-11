@@ -23,6 +23,11 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 	tests := []struct {
 		name, argument, wantForm string
 	}{
+		{"counting elimination", `1. Exactly two labs are red.
+2. Therefore, at least two labs are red. [1]`, "counting definition"},
+		{"counting subset", `1. At least two labs signed the pledge.
+2. At most one lab that signed the pledge is American.
+3. Therefore, some lab that signed the pledge is not American. [1,2]`, "counting subset"},
 		// v17 relational additions; these rows were absent in the v15 base ledger.
 		{"relational UI", `1. Alice admires every teacher.
 2. Bob is a teacher.
