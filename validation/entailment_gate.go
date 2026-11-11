@@ -7,7 +7,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v22"
+const EntailmentGateCatalogVersion = "v23"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -223,7 +223,21 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 }
 
 func gateConclusionStep(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
-	return gateRelationalScopes(conclusion, steps)
+	report := gateRelationalScopes(conclusion, steps)
+	if !report.Passed {
+		texts := []string{conclusion.Statement}
+		for _, id := range conclusion.Citations {
+			texts = append(texts, steps[id].Statement)
+		}
+		for _, s := range texts {
+			if relativeNested(s) {
+				report.NearestForm = "relative clause inference"
+				report.Mismatch = "relative clauses require the class and the verbatim relation with the same gap role; use is such that for nesting and separate steps for unsupported grammar"
+				break
+			}
+		}
+	}
+	return report
 }
 
 func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
@@ -374,6 +388,9 @@ func gateCandidateSets(premises []NumberedArgumentStep, conclusion NumberedArgum
 }
 
 func schemaAcceptsPremiseCount(schema entailmentSchema, premiseCount int) bool {
+	if schema.arity == relativeArity {
+		return premiseCount >= 1
+	}
 	if schema.arity == variableArityAtLeastTwo {
 		return premiseCount >= 2
 	}
@@ -384,6 +401,12 @@ func schemaAcceptsPremiseCount(schema entailmentSchema, premiseCount int) bool {
 }
 
 func orderedPremiseSelections(premises []NumberedArgumentStep, arity int) [][]NumberedArgumentStep {
+	if arity == relativeArity {
+		if len(premises) == 0 {
+			return nil
+		}
+		return [][]NumberedArgumentStep{premises}
+	}
 	if arity == variableArityAtLeastTwo {
 		if len(premises) < 2 {
 			return nil

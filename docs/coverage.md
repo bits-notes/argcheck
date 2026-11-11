@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v22)
+# Entailment Gate — Coverage and Known Limits (catalog v23)
 
 **Type:** reference
-**Status:** current as of catalog v22 (2026-11-10)
+**Status:** current as of catalog v23 (2026-11-10)
 
 
 The gate checks whether each step of a numbered argument is an instance of a
@@ -49,7 +49,6 @@ These will not be added. The workaround is always a visible premise.
 
 | Limit | Example that fails | Workaround today |
 |---|---|---|
-| Relative clauses inside relations | `Clark Kent admires every hero that Superman admires.` + `Batman is a hero that Superman admires.` ⊢ `Clark Kent admires Batman.` | Restate as a copular universal (`Every hero that Superman admires is a hero that Clark Kent admires.`) |
 | Definite descriptions with uniqueness | `Exactly one person wrote Waverley.` + `Scott wrote Waverley.` ⊢ `No person other than Scott wrote Waverley.` | Identity premises (`Scott is identical to the author of Waverley.`) for substitution; uniqueness as a premise |
 | Counting and arithmetic | `Three senators voted yes and two voted no, so at least five voted.` | State the arithmetic as a premise |
 | Tense and ordering | `It rained before the meeting.` + `The meeting was before lunch.` ⊢ `It rained before lunch.` | State transitivity of "before" as a premise |
@@ -102,7 +101,7 @@ restricted syntactic catalog, not general English parsing: new flat forms use
 a single verb token, named or quantified noun phrases, and the preposition
 vocabulary `to`, `from`, `with`, `for`, `at`, `in`, `on`, `into`, `onto`, `under`,
 `over`, `through`, `between`, `beside`, and `by`. Prepositions inside a noun
-phrase, relative clauses, repeated bound-class references in a scaffold, and
+phrase, repeated bound-class references in a scaffold, and
 embedded negations beneath multiple scaffolds are not supported by the new
 grammar. Prefer the prepositional form when double-object noun boundaries are
 unclear. Existing two-place and copular forms retain their previous grammar.
@@ -112,3 +111,46 @@ formulas and exhaustively searches domains of sizes 1–3, allowing empty classe
 and co-denoting names. Boolean unit propagation prunes the search without
 sampling models. This bounded check is evidence of soundness, not a proof over
 unbounded domains.
+
+## v23: relative clauses
+
+`F that A Rs` decomposes as F(x) and R(A,x); `F that Rs A` decomposes as
+F(x) and R(x,A). `who` and `which` use the same rules. Unary clauses such as
+`runner who runs` and n-place clauses such as `book that Alex gave Blair`
+are supported. The filled clause must match verbatim; this path does not apply
+the v22 double-object/to equivalence inside a relative clause.
+
+Instantiation needs every conjunct of the restrictor. Existential introduction
+needs both the restrictor and the body's facts. Predicate nominals can be
+introduced from their two conjuncts or eliminated to either conjunct. Every
+cited premise must contribute. Fitch existential witness assumptions state the
+full restrictor and body; elimination exposes both class and relation, and the
+existing fresh-name checks prevent witness escape. Universal generalization
+also accepts relative restrictors.
+
+Relative nouns may occupy subject or object positions under every/some/no.
+The new path permits one quantifier per unscaffolded clause. To nest, use:
+
+```text
+Every hero that Sam admires is such that Pat admires every reader who visits that hero.
+```
+
+The scaffold fixes the outer scope, and instantiation preserves its entire
+body. Unscaffolded relative clauses inside relative clauses receive a nearest
+form diagnostic. Historical forms still run first, with unchanged parsing.
+
+The new relative-clause verb vocabulary is deliberately bounded:
+`lobbies`, `funds`, `admires`, `helps`, `visits`, `owns`, `reads`, `runs`,
+`sleeps`, `smiles`, `works`, `gave`, `gives`, `sends`, `sent`, `sells`, `sold`,
+`offers`, `offered`, `lends`, `lent`, `hands`, `handed`, `shows`, `showed`.
+Other verbs, embedded negation, quantifiers inside the relative guard, and
+unscaffolded nested relatives require separate explicit steps or a visible
+bridging premise. There is no paraphrase, tense, or active/passive conversion.
+
+The independent finite oracle translates relative nouns into conjunctions and
+checks every new accepted exercise over domains 1–3, with empty classes and
+co-denoting constants allowed. Invalid semantic look-alikes have countermodels;
+Fitch checks cover local obligations and discharge. This is bounded evidence,
+not a proof for arbitrary domain sizes. A redundant-citation rejection can
+still be logically valid: class membership and a matching relation directly
+entail their relative nominal, regardless of an unused universal premise.

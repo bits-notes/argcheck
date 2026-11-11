@@ -37,7 +37,7 @@ var v21AcceptedCases = []v20GateCase{
 }
 
 func TestCatalogV21(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v22" {
+	if EntailmentGateCatalogVersion != "v23" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range v21AcceptedCases {
@@ -168,11 +168,11 @@ func TestCatalogV21PropertyScope(t *testing.T) {
 
 func TestCatalogV21FormsAppendOnly(t *testing.T) {
 	names := EntailmentGateForms()
-	if len(names) != 85 {
+	if len(names) != 86 {
 		t.Fatalf("form count %d", len(names))
 	}
 	want := "property instantiation (arbitrary property)|distinguishing property|distinguishing property nonidentity|distinguishing property non-inclusion"
-	if got := strings.Join(names[81:], "|"); got != want {
+	if got := strings.Join(names[81:85], "|"); got != want {
 		t.Fatalf("v21 forms: %s", got)
 	}
 }

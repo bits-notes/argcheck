@@ -43,6 +43,8 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 		// v22 closes the position gap while retaining the scope boundary above.
 		{"three-place recipient introduction", v22A1, "relational existential generalization"},
 		{"three-place multiple instantiation", v22A3, "relational universal instantiation"},
+		// v23 decomposes relative restrictors and predicate nominals.
+		{"relative restrictor instantiation", v23A2, "relative clause inference"},
 		// Remaining relation boundary: an arbitrary relation need not be transitive.
 		{"relation transitivity without premise", `1. Ada admires Ben.
 2. Ben admires Cy.

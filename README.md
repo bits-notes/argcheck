@@ -3,7 +3,7 @@
 argcheck checks the syntactically transparent validity of numbered arguments.
 It runs deterministic syntax and entailment checks in Go, with no LLM and no
 network access in local mode. Each conclusion must match an accepted inference
-form using its cited steps. The current catalog is v22; `argcheck --forms` lists
+form using its cited steps. The current catalog is v23; `argcheck --forms` lists
 its forms.
 
 A passing result establishes validity under that catalog. It does not establish
@@ -79,7 +79,7 @@ argcheck --forms
 ```
 
 Text output reports `VALID` or `INVALID`, the catalog and build stamp
-(`gate catalog v22; local argcheck@<commit>`), and each conclusion's matched
+(`gate catalog v23; local argcheck@<commit>`), and each conclusion's matched
 form or mismatch. Fitch input is echoed before the verdict. An inert-citation
 hint identifies extra citations whose removal would let a known form pass.
 `--json` returns structured checks, details, and provenance.
@@ -229,6 +229,26 @@ Argument roles, verbs, and prepositions otherwise match verbatim. All scope
 orders are checked, with at most four quantifiers per sentence. Nested
 `is such that` scaffolds fix scope. See [coverage and known limits](docs/coverage.md)
 for the supported vocabulary, examples, and restrictions.
+
+### Relative clauses (v23)
+
+Relative nouns decompose into their class and relation. `F that A admires`
+requires both `x is an F` and `A admires x`; `F who admires A` instead requires
+`x admires A`. `that`, `who`, and `which` support the same gap rules.
+
+```text
+1. Every hero that Sam admires is active.
+2. Robin is a hero.
+3. Sam admires Robin.
+4. Therefore, Robin is active. [1,2,3]
+```
+
+The same decomposition supports existential introduction, predicate-nominal
+introduction and elimination, and fresh witnesses in Fitch subproofs. Relative
+nouns can occur in either relation position under every/some/no, including
+`book that Alex gave Blair`. Relations match verbatim with the gap filled.
+Use `is such that` to delimit nested scopes. The new grammar has a bounded verb
+vocabulary; see [coverage](docs/coverage.md#v23-relative-clauses).
 
 ### Counterfactuals
 

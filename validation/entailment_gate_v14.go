@@ -89,6 +89,18 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 			}
 			report.NearestForm = "universal generalization"
 			m := arbitraryNamePattern.FindStringSubmatch(first.Statement)
+			if m != nil && relativeMarker(normalizeClause(m[2])) {
+				if q, ok := relativeQuant(c.Statement); ok && q.kind == "every" {
+					guards, good := relativeNP(normalizeClause(m[2]), relativeHole)
+					if good && relativeAll(guards, q.guards) && relativeAll(q.guards, guards) && equalClauses(last.Statement, relativeFill(q.body, normalizeClause(m[1]))) {
+						if reason := fitchFreshName(m[1], first.Number, c, steps); reason != "" {
+							report.Mismatch = reason
+							return report
+						}
+						return accept("universal generalization")
+					}
+				}
+			}
 			if m != nil && v13PlainClause(m[2]) {
 				if reason := fitchFreshName(m[1], first.Number, c, steps); reason != "" {
 					report.Mismatch = reason
@@ -146,6 +158,13 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 		r := c.Ranges[0]
 		first, last := steps[r[0]], steps[r[1]]
 		if first.Kind == numberedArgumentStepAssumption && equalClauses(last.Statement, c.Statement) {
+			if name := relativeEEName(first, steps[c.Citations[0]]); name != "" {
+				if reason := fitchFreshName(name, first.Number, c, steps); reason != "" {
+					report.Mismatch = reason
+					return report
+				}
+				return accept("existential elimination")
+			}
 			if name := relationalEEName(first, steps[c.Citations[0]]); name != "" {
 				if reason := fitchFreshName(name, first.Number, c, steps); reason != "" {
 					report.Mismatch = reason

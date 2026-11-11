@@ -123,7 +123,7 @@ func nplaceExercises() []nplaceExercise {
 	return out
 }
 func TestCatalogV22(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v22" {
+	if EntailmentGateCatalogVersion != "v23" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range nplaceExercises() {

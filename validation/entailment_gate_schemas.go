@@ -9,6 +9,7 @@ import (
 
 const clauseWrapper = "it is the case that"
 
+const relativeArity = -3
 const variableArity = -1
 const variableArityAtLeastTwo = -2
 
@@ -142,6 +143,7 @@ var entailmentSchemas = []entailmentSchema{
 	{name: "distinguishing property", arity: 2, match: matchDistinguishingProperty, matchScoped: matchScopedDistinguishingProperty},
 	{name: "distinguishing property nonidentity", arity: 1, match: matchDistinguishingPropertyNonidentity},
 	{name: "distinguishing property non-inclusion", arity: 1, match: matchDistinguishingPropertyNonInclusion},
+	{name: "relative clause inference", arity: relativeArity, match: matchRelativeClauses},
 }
 
 // normalizeClause is the gate's only clause normalization: contractions, case,
@@ -2078,7 +2080,7 @@ func permuteClauses(parts []string, from int, visit func([]string) bool) bool {
 func EntailmentGateForms() []string {
 	names := make([]string, 0, len(entailmentSchemas))
 	for _, schema := range entailmentSchemas {
-		if !v20PropertyForm(schema.name) && !v21PropertyForm(schema.name) {
+		if !v20PropertyForm(schema.name) && !v21PropertyForm(schema.name) && schema.name != "relative clause inference" {
 			names = append(names, schema.name)
 		}
 	}
@@ -2094,5 +2096,6 @@ func EntailmentGateForms() []string {
 			names = append(names, schema.name)
 		}
 	}
+	names = append(names, "relative clause inference")
 	return names
 }
