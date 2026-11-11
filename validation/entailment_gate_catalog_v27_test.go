@@ -152,3 +152,34 @@ func TestCatalogV27Fitch(t *testing.T) {
 	}
 	t.Log(fmt.Sprint("local and conditional discharge checked over domains 1-4"))
 }
+
+func TestCatalogV27FallbackBoundary(t *testing.T) {
+	// Exercise the new path itself even when an old schema can certify a case.
+	for _, tc := range v27Exercises() {
+		arg, syntax := ParseNumberedArgument(tc.argument, numberedArgumentOptions{})
+		if !syntax.Passed {
+			t.Fatal(syntax.Message)
+		}
+		steps := map[int]NumberedArgumentStep{}
+		for _, s := range arg.Steps {
+			steps[s.Number] = s
+		}
+		c := arg.Steps[len(arg.Steps)-1]
+		r := gateDescriptions(c, steps)
+		if r.Passed != tc.valid {
+			t.Errorf("fallback %s: got %v, want %v", tc.name, r.Passed, tc.valid)
+		}
+	}
+	// Equivalent relative clauses still are not verbatim descriptions.
+	text := v26Argument([]string{"The courier who admires Blair is Ada", "The courier that admires Blair is red"}, "Ada is red")
+	_, r := CheckEntailmentGate(text)
+	if r.Passed {
+		t.Fatal("nonverbatim description substitution")
+	}
+	// No unrelated extra citation may be silently discarded.
+	text = v26Argument([]string{"The author of Waverley is Scott", "The author of Waverley wrote Ivanhoe", "Ada is red"}, "Scott wrote Ivanhoe")
+	_, r = CheckEntailmentGate(text)
+	if r.Passed {
+		t.Fatal("unrelated citation discarded")
+	}
+}

@@ -3,7 +3,7 @@
 argcheck checks the syntactically transparent validity of numbered arguments.
 It runs deterministic syntax and entailment checks in Go, with no LLM and no
 network access in local mode. Each conclusion must match an accepted inference
-form using its cited steps. The current catalog is v26; `argcheck --forms` lists
+form using its cited steps. The current catalog is v27; `argcheck --forms` lists
 its forms.
 
 A passing result establishes validity under that catalog. It does not establish
@@ -79,7 +79,7 @@ argcheck --forms
 ```
 
 Text output reports `VALID` or `INVALID`, the catalog and build stamp
-(`gate catalog v26; local argcheck@<commit>`), and each conclusion's matched
+(`gate catalog v27; local argcheck@<commit>`), and each conclusion's matched
 form or mismatch. Fitch input is echoed before the verdict. An inert-citation
 hint identifies extra citations whose removal would let a known form pass.
 `--json` returns structured checks, details, and provenance.
@@ -365,5 +365,36 @@ Counts one–five (also 1–5) expand into FOL with identity and distinct witnes
 
 An exact count entails both bounds. Counting definitions convert to and from
 explicit-variable FOL. Larger bounds report the bound of 5; general arithmetic
-and definite descriptions remain unsupported. Uniqueness must establish that
+remains unsupported. Uniqueness must establish that
 the named witness belongs to the counted class.
+
+### Definite descriptions (v27)
+
+Russellian descriptions assert existence, uniqueness, and predication:
+
+```text
+1. The author of Waverley is Scott.
+2. The author of Waverley wrote Ivanhoe.
+3. Therefore, Scott wrote Ivanhoe. [1,2]
+```
+
+The fallback supports substitution, introduction from a witnessed predication
+and an at-most-one bound, elimination, and uniqueness inferences. It works
+inside Fitch subproofs and converts to explicit FOL with identity. Subject
+descriptions can contain literal of-phrases and one relative clause. A bare
+capitalized copular complement denotes a name; use `is identical to` for
+explicit identity, and lowercase predicate wording for properties. Matching
+restrictors stay verbatim; opaque attitude, modal, and deontic clauses never
+expose terms for description substitution.
+
+For the present King of France case, `The present king of France is not bald`
+has both a wide reading (a unique king who is not bald) and a narrow reading
+(not a unique king who is bald). New description steps must hold on every
+reading. `It is not the case that the present king of France is bald` fixes
+the narrow reading.
+
+Compatibility takes priority: v26 successes retain their exact reports. In
+particular, its old narrow-to-surface-negation certificate is preserved even
+though it does not establish the new wide reading. The every-reading guarantee
+applies to the new fallback, not retroactively to historical certificates.
+See [coverage and limits](docs/coverage.md#v27-russellian-definite-descriptions).

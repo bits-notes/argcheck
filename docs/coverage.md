@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v26)
+# Entailment Gate — Coverage and Known Limits (catalog v27)
 
 **Type:** reference
-**Status:** current as of catalog v26 (2026-11-10)
+**Status:** current as of catalog v27 (2026-11-11)
 
 
 The gate checks whether each step of a numbered argument is an instance of a
@@ -49,7 +49,6 @@ These will not be added. The workaround is always a visible premise.
 
 | Limit | Example that fails | Workaround today |
 |---|---|---|
-| Definite descriptions with uniqueness | `Exactly one person wrote Waverley.` + `Scott wrote Waverley.` ⊢ `No person other than Scott wrote Waverley.` | Identity premises (`Scott is identical to the author of Waverley.`) for substitution; uniqueness as a premise |
 | Counting and arithmetic | `Three senators voted yes and two voted no, so at least five voted.` | State the arithmetic as a premise |
 | Tense and ordering | `It rained before the meeting.` + `The meeting was before lunch.` ⊢ `It rained before lunch.` | State transitivity of "before" as a premise |
 | Verb predicates as properties | `Superman flies.` ⊢ `Superman has the property of being ...` | Write `Superman is someone who flies.` (copular) or add a premise |
@@ -389,7 +388,13 @@ Outside the claim:
   is a signature restriction, not an incompleteness of that calculus.
 - Counting bounds 1–5 are identity-based FOL abbreviations (v26). Larger bounds
   and general arithmetic remain outside the supported surface grammar.
-  Definite descriptions remain unimplemented (v27).
+- Unambiguous subject descriptions are identity-based FOL abbreviations (v27).
+  Expansion and contraction use the exact Russellian AST with a negated
+  two-distinct-witness uniqueness bound. This adds a notation bridge, not a
+  stronger logic. Explicit narrow negation is unambiguous; surface "the F is
+  not G" remains outside this single-reading completeness claim. Historical
+  certificates retain their previous semantics and are not a Russellian
+  soundness guarantee (see the v27 compatibility exception below).
 - Modal, counterfactual, property and that-clause grammar are outside the
   function-free FOL claim. An opaque propositional letter carries no internal
   modal or attitude semantics.
@@ -441,7 +446,7 @@ as originally specified: it lacks
 Waverley. The two-object countermodel forces rejection. Adding that membership
 as a separate cited premise (or in the cited ground conjunction) yields the
 intended VALID uniqueness step.
-The supplied b3 is supported; definite-description b2 remains unsupported.
+The supplied b3 is supported; v27 additionally supports definite-description b2.
 
 The v26 tests check accepted local and discharged proof obligations over domains
 1–4, including empty extensions and co-denoting names, and compare all 15 count
@@ -454,3 +459,61 @@ report; counting is a fallback for new inferences. Explicit out-of-range bounds
 receive the counting-bound diagnostic only after historical paths decline the
 step. Non-numeric adverbial uses do not activate the counting quantifiers. The
 290-argument corpus comparison checks both verdicts and normalized report hashes.
+
+## v27: Russellian definite descriptions
+
+`The F is G` expands to existence with predication plus at most one F:
+`∃x(Fx ∧ Gx) ∧ ¬∃x∃y(Fx ∧ Fy ∧ x ≠ y)`. This is equivalent over nonempty
+domains to Russell's `∃x(Fx ∧ ∀y(Fy → y = x) ∧ Gx)`. The oracle independently
+uses the latter universal-identity analysis. Production reuses v26's counting
+definition and checks syntactic rule instances; it performs no model search.
+
+Supported forms are description definition, substitution, introduction,
+elimination, uniqueness, and negation. The reference b2 passes. Introduction
+accepts existence-with-predication plus uniqueness, or a named member and its
+predication plus an at-most-one/exactly-one bound. Elimination returns the
+existential conjunct, uniqueness conjunct, existence alone, an exact count,
+or membership of an identified witness. Definition expansion/contraction
+connects descriptions with the explicit FOL calculus. Fitch discharge uses
+the existing scope and eigenname checker on translated definitions.
+
+Subject descriptions support one relative clause, including n-place relations,
+and literal of-phrases: `author of Waverley` denotes the ordered author-of
+relation to Waverley. No synonyms or differently written relative restrictors
+are equated. Bare capitalized copular complements denote names; lowercase
+complements denote predicates. Explicit `is identical to` removes this surface
+convention. Nested descriptions, descriptions in arbitrary argument positions,
+and unrestricted English remain outside this extension; write explicit FOL
+intermediate lines. At most 16 readings per compound and 12 distinct clauses
+per fallback step are considered.
+
+**Present King of France.** `The present king of France is not bald` admits
+both existence/uniqueness with negative predication (wide) and negation of
+the entire positive description (narrow). The description fallback requires
+every combination of admissible premise and conclusion readings to validate;
+repeated occurrences of the same clause share a reading. Explicit `It is not
+the case that the present king of France is bald` fixes only the narrow
+reading. Neither reading is silently discarded.
+
+**Compatibility exception.** The v26 gate always runs first. Its successes
+and full reports are preserved, and failed new attempts return the original
+v26 diagnostic. Consequently, the old certificate from explicit narrow
+negation to surface "the F is not G" still passes: v26 treats these as ordinary
+clausal negation, whereas Russellian wide scope has a countermodel with no F.
+A regression test pins both this unchanged report and its independent
+Russellian countermodel. Thus legacy preservation and a retroactive universal
+Russellian soundness guarantee cannot both hold; v27 preserves legacy behavior
+as required. No description-specific error overrides an old VALID result.
+
+Opaque that-clauses, attitudes, modal and deontic contexts expose no substitutable
+terms. Invalid look-alikes cover missing existence, missing uniqueness, opaque
+substitution, scope, unnamed witnesses, and changed restrictors.
+
+Validation includes 20 valid and nine invalid fresh exercises, independent
+finite-model checks over domains 1–3, 39 surface-reading equivalence checks
+over domains 1–4, and Fitch local/discharge obligations. Empty extensions and
+co-denoting constants are included; bounded checks do not prove unbounded
+soundness. A read-only corpus scan supplied 40 sentences from 38 source files,
+20 for each requested phrase pattern. Each is checked under modus ponens and
+an unrelated-premise rejection, comparing complete v26/v27 step reports.
+The source index records corpus-relative paths and line numbers.
