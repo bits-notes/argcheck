@@ -130,6 +130,23 @@ func descriptionParse(text string) ([]*folFormula, error) {
 			return descriptionPair("implies", strings.TrimSuffix(original[3:3+len(a)], ","), original[len(original)-len(b):])
 		}
 	}
+	// This fallback has no precedence convention for readable compounds.
+	// In particular, splitting AND before OR changes either P or Q and R
+	// into (P or Q) and R. Leave those surfaces to the legacy gate; compound
+	// description formulas must delimit both operands with parentheses.
+	for _, marker := range []string{"either ", "both that ", " if and only if "} {
+		if strings.Contains(s, marker) {
+			return nil, fmt.Errorf("unsupported description connective scaffold")
+		}
+	}
+	for _, pair := range []struct{ sep, op string }{{" and ", "and"}, {" or ", "or"}} {
+		if a, b, ok := folSplit(s, pair.sep); ok {
+			if folStrip(a) == a || folStrip(b) == b {
+				return nil, fmt.Errorf("parenthesize description compound operands")
+			}
+			return descriptionPair(pair.op, original[:len(a)], original[len(original)-len(b):])
+		}
+	}
 	// Opaque clauses remain whole propositions, with no replaceable name slots.
 	for _, prefix := range []string{"an ", "a "} {
 		if strings.HasPrefix(s, prefix) {
@@ -168,11 +185,6 @@ func descriptionParse(text string) ([]*folFormula, error) {
 		}
 		return []*folFormula{descriptionDefinition(g, p)}, nil
 	}
-	for _, pair := range []struct{ sep, op string }{{" and ", "and"}, {" or ", "or"}} {
-		if a, b, ok := folSplit(s, pair.sep); ok {
-			return descriptionPair(pair.op, original[:len(a)], original[len(original)-len(b):])
-		}
-	}
 	// Bare-name copulas in this controlled extension denote equality. Ordinary
 	// property words retain the legacy predicate analysis.
 	if name := descriptionName(text); name != "" {
@@ -191,6 +203,16 @@ func descriptionPredication(tail string) (*folFormula, error) {
 	f, e := countAtom("countwitness " + tail)
 	if e != nil {
 		return nil, e
+	}
+	// A successful legacy parse can still be an opaque zero-place clause.
+	// It is a predication of the description only when the witness occupies
+	// a real term slot in an atom (or its negation), never a connective tree.
+	atom := f
+	if atom.op == "not" {
+		atom = atom.children[0]
+	}
+	if (atom.op != "atom" && atom.op != "equal") || folSame(f, folSub(f, "countwitness", "$count")) {
+		return nil, fmt.Errorf("description requires a predicate of its witness")
 	}
 	return descriptionRelations(folSub(f, "countwitness", "$count")), nil
 }

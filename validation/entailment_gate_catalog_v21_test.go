@@ -168,11 +168,15 @@ func TestCatalogV21PropertyScope(t *testing.T) {
 
 func TestCatalogV21FormsAppendOnly(t *testing.T) {
 	names := EntailmentGateForms()
-	if len(names) != 113 { // v26 appends six counting forms.
+	if len(names) != 119 { // v27 appends six description forms.
 		t.Fatalf("form count %d", len(names))
 	}
 	want := "property instantiation (arbitrary property)|distinguishing property|distinguishing property nonidentity|distinguishing property non-inclusion"
 	if got := strings.Join(names[81:85], "|"); got != want {
 		t.Fatalf("v21 forms: %s", got)
+	}
+	want = "description definition|description substitution|description introduction|description elimination|description uniqueness|description negation"
+	if got := strings.Join(names[113:], "|"); got != want {
+		t.Fatalf("v27 appended forms: %s", got)
 	}
 }

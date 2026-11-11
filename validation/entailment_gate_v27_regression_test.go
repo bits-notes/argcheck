@@ -60,3 +60,51 @@ func TestCatalogV27InheritedNegation(t *testing.T) {
 		t.Fatal("expected inherited scope countermodel")
 	}
 }
+
+func TestCatalogV27PropositionalScopeRegression(t *testing.T) {
+	// All ten accepted-invalid candidates from the propositional oracle.
+	for _, tc := range []struct{ premise, conclusion string }{
+		{"either it rains or it rains and the street is wet", "the street is wet"},
+		{"either it rains or it snows and the street is wet", "the street is wet"},
+		{"either it rains or the street is wet and it snows", "it snows"},
+		{"either it rains or the street is wet and the street is wet", "the street is wet"},
+		{"either it snows or it rains and the street is wet", "the street is wet"},
+		{"either it snows or it snows and the street is wet", "the street is wet"},
+		{"either it snows or the street is wet and it rains", "it rains"},
+		{"either it snows or the street is wet and the street is wet", "the street is wet"},
+		{"either the street is wet or the street is wet and it rains", "it rains"},
+		{"either the street is wet or the street is wet and it snows", "it snows"},
+	} {
+		t.Run(tc.premise, func(t *testing.T) {
+			text := v26Argument([]string{tc.premise}, tc.conclusion)
+			_, r := CheckEntailmentGate(text)
+			if r.Passed {
+				t.Fatalf("invalid projection accepted: %s", text)
+			}
+			steps := map[int]NumberedArgumentStep{1: {Number: 1, Statement: tc.premise}}
+			if gateDescriptions(NumberedArgumentStep{Number: 2, Statement: tc.conclusion, Citations: []int{1}}, steps).Passed {
+				t.Fatal("description fallback accepted invalid projection")
+			}
+		})
+	}
+}
+
+func TestCatalogV27PredicateTermRegression(t *testing.T) {
+	for _, tail := range []string{"is wet or it rains", "is wet and it rains", "wobbles", "signed"} {
+		if f, err := descriptionPredication(tail); err == nil {
+			t.Errorf("non-atomic or opaque tail %q accepted as %s", tail, f.Render())
+		}
+	}
+	for _, tail := range []string{"is wet", "is not wet", "wrote Ivanhoe", "is identical to Scott"} {
+		if _, err := descriptionPredication(normalizeClause(tail)); err != nil {
+			t.Errorf("term-bearing tail %q: %v", tail, err)
+		}
+	}
+	// Explicit parentheses preserve the disjunction: its right conjunct cannot
+	// be projected through the disjunction even with a real description term.
+	text := v26Argument([]string{"(it rains) or ((the street is wet) and (it snows))"}, "it snows")
+	_, r := CheckEntailmentGate(text)
+	if r.Passed {
+		t.Fatal("parenthesized disjunction projected a conjunct")
+	}
+}

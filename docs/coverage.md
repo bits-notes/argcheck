@@ -487,6 +487,12 @@ and unrestricted English remain outside this extension; write explicit FOL
 intermediate lines. At most 16 readings per compound and 12 distinct clauses
 per fallback step are considered.
 
+The fallback requires a real witness term in an atomic predication (or its
+negation); an opaque zero-place clause is not a description predicate. Binary
+conjunctions and disjunctions in this fallback require parentheses around both
+operands. Readable `either`, `both that`, and biconditional scaffolds remain
+with the legacy gate, so description expansion cannot change their scope.
+
 **Present King of France.** `The present king of France is not bald` admits
 both existence/uniqueness with negative predication (wide) and negation of
 the entire positive description (narrow). The description fallback requires
