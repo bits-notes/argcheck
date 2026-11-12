@@ -63,6 +63,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	jsonOut := flags.Bool("json", false, "print machine-readable JSON")
 	prod := flags.Bool("prod", false, "check against the remote validate endpoint (MCP)")
 	both := flags.Bool("both", false, "check locally and on prod; exit 3 if they disagree")
+	version := flags.Bool("version", false, "print the catalog and build version and exit")
 	forms := flags.Bool("forms", false, "list the accepted inference forms and exit")
 	proxyURL := flags.String("proxy", defaultProxyURL, "remote validate endpoint (MCP) URL")
 	flags.Usage = func() {
@@ -82,6 +83,10 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
 	}
 	if err := flags.Parse(args); err != nil {
 		return exitError
+	}
+	if *version {
+		fmt.Fprintf(stdout, "entailment gate catalog %s (%s)\n", validation.EntailmentGateCatalogVersion, localVersion())
+		return exitValid
 	}
 	if *forms {
 		fmt.Fprintf(stdout, "entailment gate catalog %s (%s)\n", validation.EntailmentGateCatalogVersion, localVersion())
@@ -224,6 +229,9 @@ func localVersion() string {
 		}
 	}
 	if revision == "" {
+		if info.Main.Version != "" && info.Main.Version != "(devel)" {
+			return "argcheck@" + info.Main.Version
+		}
 		return "argcheck@unknown (build with go build, not go run)"
 	}
 	if len(revision) > 7 {

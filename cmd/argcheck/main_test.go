@@ -62,7 +62,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v27", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v28", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -166,5 +166,22 @@ func TestArgcheckCounterfactualNotes(t *testing.T) {
 				t.Fatalf("missing plain note %q: %s", tc.note, out)
 			}
 		}
+	}
+}
+
+func TestArgcheckVersion(t *testing.T) {
+	old := commit
+	t.Cleanup(func() { commit = old })
+	commit = "v28-test-commit"
+	code, out := runArgcheck(t, "", "--version")
+	if code != exitValid || !strings.Contains(out, "catalog v28") || !strings.Contains(out, "argcheck@v28-test-commit") {
+		t.Fatalf("%d: %s", code, out)
+	}
+	if code, _ := runArgcheck(t, "", "--version-typo"); code != exitError {
+		t.Fatalf("unknown flag returned %d", code)
+	}
+	commit = ""
+	if got := localVersion(); !strings.HasPrefix(got, "argcheck@") {
+		t.Fatal(got)
 	}
 }
