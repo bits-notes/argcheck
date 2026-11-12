@@ -63,7 +63,6 @@ func checkNumberedArgumentScope(arg NumberedArgument) Result {
 	blocks := map[int]numberedSubproof{}
 	owners := map[int]int{}
 	active := []int{0}
-	started := false
 	for index, s := range arg.Steps {
 		if s.Number != index+1 {
 			return fail("step %d is not sequential (expected %d)", s.Number, index+1)
@@ -93,11 +92,9 @@ func checkNumberedArgumentScope(arg NumberedArgument) Result {
 			return fail("step %d increases depth without an assumption", s.Number)
 		}
 		if s.Kind == numberedArgumentStepPremise {
-			if s.Depth != 0 || started {
-				return fail("step %d premise must be at depth 0 before the first conclusion or assumption", s.Number)
+			if s.Depth != 0 {
+				return fail("step %d premise must be at depth 0", s.Number)
 			}
-		} else {
-			started = true
 		}
 		owners[s.Number] = active[len(active)-1]
 	}

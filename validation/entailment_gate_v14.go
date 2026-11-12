@@ -215,6 +215,13 @@ func fitchFreshName(name string, start int, conclusion NumberedArgumentStep, ste
 			return fmt.Sprintf("fresh name %q at step %d already occurs in earlier step %d", name, start, n)
 		}
 	}
+	// v28 permits later root premises. They must not smuggle an eigenname
+	// into the existential premise used to discharge an earlier witness block.
+	for n := start; n < conclusion.Number; n++ {
+		if steps[n].Kind == numberedArgumentStepPremise && contains(steps[n].Statement) {
+			return fmt.Sprintf("fresh name %q from step %d occurs in open premise %d", name, start, n)
+		}
+	}
 	if contains(conclusion.Statement) {
 		return fmt.Sprintf("fresh name %q from step %d occurs in conclusion step %d", name, start, conclusion.Number)
 	}

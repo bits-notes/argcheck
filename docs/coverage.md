@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v27)
+# Entailment Gate — Coverage and Known Limits (catalog v28)
 
 **Type:** reference
-**Status:** current as of catalog v27 (2026-11-11)
+**Status:** current as of catalog v28 (2026-11-11)
 
 
 The gate checks whether each step of a numbered argument is an instance of a
@@ -523,3 +523,70 @@ soundness. A read-only corpus scan supplied 40 sentences from 38 source files,
 20 for each requested phrase pattern. Each is checked under modus ponens and
 an unrelated-premise rejection, comparing complete v26/v27 step reports.
 The source index records corpus-relative paths and line numbers.
+
+## v28: schematic substitution and premise placement
+
+The form list is unchanged: these are extensions of identity substitution and
+schematic modus ponens. Historical successful certificates retain priority.
+
+Bare-and schematic antecedents now accept up to **ten conjuncts**, with one
+used cited premise per conjunct. The matcher binds in antecedent order and
+backtracks immediately on incompatible premises instead of allocating every
+premise permutation. Repeated category conjuncts and `from Y` retain their
+verbatim meanings. Unsplit `and` tokens can remain inside a conjunct if its
+whole text matches a cited premise. Plain partition enumeration retains its
+12-boundary bound. Existing explicit `, and it is the case that` scaffolds
+retain their older supported lengths. A failed branch names its first unmatched
+conjunct and the binding in force; diagnostics select the branch with most
+matched conjuncts, deterministically. Exceeding the bare-and conjunct limit
+reports `antecedent has N conjuncts; the limit is 10`.
+
+`U`, `V`, and `W` join `X`, `Y`, and `Z` for schematic conditional instantiation.
+The original alphabet is tried first, preserving old certificates that use the
+new letters literally. Otherwise the extended alphabet requires the same
+binding everywhere and forbids an unbound consequent variable. This extension
+does not change explicit lowercase FOL binders or existential-placeholder syntax.
+
+The identity fallback accepts `is identical with` as well as `is identical to`.
+It recognizes whole gerund terms and coordinated proper names stipulated by an
+identity, in a copular subject or a terminal object of the controlled transitive
+register (`deserves`, `admires`, `praised`, `praises`, `helps`, `helped`,
+`receives help from`). For example, `Standing as an equal` can replace
+`being recognized as a peer` as the object of `Every citizen deserves ...`.
+Coordinated proper names require capitalized words in each coordinand.
+
+The fallback replaces a complete term, never a predicate or part of a longer
+word/name. It retains quotation, attitude, sentential modal and bound-definite
+safeguards. Bare adjectival `necessary`/`possible` conjuncts (optionally modified
+by `not`, `always`, `often`, or `sometimes`) are read as predicates of the
+subject, allowing `Ada is necessary and often obligatory`; this does not expose
+names inside `It is necessary that ...`. The new fallback requires one complete
+term occurrence on each side. Historical all-occurrence and structured FOL
+identity rules retain their existing behavior, including selective substitution
+where the structured rule explicitly permits it.
+
+Root premises may follow inferences or completed Fitch subproofs. Citations
+must still point backward and obey subproof visibility. Ordinary premises cannot
+be inserted at a nonzero proof depth. Fresh-name checking also scans later open
+premises before discharge: a late existential containing the witness name must
+not license a circular existential elimination.
+
+**Legacy negation decision A (keep).** The historical clausal reading of
+`the F is not G` remains deliberate. In particular, explicit
+`not (the F is G)` still licenses that surface wording under the old certificate.
+The Russellian description-wide reading instead asserts
+`∃x(Fx ∧ ∀y(Fy → y=x) ∧ ¬Gx)`. In a nonempty model with **no F**, the historical
+clausal negation is true and that Russellian reading is false. The inherited
+negation regression and its independent finite countermodel remain pinned;
+v28 does not retroactively impose the stronger reading. Concluding existence
+of an F from the narrow negation remains rejected.
+
+Verification compares the new regression fixtures against untouched v27 commit
+`f9f0042`, plus targeted historical tests. The supplied negative-star and
+shared-category/`from Y` examples already pass v27; they are preservation pins.
+New identity exercises have manually assigned meanings checked by the existing
+finite-model oracle, domains 1–3. The six-to-ten-conjunct schemas also receive
+exhaustive propositional truth-table checks, and repeated-category substitution
+and late-premise eigenname rejection receive independent finite-model checks.
+These are bounded soundness checks, not an unbounded proof. Full-suite and
+corpus validation are reserved for the caller's host run.

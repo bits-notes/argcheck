@@ -23,6 +23,9 @@ const (
 )
 
 var schematicVariableMarkers = map[rune]rune{
+	'U': '\u241a',
+	'V': '\u241b',
+	'W': '\u241c',
 	'X': schematicVariableMarkerX,
 	'Y': schematicVariableMarkerY,
 	'Z': schematicVariableMarkerZ,
@@ -326,9 +329,8 @@ func conjunctiveAntecedentCandidatesPreservingCase(statement string, partCount i
 	for _, conjunction := range conjunctionCandidatesPreservingCase(statement) {
 		result = append(result, []string{conjunction.left, conjunction.right})
 	}
-	// The schematic evaluator also enumerates premise assignments (k!).
-	// Bound the additional plain-and search independently of legacy forms.
-	if partCount <= 5 {
+	// v28 matches incrementally, pruning incompatible bindings before branching.
+	if partCount <= schematicConjunctLimit {
 		result = append(result, plainAndPartitions(statement, partCount)...)
 	}
 	return result
@@ -657,12 +659,15 @@ func conjunctionPartitions(statement string, partCount int) [][]string {
 }
 
 func replaceSchematicVariables(value string) (string, schematicVariableCounts) {
+	return replaceSchematicAlphabet(value, false)
+}
+func replaceSchematicAlphabet(value string, extended bool) (string, schematicVariableCounts) {
 	runes := []rune(value)
 	var result strings.Builder
 	counts := schematicVariableCounts{}
 	for index, current := range runes {
 		marker, isVariable := schematicVariableMarkers[current]
-		if isVariable &&
+		if isVariable && (extended || current >= 'X') &&
 			(index == 0 || !unicode.IsLetter(runes[index-1])) &&
 			(index == len(runes)-1 || !unicode.IsLetter(runes[index+1])) {
 			result.WriteRune(marker)
@@ -990,6 +995,14 @@ func evaluateConjunctiveModusPonensCandidate(
 }
 
 func matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	old := matchSchematicConjunctiveModusPonensAlphabet(premises, conclusion, schematicTemplate)
+	if old.matched {
+		return old
+	}
+	return betterOutcome(old, matchSchematicConjunctiveModusPonensAlphabet(premises, conclusion, extendedSchematicTemplate))
+}
+
+func matchSchematicConjunctiveModusPonensAlphabet(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, templateOf func(string) (string, schematicVariableCounts)) schemaMatchOutcome {
 	if len(premises) < 3 {
 		return schemaMatchOutcome{}
 	}
@@ -997,8 +1010,8 @@ func matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, concl
 	best := schemaMatchOutcome{}
 	for conditionalIndex, premise := range premises {
 		for _, conditional := range conditionalCandidatesPreservingCase(premise.Statement) {
-			antecedentTemplate, antecedentVariables := schematicTemplate(conditional.left)
-			consequentTemplate, consequentVariables := schematicTemplate(conditional.right)
+			antecedentTemplate, antecedentVariables := templateOf(conditional.left)
+			consequentTemplate, consequentVariables := templateOf(conditional.right)
 			if len(antecedentVariables) == 0 && len(consequentVariables) == 0 {
 				continue
 			}
@@ -1013,6 +1026,12 @@ func matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, concl
 				continue
 			}
 
+			if len(premises)-1 > schematicConjunctLimit && !strings.Contains(strings.ToLower(conditional.left), ", and "+clauseWrapper) && strings.Count(strings.ToLower(conditional.left), " and ")+1 > schematicConjunctLimit {
+				candidate.score = len(premises)
+				candidate.mismatch = fmt.Sprintf("antecedent has %d conjuncts; the limit is %d", strings.Count(strings.ToLower(conditional.left), " and ")+1, schematicConjunctLimit)
+				best = betterOutcome(best, candidate)
+				continue
+			}
 			conjunctiveCandidates := conjunctiveAntecedentCandidatesPreservingCase(conditional.left, len(premises)-1)
 			if len(conjunctiveCandidates) == 0 {
 				candidate.mismatch = fmt.Sprintf(
@@ -1027,7 +1046,7 @@ func matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, concl
 			for _, conjuncts := range conjunctiveCandidates {
 				conjunctTemplates := make([]string, len(conjuncts))
 				for index, conjunct := range conjuncts {
-					conjunctTemplates[index], _ = schematicTemplate(conjunct)
+					conjunctTemplates[index], _ = templateOf(conjunct)
 				}
 				candidate = evaluateSchematicConjunctiveModusPonensCandidate(
 					premises,
@@ -1042,6 +1061,9 @@ func matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, concl
 					return best
 				}
 			}
+			if boundaries := strings.Count(strings.ToLower(conditional.left), " and "); boundaries > 12 && !strings.Contains(strings.ToLower(conditional.left), ", and "+clauseWrapper) {
+				best = betterOutcome(best, schemaMatchOutcome{traction: true, score: len(premises), mismatch: fmt.Sprintf("antecedent has %d 'and' boundaries; the partition limit is 12; use explicit conjunct wrappers", boundaries)})
+			}
 		}
 	}
 	return best
@@ -1055,134 +1077,7 @@ func evaluateSchematicConjunctiveModusPonensCandidate(
 	conjunctTemplates []string,
 	conclusion NumberedArgumentStep,
 ) schemaMatchOutcome {
-	conditionalPremise := premises[conditionalIndex]
-	assignments := schematicPremiseAssignments(premises, conditionalIndex, len(conjunctTemplates))
-	if len(assignments) == 0 {
-		return schemaMatchOutcome{
-			traction: true,
-			mismatch: fmt.Sprintf(
-				"premise %d antecedent has %d conjuncts but only %d other cited premises",
-				conditionalPremise.Number,
-				len(conjunctTemplates),
-				len(premises)-1,
-			),
-		}
-	}
-
-	best := schemaMatchOutcome{}
-	for _, assignment := range assignments {
-		states := []schematicSubstitution{{}}
-		candidate := schemaMatchOutcome{traction: true}
-		for conjunctIndex, premiseIndex := range assignment {
-			nextStates := make([]schematicSubstitution, 0)
-			for _, state := range states {
-				nextStates = append(
-					nextStates,
-					unifySchematicTemplate(conjunctTemplates[conjunctIndex], premises[premiseIndex].Statement, state)...,
-				)
-			}
-			if len(nextStates) == 0 {
-				candidate.mismatch = fmt.Sprintf(
-					"premise %d antecedent conjunct %q does not instantiate cited premise %d %q under one consistent substitution",
-					conditionalPremise.Number,
-					normalizeClause(conjunctTemplates[conjunctIndex]),
-					premises[premiseIndex].Number,
-					normalizeClause(premises[premiseIndex].Statement),
-				)
-				states = nil
-				break
-			}
-			states = nextStates
-			candidate.score++
-		}
-
-		if len(states) == 0 {
-			best = betterOutcome(best, candidate)
-			continue
-		}
-
-		for _, state := range states {
-			instantiatedAntecedent, antecedentOK := instantiateSchematicTemplate(antecedentTemplate, state)
-			instantiatedConsequent, consequentOK := instantiateSchematicTemplate(consequentTemplate, state)
-			if !antecedentOK || !consequentOK {
-				continue
-			}
-			stateCandidate := schemaMatchOutcome{traction: true, score: len(conjunctTemplates)}
-			consequentOutcome := evaluateIdentities(clauseIdentity{
-				fmt.Sprintf("premise %d instantiated consequent", conditionalPremise.Number), instantiatedConsequent,
-				fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
-			})
-			appendOutcome(&stateCandidate, consequentOutcome)
-
-			unused := firstUnusedSchematicPremise(premises, conditionalIndex, assignment)
-			if stateCandidate.mismatch == "" && unused.Number != 0 {
-				stateCandidate.mismatch = fmt.Sprintf(
-					"cited premise %d %q is unused by premise %d conjunctive antecedent %q",
-					unused.Number,
-					normalizeClause(unused.Statement),
-					conditionalPremise.Number,
-					normalizeClause(instantiatedAntecedent),
-				)
-			}
-			stateCandidate.matched = stateCandidate.mismatch == "" && len(conjunctTemplates)+1 == len(premises)
-			best = betterOutcome(best, stateCandidate)
-			if best.matched {
-				return best
-			}
-		}
-	}
-	return best
-}
-
-func schematicPremiseAssignments(premises []NumberedArgumentStep, conditionalIndex, conjunctCount int) [][]int {
-	available := make([]int, 0, len(premises)-1)
-	for index, premise := range premises {
-		if index != conditionalIndex && premise.Number != premises[conditionalIndex].Number {
-			available = append(available, index)
-		}
-	}
-	if conjunctCount > len(available) {
-		return nil
-	}
-
-	result := make([][]int, 0)
-	var enumerate func([]int, []bool, map[int]bool)
-	enumerate = func(current []int, used []bool, usedNumbers map[int]bool) {
-		if len(current) == conjunctCount {
-			result = append(result, append([]int(nil), current...))
-			return
-		}
-		for availableIndex, premiseIndex := range available {
-			if used[availableIndex] || usedNumbers[premises[premiseIndex].Number] {
-				continue
-			}
-			used[availableIndex] = true
-			usedNumbers[premises[premiseIndex].Number] = true
-			enumerate(append(current, premiseIndex), used, usedNumbers)
-			delete(usedNumbers, premises[premiseIndex].Number)
-			used[availableIndex] = false
-		}
-	}
-	enumerate(nil, make([]bool, len(available)), map[int]bool{premises[conditionalIndex].Number: true})
-	return result
-}
-
-func firstUnusedSchematicPremise(
-	premises []NumberedArgumentStep,
-	conditionalIndex int,
-	assignment []int,
-) NumberedArgumentStep {
-	used := make([]bool, len(premises))
-	used[conditionalIndex] = true
-	for _, premiseIndex := range assignment {
-		used[premiseIndex] = true
-	}
-	for premiseIndex, premise := range premises {
-		if !used[premiseIndex] {
-			return premise
-		}
-	}
-	return NumberedArgumentStep{}
+	return searchSchematicConjuncts(premises, conditionalIndex, antecedentTemplate, consequentTemplate, conjunctTemplates, conclusion)
 }
 
 func matchModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
@@ -1674,10 +1569,18 @@ func stripOptionalIndefiniteArticle(value string) string {
 // therefore B(sigma), where vars are standalone uppercase X, Y, or Z and one
 // consistent non-empty substitution verifies every occurrence.
 func matchSchematicInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	old := matchSchematicInstantiationAlphabet(premises, conclusion, schematicTemplate)
+	if old.matched {
+		return old
+	}
+	return betterOutcome(old, matchSchematicInstantiationAlphabet(premises, conclusion, extendedSchematicTemplate))
+}
+
+func matchSchematicInstantiationAlphabet(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, templateOf func(string) (string, schematicVariableCounts)) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, conditional := range conditionalCandidatesPreservingCase(premises[0].Statement) {
-		antecedentTemplate, antecedentVariables := schematicTemplate(conditional.left)
-		consequentTemplate, consequentVariables := schematicTemplate(conditional.right)
+		antecedentTemplate, antecedentVariables := templateOf(conditional.left)
+		consequentTemplate, consequentVariables := templateOf(conditional.right)
 		candidate := schemaMatchOutcome{traction: true}
 		if len(antecedentVariables) == 0 || len(consequentVariables) == 0 {
 			switch {
@@ -1707,9 +1610,9 @@ func matchSchematicInstantiation(premises []NumberedArgumentStep, conclusion Num
 		if len(substitutions) == 0 {
 			candidate.score = 1
 			candidate.mismatch = fmt.Sprintf(
-				"premise %d does not provide one consistent non-empty substitution for premise %d antecedent template",
-				premises[1].Number,
+				"premise %d antecedent conjunct %q has no matching cited premise under binding {}",
 				premises[0].Number,
+				schematicDisplay(antecedentTemplate),
 			)
 			best = betterOutcome(best, candidate)
 			continue

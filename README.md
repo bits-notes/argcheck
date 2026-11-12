@@ -3,7 +3,7 @@
 argcheck checks the syntactically transparent validity of numbered arguments.
 It runs deterministic syntax and entailment checks in Go, with no LLM and no
 network access in local mode. Each conclusion must match an accepted inference
-form using its cited steps. The current catalog is v27; `argcheck --forms` lists
+form using its cited steps. The current catalog is v28; `argcheck --forms` lists
 its forms.
 
 A passing result establishes validity under that catalog. It does not establish
@@ -76,10 +76,11 @@ argcheck < argument.txt
 cat argument.txt | argcheck -
 argcheck --json argument.txt
 argcheck --forms
+argcheck --version
 ```
 
 Text output reports `VALID` or `INVALID`, the catalog and build stamp
-(`gate catalog v27; local argcheck@<commit>`), and each conclusion's matched
+(`gate catalog v28; local argcheck@<commit>`), and each conclusion's matched
 form or mismatch. Fitch input is echoed before the verdict. An inert-citation
 hint identifies extra citations whose removal would let a known form pass.
 `--json` returns structured checks, details, and provenance.
@@ -156,9 +157,10 @@ state the connection as a visible identity or conditional premise.
   uses; extra citations can cause rejection.
 - Copular parsing splits at the first ` is `. Give a short name to a subject
   containing an embedded `is`, then use that name consistently.
-- An `and` inside a predicate can be parsed as conjunction. Examples appended
-  with `such as` can prevent placeholder binding; keep examples outside the
-  numbered argument unless they are separate premises.
+- Identity substitution supports whole gerund terms and coordinated proper names
+  in its controlled argument positions, including predicates containing `and`.
+  Examples appended with `such as` can still prevent placeholder binding; keep
+  examples outside the numbered argument unless they are separate premises.
 
 When a step fails, inspect the quoted mismatch, correct wording or citations,
 and rerun. Test an unfamiliar shape in a small argument first. Do not silently
@@ -167,7 +169,7 @@ inferential link should be a visible premise.
 
 ### Toolkit for general rules
 
-Schematic conditionals can bind `X`, `Y`, and `Z` to terms or whole clauses:
+Schematic conditionals can bind `U`, `V`, `W`, `X`, `Y`, and `Z` to terms or whole clauses:
 `If X depends on a prior, then X is unfit for science.` instantiates against
 `Bayesian inference depends on a prior.` Possessives (`X's`), conjunctive
 antecedents, and nested conditionals work. Placeholders must agree in number
@@ -398,3 +400,17 @@ particular, its old narrow-to-surface-negation certificate is preserved even
 though it does not establish the new wide reading. The every-reading guarantee
 applies to the new fallback, not retroactively to historical certificates.
 See [coverage and limits](docs/coverage.md#v27-russellian-definite-descriptions).
+
+### Substitution and CLI provenance (v28)
+
+Schematic conjunctive modus ponens accepts six through ten bare-and conjuncts
+and the additional placeholders `U`, `V`, and `W`. Failures report the unmatched
+conjunct and current binding. Explicit identity substitution supports whole
+gerund terms, coordinated proper names, and `identical with` in controlled
+argument positions. Root premises can follow inferences, provided citations
+still point backward; Fitch visibility and fresh-name safeguards remain active.
+
+`argcheck --version` prints the catalog and build commit without reading input.
+The install script already embeds the commit; module version or `unknown` is
+used when build provenance is unavailable. The legacy narrow-negation choice
+is unchanged. See [v28 coverage and limits](docs/coverage.md#v28-schematic-substitution-and-premise-placement).

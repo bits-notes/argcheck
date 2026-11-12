@@ -37,7 +37,7 @@ var v21AcceptedCases = []v20GateCase{
 }
 
 func TestCatalogV21(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v27" {
+	if EntailmentGateCatalogVersion != "v28" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range v21AcceptedCases {

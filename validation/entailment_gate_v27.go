@@ -8,7 +8,7 @@ import (
 
 // Descriptions are a private fallback. Keep the v26 verdict and report whenever
 // it succeeds, and keep its diagnostic whenever this extension declines.
-func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+func gateConclusionStepV27(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	old := gateConclusionStepV26(c, steps)
 	if old.Passed {
 		return old
