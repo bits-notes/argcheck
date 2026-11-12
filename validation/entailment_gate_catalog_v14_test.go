@@ -101,7 +101,7 @@ func TestNumberedArgumentFitchScope(t *testing.T) {
 		{"jump", "| | 1. Suppose it rains.\n2. Therefore, it rains. [1]", "step 1 increases depth"},
 		{"no assumption", "1. it rains.\n| 2. Therefore, it rains. [1]\n3. Therefore, it rains. [1]", "step 2 increases depth without"},
 		{"open block", "1. it rains.\n| 2. Suppose it rains.\n| 3. Therefore, it rains. [2]", "final step 3 must be at depth 0"},
-		{"late premise", fitchCP + "\n7. it snows.\n8. Therefore, it snows. [7]", "step 7 premise"},
+		// "late premise" moved: v28 accepts a root premise after an inference (TestCatalogV28PremiseOrder).
 		{"sibling leak", strings.Replace(fitchCases, "[3,6]", "[5]", 1), "step 7 cites 5, which is inside the closed subproof 4-5"},
 		{"range at wrong depth", strings.Replace(fitchExcludedMiddle, "[1-7]", "[2-4]", 1), "step 8 range 2-4"},
 		{"range reversed", strings.Replace(fitchCP, "[3-5]", "[5-3]", 1), "range 5-3 is reversed"},
