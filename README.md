@@ -297,7 +297,7 @@ one atom, quoted arguments are constants, and unquoted variables must be bound.
 use JSON escaping, and decoded names participate in eigenname freshness checks.
 These escapes preserve exact symbols and arity; they do not add paraphrase rules.
 The renderer uses them only when needed. Curly braces are distinct from citation
-brackets. This is still catalog **v25**, with no new inference form.
+brackets. These escapes arrived in catalog **v25** and added no new inference form.
 
 The legacy audit converts **3,550 of 6,386** distinct sentences both ways with
 zero conversion failures. All **116** final lexical/structural residuals are
