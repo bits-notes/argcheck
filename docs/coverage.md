@@ -59,7 +59,7 @@ These will not be added. The workaround is always a visible premise.
 
 ## Out of scope for the gate
 
-- **Soundness:** the gate never judges whether premises are true.
+- **Premise truth:** the gate never judges whether premises are true.
 - **Fidelity:** the gate never checks that an argument matches its source text.
 - **Bridge squish:** an ad hoc `If [premises], then [conclusion]` always passes.
   Passing shows validity of the encoding, not that the reasoning was
