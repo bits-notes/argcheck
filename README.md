@@ -75,14 +75,24 @@ argcheck argument.txt
 argcheck < argument.txt
 cat argument.txt | argcheck -
 argcheck --json argument.txt
+argcheck --quiet argument.txt
 argcheck --forms
 argcheck --version
 ```
 
 Text output reports `VALID` or `INVALID`, the catalog and build stamp
 (`gate catalog v28; local argcheck@<commit>`), and each conclusion's matched
-form or mismatch. Fitch input is echoed before the verdict. An inert-citation
+form or mismatch. The verdict is always the first line; Fitch input is echoed
+after the step report. An inert-citation
 hint identifies extra citations whose removal would let a known form pass.
+
+For scripts, use the exit code (0 valid, 1 invalid, 2 error, 3 divergent with
+`--both`) or `--quiet`, which prints only `VALID`, `INVALID` or `DIVERGENT`:
+
+```sh
+argcheck --quiet argument.txt          # VALID
+for f in args/*.txt; do argcheck --quiet "$f"; done | grep -c '^VALID$'
+```
 `--json` returns structured checks, details, and provenance.
 
 Remote comparison is opt-in:

@@ -185,3 +185,23 @@ func TestArgcheckVersion(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestArgcheckVerdictLineFirstWithSubproof(t *testing.T) {
+	const text = "1. If it rains, then it snows.\n| 2. Suppose it rains.\n| 3. Therefore, it snows. [1,2]\n4. Therefore, if it rains, then it snows. [2-3]"
+	code, out := runArgcheck(t, text)
+	if code != 0 || !strings.HasPrefix(out, "VALID  (") || !strings.Contains(out, "| 2. Suppose it rains.") {
+		t.Fatalf("code=%d out=%q", code, out)
+	}
+}
+
+func TestArgcheckQuiet(t *testing.T) {
+	const valid = "1. If it rains, then it snows.\n| 2. Suppose it rains.\n| 3. Therefore, it snows. [1,2]\n4. Therefore, if it rains, then it snows. [2-3]"
+	code, out := runArgcheck(t, valid, "--quiet")
+	if code != 0 || out != "VALID\n" {
+		t.Fatalf("valid: code=%d out=%q", code, out)
+	}
+	code, out = runArgcheck(t, "1. If it rains, then it snows.\n2. It snows.\n3. Therefore, it rains. [1,2]", "--quiet")
+	if code != 1 || out != "INVALID\n" {
+		t.Fatalf("invalid: code=%d out=%q", code, out)
+	}
+}

@@ -65,9 +65,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	both := flags.Bool("both", false, "check locally and on prod; exit 3 if they disagree")
 	version := flags.Bool("version", false, "print the catalog and build version and exit")
 	forms := flags.Bool("forms", false, "list the accepted inference forms and exit")
+	quiet := flags.Bool("quiet", false, "print only the verdict word (VALID or INVALID; DIVERGENT with --both on disagreement)")
 	proxyURL := flags.String("proxy", defaultProxyURL, "remote validate endpoint (MCP) URL")
 	flags.Usage = func() {
-		fmt.Fprintln(stderr, `usage: argcheck [--json] [--prod|--both] [file|-]
+		fmt.Fprintln(stderr, `usage: argcheck [--json|--quiet] [--prod|--both] [file|-]
 
 Reads a numbered argument (file, or stdin) in the gate's format:
   1. Premise statement.
@@ -136,11 +137,17 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
 			fmt.Fprintln(stderr, "argcheck:", err)
 			return exitError
 		}
-	} else {
-		if strings.Contains(argument, "| ") {
-			fmt.Fprintln(stdout, argument)
-			fmt.Fprintln(stdout)
+	} else if *quiet {
+		switch {
+		case divergent:
+			fmt.Fprintln(stdout, "DIVERGENT")
+		case verdicts[len(verdicts)-1].Valid:
+			fmt.Fprintln(stdout, "VALID")
+		default:
+			fmt.Fprintln(stdout, "INVALID")
 		}
+	} else {
+		// The verdict line always comes first, so `head -1` is the verdict.
 		for index, v := range verdicts {
 			if index > 0 {
 				fmt.Fprintln(stdout)
@@ -149,6 +156,10 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
 		}
 		if divergent {
 			fmt.Fprintln(stdout, "\nDIVERGENT: local and prod disagree; prod is authoritative (likely a different commit).")
+		}
+		if strings.Contains(argument, "| ") {
+			fmt.Fprintln(stdout)
+			fmt.Fprintln(stdout, argument)
 		}
 	}
 
