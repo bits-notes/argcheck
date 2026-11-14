@@ -64,12 +64,14 @@ func (v entailmentGateValidator) Validate(ctx context.Context, output string) Re
 	default:
 	}
 
-	_, result := checkEntailmentGate(output, v.options)
+	report, result := checkEntailmentGate(output, v.options)
+	observeGateReport(report)
 	return result
 }
 
 // CheckEntailmentGate parses, expands, and gates a numbered argument. At most
-// one options value may be supplied.
+// one options value may be supplied. Each gated step is passed to
+// gateStepObserver once, just before this returns.
 func CheckEntailmentGate(output string, options ...EntailmentGateOptions) (EntailmentGateReport, Result) {
 	if len(options) > 1 {
 		return EntailmentGateReport{}, Result{Passed: false, Message: "entailment_gate accepts at most one options value"}
@@ -79,7 +81,8 @@ func CheckEntailmentGate(output string, options ...EntailmentGateOptions) (Entai
 		parseOptions.AllowSingleFencedBlock = options[0].AllowSingleFencedBlock
 		parseOptions.AllowBlankLines = options[0].AllowBlankLines
 	}
-	return checkEntailmentGate(output, parseOptions)
+	report, result := checkEntailmentGate(output, parseOptions)
+	return observeGateReport(report), result
 }
 
 func checkEntailmentGate(output string, options numberedArgumentOptions) (EntailmentGateReport, Result) {
@@ -95,7 +98,8 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 			Message: fmt.Sprintf("entailment gate bridge expansion failed: %v", err),
 		}
 	}
-	report := GateNumberedArgument(expanded)
+	// Observed by CheckEntailmentGate or the builtin validator, not here.
+	report := gateNumberedArgument(expanded, false)
 	passedSteps := 0
 	for _, step := range report.Steps {
 		if step.Passed {
@@ -131,14 +135,23 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 // GateNumberedArgument checks every conclusion step of an already-expanded
 // numbered argument.
 func GateNumberedArgument(arg NumberedArgument) EntailmentGateReport {
+	return gateNumberedArgument(arg, true)
+}
+
+// gateNumberedArgument builds the step report. Scope failures and
+// explicit-variable FOL parse failures return a one-step report. observe is
+// false when CheckEntailmentGate or the builtin validator reports those steps.
+func gateNumberedArgument(arg NumberedArgument, observe bool) EntailmentGateReport {
 	if result := checkNumberedArgumentScope(arg); !result.Passed {
-		return EntailmentGateReport{Passed: false, Steps: []EntailmentGateStepReport{{NearestForm: "scope", Mismatch: result.Message}}}
+		report := EntailmentGateReport{Passed: false, Steps: []EntailmentGateStepReport{{NearestForm: "scope", Mismatch: result.Message}}}
+		return finishGateReport(report, observe)
 	}
 	stepsByNumber := make(map[int]NumberedArgumentStep, len(arg.Steps))
 	for _, step := range arg.Steps {
 		if folExplicit(step.Statement) {
 			if _, err := parseFOL(step.Statement); err != nil {
-				return EntailmentGateReport{Passed: false, Steps: []EntailmentGateStepReport{{Step: step.Number, NearestForm: "explicit-variable FOL", Mismatch: err.Error()}}}
+				report := EntailmentGateReport{Passed: false, Steps: []EntailmentGateStepReport{{Step: step.Number, NearestForm: "explicit-variable FOL", Mismatch: err.Error()}}}
+				return finishGateReport(report, observe)
 			}
 		}
 		stepsByNumber[step.Number] = step
@@ -155,7 +168,14 @@ func GateNumberedArgument(arg NumberedArgument) EntailmentGateReport {
 			report.Passed = false
 		}
 	}
-	return report
+	return finishGateReport(report, observe)
+}
+
+func finishGateReport(report EntailmentGateReport, observe bool) EntailmentGateReport {
+	if !observe {
+		return report
+	}
+	return observeGateReport(report)
 }
 
 // NumberedArgumentInertCitations finds gate-failing conclusions for which a
