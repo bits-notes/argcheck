@@ -1,7 +1,12 @@
 # Entailment Gate — Coverage and Known Limits (catalog v28)
 
 **Type:** reference
-**Status:** current as of catalog v28 (2026-11-11)
+**Status:** current as of catalog v28
+
+Coverage claim: complete for propositional logic and for function-free
+first-order logic with identity, within a controlled English (sentences with one
+reading); a bounded finite-model oracle tests that the checker never accepts an
+invalid argument; this is not proved.
 
 
 The gate checks whether each step of a numbered argument is an instance of a
@@ -65,6 +70,35 @@ These will not be added. The workaround is always a visible premise.
   Passing shows validity of the encoding, not that the reasoning was
   reconstructed.
 
+## Writing so the gate can see the inference
+
+Clauses match word for word after limited normalization (case, whitespace,
+contractions, optional `then` after `if`, and simple elided copular
+disjunctions). Synonym and paraphrase tolerance are outside the gate: if two
+wordings should count as equivalent, state that connection as a visible identity
+or conditional premise.
+
+- **Canonical connectives:** write sentential negation as `It is not the case
+  that X.`, disjunction as `Either X or Y.`, conjunction as `X and Y.`, and
+  parenthesize nested biconditional sides as `(X) if and only if (Y)` (optionally
+  prefixed by `It is the case that`). `It holds that` is ordinary text.
+- **Quantifiers and agreement:** for singular instantiation use `Every man is
+  mortal.` with `The traveler is a man.` (`All men are mortal.` does not match
+  singular `a man`; use `All A are B.` + `All B are C.` for class syllogisms).
+  Schematic placeholders (`U`, `V`, `W`, `X`, `Y`, `Z`) must agree in number with
+  their bindings (`If X are fixed, ...` for plural subjects), and possessives
+  (`X's`) and nested conditionals work.
+- **Copular parsing and examples:** copular sentences split at their first ` is `,
+  so give a short name to any subject containing an embedded `is` and state the
+  identity as a premise. Keep parenthetical `such as ...` examples outside
+  premises so they do not block placeholder binding.
+- **General rules over ad hoc bridges:** to conclude one alternative rather than
+  another, state the dichotomy (`Either we should use X or we should use Y.`),
+  refute one side, and apply disjunctive syllogism. Replace ad hoc bridge
+  conditionals with the general schematic or universal premise the argument
+  relies on. See [`rules.md`](rules.md) for all 119 inference forms and worked
+  examples.
+
 ## v22: n-place relations
 
 Flat relations may have three, four, or more ordered argument positions. A
@@ -108,8 +142,8 @@ unclear. Existing two-place and copular forms retain their previous grammar.
 The finite-model oracle independently translates the exercises to first-order
 formulas and exhaustively searches domains of sizes 1–3, allowing empty classes
 and co-denoting names. Boolean unit propagation prunes the search without
-sampling models. This bounded check is evidence of soundness, not a proof over
-unbounded domains.
+sampling models. This bounded check tests that the checker never accepts an
+invalid argument; this is not proved over unbounded domains.
 
 ## v23: relative clauses
 
@@ -302,7 +336,8 @@ The audit still requires the public gate to accept both directions. Conversions
 of that-clause or opaque labels do not establish their intended English semantics.
 
 The escape syntax selects the explicit parser; existing prose recognizers and
-inference forms are unchanged. The catalog remains **v25**. Tests cover capture,
+inference forms are unchanged (introduced in v25 without adding an inference
+form; the current catalog is **v28**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -375,7 +410,8 @@ legacy bridge audit, rule inventory, bounded oracle, and this proof sketch:
    an accepted finite derivation, not an automatic proof-search algorithm.
 
 The finite tests support this construction and catch implementation mistakes;
-they are not themselves a proof of completeness or unbounded soundness. The
+they test that the checker never accepts an invalid argument (tested, not
+proved), rather than proving completeness or validity over unbounded domains. The
 argument depends on the stated parser/AST correspondence and standard natural-
 deduction completeness, not on extrapolating a bounded oracle result.
 
@@ -393,22 +429,23 @@ Outside the claim:
   two-distinct-witness uniqueness bound. This adds a notation bridge, not a
   stronger logic. Explicit narrow negation is unambiguous; surface "the F is
   not G" remains outside this single-reading completeness claim. Historical
-  certificates retain their previous semantics and are not a Russellian
-  soundness guarantee (see the v27 compatibility exception below).
+  certificates retain their previous semantics rather than a retroactive
+  Russellian every-reading check (see the v27 compatibility exception below).
 - Modal, counterfactual, property and that-clause grammar are outside the
   function-free FOL claim. An opaque propositional letter carries no internal
   modal or attitude semantics.
 - Paraphrase remains a permanent non-goal. Zero-place atoms render verbatim;
   different normalized clauses remain independent propositional letters.
 
-Soundness evidence is bounded, **not a proof**: the finite-model oracle checks
-domains 1–3, empty predicate extensions, and co-denoting names. v24 checks a
-fixed 10/50 sample of every inventory rule, plus exercises and local Fitch
-obligations with eigenname closure. v25 adds bidirectional conversion samples
-and independently hand-built meanings for representative readable sentences,
-alongside ambiguity and near-miss rejections. The identical-AST criterion is
-sound by construction conditional on faithful parsing; the tests do not prove
-faithfulness for arbitrary English or soundness over all domain sizes.
+A bounded finite-model oracle tests that the checker never accepts an invalid
+argument; this is not proved: the oracle checks domains 1–3, empty predicate
+extensions, and co-denoting names. v24 checks a fixed 10/50 sample of every
+inventory rule, plus exercises and local Fitch obligations with eigenname
+closure. v25 adds bidirectional conversion samples and independently hand-built
+meanings for representative readable sentences, alongside ambiguity and
+near-miss rejections. The identical-AST criterion preserves truth conditional on
+faithful parsing; the tests do not prove faithfulness for arbitrary English or
+that the checker never accepts an invalid argument over all domain sizes.
 
 Bare opaque text containing an active bound-variable token remains conservatively
 rejected inside that scope. This does **not** block the claim: use a fresh binder.
@@ -440,19 +477,20 @@ recognized privately; historical lexical candidate sets are unchanged. Simple
 plural classes use a final-s spelling. Other morphology, nested count phrases,
 ambiguous scope, and general arithmetic require explicit formalization.
 
-Uniqueness requires membership in the counted class. The supplied b1 is INVALID
-as originally specified: it lacks
+Uniqueness requires membership in the counted class. Inferring `No person other
+than Scott wrote Waverley` from `Exactly one person wrote Waverley` and `Scott
+wrote Waverley` alone is INVALID because it lacks
 `Scott is a person`: a nonperson Scott and a distinct person may both write
 Waverley. The two-object countermodel forces rejection. Adding that membership
 as a separate cited premise (or in the cited ground conjunction) yields the
 intended VALID uniqueness step.
-The supplied b3 is supported; v27 additionally supports definite-description b2.
 
 The v26 tests check accepted local and discharged proof obligations over domains
 1–4, including empty extensions and co-denoting names, and compare all 15 count
 abbreviations against independently assembled identity formulas. Counts 4 and
-5 have vacuous lower-bound checks on smaller domains; these bounded checks do
-not establish unbounded soundness. Invalid exercises each require a countermodel.
+5 have vacuous lower-bound checks on smaller domains; these bounded checks test
+that the checker never accepts an invalid argument (tested, not proved). Invalid
+exercises each require a countermodel.
 
 Compatibility: existing successful proofs keep their historical schema and
 report; counting is a fallback for new inferences. Explicit out-of-range bounds
@@ -469,7 +507,7 @@ uses the latter universal-identity analysis. Production reuses v26's counting
 definition and checks syntactic rule instances; it performs no model search.
 
 Supported forms are description definition, substitution, introduction,
-elimination, uniqueness, and negation. The reference b2 passes. Introduction
+elimination, uniqueness, and negation. Introduction
 accepts existence-with-predication plus uniqueness, or a named member and its
 predication plus an at-most-one/exactly-one bound. Elimination returns the
 existential conjunct, uniqueness conjunct, existence alone, an exact count,
@@ -508,7 +546,7 @@ negation to surface "the F is not G" still passes: v26 treats these as ordinary
 clausal negation, whereas Russellian wide scope has a countermodel with no F.
 A regression test pins both this unchanged report and its independent
 Russellian countermodel. Thus legacy preservation and a retroactive universal
-Russellian soundness guarantee cannot both hold; v27 preserves legacy behavior
+Russellian validity check cannot both hold; v27 preserves legacy behavior
 as required. No description-specific error overrides an old VALID result.
 
 Opaque that-clauses, attitudes, modal and deontic contexts expose no substitutable
@@ -518,8 +556,8 @@ substitution, scope, unnamed witnesses, and changed restrictors.
 Validation includes 20 valid and nine invalid fresh exercises, independent
 finite-model checks over domains 1–3, 39 surface-reading equivalence checks
 over domains 1–4, and Fitch local/discharge obligations. Empty extensions and
-co-denoting constants are included; bounded checks do not prove unbounded
-soundness. A read-only corpus scan supplied 40 sentences from 38 source files,
+co-denoting constants are included; bounded checks test that the checker never
+accepts an invalid argument (tested, not proved). A read-only corpus scan supplied 40 sentences from 38 source files,
 20 for each requested phrase pattern. Each is checked under modus ponens and
 an unrelated-premise rejection, comparing complete v26/v27 step reports.
 The source index records corpus-relative paths and line numbers.
@@ -571,7 +609,7 @@ be inserted at a nonzero proof depth. Fresh-name checking also scans later open
 premises before discharge: a late existential containing the witness name must
 not license a circular existential elimination.
 
-**Legacy negation decision A (keep).** The historical clausal reading of
+**Legacy narrow negation.** The historical clausal reading of
 `the F is not G` remains deliberate. In particular, explicit
 `not (the F is G)` still licenses that surface wording under the old certificate.
 The Russellian description-wide reading instead asserts
@@ -582,11 +620,11 @@ v28 does not retroactively impose the stronger reading. Concluding existence
 of an F from the narrow negation remains rejected.
 
 Verification compares the new regression fixtures against untouched v27 commit
-`f9f0042`, plus targeted historical tests. The supplied negative-star and
+`f9f0042`, plus targeted historical tests. The negative-star and
 shared-category/`from Y` examples already pass v27; they are preservation pins.
 New identity exercises have manually assigned meanings checked by the existing
 finite-model oracle, domains 1–3. The six-to-ten-conjunct schemas also receive
 exhaustive propositional truth-table checks, and repeated-category substitution
 and late-premise eigenname rejection receive independent finite-model checks.
-These are bounded soundness checks, not an unbounded proof. Full-suite and
-corpus validation are reserved for the caller's host run.
+These bounded checks test that the checker never accepts an invalid argument;
+this is not proved.

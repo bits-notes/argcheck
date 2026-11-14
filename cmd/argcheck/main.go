@@ -28,8 +28,6 @@ const (
 	exitInvalid   = 1
 	exitError     = 2
 	exitDivergent = 3
-
-	defaultProxyURL = "http://127.0.0.1:17779/mcp"
 )
 
 // check mirrors a check in the remote validate endpoint response.
@@ -61,12 +59,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("argcheck", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	jsonOut := flags.Bool("json", false, "print machine-readable JSON")
-	prod := flags.Bool("prod", false, "check against the remote validate endpoint (MCP)")
-	both := flags.Bool("both", false, "check locally and on prod; exit 3 if they disagree")
+	prod := flags.Bool("prod", false, "check against the remote MCP endpoint configured via ARGCHECK_REMOTE_URL and ARGCHECK_REMOTE_TOOL")
+	both := flags.Bool("both", false, "check locally and against the remote endpoint; exit 3 if they disagree")
 	version := flags.Bool("version", false, "print the catalog and build version and exit")
 	forms := flags.Bool("forms", false, "list the accepted inference forms and exit")
 	quiet := flags.Bool("quiet", false, "print only the verdict word (VALID or INVALID; DIVERGENT with --both on disagreement)")
-	proxyURL := flags.String("proxy", defaultProxyURL, "remote validate endpoint (MCP) URL")
 	flags.Usage = func() {
 		fmt.Fprintln(stderr, `usage: argcheck [--json|--quiet] [--prod|--both] [file|-]
 
@@ -79,7 +76,7 @@ Clauses must match word for word (after case and whitespace normalization).
 This is deliberate and will not change: if two wordings mean the same thing,
 state that as a premise.
 
-Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
+Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args); err != nil {
@@ -101,6 +98,20 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
 		return exitError
 	}
 
+	var remoteURL, remoteTool string
+	if *prod || *both {
+		remoteURL = strings.TrimSpace(os.Getenv("ARGCHECK_REMOTE_URL"))
+		if remoteURL == "" {
+			fmt.Fprintln(stderr, "argcheck: --prod and --both require ARGCHECK_REMOTE_URL to be set")
+			return exitError
+		}
+		remoteTool = strings.TrimSpace(os.Getenv("ARGCHECK_REMOTE_TOOL"))
+		if remoteTool == "" {
+			fmt.Fprintln(stderr, "argcheck: --prod and --both require ARGCHECK_REMOTE_TOOL to be set")
+			return exitError
+		}
+	}
+
 	input, err := readInput(flags.Arg(0), stdin)
 	if err != nil {
 		fmt.Fprintln(stderr, "argcheck:", err)
@@ -117,9 +128,9 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
 		verdicts = append(verdicts, checkLocal(argument))
 	}
 	if *prod || *both {
-		remote, err := checkProd(*proxyURL, argument)
+		remote, err := checkProd(remoteURL, remoteTool, argument)
 		if err != nil {
-			fmt.Fprintln(stderr, "argcheck: prod check failed:", err)
+			fmt.Fprintln(stderr, "argcheck: remote check failed:", err)
 			return exitError
 		}
 		verdicts = append(verdicts, remote)
@@ -155,7 +166,7 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/prod divergence (--both).`)
 			printVerdict(stdout, v)
 		}
 		if divergent {
-			fmt.Fprintln(stdout, "\nDIVERGENT: local and prod disagree; prod is authoritative (likely a different commit).")
+			fmt.Fprintln(stdout, "\nDIVERGENT: local and remote disagree (likely a different catalog or commit).")
 		}
 		if strings.Contains(argument, "| ") {
 			fmt.Fprintln(stdout)
@@ -254,20 +265,20 @@ func localVersion() string {
 	return "argcheck@" + revision
 }
 
-func checkProd(proxyURL, argument string) (verdict, error) {
+func checkProd(remoteURL, remoteTool, argument string) (verdict, error) {
 	body, err := json.Marshal(map[string]any{
 		"jsonrpc": "2.0",
 		"id":      1,
 		"method":  "tools/call",
 		"params": map[string]any{
-			"name":      "formalizer.validate",
+			"name":      remoteTool,
 			"arguments": map[string]string{"argument": argument},
 		},
 	})
 	if err != nil {
 		return verdict{}, err
 	}
-	request, err := http.NewRequest(http.MethodPost, proxyURL, bytes.NewReader(body))
+	request, err := http.NewRequest(http.MethodPost, remoteURL, bytes.NewReader(body))
 	if err != nil {
 		return verdict{}, err
 	}
@@ -284,7 +295,7 @@ func checkProd(proxyURL, argument string) (verdict, error) {
 		return verdict{}, err
 	}
 	if response.StatusCode != http.StatusOK {
-		return verdict{}, fmt.Errorf("proxy returned %s: %s", response.Status, strings.TrimSpace(string(raw)))
+		return verdict{}, fmt.Errorf("remote endpoint returned %s: %s", response.Status, strings.TrimSpace(string(raw)))
 	}
 
 	var envelope struct {
@@ -300,13 +311,13 @@ func checkProd(proxyURL, argument string) (verdict, error) {
 		} `json:"error"`
 	}
 	if err := json.Unmarshal(raw, &envelope); err != nil {
-		return verdict{}, fmt.Errorf("unreadable proxy response: %w", err)
+		return verdict{}, fmt.Errorf("unreadable remote response: %w", err)
 	}
 	if envelope.Error != nil {
 		return verdict{}, errors.New(envelope.Error.Message)
 	}
 	if envelope.Result == nil {
-		return verdict{}, errors.New("proxy response has no result")
+		return verdict{}, errors.New("remote response has no result")
 	}
 	if envelope.Result.IsError || len(envelope.Result.StructuredContent) == 0 {
 		texts := make([]string, 0, len(envelope.Result.Content))

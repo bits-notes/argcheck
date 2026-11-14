@@ -1,40 +1,66 @@
 # argcheck
 
-argcheck checks the syntactically transparent validity of numbered arguments.
-It runs deterministic syntax and entailment checks in Go, with no LLM and no
-network access in local mode. Each conclusion must match an accepted inference
-form using its cited steps. The current catalog is v28; `argcheck --forms` lists
-its forms.
+`argcheck` is a deterministic checker in Go for transparently valid numbered
+arguments. It runs offline with no LLM and no network access by default: every
+conclusion step must instantiate a named inference form from the catalog
+(currently **v28**, 119 forms) using only its cited earlier steps, with clauses
+matched word for word after light surface normalization.
 
-A passing result establishes validity under that catalog. It does not establish
-that premises are true, that an argument faithfully represents a source, or that
-an unstated assumption is justified. This is not a general theorem prover:
-inferences outside the catalog can fail even when they are logically valid.
+Coverage: complete for propositional logic and for function-free first-order
+logic with identity, within a controlled English (sentences with one reading); a
+bounded finite-model oracle tests that the checker never accepts an invalid
+argument; this is not proved.
+
+Passing `argcheck` shows that an argument's steps follow under the catalog. It
+does not establish that the premises are true, that an encoding faithfully
+captures a source text, or that an unstated assumption is warranted. If two
+wordings are meant to be equivalent, state that link as an explicit premise.
 
 ## Install
 
-Requires Go 1.25.0 or later. From a checkout:
+Requires Go 1.25.0 or later.
+
+Install the latest published version with `go install`:
+
+```sh
+go install github.com/bits-notes/argcheck/cmd/argcheck@latest
+```
+
+Or install from a local checkout (stamps the binary with the current git commit
+into `$HOME/.local/bin`, overridable via `BIN_DIR`):
 
 ```sh
 ./install-argcheck.sh
 ```
 
-The script installs to `$HOME/.local/bin`; set `BIN_DIR` to override it. It stamps
-the binary with the current commit and adds `-dirty` when `cmd/argcheck` or
-`validation` has uncommitted changes. Put the destination on your `PATH`.
-
-Alternatively, from the checkout, install the latest published module version
-(the module path is read from `go.mod`):
+## Usage
 
 ```sh
-go install "$(go list -m)/cmd/argcheck@latest"
+argcheck argument.txt        # check a file
+argcheck < argument.txt      # read from stdin
+cat argument.txt | argcheck -
+argcheck --quiet argument.txt
+argcheck --json argument.txt
+argcheck --forms             # list all 119 inference forms in catalog v28
+argcheck --version           # print catalog version and build stamp
 ```
 
-This uses Go's usual `GOBIN` or `GOPATH/bin` destination. Access to the module and
-a published version are required. The script is preferable when you need an
-explicit commit stamp.
+Put flags before the file argument.
 
-## Numbered input format
+### Exit codes
+
+| Code | Meaning |
+| ---: | --- |
+| `0` | `VALID` — syntax and every conclusion step pass |
+| `1` | `INVALID` — syntax fails or at least one conclusion step fails |
+| `2` | Input, flag, or operational error (for example, empty input or missing remote configuration) |
+| `3` | `DIVERGENT` — local and remote verdicts disagree (`--both`) |
+
+## Worked examples
+
+### Valid argument
+
+Input (`valid.txt`):
 
 ```text
 1. If it rains, then the street is wet.
@@ -42,17 +68,62 @@ explicit commit stamp.
 3. Therefore, the street is wet. [1,2]
 ```
 
-- A premise is one line ending in a period, without `Therefore,` or citations.
-- A conclusion uses `Therefore,` and citations after the period: `[1,2]`.
-  Citations refer only to earlier steps.
-- Number steps sequentially from 1. Do not include blank lines, leading spaces,
-  code fences, or commentary in the argument. The final step is the conclusion.
-- Every premise and intermediate conclusion must be cited by a later step.
-- A bridge premise such as `If [1,2], then C.` expands those numbered steps into
-  its antecedent. Such a bridge is an explicit assumption, not evidence for it.
+Output (`argcheck valid.txt`, exit `0`):
 
-Fitch subproofs use one `| ` prefix per depth level. `Suppose X.` opens an
-assumption; discharge cites the entire subproof as `[i-j]`. For example:
+```text
+VALID  (gate catalog v28; local argcheck@ef44658)
+syntax: ok
+step 3 [1,2]: ok: modus ponens
+```
+
+### Rejected argument
+
+Clauses must match verbatim (after case, whitespace, contraction, and optional
+`then` normalization). Replacing `the street is wet` with `the road is wet` is
+rejected (`invalid.txt`):
+
+```text
+1. If it rains, then the street is wet.
+2. It rains.
+3. Therefore, the road is wet. [1,2]
+```
+
+Output (`argcheck invalid.txt`, exit `1`):
+
+```text
+INVALID  (gate catalog v28; local argcheck@ef44658)
+syntax: ok
+step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
+```
+
+When a conclusion fails only because it cites an extra step that does no work,
+`argcheck` prints an advisory `hint:` line naming the form that passes on the
+used subset and the inert citation(s) to drop.
+
+## The numbered format
+
+- **Premises:** `1. Statement.` — one declarative sentence per line, ending in a
+  period, with no `Therefore,` prefix and no trailing citation brackets.
+- **Conclusions:** `3. Therefore, statement. [1,2]` — starts with `Therefore,`,
+  ends in a period followed by bracketed citations to earlier steps.
+- **Structure:** Steps are numbered sequentially from `1` with no blank lines,
+  leading/trailing spaces, code fences, or commentary. The final step must be a
+  conclusion. Every premise and every scoped step must support a later step (no
+  unused premises). Root-level premises may appear after intermediate conclusions
+  as long as every citation points to an earlier step.
+- **Canonical phrasing:** Write sentential negation as `It is not the case that X.`,
+  disjunction as `Either X or Y.`, conjunction as `X and Y.`, and identity as
+  `A is identical to B.` (or `A is identical with B.`).
+- **Inline bridge premises:** `If [1,2], then C.` expands steps `1` and `2`
+  verbatim into a conjunctive antecedent. Note that an ad hoc bridge puts the
+  inferential weight into that conditional premise rather than proving it.
+
+### Fitch subproofs
+
+Prefix each active subproof level with `| `. Open an assumption with
+`Suppose X.` (or `Let a be an arbitrary F.` / `Let x be arbitrary.` for
+universal generalization) and discharge the closed subproof by citing its full
+line range `[i-j]`:
 
 ```text
 1. If it rains, then the street is wet.
@@ -63,364 +134,73 @@ assumption; discharge cites the entire subproof as `[i-j]`. For example:
 6. Therefore, if it rains, then the cars slow. [3-5]
 ```
 
-A step cannot cite into a closed subproof. Reductio subproofs end with
-`Therefore, contradiction. [i,j]`. The catalog also supports proof by cases,
-universal generalization (`Let a be an arbitrary F.`), and existential
-elimination with fresh-name checks.
+Steps outside a closed subproof cannot cite individual lines inside it. Reductio
+subproofs conclude `Therefore, contradiction. [i,j]`.
 
-## CLI usage
+## `--json` and `--forms`
 
-```sh
-argcheck argument.txt
-argcheck < argument.txt
-cat argument.txt | argcheck -
-argcheck --json argument.txt
-argcheck --quiet argument.txt
-argcheck --forms
-argcheck --version
-```
+`--json` emits structured syntax and entailment results:
 
-Text output reports `VALID` or `INVALID`, the catalog and build stamp
-(`gate catalog v28; local argcheck@<commit>`), and each conclusion's matched
-form or mismatch. The verdict is always the first line; Fitch input is echoed
-after the step report. An inert-citation
-hint identifies extra citations whose removal would let a known form pass.
-
-For scripts, use the exit code (0 valid, 1 invalid, 2 error, 3 divergent with
-`--both`) or `--quiet`, which prints only `VALID`, `INVALID` or `DIVERGENT`:
-
-```sh
-argcheck --quiet argument.txt          # VALID
-for f in args/*.txt; do argcheck --quiet "$f"; done | grep -c '^VALID$'
-```
-`--json` returns structured checks, details, and provenance.
-
-Remote comparison is opt-in:
-
-```sh
-argcheck --prod argument.txt
-argcheck --both argument.txt
-argcheck --both --proxy http://127.0.0.1:17779/mcp argument.txt
-```
-
-`--prod` calls the remote validate endpoint (MCP); `--both` runs local and remote
-checks and flags disagreement. The default endpoint is the localhost URL above.
-It must be running and provide the expected validation tool. Remote results can
-differ when the endpoint uses another catalog or implementation revision.
-
-Exit codes: 0 valid, 1 invalid, 2 operational or input error, 3 local/remote
-divergence. Put flags before the filename.
-
-## Using the validation package from Go
-
-Run syntax validation first, then the entailment gate, as the CLI does:
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-
-    "github.com/bits-notes/argcheck/validation"
-)
-
-func main() {
-    argument := "1. If it rains, then the street is wet.\n" +
-        "2. It rains.\n" +
-        "3. Therefore, the street is wet. [1,2]"
-    syntax := validation.Validate(context.Background(),
-        validation.BuiltinSpec(validation.BuiltinNumberedArgumentSyntax), argument)
-    if !syntax.Passed {
-        fmt.Println(syntax.Message)
-        return
+```json
+{
+  "valid": true,
+  "syntax": {
+    "passed": true,
+    "message": "output matches numbered_argument_syntax",
+    "details": { "step_count": 3 }
+  },
+  "entailment": {
+    "passed": true,
+    "message": "output passes entailment_gate",
+    "details": {
+      "catalog": "v28",
+      "expansions": [],
+      "gated_steps": 1,
+      "passed_steps": 1,
+      "steps": [
+        { "step": 3, "citations": [1, 2], "passed": true, "form": "modus ponens" }
+      ]
     }
-    report, result := validation.CheckEntailmentGate(argument)
-    fmt.Println(result.Passed, result.Message)
-    fmt.Println(report)
+  },
+  "entailment_catalog": "v28",
+  "backend": "local",
+  "version": "argcheck@ef44658"
 }
 ```
 
-`EntailmentGateCatalogVersion` exposes the catalog version;
-`EntailmentGateForms()` lists accepted form names. `CheckEntailmentGate` returns
-both a step report and a validation result. Package calls do not contact a remote
-service.
+`--forms` prints the catalog header (`entailment gate catalog v28 (...)`)
+followed by all 119 accepted form names, covering propositional schemas,
+syllogisms, schematic rules (`U`, `V`, `W`, `X`, `Y`, `Z` up to 10 conjuncts),
+identity, system-T modals, counterfactuals, properties, n-place relations,
+relative clauses, explicit-variable FOL with notation equivalence, counting
+quantifiers (`1`–`5`), and Russellian definite descriptions.
 
-## Writing so the gate can see the inference
+- Every inference form, schema, accepted example, and rejected near-miss:
+  [`docs/rules.md`](docs/rules.md)
+- Detailed grammar rules, authoring guidance, and known limits:
+  [`docs/coverage.md`](docs/coverage.md)
+- Agent workflow skill: [`skills/argcheck/SKILL.md`](skills/argcheck/SKILL.md)
 
-Clauses match word for word after limited normalization, including case,
-whitespace, contractions, and optional `then`. Synonym and paraphrase tolerance
-are deliberately outside the gate. If two wordings should count as equivalent,
-state the connection as a visible identity or conditional premise.
+## Go library and development
 
-- Repeat clauses exactly: `the street is wet` does not become `the road is wet`.
-- Use canonical negation: `It is not the case that X.` For modus tollens,
-  `The street is not wet` does not substitute for the canonical negation of
-  `the street is wet`.
-- For instantiation, use `Every man is mortal.` with `The traveler is a man.`
-  `All men are mortal.` does not match the singular `a man`.
-  For class syllogisms, use `All A are B.` and `All B are C.`
-- Write disjunction as `Either X or Y.` and conjunction as `X and Y.`
-  A conditional with a conjoined antecedent can use the separately cited
-  conjuncts in conjunctive modus ponens.
-- Make one inference hop per conclusion. Cite exactly the premises the form
-  uses; extra citations can cause rejection.
-- Copular parsing splits at the first ` is `. Give a short name to a subject
-  containing an embedded `is`, then use that name consistently.
-- Identity substitution supports whole gerund terms and coordinated proper names
-  in its controlled argument positions, including predicates containing `and`.
-  Examples appended with `such as` can still prevent placeholder binding; keep
-  examples outside the numbered argument unless they are separate premises.
-
-When a step fails, inspect the quoted mismatch, correct wording or citations,
-and rerun. Test an unfamiliar shape in a small argument first. Do not silently
-drop qualifiers or change a source's meaning to obtain a pass. Any supplied
-inferential link should be a visible premise.
-
-### Toolkit for general rules
-
-Schematic conditionals can bind `U`, `V`, `W`, `X`, `Y`, and `Z` to terms or whole clauses:
-`If X depends on a prior, then X is unfit for science.` instantiates against
-`Bayesian inference depends on a prior.` Possessives (`X's`), conjunctive
-antecedents, and nested conditionals work. Placeholders must agree in number
-with their bindings: use `If X are fixed...` for a plural subject.
-
-Universal syllogisms accept `Every A is a B.` plus `Every B is C.`, including
-negative variants such as `No B is C.` Relative clauses and internal commas
-can occur, but the repeated terms must match verbatim.
-
-Copular existential introduction accepts: `J is preferable to M.`
-and `J is an E.` can yield `Some E is preferable to M.` Non-copular verbs use the relational forms described below. Use a definite or bare individual subject, rather than
-`A ...`. `Some A is a B.` plus `No B is C.` can yield `Some A is not C.`
-
-To conclude one alternative rather than another, state the dichotomy
-(`Either we should use X or we should use Y.`), refute one side, and apply
-disjunctive syllogism. The dichotomy is a substantive premise to justify.
-Likewise, a bridge saying that exactly these premises imply exactly this
-conclusion can pass while carrying all the argument's disputed weight. Prefer
-to state and instantiate the general rule that actually supports the inference.
-
-### Catalog forms and scope
-
-The catalog includes modus ponens and tollens, hypothetical and disjunctive
-syllogism, conjunction introduction and elimination, identity substitution,
-biconditionals, and dilemmas. v13 added forms including contraposition, De Morgan,
-commutation, exportation/importation, material implication, distribution,
-absorption, double-negation introduction, biconditional tollens and chaining,
-negated conditional, identity symmetry, quantifier negation, conversion,
-universal modus tollens, and possibility introduction. Explosion and excluded
-middle from an unrelated premise are intentionally rejected. Conjunction
-elimination does not split beneath an outer operator: negating `P and Q` does
-not yield `Q`. v14 added the Fitch forms described above; flat-only package
-consumers reject scoped input. Use `--forms` for the complete current catalog,
-including modal forms.
-
-Parenthesize biconditional sides to fix their boundaries:
-`(X) if and only if (Y)`, optionally prefixed by `It is the case that`.
-This handles sides containing conditionals. `It holds that` is ordinary text.
-
-Relations use `TERM VERB TERM`, with every/some/no quantifiers in either position.
-Fitch generalization and existential elimination also work over relations.
-Sentences with two quantifiers are checked under both scope readings; a step
-that depends on just one reading fails with a note. Make scope explicit, for
-example `Some teacher is such that every student admires that teacher.`
-Active and passive clauses do not automatically match.
-
-v22 extends relations to three or more places, including prepositional forms
-such as `Alice sends Parcel to Bob from Depot`. For example:
-
-```text
-1. Alice gave Bob a book.
-2. Bob is a child.
-3. Therefore, Alice gave some child a book. [1,2]
+```go
+syntax := validation.Validate(ctx,
+    validation.BuiltinSpec(validation.BuiltinNumberedArgumentSyntax), argument)
+if syntax.Passed {
+    report, entailment := validation.CheckEntailmentGate(argument)
+    _ = report // per-step forms or mismatches; entailment.Passed is the verdict
+}
 ```
 
-`Alice gave Bob a book` and `Alice gave a book to Bob` are the same atom:
-the double-object / `to` alternation is the only new wording equivalence.
-Argument roles, verbs, and prepositions otherwise match verbatim. All scope
-orders are checked, with at most four quantifiers per sentence. Nested
-`is such that` scaffolds fix scope. See [coverage and known limits](docs/coverage.md)
-for the supported vocabulary, examples, and restrictions.
+Run tests locally with `go test ./...`.
 
-### Relative clauses (v23)
+## Advanced: remote MCP comparison
 
-Relative nouns decompose into their class and relation. `F that A admires`
-requires both `x is an F` and `A admires x`; `F who admires A` instead requires
-`x admires A`. `that`, `who`, and `which` support the same gap rules.
+`--prod` sends the argument over HTTP JSON-RPC (`tools/call`) to a remote MCP
+validation endpoint; `--both` runs local and remote checks and exits `3` if they
+disagree. Both `ARGCHECK_REMOTE_URL` and `ARGCHECK_REMOTE_TOOL` must be set (there
+are no defaults; if either is unset, `argcheck` exits `2`).
 
-```text
-1. Every hero that Sam admires is active.
-2. Robin is a hero.
-3. Sam admires Robin.
-4. Therefore, Robin is active. [1,2,3]
-```
+## License
 
-The same decomposition supports existential introduction, predicate-nominal
-introduction and elimination, and fresh witnesses in Fitch subproofs. Relative
-nouns can occur in either relation position under every/some/no, including
-`book that Alex gave Blair`. Relations match verbatim with the gap filled.
-Use `is such that` to delimit nested scopes. The new grammar has a bounded verb
-vocabulary; see [coverage](docs/coverage.md#v23-relative-clauses).
-
-### Explicit variables and notation equivalence (v25)
-
-For nested formulas with no readable phrasing, use `every x is such that BODY`
-or `some x is such that BODY`. For example, `every x is such that every y is
-such that every z is such that if x outranks y and y outranks z then x outranks z`.
-Parentheses fix connective boundaries; variables must be bound without rebinding.
-Use `name{x}` or `name{y2}` for constants spelled like variables; bare names
-outside explicit bodies keep their previous behavior. The four-quantifier readable limit
-does not apply. Indexed variables (`x1`, `x2`, `y12`) give an unbounded
-alphabet; round trips test 30–40 simultaneous binders and a 64-binder boundary.
-Indexed variables must be bound, just like bare letters, in explicit proofs.
-
-The structured core supports propositional rules, identity substitution, and
-Fitch quantifier rules for nested formulas. `Let witness be arbitrary.` opens
-an unrestricted fresh-name subproof; the older `Let witness be an arbitrary F.`
-remains class-restricted. See [the completeness scope and evidence](docs/coverage.md#completeness-fol-with-identity).
-The new **notation equivalence** form cites one premise and requires both
-sentences to have one reading, identical up to bound-variable renaming. It
-converts readable FOL phrasing to the explicit core and back. Ambiguous readings
-are refused; use `is such that` to fix scope. Existing matching forms keep their
-priority. This is grammatical conversion, not paraphrase.
-
-Opaque propositional clauses now render verbatim as zero-place atoms, including
-inside explicit-variable bodies. Multiword names and predicates and additional
-relation prepositions use the readable grammar's lexical recognizers. Distinct
-normalized clauses are distinct atoms; this adds no paraphrase matching.
-
-When ordinary phrasing cannot preserve a lexical boundary, use
-`atom{"works/with", "alice", x}`: the quoted symbol and ordered arguments specify
-one atom, quoted arguments are constants, and unquoted variables must be bound.
-`atom{"either it rains"}` has no arguments and is a zero-place proposition.
-`name{"claim that the store is nearby"}` quotes a complete name. Quoted strings
-use JSON escaping, and decoded names participate in eigenname freshness checks.
-These escapes preserve exact symbols and arity; they do not add paraphrase rules.
-The renderer uses them only when needed. Curly braces are distinct from citation
-brackets. These escapes arrived in catalog **v25** and added no new inference form.
-
-The legacy audit converts **3,550 of 6,386** distinct sentences both ways with
-zero conversion failures. All **116** final lexical/structural residuals are
-resolved; the **2,424 ambiguous** and **412 non-FOL** sentences are unchanged.
-There are no reclassifications.
-
-The completeness verdict is **Established over the stated scope**: every valid
-finite argument with one closed, function-free FOL= reading per sentence under
-the gate's controlled grammar has some accepted derivation over nonempty domains.
-The argument uses a lossless notation bridge, structural rendering, and the
-standard completeness of natural deduction for FOL=. It does not assert that
-the checker finds proofs automatically. Fresh variable names avoid collisions
-with literal opaque text. Ambiguous readings, modal, counterfactual, property
-and that-clause semantics remain outside the claim. Bounded oracle checks are
-soundness evidence, not a soundness proof; see the coverage page for the proof
-sketch and its implementation-correspondence assumptions.
-
-### Counterfactuals
-
-A conditional whose consequent contains `would` is treated as counterfactual.
-Ordinary rules can use it as a premise, but cannot conclude a counterfactual or
-use one inside a negation. Counterfactual conclusions require the dedicated
-catalog forms, preventing ordinary strengthening, false-antecedent inference,
-and unsupported chaining.
-
-Counterfactual modus ponens and tollens compare mood-stripped content:
-`had been struck` can match `was struck`. Only auxiliaries are rewritten;
-`had gone` and `went` need a visible bridge. `would light` has no plain form,
-and `might` has no rules.
-
-### Properties
-
-For copular predicates, `a is F.` and `a has the property of being F.` convert
-in either direction, also under a top-level canonical negation. `F` must match
-verbatim. Property inclusion (`a has every property that b has.`) permits
-instantiation from `b has the property of being F.` The catalog also supports
-property existence, shared properties, and indiscernibility from identity.
-
-For property generalization, open a Fitch subproof with
-`Let P be an arbitrary property that b has.`, which provides `b has P.`;
-derive `a has P.` and discharge to `a has every property that b has.` v21 also
-allows property-inclusion chaining for such an arbitrary property. A property
-possessed by one individual and denied of another establishes a distinguishing
-property, supporting nonidentity or non-inclusion.
-
-Property bearers must be individuals, not quantified phrases or properties
-themselves. These conversions do not rewrite inside modals, conditionals, or
-counterfactuals. `Being F is a property that a has` remains ordinary text.
-
-## Development
-
-```sh
-go build ./...
-go vet ./...
-go test -vet=off ./...
-```
-
-Test fixtures live inside `validation/testdata`; no sibling checkout is needed.
-See `LICENSE` for the current rights notice.
-
-### Counting (v26)
-
-Counts one–five (also 1–5) expand into FOL with identity and distinct witnesses.
-
-```text
-1. At least two labs signed the pledge.
-2. At most one lab that signed the pledge is American.
-3. Therefore, some lab that signed the pledge is not American. [1,2]
-```
-
-```text
-1. Exactly one student admires blair.
-| 2. Suppose Ada is a student and Ada admires blair.
-| 3. Therefore, no student other than Ada admires blair. [1,2]
-4. Therefore, if Ada is a student and Ada admires blair then no student other than Ada admires blair. [2-3]
-```
-
-An exact count entails both bounds. Counting definitions convert to and from
-explicit-variable FOL. Larger bounds report the bound of 5; general arithmetic
-remains unsupported. Uniqueness must establish that
-the named witness belongs to the counted class.
-
-### Definite descriptions (v27)
-
-Russellian descriptions assert existence, uniqueness, and predication:
-
-```text
-1. The author of Waverley is Scott.
-2. The author of Waverley wrote Ivanhoe.
-3. Therefore, Scott wrote Ivanhoe. [1,2]
-```
-
-The fallback supports substitution, introduction from a witnessed predication
-and an at-most-one bound, elimination, and uniqueness inferences. It works
-inside Fitch subproofs and converts to explicit FOL with identity. Subject
-descriptions can contain literal of-phrases and one relative clause. A bare
-capitalized copular complement denotes a name; use `is identical to` for
-explicit identity, and lowercase predicate wording for properties. Matching
-restrictors stay verbatim; opaque attitude, modal, and deontic clauses never
-expose terms for description substitution.
-
-For the present King of France case, `The present king of France is not bald`
-has both a wide reading (a unique king who is not bald) and a narrow reading
-(not a unique king who is bald). New description steps must hold on every
-reading. `It is not the case that the present king of France is bald` fixes
-the narrow reading.
-
-Compatibility takes priority: v26 successes retain their exact reports. In
-particular, its old narrow-to-surface-negation certificate is preserved even
-though it does not establish the new wide reading. The every-reading guarantee
-applies to the new fallback, not retroactively to historical certificates.
-See [coverage and limits](docs/coverage.md#v27-russellian-definite-descriptions).
-
-### Substitution and CLI provenance (v28)
-
-Schematic conjunctive modus ponens accepts six through ten bare-and conjuncts
-and the additional placeholders `U`, `V`, and `W`. Failures report the unmatched
-conjunct and current binding. Explicit identity substitution supports whole
-gerund terms, coordinated proper names, and `identical with` in controlled
-argument positions. Root premises can follow inferences, provided citations
-still point backward; Fitch visibility and fresh-name safeguards remain active.
-
-`argcheck --version` prints the catalog and build commit without reading input.
-The install script already embeds the commit; module version or `unknown` is
-used when build provenance is unavailable. The legacy narrow-negation choice
-is unchanged. See [v28 coverage and limits](docs/coverage.md#v28-schematic-substitution-and-premise-placement).
+[MIT](LICENSE)

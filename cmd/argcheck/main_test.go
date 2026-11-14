@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -203,5 +205,79 @@ func TestArgcheckQuiet(t *testing.T) {
 	code, out = runArgcheck(t, "1. If it rains, then it snows.\n2. It snows.\n3. Therefore, it rains. [1,2]", "--quiet")
 	if code != 1 || out != "INVALID\n" {
 		t.Fatalf("invalid: code=%d out=%q", code, out)
+	}
+}
+
+func TestArgcheckRemoteRequiresEnv(t *testing.T) {
+	const valid = "1. If it rains, then the street is wet.\n2. It rains.\n3. Therefore, the street is wet. [1,2]"
+	t.Setenv("ARGCHECK_REMOTE_URL", "")
+	t.Setenv("ARGCHECK_REMOTE_TOOL", "")
+	for _, flagName := range []string{"--prod", "--both"} {
+		code, out := runArgcheck(t, valid, flagName)
+		if code != exitError || !strings.Contains(out, "ARGCHECK_REMOTE_URL") {
+			t.Fatalf("%s without URL: exit %d, output:\n%s", flagName, code, out)
+		}
+	}
+	t.Setenv("ARGCHECK_REMOTE_URL", "http://127.0.0.1:1/mcp")
+	for _, flagName := range []string{"--prod", "--both"} {
+		code, out := runArgcheck(t, valid, flagName)
+		if code != exitError || !strings.Contains(out, "ARGCHECK_REMOTE_TOOL") {
+			t.Fatalf("%s without tool: exit %d, output:\n%s", flagName, code, out)
+		}
+	}
+}
+
+func TestArgcheckRemoteAndBoth(t *testing.T) {
+	const valid = "1. If it rains, then the street is wet.\n2. It rains.\n3. Therefore, the street is wet. [1,2]"
+	flip := false
+	seenTool := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Method string `json:"method"`
+			Params struct {
+				Name      string            `json:"name"`
+				Arguments map[string]string `json:"arguments"`
+			} `json:"params"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		seenTool = req.Params.Name
+		v := checkLocal(req.Params.Arguments["argument"])
+		if flip {
+			v.Valid = !v.Valid
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"jsonrpc": "2.0",
+			"id":      1,
+			"result": map[string]any{
+				"structuredContent": v,
+			},
+		})
+	}))
+	t.Cleanup(server.Close)
+
+	t.Setenv("ARGCHECK_REMOTE_URL", server.URL)
+	t.Setenv("ARGCHECK_REMOTE_TOOL", "custom.validate")
+
+	code, out := runArgcheck(t, valid, "--prod")
+	if code != exitValid || seenTool != "custom.validate" || !strings.Contains(out, "step 3 [1,2]: ok: modus ponens") {
+		t.Fatalf("--prod: code=%d tool=%q out:\n%s", code, seenTool, out)
+	}
+	code, out = runArgcheck(t, valid, "--both")
+	if code != exitValid {
+		t.Fatalf("--both agree: code=%d out:\n%s", code, out)
+	}
+
+	flip = true
+	code, out = runArgcheck(t, valid, "--both")
+	if code != exitDivergent || !strings.Contains(out, "DIVERGENT") {
+		t.Fatalf("--both diverge: code=%d out:\n%s", code, out)
+	}
+	code, out = runArgcheck(t, valid, "--both", "--quiet")
+	if code != exitDivergent || out != "DIVERGENT\n" {
+		t.Fatalf("--both --quiet diverge: code=%d out=%q", code, out)
 	}
 }
