@@ -210,6 +210,8 @@ func TestArgcheckQuiet(t *testing.T) {
 
 func TestArgcheckRemoteRequiresEnv(t *testing.T) {
 	const valid = "1. If it rains, then the street is wet.\n2. It rains.\n3. Therefore, the street is wet. [1,2]"
+	// Isolate from any user config file (~/.config/argcheck/config).
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("ARGCHECK_REMOTE_URL", "")
 	t.Setenv("ARGCHECK_REMOTE_TOOL", "")
 	for _, flagName := range []string{"--prod", "--both"} {
