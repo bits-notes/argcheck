@@ -161,7 +161,16 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 	if cs := identityCandidates(s); len(cs) > 0 {
 		var out []*folFormula
 		for _, c := range cs {
+			// v28.2: an indefinite or quantified side is not a name. termCandidates
+			// strips "a "/"an " for predicate nouns, which read "Tom is identical to
+			// a cat" as tom = cat.
+			if quantifiedIdentitySide(c.left) || quantifiedIdentitySide(c.right) {
+				continue
+			}
 			out = append(out, &folFormula{op: "equal", terms: []string{legacyFOLTerm(c.left), legacyFOLTerm(c.right)}})
+		}
+		if len(out) == 0 {
+			return nil, "identity needs names on both sides, not quantifier phrases"
 		}
 		return unique(out), ""
 	}
@@ -340,4 +349,19 @@ func notationEquivalence(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 		r.Mismatch = ""
 	}
 	return r
+}
+
+// identityQuantifierWords are determiners and quantifier pronouns that cannot
+// open a name. Personal and reflexive pronouns are left to the existing readings.
+var identityQuantifierWords = map[string]bool{
+	"every": true, "all": true, "each": true, "any": true, "some": true, "no": true, "none": true,
+	"nothing": true, "nobody": true, "something": true, "someone": true, "somebody": true,
+	"everything": true, "everyone": true, "everybody": true, "anything": true, "anyone": true,
+	"anybody": true, "a": true, "an": true, "few": true, "many": true, "most": true, "several": true,
+	"both": true, "either": true, "neither": true, "only": true, "not": true,
+}
+
+func quantifiedIdentitySide(term string) bool {
+	words := strings.Fields(normalizeClause(term))
+	return len(words) > 0 && identityQuantifierWords[strings.Trim(words[0], "'’")]
 }

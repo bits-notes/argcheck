@@ -99,6 +99,12 @@ func searchSchematicConjuncts(ps []NumberedArgumentStep, ci int, ant, cons strin
 // Masking the entire stipulated term keeps gerund/coordination vocabulary out
 // of the surrounding opacity check; it never exposes a term inside an attitude.
 func v28IdentityTerm(term string) bool {
+	// v28.2: check quantifier words case-insensitively. The case-preserving split
+	// handed "Nobody" and "Some cat" to a lowercase word list, so they passed as
+	// names ("Nobody is identical to Felix" + "Nobody is black" => "Felix is black").
+	if quantifiedIdentitySide(term) {
+		return false
+	}
 	if substitutionTerm(term, false) {
 		return true
 	}

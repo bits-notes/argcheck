@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v28.1)
+# Entailment Gate — Coverage and Known Limits (catalog v28.2)
 
 **Type:** reference
-**Status:** current as of catalog v28.1
+**Status:** current as of catalog v28.2
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v28.1**). Tests cover capture,
+form; the current catalog is **v28.2**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -663,3 +663,33 @@ Known gap: an indefinite or disjunctive term bound to a slot that occurs twice i
 the antecedent still combines two premises that may have different witnesses
 ("Some philosopher is wise", "Some philosopher is rich", so "some philosopher is
 happy"). `TestEntailmentGateSlotBindingRepeatedIndefiniteGap` records it.
+
+## v28.2: identity terms must refer
+
+The blind completeness review found three paths by which the identity rules took
+quantifier phrases as names. v28.1 accepted, for example:
+
+```text
+1. Nobody is identical to Felix.
+2. Nobody is black.
+3. Therefore, Felix is black. [2,1]
+```
+
+- The v28 whole-term identity register compared capitalized words against a
+  lowercase word list, so "Nobody" and "Some cat" passed as names.
+- `identity transitivity` had no term check ("Tom is identical to some cat",
+  "Some cat is identical to Felix", so "Tom is identical to Felix").
+- The readable-to-FOL bridge stripped "a"/"an" from identity terms, so "Tom is
+  identical to a cat" read as tom = cat and fed `FOL identity substitution`.
+
+v28.2 rejects an identity side that opens with a determiner or quantifier
+pronoun (every, all, each, any, some, no, none, nobody, nothing, someone,
+everyone, anything, a, an, few, many, most, several, both, either, neither,
+only, not) in all three paths. Names, definite descriptions ("the cat") and
+gerund terms behave as before. Re-gating the 1,482-argument corpus, the 23
+reverse spot-check derivations and 193 identity-bearing mutants changed no
+verdict. Tests: `validation/entailment_gate_identity_terms_test.go`.
+
+Known reading limit: an intensional transitive verb is read as an ordinary
+relation ("Lois is looking for Superman", "Superman is identical to Clark", so
+"Lois is looking for Clark"). `TestEntailmentGateIntensionalVerbGap` records it.

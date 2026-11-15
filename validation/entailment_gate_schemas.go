@@ -1341,6 +1341,12 @@ func matchIdentityTransitivity(premises []NumberedArgumentStep, conclusion Numbe
 	for _, first := range identityCandidates(premises[0].Statement) {
 		for _, second := range identityCandidates(premises[1].Statement) {
 			for _, result := range identityCandidates(conclusion.Statement) {
+				// v28.2: every term must refer. "Tom is identical to some cat" and
+				// "Some cat is identical to Felix" need not share a cat.
+				if !identityPairRefers(first) || !identityPairRefers(second) || !identityPairRefers(result) {
+					best = betterOutcome(best, schemaMatchOutcome{traction: true, mismatch: "identity transitivity needs referring terms, not quantifier phrases"})
+					continue
+				}
 				candidate := evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d middle term", premises[0].Number), first.right, fmt.Sprintf("premise %d middle term", premises[1].Number), second.left},
 					clauseIdentity{fmt.Sprintf("premise %d first term", premises[0].Number), first.left, fmt.Sprintf("conclusion %d first term", conclusion.Number), result.left},
@@ -2058,4 +2064,12 @@ var schematicBindingClauseVerbs = map[string]bool{
 	"do": true, "does": true, "did": true, "has": true, "have": true, "had": true,
 	"can": true, "could": true, "will": true, "would": true, "may": true, "might": true,
 	"must": true, "should": true, "shall": true, "not": true,
+}
+
+func identityPairRefers(pair clausePair) bool {
+	return identityTermRefers(pair.left) && identityTermRefers(pair.right)
+}
+
+func identityTermRefers(term string) bool {
+	return substitutionTerm(term, false) || v28IdentityTerm(term)
 }

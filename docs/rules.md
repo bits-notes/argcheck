@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v28.1`)
+# Inference Rule Catalog (`v28.2`)
 
-`argcheck` checks each conclusion step against the 119 inference forms in gate catalog `v28.1` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`argcheck` checks each conclusion step against the 119 inference forms in gate catalog `v28.2` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -369,7 +369,7 @@ Every `argcheck-accept <form>` and `argcheck-reject <form>` fenced block in this
 3. Therefore, alpha is identical to delta. [1,2]
 ```
 
-- **What it does not cover:** Bare copular `"is"` (`Alpha is beta`), negated identities, or chaining three or more identity premises in a single step.
+- **What it does not cover:** Bare copular `"is"` (`Alpha is beta`), negated identities, or chaining three or more identity premises in a single step, or quantifier phrases as terms: since v28.2 `Tom is identical to some cat` and `Some cat is identical to Felix` do not chain, and neither do `a`, `no`, `every` or `nobody` terms.
 
 ---
 
@@ -689,7 +689,7 @@ Every `argcheck-accept <form>` and `argcheck-reject <form>` fenced block in this
 3. Therefore, Phosphorus is visible at dusk. [1,2]
 ```
 
-- **What it does not cover:** Bare `"is"` (`Hesperus is Phosphorus`; for Russellian `"The F is a"` substitution, see `description substitution`), partial replacement of only some occurrences (supported in explicit-variable `FOL identity substitution`), attitude/modal/deontic opaque contexts, or substituting predicates/indefinites (`Ada is identical to a doctor`).
+- **What it does not cover:** Bare `"is"` (`Hesperus is Phosphorus`; for Russellian `"The F is a"` substitution, see `description substitution`), partial replacement of only some occurrences (supported in explicit-variable `FOL identity substitution`), attitude/modal/deontic opaque contexts, or substituting predicates/indefinites (`Ada is identical to a doctor`). Since v28.2 this also holds when the quantifier phrase is capitalized or opens the sentence (`Nobody is identical to Felix`, `A cat is identical to Felix`), in the readable and the explicit-variable forms. Intensional transitive verbs (`is looking for`) are read as ordinary relations, so substitution goes through them.
 
 ---
 
