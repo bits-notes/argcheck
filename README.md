@@ -198,8 +198,16 @@ Run tests locally with `go test ./...`.
 
 `--prod` sends the argument over HTTP JSON-RPC (`tools/call`) to a remote MCP
 validation endpoint; `--both` runs local and remote checks and exits `3` if they
-disagree. Both `ARGCHECK_REMOTE_URL` and `ARGCHECK_REMOTE_TOOL` must be set (there
-are no defaults; if either is unset, `argcheck` exits `2`).
+disagree. Both `ARGCHECK_REMOTE_URL` and `ARGCHECK_REMOTE_TOOL` must be set, either
+in the environment or in `$XDG_CONFIG_HOME/argcheck/config` (default
+`~/.config/argcheck/config`), one `KEY=VALUE` per line; the environment wins.
+There are no built-in defaults; if either is unset, `argcheck` exits `2`.
+
+```text
+# ~/.config/argcheck/config
+ARGCHECK_REMOTE_URL=https://example.com/mcp
+ARGCHECK_REMOTE_TOOL=formalizer.validate
+```
 
 ## License
 

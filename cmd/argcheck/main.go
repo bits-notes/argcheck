@@ -100,14 +100,14 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 
 	var remoteURL, remoteTool string
 	if *prod || *both {
-		remoteURL = strings.TrimSpace(os.Getenv("ARGCHECK_REMOTE_URL"))
+		remoteURL = remoteSetting("ARGCHECK_REMOTE_URL")
 		if remoteURL == "" {
-			fmt.Fprintln(stderr, "argcheck: --prod and --both require ARGCHECK_REMOTE_URL to be set")
+			fmt.Fprintln(stderr, "argcheck: --prod and --both require ARGCHECK_REMOTE_URL (environment or "+configPathHint()+")")
 			return exitError
 		}
-		remoteTool = strings.TrimSpace(os.Getenv("ARGCHECK_REMOTE_TOOL"))
+		remoteTool = remoteSetting("ARGCHECK_REMOTE_TOOL")
 		if remoteTool == "" {
-			fmt.Fprintln(stderr, "argcheck: --prod and --both require ARGCHECK_REMOTE_TOOL to be set")
+			fmt.Fprintln(stderr, "argcheck: --prod and --both require ARGCHECK_REMOTE_TOOL (environment or "+configPathHint()+")")
 			return exitError
 		}
 	}
