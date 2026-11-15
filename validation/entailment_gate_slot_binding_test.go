@@ -37,6 +37,20 @@ func TestEntailmentGateSlotBindingScope(t *testing.T) {
 		{"conditional consequent", one("If Plato is right, Socrates is wise.", "if Plato is right, Socrates is happy."), true},
 		{"complete clause inside a noun phrase", one("The claim that the store is nearby is wise.", "the claim that the store is nearby is happy."), true},
 		{"repeated name", twice("Socrates"), true},
+
+		// v30: a slot repeated in the antecedent binds one fixed thing.
+		{"repeated some", twice("Some philosopher"), false},
+		{"repeated a", twice("A philosopher"), false},
+		{"repeated disjunction", twice("Socrates or Plato"), false},
+		{"repeated someone", twice("Someone"), false},
+		{"repeated number", twice("Two philosophers"), false},
+		{"repeated slot inside one premise", "1. Some philosopher admires some philosopher.\n2. If X admires X, then X is vain.\n3. Therefore, some philosopher is vain. [1,2]", false},
+		{"universal spread in the consequent", "1. Every philosopher is wise.\n2. If X is wise, then X admires X.\n3. Therefore, every philosopher admires every philosopher. [1,2]", false},
+		{"repeated every", twice("Every philosopher"), true},
+		{"repeated definite description", twice("The oldest philosopher"), true},
+		{"definite description with or", twice("The philosopher who writes or teaches"), true},
+		{"single every", "1. Every philosopher is wise.\n2. If X is wise and Plato is rich, then X is happy.\n3. Plato is rich.\n4. Therefore, every philosopher is happy. [1,3,2]", true},
+		{"one premise holding both conjuncts", "1. Some philosopher is wise and rich.\n2. If X is wise and rich, then X is happy.\n3. Therefore, some philosopher is happy. [1,2]", true},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -45,19 +59,5 @@ func TestEntailmentGateSlotBindingScope(t *testing.T) {
 				t.Fatalf("accepted=%v, want %v\n%s", report.Passed, tc.want, tc.argument)
 			}
 		})
-	}
-}
-
-// Known gap, not fixed here: an indefinite or disjunctive term bound to a slot
-// that occurs twice in the antecedent lets two premises with different
-// witnesses combine ("Some philosopher is wise", "Some philosopher is rich").
-// The gate still accepts these; the test records it so a fix shows up.
-func TestEntailmentGateSlotBindingRepeatedIndefiniteGap(t *testing.T) {
-	for _, subject := range []string{"Some philosopher", "A philosopher", "Socrates or Plato"} {
-		argument := "1. " + subject + " is wise.\n2. " + subject + " is rich.\n" +
-			"3. If X is wise and X is rich, then X is happy.\n4. Therefore, " + subject + " is happy. [1,2,3]"
-		if report, _ := CheckEntailmentGate(argument); !report.Passed {
-			t.Fatalf("repeated-indefinite gap for %q is now rejected; move it into TestEntailmentGateSlotBindingScope", subject)
-		}
 	}
 }

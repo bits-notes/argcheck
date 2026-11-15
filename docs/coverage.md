@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v29.1)
+# Entailment Gate — Coverage and Known Limits (catalog v30)
 
 **Type:** reference
-**Status:** current as of catalog v29.1
+**Status:** current as of catalog v30
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v29.1**). Tests cover capture,
+form; the current catalog is **v30**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -659,10 +659,7 @@ clause inside a noun phrase ("the claim that the store is nearby"), "every",
 arguments of the internal corpus changed no verdict. Tests:
 `validation/entailment_gate_slot_binding_test.go`.
 
-Known gap: an indefinite or disjunctive term bound to a slot that occurs twice in
-the antecedent still combines two premises that may have different witnesses
-("Some philosopher is wise", "Some philosopher is rich", so "some philosopher is
-happy"). `TestEntailmentGateSlotBindingRepeatedIndefiniteGap` records it.
+v30 closed the repeated-indefinite gap recorded here; see below.
 
 ## v28.2: identity terms must refer
 
@@ -724,3 +721,44 @@ membership premise is singular (`Rex is a square` ⊢ `Rex has four sides`): `ha
 `has`, `do` → `does`, `go` → `goes`, and regular `-s`, `-es` and consonant-`y` →
 `-ies` spellings. The verbatim plural stays accepted, so no earlier certificate
 changes; tense changes (`flew`) and mismatched agreement stay rejected.
+
+## v30: a repeated slot binds one fixed thing
+
+A schematic rule is read as universally closed over its placeholders. When a
+placeholder occurs more than once in the antecedent, each occurrence is matched
+against its own premise (or its own position in one premise), so a quantifier
+phrase bound there is re-scoped at each occurrence. v28.2 accepted
+
+    1. Some philosopher is wise.
+    2. Some philosopher is rich.
+    3. If X is wise and X is rich, then X is happy.
+    4. Therefore, some philosopher is happy. [1,2,3]
+
+although the two premises may concern different philosophers. The same held for
+`a philosopher`, `someone`, number phrases and disjunctions (`Socrates or Plato`),
+for `U`/`V`/`W` placeholders, for two-variable rules (`X loves Y and Y is loyal`),
+and for one premise matched twice (`Some philosopher admires some philosopher` +
+`If X admires X, then X is vain`).
+
+v30 rejects these bindings:
+
+- a placeholder repeated in the antecedent may not bind an existential,
+  indefinite or disjunctive term;
+- a placeholder repeated in the consequent may not bind a universal or
+  disjunctive term (`Every philosopher is wise` + `If X is wise, then X admires X`
+  does not give `every philosopher admires every philosopher`).
+
+Still accepted: names, definite descriptions (including one whose relative clause
+contains `or`), `every`/`each`/`all` phrases repeated in the antecedent (every
+philosopher is wise and every philosopher is rich, so every philosopher is happy),
+a slot used once with `some` or `every`, and one premise that already says both
+things of one witness (`Some philosopher is wise and rich` + `If X is wise and
+rich, then X is happy`). Bare plurals (`Philosophers are wise`) take their generic
+reading and still bind; this is a reading limit, not a proof of soundness for the
+existential reading.
+
+The other forms that combine two premises about one term were checked and already
+reject the shape: predicate conjunction (`Some philosopher is wise` + `Some
+philosopher is rich` does not give `some philosopher is wise and rich`), restricted
+universals with a conjunctive relative clause, and the identity rules (v28.2).
+`TestEntailmentGateSlotBindingScope` holds the repros and controls.

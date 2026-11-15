@@ -61,6 +61,8 @@ func searchSchematicConjuncts(ps []NumberedArgumentStep, ci int, ant, cons strin
 			_, antOK := instantiateSchematicTemplate(ant, state)
 			if !ok || !antOK {
 				candidate.mismatch = "unbound schematic variable under binding " + schematicBindingText(state)
+			} else if reason := repeatedSlotMismatch(ant, cons, state); reason != "" {
+				candidate.mismatch = reason
 			} else {
 				appendOutcome(&candidate, evaluateIdentities(clauseIdentity{fmt.Sprintf("premise %d instantiated consequent", ps[ci].Number), want, fmt.Sprintf("conclusion %d", c.Number), c.Statement}))
 				if candidate.mismatch == "" && n+1 != len(ps) {

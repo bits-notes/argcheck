@@ -1646,6 +1646,10 @@ func matchSchematicInstantiationAlphabet(premises []NumberedArgumentStep, conclu
 			if !antecedentOK || !consequentOK {
 				continue
 			}
+			if reason := repeatedSlotMismatch(antecedentTemplate, consequentTemplate, substitution); reason != "" {
+				best = betterOutcome(best, schemaMatchOutcome{traction: true, score: 1, mismatch: reason})
+				continue
+			}
 			candidate = evaluateIdentities(
 				clauseIdentity{
 					fmt.Sprintf("premise %d instantiated antecedent", premises[0].Number),

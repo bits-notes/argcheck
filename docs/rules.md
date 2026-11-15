@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v29.1`)
+# Inference Rule Catalog (`v30`)
 
-`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v29.1` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v30` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -467,7 +467,7 @@ Every `argcheck-accept <form>` and `argcheck-reject <form>` fenced block in this
 3. Therefore, it is not the case that Socrates is happy. [1,2]
 ```
 
-- **What it does not cover:** Lowercase variables (`x` is reserved for explicit `is such that` binders), letters embedded inside words (`Xylophone`), unbound placeholders in the consequent, or empty substitutions. Since v28.1 a placeholder also may not bind text that carries a scope operator: a binding that opens with negation, a non-upward quantifier or a falsity wrapper (`not every`, `no`, `nobody`, `at most`, `it is not`, `it is false`), or one that ends inside an attitude complement before its verb (`Plato denies that Socrates`). This applies to every schematic form.
+- **What it does not cover:** Lowercase variables (`x` is reserved for explicit `is such that` binders), letters embedded inside words (`Xylophone`), unbound placeholders in the consequent, or empty substitutions. Since v28.1 a placeholder also may not bind text that carries a scope operator: a binding that opens with negation, a non-upward quantifier or a falsity wrapper (`not every`, `no`, `nobody`, `at most`, `it is not`, `it is false`), or one that ends inside an attitude complement before its verb (`Plato denies that Socrates`). This applies to every schematic form. Since v30 a placeholder that occurs more than once in the antecedent may not bind an indefinite, existential or disjunctive term (`some philosopher`, `a cat`, `someone`, `two dogs`, `Socrates or Plato`): separate occurrences, matched against separate premises, could concern different witnesses. Names, definite descriptions and `every`/`each`/`all` phrases still bind there. A placeholder that occurs more than once in the consequent may not bind a universal or disjunctive term (`If X is wise, then X admires X` does not give `every philosopher admires every philosopher`).
 
 ---
 
