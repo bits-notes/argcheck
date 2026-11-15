@@ -192,7 +192,7 @@ if syntax.Passed {
 }
 ```
 
-Run tests locally with `go test ./...`.
+Run tests locally with `go test -timeout 30m ./...`. The full suite takes about 6 to 10 minutes, mostly in the truth-table and Fitch oracle tests in `validation/`, which is close to Go's default 10-minute per-package timeout.
 
 ## Advanced: remote MCP comparison
 
