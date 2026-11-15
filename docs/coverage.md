@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v29)
+# Entailment Gate — Coverage and Known Limits (catalog v29.1)
 
 **Type:** reference
-**Status:** current as of catalog v29
+**Status:** current as of catalog v29.1
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v29**). Tests cover capture,
+form; the current catalog is **v29.1**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -714,3 +714,13 @@ verdicts, because sub-clauses are normalized at different granularities. With
 dedicated forms, the 1,482-argument corpus, 177 unless-bearing mutants, the
 reverse spot-check and the earlier repros change no verdict. Tests:
 `validation/entailment_gate_v29_test.go`.
+
+## v29.1: verb agreement in non-copular instantiation
+
+`non-copular universal instantiation` required the instance to repeat the plural
+verb verbatim, so `All squares have four sides` + `Rex is a square` gave only
+`rex have four sides`. v29.1 also accepts the third-person-singular verb when the
+membership premise is singular (`Rex is a square` ⊢ `Rex has four sides`): `have` →
+`has`, `do` → `does`, `go` → `goes`, and regular `-s`, `-es` and consonant-`y` →
+`-ies` spellings. The verbatim plural stays accepted, so no earlier certificate
+changes; tense changes (`flew`) and mismatched agreement stay rejected.

@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v29`)
+# Inference Rule Catalog (`v29.1`)
 
-`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v29` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v29.1` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -490,7 +490,7 @@ Every `argcheck-accept <form>` and `argcheck-reject <form>` fenced block in this
 3. Therefore, Socrates dies. [1,2]
 ```
 
-- **What it does not cover:** Irregular or inflected verb changes between plural and singular (`die` vs `dies`; write `Every man dies` so the verb phrase matches verbatim), attitude-embedded memberships (`Ada believes whales are mammals`), or dropping a relative-clause restrictor.
+- **What it does not cover:** Irregular or inflected verb changes between plural and singular (`die` vs `dies`; write `Every man dies` so the verb phrase matches verbatim), attitude-embedded memberships (`Ada believes whales are mammals`), or dropping a relative-clause restrictor. Since v29.1 a singular instance (`Rex is a square`) may also take the third-person-singular verb (`Rex has four sides`); tense changes are not accepted.
 
 ---
 

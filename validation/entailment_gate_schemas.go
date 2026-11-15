@@ -1410,6 +1410,19 @@ func matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conc
 		candidate := evaluateTermIdentities(clauseIdentity{"universal class", class, "membership class", instance.right})
 		appendOutcome(&candidate, evaluateIdentities(clauseIdentity{"instantiated predicate", instance.left + " " + predicate, "conclusion", conclusion.Statement}))
 		candidate.matched = candidate.score == 2
+		// v29.1: a singular instance ("Rex is a square") may take the
+		// third-person-singular verb ("Rex has four sides"); the verbatim plural
+		// form stays accepted so no earlier certificate changes.
+		if !candidate.matched && strings.HasPrefix(membership, instance.left+" is ") {
+			if singular, ok := thirdPersonSingularPredicate(predicate); ok {
+				agreed := evaluateTermIdentities(clauseIdentity{"universal class", class, "membership class", instance.right})
+				appendOutcome(&agreed, evaluateIdentities(clauseIdentity{"instantiated predicate", instance.left + " " + singular, "conclusion", conclusion.Statement}))
+				agreed.matched = agreed.score == 2
+				if agreed.matched {
+					candidate = agreed
+				}
+			}
+		}
 		best = betterOutcome(best, candidate)
 		if best.matched {
 			return best
@@ -2073,4 +2086,45 @@ func identityPairRefers(pair clausePair) bool {
 
 func identityTermRefers(term string) bool {
 	return substitutionTerm(term, false) || v28IdentityTerm(term)
+}
+
+// thirdPersonSingularPredicate inflects the leading plural verb of a
+// non-copular predicate ("have four sides" -> "has four sides"). Only regular
+// spellings and have/do/go are inflected; anything else is left alone.
+func thirdPersonSingularPredicate(predicate string) (string, bool) {
+	verb, rest, _ := strings.Cut(predicate, " ")
+	if verb == "" || strings.HasSuffix(verb, "s") && !strings.HasSuffix(verb, "ss") {
+		return "", false
+	}
+	// A quantified object ("admire every teacher") is left to the relational
+	// forms, which handle its scope; agreement never applies there.
+	for _, word := range strings.Fields(rest) {
+		switch word {
+		case "every", "all", "each", "any", "some", "no", "none", "most", "few", "many", "both", "either", "neither", "nobody", "nothing", "everyone", "someone", "anyone":
+			return "", false
+		}
+	}
+	var singular string
+	switch verb {
+	case "have":
+		singular = "has"
+	case "do":
+		singular = "does"
+	case "go":
+		singular = "goes"
+	default:
+		n := len(verb)
+		switch {
+		case n > 1 && verb[n-1] == 'y' && !strings.ContainsRune("aeiou", rune(verb[n-2])):
+			singular = verb[:n-1] + "ies"
+		case strings.HasSuffix(verb, "ss") || strings.HasSuffix(verb, "sh") || strings.HasSuffix(verb, "ch") || strings.HasSuffix(verb, "x") || strings.HasSuffix(verb, "z") || strings.HasSuffix(verb, "o"):
+			singular = verb + "es"
+		default:
+			singular = verb + "s"
+		}
+	}
+	if rest == "" {
+		return singular, true
+	}
+	return singular + " " + rest, true
 }

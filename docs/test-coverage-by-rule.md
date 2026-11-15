@@ -2,7 +2,7 @@
 
 Positive is the number of gated steps the validation tests accepted with that form. Negative is the number of gated steps they rejected with that form as `nearest_form`.
 
-Catalog version: `v29`.
+Catalog version: `v29.1`.
 
 The table lists every form `argcheck --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.
 
@@ -23,7 +23,7 @@ go run ./tools/formcoverage tmp/form-coverage.json > docs/test-coverage-by-rule.
 | `biconditional introduction` | 209 | 7 |
 | `biconditional elimination` | 362 | 1547 |
 | `biconditional modus ponens` | 733 | 1536 |
-| `conjunction introduction` | 84 | 66 |
+| `conjunction introduction` | 84 | 67 |
 | `n-ary conjunction introduction` | 14 | 0 |
 | `conjunction elimination` | 7169 | 1078 |
 | `disjunction introduction` | 85 | 1956 |
@@ -35,7 +35,7 @@ go run ./tools/formcoverage tmp/form-coverage.json > docs/test-coverage-by-rule.
 | `universal negative syllogism` | 5 | 4 |
 | `universal negative instantiation` | 11 | 14 |
 | `schematic instantiation` | 43 | 17 |
-| `non-copular universal instantiation` | 124 | 140 |
+| `non-copular universal instantiation` | 128 | 141 |
 | `universal instantiation` | 27 | 16 |
 | `existential generalization` | 18 | 0 |
 | `existential introduction` | 15 | 13 |
