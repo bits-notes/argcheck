@@ -731,6 +731,9 @@ func unifySchematicRunes(
 		if containsSchematicMarker(segment) {
 			continue
 		}
+		if !schematicBindingAllowed(string(segment)) {
+			continue
+		}
 		next := cloneSchematicSubstitution(substitution)
 		next[variable] = string(segment)
 		result = append(result, unifySchematicRunes(template, concrete, templateIndex+1, end, next)...)
@@ -2010,4 +2013,49 @@ func EntailmentGateForms() []string {
 	names = append(names, "counting definition", "counting introduction", "counting elimination", "counting contradiction", "counting uniqueness", "counting subset")
 	names = append(names, "description definition", "description substitution", "description introduction", "description elimination", "description uniqueness", "description negation")
 	return names
+}
+
+// A schematic slot stands for a term. These checks reject bindings that would
+// let a schema reach inside a scope-taking operator: a binding that opens with
+// negation or a non-upward quantifier ("no philosopher", "it is not the case
+// that Socrates"), or one that ends inside the complement of an attitude verb or
+// modal adjective ("Plato denies that Socrates"). In those positions the rule's
+// predicate lands under the operator, so term substitution is not valid.
+var schematicBindingLeadingOperators = []string{
+	"not every ", "not all ", "not each ", "not any ", "not one ", "not a ", "not an ",
+	"not many ", "not the case ", "no ", "nobody", "none ", "nothing", "no one", "never ",
+	"neither ", "few ", "fewer ", "at most ", "less than ", "hardly ", "scarcely ",
+	"it is not ", "it isn't ", "it's not ", "it is false", "it is untrue",
+	"it is unlikely", "it is possible", "it is doubtful",
+}
+
+var schematicBindingComplementTail = regexp.MustCompile(`(?:^|\s)(?:den(?:y|ies|ied)|doubt(?:s|ed)?|believ(?:e|es|ed)|think(?:s)?|thought|claim(?:s|ed)?|say(?:s)?|said|hold(?:s)?|held|argu(?:e|es|ed)|assert(?:s|ed)?|suppos(?:e|es|ed)|assum(?:e|es|ed)|fear(?:s|ed)?|hop(?:e|es|ed)|know(?:s)?|knew|suspect(?:s|ed)?|show(?:s|ed)?|prov(?:e|es|ed)|suggest(?:s|ed)?|predict(?:s|ed)?|expect(?:s|ed)?|wish(?:es|ed)?|false|possible|likely|unlikely|probable|improbable|doubtful|certain)\s+(?:that|whether)\s+(\S+(?:\s+\S+){0,3})$`)
+
+func schematicBindingAllowed(binding string) bool {
+	lower := strings.ToLower(strings.TrimSpace(binding))
+	for _, prefix := range schematicBindingLeadingOperators {
+		if strings.HasPrefix(lower+" ", prefix) {
+			return false
+		}
+	}
+	tail := schematicBindingComplementTail.FindStringSubmatch(lower)
+	if tail == nil {
+		return true
+	}
+	// A captured complement ends at the embedded subject, before its verb
+	// ("denies that Socrates"). A tail that already has its own verb is a
+	// complete clause inside a noun phrase ("the claim that the store is nearby").
+	for _, word := range strings.Fields(tail[1]) {
+		if schematicBindingClauseVerbs[word] {
+			return true
+		}
+	}
+	return false
+}
+
+var schematicBindingClauseVerbs = map[string]bool{
+	"is": true, "are": true, "was": true, "were": true, "be": true, "been": true, "am": true,
+	"do": true, "does": true, "did": true, "has": true, "have": true, "had": true,
+	"can": true, "could": true, "will": true, "would": true, "may": true, "might": true,
+	"must": true, "should": true, "shall": true, "not": true,
 }

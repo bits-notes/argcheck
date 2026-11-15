@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v28)
+# Entailment Gate — Coverage and Known Limits (catalog v28.1)
 
 **Type:** reference
-**Status:** current as of catalog v28
+**Status:** current as of catalog v28.1
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v28**). Tests cover capture,
+form; the current catalog is **v28.1**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -628,3 +628,38 @@ exhaustive propositional truth-table checks, and repeated-category substitution
 and late-premise eigenname rejection receive independent finite-model checks.
 These bounded checks test that the checker never accepts an invalid argument;
 this is not proved.
+
+## v28.1: slot bindings may not carry scope operators
+
+A schematic slot (X, Y, Z, W, U, V) stands for a term. Through v28 a slot could
+bind any substring, so it could absorb an operator from the premise and leave the
+rule's predicate inside that operator's scope. v28 accepted, for example:
+
+```text
+1. It is not the case that Socrates is wise.
+2. If X is wise, then X is happy.
+3. Therefore, it is not the case that Socrates is happy. [1,2]
+```
+
+with X bound to "it is not the case that Socrates": denying the antecedent. The
+same capture worked with "no philosopher", "nobody", "not every philosopher",
+"at most one philosopher", "it is false that Socrates" and "Plato denies that
+Socrates". v28.1 rejects a binding that
+
+- opens with negation, a non-upward quantifier or a falsity wrapper ("not every",
+  "no", "nobody", "none", "nothing", "never", "neither", "few", "at most",
+  "less than", "it is not", "it is false", "it is unlikely", "it is possible", …), or
+- ends inside the complement of an attitude verb or modal adjective before the
+  embedded clause has its own verb ("Plato denies that Socrates", "it is likely
+  that the store").
+
+Negation inside a relative clause ("the philosopher who is not rich"), a complete
+clause inside a noun phrase ("the claim that the store is nearby"), "every",
+"some", names and conditional consequents bind as before. Re-gating the 1,482
+arguments of the internal corpus changed no verdict. Tests:
+`validation/entailment_gate_slot_binding_test.go`.
+
+Known gap: an indefinite or disjunctive term bound to a slot that occurs twice in
+the antecedent still combines two premises that may have different witnesses
+("Some philosopher is wise", "Some philosopher is rich", so "some philosopher is
+happy"). `TestEntailmentGateSlotBindingRepeatedIndefiniteGap` records it.
