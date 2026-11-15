@@ -2,7 +2,7 @@
 
 Positive is the number of gated steps the validation tests accepted with that form. Negative is the number of gated steps they rejected with that form as `nearest_form`.
 
-Catalog version: `v28.2`.
+Catalog version: `v29`.
 
 The table lists every form `argcheck --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.
 
@@ -15,28 +15,28 @@ go run ./tools/formcoverage tmp/form-coverage.json > docs/test-coverage-by-rule.
 
 | Form | Positive | Negative |
 | --- | ---: | ---: |
-| `schematic conjunctive modus ponens` | 37 | 24 |
-| `conjunctive modus ponens` | 111 | 383 |
+| `schematic conjunctive modus ponens` | 41 | 24 |
+| `conjunctive modus ponens` | 111 | 384 |
 | `modus ponens` | 381 | 2162 |
 | `modus tollens` | 83 | 57 |
 | `hypothetical syllogism` | 98 | 13 |
 | `biconditional introduction` | 209 | 7 |
 | `biconditional elimination` | 362 | 1547 |
 | `biconditional modus ponens` | 733 | 1536 |
-| `conjunction introduction` | 83 | 66 |
+| `conjunction introduction` | 84 | 66 |
 | `n-ary conjunction introduction` | 14 | 0 |
 | `conjunction elimination` | 7169 | 1078 |
 | `disjunction introduction` | 85 | 1956 |
 | `disjunctive syllogism` | 83 | 251 |
 | `double negation` | 30 | 48 |
-| `self-entailment` | 5788 | 8203 |
-| `identity transitivity` | 4 | 2 |
+| `self-entailment` | 5788 | 8205 |
+| `identity transitivity` | 6 | 5 |
 | `universal syllogism` | 4 | 4 |
 | `universal negative syllogism` | 5 | 4 |
 | `universal negative instantiation` | 11 | 14 |
-| `schematic instantiation` | 37 | 9 |
+| `schematic instantiation` | 43 | 17 |
 | `non-copular universal instantiation` | 124 | 140 |
-| `universal instantiation` | 27 | 15 |
+| `universal instantiation` | 27 | 16 |
 | `existential generalization` | 18 | 0 |
 | `existential introduction` | 15 | 13 |
 | `existential counterexample` | 7 | 4 |
@@ -44,7 +44,7 @@ go run ./tools/formcoverage tmp/form-coverage.json > docs/test-coverage-by-rule.
 | `existential syllogism` | 9 | 3 |
 | `existential negative syllogism` | 9 | 1 |
 | `schematic existential introduction` | 14 | 0 |
-| `identity substitution` | 61 | 31 |
+| `identity substitution` | 63 | 34 |
 | `constructive dilemma` | 133 | 1721 |
 | `simple dilemma` | 181 | 0 |
 | `destructive dilemma` | 44 | 0 |
@@ -57,7 +57,7 @@ go run ./tools/formcoverage tmp/form-coverage.json > docs/test-coverage-by-rule.
 | `distribution` | 137 | 1117 |
 | `absorption` | 60 | 298 |
 | `double negation introduction` | 27 | 0 |
-| `biconditional modus tollens` | 471 | 3644 |
+| `biconditional modus tollens` | 471 | 3648 |
 | `biconditional chaining` | 284 | 310 |
 | `biconditional commutation` | 205 | 51 |
 | `negated conditional` | 93 | 11 |
@@ -122,7 +122,7 @@ go run ./tools/formcoverage tmp/form-coverage.json > docs/test-coverage-by-rule.
 | `FOL existential elimination` | 52 | 0 |
 | `FOL proof by cases` | 51 | 0 |
 | `notation equivalence` | 5813 | 13 |
-| `counting definition` | 73 | 29 |
+| `counting definition` | 73 | 30 |
 | `counting introduction` | 1 | 0 |
 | `counting elimination` | 1 | 0 |
 | `counting contradiction` | 1 | 0 |
@@ -134,10 +134,12 @@ go run ./tools/formcoverage tmp/form-coverage.json > docs/test-coverage-by-rule.
 | `description elimination` | 3 | 0 |
 | `description uniqueness` | 2 | 0 |
 | `description negation` | 2 | 0 |
+| `unless elimination` | 4 | 1 |
+| `unless conversion` | 3 | 0 |
 
 ## Summary
 
-0 forms have 0 positive. 66 forms have 0 negative.
+0 forms have 0 positive. 67 forms have 0 negative.
 
 ## Forms counted outside `--forms`
 

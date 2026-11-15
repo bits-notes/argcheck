@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v28.2`)
+# Inference Rule Catalog (`v29`)
 
-`argcheck` checks each conclusion step against the 119 inference forms in gate catalog `v28.2` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v29` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -2711,3 +2711,47 @@ Every `argcheck-accept <form>` and `argcheck-reject <form>` fenced block in this
 ```
 
 - **What it does not cover:** Inferring existence (`Some G is not P`) from surface `The G is not P` (which has both a wide-scope Russellian reading and a narrow-scope `It is not the case that the G is P` reading that holds when no `G` exists), or inferring wide-scope `The G is not P` from narrow-scope `It is not the case that the G is P` plus `At most one G`.
+
+---
+
+## `unless elimination`
+
+- **Schema:** `P unless Q` (or `Unless Q, P`); `It is not the case that Q` ⊢ `P`. "Unless" has its weak reading, `if it is not the case that Q, then P` (equivalently `P or Q`).
+- **Accepted:**
+
+```argcheck-accept unless elimination
+1. The alarm sounds unless the battery is dead.
+2. It is not the case that the battery is dead.
+3. Therefore, the alarm sounds. [1,2]
+```
+
+- **Rejected near-miss:**
+
+```argcheck-reject unless elimination
+1. The alarm sounds unless the battery is dead.
+2. The battery is dead.
+3. Therefore, it is not the case that the alarm sounds. [1,2]
+```
+
+- **What it does not cover:** The biconditional or exclusive reading (`P unless Q`, `Q` ⊢ `not P`; `P unless Q`, `P` ⊢ `not Q`), an unless-clause containing a personal pronoun (`Every student passes unless he fails the exam`, whose pronoun may point back into the main clause), or a compound unless-clause matched against one conjunct.
+
+---
+
+## `unless conversion`
+
+- **Schema:** `P unless Q` ⊣⊢ `If it is not the case that Q, then P` (either direction).
+- **Accepted:**
+
+```argcheck-accept unless conversion
+1. The alarm sounds unless the battery is dead.
+2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]
+```
+
+- **Rejected near-miss:**
+
+```argcheck-reject unless conversion
+1. The alarm sounds unless the battery is dead.
+2. Therefore, if the battery is dead, then it is not the case that the alarm sounds. [1]
+```
+
+- **What it does not cover:** The converse conditional `if Q, then not P` (the exclusive reading), or an unless-clause containing a personal pronoun.

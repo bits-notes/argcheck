@@ -3,7 +3,7 @@
 `argcheck` is a deterministic checker in Go for transparently valid numbered
 arguments. It runs offline with no LLM and no network access by default: every
 conclusion step must instantiate a named inference form from the catalog
-(currently **v28.2**, 119 forms) using only its cited earlier steps, with clauses
+(currently **v29**, 121 forms) using only its cited earlier steps, with clauses
 matched word for word after light surface normalization.
 
 Coverage: complete for propositional logic and for function-free first-order
@@ -41,7 +41,7 @@ argcheck < argument.txt      # read from stdin
 cat argument.txt | argcheck -
 argcheck --quiet argument.txt
 argcheck --json argument.txt
-argcheck --forms             # list all 119 inference forms in catalog v28.2
+argcheck --forms             # list all 121 inference forms in catalog v29
 argcheck --version           # print catalog version and build stamp
 ```
 
@@ -71,7 +71,7 @@ Input (`valid.txt`):
 Output (`argcheck valid.txt`, exit `0`):
 
 ```text
-VALID  (gate catalog v28.2; local argcheck@ef44658)
+VALID  (gate catalog v29; local argcheck@ef44658)
 syntax: ok
 step 3 [1,2]: ok: modus ponens
 ```
@@ -91,7 +91,7 @@ rejected (`invalid.txt`):
 Output (`argcheck invalid.txt`, exit `1`):
 
 ```text
-INVALID  (gate catalog v28.2; local argcheck@ef44658)
+INVALID  (gate catalog v29; local argcheck@ef44658)
 syntax: ok
 step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
 ```
@@ -153,7 +153,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
     "passed": true,
     "message": "output passes entailment_gate",
     "details": {
-      "catalog": "v28.2",
+      "catalog": "v29",
       "expansions": [],
       "gated_steps": 1,
       "passed_steps": 1,
@@ -162,14 +162,14 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
       ]
     }
   },
-  "entailment_catalog": "v28.2",
+  "entailment_catalog": "v29",
   "backend": "local",
   "version": "argcheck@ef44658"
 }
 ```
 
-`--forms` prints the catalog header (`entailment gate catalog v28.2 (...)`)
-followed by all 119 accepted form names, covering propositional schemas,
+`--forms` prints the catalog header (`entailment gate catalog v29 (...)`)
+followed by all 121 accepted form names, covering propositional schemas,
 syllogisms, schematic rules (`U`, `V`, `W`, `X`, `Y`, `Z` up to 10 conjuncts),
 identity, system-T modals, counterfactuals, properties, n-place relations,
 relative clauses, explicit-variable FOL with notation equivalence, counting

@@ -1995,7 +1995,7 @@ func permuteClauses(parts []string, from int, visit func([]string) bool) bool {
 func EntailmentGateForms() []string {
 	names := make([]string, 0, len(entailmentSchemas))
 	for _, schema := range entailmentSchemas {
-		if !v20PropertyForm(schema.name) && !v21PropertyForm(schema.name) && schema.name != "relative clause inference" {
+		if !v20PropertyForm(schema.name) && !v21PropertyForm(schema.name) && schema.name != "relative clause inference" && !v29UnlessForm(schema.name) {
 			names = append(names, schema.name)
 		}
 	}
@@ -2018,6 +2018,7 @@ func EntailmentGateForms() []string {
 	names = append(names, "notation equivalence")
 	names = append(names, "counting definition", "counting introduction", "counting elimination", "counting contradiction", "counting uniqueness", "counting subset")
 	names = append(names, "description definition", "description substitution", "description introduction", "description elimination", "description uniqueness", "description negation")
+	names = append(names, v29UnlessForms...)
 	return names
 }
 

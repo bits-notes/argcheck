@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v28.2)
+# Entailment Gate — Coverage and Known Limits (catalog v29)
 
 **Type:** reference
-**Status:** current as of catalog v28.2
+**Status:** current as of catalog v29
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v28.2**). Tests cover capture,
+form; the current catalog is **v29**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -693,3 +693,24 @@ verdict. Tests: `validation/entailment_gate_identity_terms_test.go`.
 Known reading limit: an intensional transitive verb is read as an ordinary
 relation ("Lois is looking for Superman", "Superman is identical to Clark", so
 "Lois is looking for Clark"). `TestEntailmentGateIntensionalVerbGap` records it.
+
+## v29: "unless"
+
+v28.2 had no form for "unless", so the Formalizer could not certify a repair that
+kept a statute's wording ("Any filing received after the statutory deadline is
+untimely unless the court granted an extension"; review fixture domain-legal-01
+failed with repaired verdict `non_atomic`). v29 adds two forms on the weak reading,
+`P unless Q` = `if it is not the case that Q, then P` (equivalently `P or Q`):
+
+- `unless elimination`: `P unless Q` (or `Unless Q, P`), `It is not the case that Q` ⊢ `P`;
+- `unless conversion`: `P unless Q` ⊣⊢ `If it is not the case that Q, then P`.
+
+The biconditional and exclusive readings are rejected: `P unless Q` with `Q` does not
+give `not P`, and with `P` does not give `not Q`. An unless-clause containing a
+personal pronoun is not matched, since the pronoun may point back into a quantified
+main clause. "Unless" text is otherwise left verbatim, not normalized: a first
+attempt that rewrote "P unless Q" during clause normalization changed 10 corpus
+verdicts, because sub-clauses are normalized at different granularities. With
+dedicated forms, the 1,482-argument corpus, 177 unless-bearing mutants, the
+reverse spot-check and the earlier repros change no verdict. Tests:
+`validation/entailment_gate_v29_test.go`.
