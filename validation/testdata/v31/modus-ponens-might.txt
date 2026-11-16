@@ -1,0 +1,3 @@
+1. If the reservoir is low, then the town might ration water.
+2. The reservoir is low.
+3. Therefore, the town might ration water. [1,2]

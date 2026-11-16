@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v30)
+# Entailment Gate — Coverage and Known Limits (catalog v31)
 
 **Type:** reference
-**Status:** current as of catalog v30
+**Status:** current as of catalog v31
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v30**). Tests cover capture,
+form; the current catalog is **v31**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -762,3 +762,52 @@ reject the shape: predicate conjunction (`Some philosopher is wise` + `Some
 philosopher is rich` does not give `some philosopher is wise and rich`), restricted
 universals with a conjunctive relative clause, and the identity rules (v28.2).
 `TestEntailmentGateSlotBindingScope` holds the repros and controls.
+
+## v31: modal phrases are opaque claim parts
+
+Catalog v31 retains 121 forms. In indicative conditionals, `might`, `could`,
+`may`, and `can` belong to the verbatim atomic claim. For example, `If the
+system is misaligned, then the system might seek power` and `The system is
+misaligned` yield `The system might seek power`. They do not yield `The system
+seeks power` or `The system could seek power`. The same matching policy applies
+to antecedents, modus tollens using explicit clausal negation, conjunctive
+modus ponens, and schematic forms. No new modal inference is licensed.
+
+The boundary is conservative and syntactic, not a general English mood parser.
+`conditionalKind` in `validation/entailment_gate_v19.go` now receives the
+antecedent as well as the consequent. Bare `might` is material unless the
+antecedent matches the existing `counterfactualMood` markers (`had`, `were`,
+and their listed auxiliary variants; an antecedent `would` atom does not count). `might have` (including `might not have`)
+and the existing `could have` remain non-material. Thus even an epistemic
+`might have` is conservatively refused. Existing `would` classification and
+counterfactual forms are unchanged; the change does not permit arbitrary
+counterfactual reasoning. Existing `could not have` treatment is unchanged.
+The recursive classification preserves explicit negation and Boolean scope;
+`v19Visit` and opaque masking use the same boundary. `counterfactualUnsafe`
+and mood rewriting are unchanged. Existing system-T forms on `possibly` and
+`necessarily` still operate only on their explicit modal scaffolds.
+
+`validation/entailment_gate_v31_test.go` tests eight representative unchanged corpus fixtures
+in `validation/testdata/v31/`, ordinary and schematic forms, modal non-inferences,
+counterfactual refusals, and system-T controls. It needs no `workspace/` files.
+
+## v27 legacy negation
+
+Decision A retains the historical clausal-negation verdict: from `It is not
+the case that the present king of France is bald`, the gate accepts `The
+present king of France is not bald`. The old certificate treats both as the
+negation of the same clause, and is preserved before the description fallback.
+
+This is not valid for the Russellian predicate-negation reading of the
+conclusion. Let the domain contain one object and let there be no present king
+of France. Then `not (there exists exactly one king and that king is bald)`
+is true, but `there exists exactly one king and that king is not bald` is false.
+The legacy verdict therefore does not establish existence of a king. The
+existing `TestCatalogV27InheritedNegation` pins compatibility;
+`TestV31V27LegacyNegationEmptyRestrictor` additionally forces the empty king
+extension in a one-object countermodel. No negation verdict is changed in v31.
+
+The full 36-fixture check passed 28: six still hit the existing repeated-indefinite
+slot guard, one hits the counting-definition reading guard, and one contains
+possessive `could have enough advantage`, which the conservative perfect-modal
+boundary still refuses. v31 does not relax those boundaries to fit the corpus.

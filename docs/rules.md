@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v30`)
+# Inference Rule Catalog (`v31`)
 
-`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v30` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v31` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -103,6 +103,23 @@ A premise may name earlier steps by number in one place only: as the whole antec
 ```
 
 - **What it does not cover:** Synonym substitution (`wet` to `damp`), affirming the consequent, `"only if"` treated as `"if"`, causal/temporal connectives (`because`, `since`, `after`, `unless`), or counterfactual detachment to indicative mood (see `counterfactual modus ponens`).
+
+
+Indicative modal phrases are verbatim atoms in v31:
+
+```argcheck-accept modus ponens
+1. If the system is misaligned, then the system might seek power.
+2. The system is misaligned.
+3. Therefore, the system might seek power. [1,2]
+```
+
+```argcheck-reject modus ponens
+1. If the system is misaligned, then the system might seek power.
+2. The system is misaligned.
+3. Therefore, the system seeks power. [1,2]
+```
+
+The modal cannot be dropped, introduced, or replaced with another modal. This also applies to modus tollens, conjunctive modus ponens, and schematic forms.
 
 ---
 
@@ -1373,7 +1390,7 @@ A premise may name earlier steps by number in one place only: as the whole antec
 3. Therefore, the match lights. [1,2]
 ```
 
-- **What it does not cover:** Bare `would <verb>` or irregular past-participle shifts (`had gone` vs `went`) where indicative mood cannot be recovered purely from auxiliaries (add a visible bridging premise), `might have` / `could have` conditionals, or `would` embedded inside an attitude report.
+- **What it does not cover:** Bare `would <verb>` or irregular past-participle shifts (`had gone` vs `went`) where indicative mood cannot be recovered purely from auxiliaries (add a visible bridging premise), `might have` / `could have` conditionals, or `would` embedded inside an attitude report. Indicative `might`/`could`/`may`/`can` atoms instead use ordinary forms verbatim; they do not receive counterfactual mood rewriting. Bare `might` with an antecedent carrying the existing `had`/`were` mood markers remains conservatively counterfactual.
 
 ---
 
@@ -1482,7 +1499,7 @@ A premise may name earlier steps by number in one place only: as the whole antec
 2. Therefore, if the match had been struck, then either the match would have lit or the room would have warmed. [1]
 ```
 
-- **What it does not cover:** Upgrading `might have` or `could have` to `would have`, or conditional excluded middle (`Either (if P_cf, then Q_cf) or (if P_cf, then not Q_cf)`).
+- **What it does not cover:** Upgrading counterfactual `might have` or `could have` to `would have` (v31 permits indicative modal atoms only in ordinary forms, without such an upgrade), or conditional excluded middle (`Either (if P_cf, then Q_cf) or (if P_cf, then not Q_cf)`).
 
 ---
 

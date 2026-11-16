@@ -1,0 +1,4 @@
+1. If the bridge is icy and the bus is late, then the school could close early.
+2. The bridge is icy.
+3. The bus is late.
+4. Therefore, the school could close early. [1,2,3]

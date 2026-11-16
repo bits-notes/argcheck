@@ -19,21 +19,24 @@ const (
 
 var nonMaterialAuxiliary = regexp.MustCompile(`(?i)\b(would|might|could have)\b`)
 
-func conditionalKind(consequent string) gateConditionalKind {
+var mightPerfectAuxiliary = regexp.MustCompile(`\bmight (not )?have\b`)
+
+func conditionalKind(consequent, antecedent string) gateConditionalKind {
 	s := v19Unparenthesize(stripClauseWrappers(consequent))
+	antecedent = normalizeClause(antecedent)
 	// A conditional inside the consequent is a separate connective. Its would
 	// does not classify the enclosing material conditional as counterfactual.
 	if strings.HasPrefix(s, "if ") || len(biconditionalCandidates(s)) > 0 {
 		return materialConditional
 	}
 	if neg := negationCandidates(s); len(neg) > 0 {
-		return conditionalKind(neg[0])
+		return conditionalKind(neg[0], antecedent)
 	}
 	for _, op := range []string{"conjunction", "disjunction"} {
 		if parts := v19PolarityPairs(op, s); len(parts) > 0 {
 			kind := materialConditional
 			for _, part := range []string{parts[0].left, parts[0].right} {
-				k := conditionalKind(part)
+				k := conditionalKind(part, antecedent)
 				if k == mightConditional {
 					return k
 				}
@@ -45,7 +48,22 @@ func conditionalKind(consequent string) gateConditionalKind {
 		}
 	}
 	kind := materialConditional
+	antecedentMood := false
+	for _, mood := range counterfactualMood.FindAllString(antecedent, -1) {
+		// A bare would-clause in an antecedent is itself an atom; only
+		// the existing had/were antecedent markers preserve this refusal.
+		if strings.HasPrefix(mood, "had ") || strings.HasPrefix(mood, "were ") {
+			antecedentMood = true
+		}
+	}
 	for _, m := range nonMaterialAuxiliary.FindAllString(s, -1) {
+		// v31: indicative might is part of the atom. Keep the existing
+		// perfect-modal boundary and conservatively retain might with the
+		// existing had/were mood markers in its antecedent. Neither this
+		// classifier nor the material schemas remove modal words.
+		if m == "might" && !mightPerfectAuxiliary.MatchString(s) && !antecedentMood {
+			continue
+		}
 		if m != "would" {
 			return mightConditional
 		}
@@ -55,11 +73,11 @@ func conditionalKind(consequent string) gateConditionalKind {
 }
 func nonMaterialConditional(s string) bool {
 	pairs := v19ConditionalPair(s)
-	return len(pairs) > 0 && conditionalKind(pairs[0].right) != materialConditional
+	return len(pairs) > 0 && conditionalKind(pairs[0].right, pairs[0].left) != materialConditional
 }
 func counterfactualCandidates(s string) []clausePair {
 	pairs := v19ConditionalPair(s)
-	if len(pairs) == 0 || conditionalKind(pairs[0].right) != wouldConditional {
+	if len(pairs) == 0 || conditionalKind(pairs[0].right, pairs[0].left) != wouldConditional {
 		return nil
 	}
 	// Only the first then closes the outer antecedent; nested consequents never

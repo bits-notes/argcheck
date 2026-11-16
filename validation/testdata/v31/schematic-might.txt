@@ -1,0 +1,4 @@
+1. If X trains Y and Y lacks Z, then Y might fail Z.
+2. The academy trains the cadet.
+3. The cadet lacks the final certificate.
+4. Therefore, the cadet might fail the final certificate. [1,2,3]

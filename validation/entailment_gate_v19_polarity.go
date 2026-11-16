@@ -132,7 +132,7 @@ func v19Visit(s string, positive bool, visit func(v19Occurrence)) {
 	}
 	// As in v13, the first then closes an unparenthesized outer antecedent.
 	pair := pairs[0]
-	kind := conditionalKind(pair.right)
+	kind := conditionalKind(pair.right, pair.left)
 	if kind != materialConditional {
 		visit(v19Occurrence{s, positive, kind})
 	}
@@ -239,7 +239,7 @@ func v19OpaqueInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) bo
 		return false
 	}
 	for _, pair := range conditionalCandidatesPreservingCase(p[0].Statement) {
-		if conditionalKind(pair.right) != materialConditional {
+		if conditionalKind(pair.right, pair.left) != materialConditional {
 			continue
 		}
 		ant, _ := schematicTemplate(pair.left)

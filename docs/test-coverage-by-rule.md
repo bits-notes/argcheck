@@ -2,7 +2,7 @@
 
 Positive is the number of gated steps the validation tests accepted with that form. Negative is the number of gated steps they rejected with that form as `nearest_form`.
 
-Catalog version: `v30`.
+Catalog version: `v31`.
 
 The table lists every form `argcheck --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.
 
@@ -158,3 +158,13 @@ A name in this list was reported for a gated step and is not printed by `argchec
 - `simplification of disjunctive antecedents`: positive 0, negative 5
 - `strong centering`: positive 0, negative 3
 - `universal negative syllogism (necessitation)`: positive 4, negative 0
+
+### v31 modal atom regression
+
+`entailment_gate_v31_test.go` covers indicative modal atoms in modus ponens,
+modus tollens, conjunctive modus ponens and schematic instantiation, plus eight representative
+real arguments in `testdata/v31/`. Negative controls reject converse,
+modal introduction/elimination/substitution and counterfactual might detachment.
+System-T controls and the explicit v27 empty-restrictor countermodel pin the
+unchanged boundaries. The modus ponens entry in `docs/rules.md` includes
+executable accepted/rejected modal examples. Catalog v31 still has 121 forms.
