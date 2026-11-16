@@ -3,7 +3,7 @@
 `argcheck` is a deterministic checker in Go for transparently valid numbered
 arguments. It runs offline with no LLM and no network access by default: every
 conclusion step must instantiate a named inference form from the catalog
-(currently **v31**, 121 forms) using only its cited earlier steps, with clauses
+(currently **v31.1**, 121 forms) using only its cited earlier steps, with clauses
 matched word for word after light surface normalization.
 
 Coverage: complete for propositional logic and for function-free first-order
@@ -41,7 +41,7 @@ argcheck < argument.txt      # read from stdin
 cat argument.txt | argcheck -
 argcheck --quiet argument.txt
 argcheck --json argument.txt
-argcheck --forms             # list all 121 inference forms in catalog v31
+argcheck --forms             # list all 121 inference forms in catalog v31.1
 argcheck --version           # print catalog version and build stamp
 ```
 
@@ -71,7 +71,7 @@ Input (`valid.txt`):
 Output (`argcheck valid.txt`, exit `0`):
 
 ```text
-VALID  (gate catalog v31; local argcheck@ef44658)
+VALID  (gate catalog v31.1; local argcheck@ef44658)
 syntax: ok
 step 3 [1,2]: ok: modus ponens
 ```
@@ -91,7 +91,7 @@ rejected (`invalid.txt`):
 Output (`argcheck invalid.txt`, exit `1`):
 
 ```text
-INVALID  (gate catalog v31; local argcheck@ef44658)
+INVALID  (gate catalog v31.1; local argcheck@ef44658)
 syntax: ok
 step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
 ```
@@ -114,9 +114,9 @@ used subset and the inert citation(s) to drop.
 - **Canonical phrasing:** Write sentential negation as `It is not the case that X.`,
   disjunction as `Either X or Y.`, conjunction as `X and Y.`, and identity as
   `A is identical to B.` (or `A is identical with B.`).
-- **Inline bridge premises:** `If [1], then C.` or `If [1,2], then C.` expands
-  the referenced steps verbatim into the antecedent. References are allowed
-  only there; see "Step references" in `docs/rules.md`. An ad hoc bridge puts the
+- **Inline bridge premises:** `If [1], then C.`, `If [1,2], then C.` or
+  `If A, then [1].` expands the referenced steps verbatim. References may fill
+  a whole antecedent or consequent and nowhere else; see "Step references" in `docs/rules.md`. An ad hoc bridge puts the
   inferential weight into that conditional premise rather than proving it.
 
 ### Fitch subproofs
@@ -154,7 +154,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
     "passed": true,
     "message": "output passes entailment_gate",
     "details": {
-      "catalog": "v31",
+      "catalog": "v31.1",
       "expansions": [],
       "gated_steps": 1,
       "passed_steps": 1,
@@ -163,13 +163,13 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
       ]
     }
   },
-  "entailment_catalog": "v31",
+  "entailment_catalog": "v31.1",
   "backend": "local",
   "version": "argcheck@ef44658"
 }
 ```
 
-`--forms` prints the catalog header (`entailment gate catalog v31 (...)`)
+`--forms` prints the catalog header (`entailment gate catalog v31.1 (...)`)
 followed by all 121 accepted form names, covering propositional schemas,
 syllogisms, schematic rules (`U`, `V`, `W`, `X`, `Y`, `Z` up to 10 conjuncts),
 identity, system-T modals, counterfactuals, properties, n-place relations,

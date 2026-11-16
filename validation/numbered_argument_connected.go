@@ -18,6 +18,16 @@ func NumberedArgumentUnusedSteps(arg NumberedArgument) []int {
 		for _, c := range step.Citations {
 			cited[c] = true
 		}
+		// v31.1: a bridge premise's [n] references use the steps they name,
+		// so a step reached only through "If A, then [1]." is not orphaned.
+		// The bridge itself must still be cited.
+		for _, m := range bracketReferencePattern.FindAllStringSubmatch(step.Statement, -1) {
+			if refs, err := parseCitations(m[1]); err == nil {
+				for _, c := range refs {
+					cited[c] = true
+				}
+			}
+		}
 	}
 	unused := make([]int, 0)
 	for _, step := range arg.Steps {

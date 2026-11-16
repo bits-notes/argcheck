@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v31`)
+# Inference Rule Catalog (`v31.1`)
 
-`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v31` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v31.1` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions, and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -8,12 +8,12 @@ Every `argcheck-accept <form>` and `argcheck-reject <form>` fenced block in this
 
 ## Step references
 
-A premise may name earlier steps by number in one place only: as the whole antecedent of a bridge premise.
+A premise may name earlier steps by number in one place only: a bridge premise whose whole antecedent, whole consequent, or both are step references.
 
-- Syntax: `If [1], then C.`, `If [1] and [2], then C.` or `If [1,2], then C.` A comma before `then` is optional.
-- Expansion: each reference becomes `it is the case that <the step's text>`, copied verbatim, and several references are joined by `, and`. So `If [1,2], then C.` is checked as `If it is the case that S1, and it is the case that S2, then C.`, and the step that uses it must still cite steps 1 and 2.
+- Syntax: `If [1], then C.`, `If [1] and [2], then C.`, `If [1], and [2], then C.` or `If [1,2], then C.` for the antecedent; `If A, then [1].` or `If A, then [1,2].` for the consequent; `If [1], then [2].` for both. A comma before `then` or `and` is optional.
+- Expansion: each reference becomes `it is the case that <the step's text>`, copied verbatim, and several references are joined by `, and`, on either side of the conditional. So `If [1,2], then C.` is checked as `If it is the case that S1, and it is the case that S2, then C.`, and the step that uses it must still cite steps 1 and 2.
 - What can be referenced: any earlier step at depth 0 or in a still-open enclosing subproof, including intermediate conclusions and discharged conditionals. A step inside a closed subproof cannot be referenced, and neither can a later step.
-- Where references are rejected (syntax error "inline bracket references outside an explicit bridge premise"): in a consequent (`If it rained, then [1].`), under negation (`It is not the case that [1].`), in a disjunction (`Either [1] or [2].`), mixed with other text in the antecedent (`If [1] and the sky is grey, then C.`), and with a comma before `and` (`If [1], and [2], then C.`). A bridge is a premise, so it cannot appear inside a subproof.
+- Where references are rejected (syntax error "inline bracket references outside an explicit bridge premise"): under negation (`It is not the case that [1].`), in a disjunction (`Either [1] or [2].`), and mixed with other text on the same side (`If [1] and the sky is grey, then C.`, `If A, then [1] and the sky is grey.`). A bridge is a premise, so it cannot appear inside a subproof.
 - Parenthesized numbers such as `(1)` are ordinary text. When a failing step uses one that names an earlier step, the failure message adds a hint: `to refer to step 1, write [1]`.
 - The bridge caveat: a bridge premise asserts that the referenced steps yield C. The gate checks that the step follows from the bridge. It does not check that the bridge itself is true, so an ad hoc bridge carries the step's weight.
 
@@ -30,7 +30,14 @@ A premise may name earlier steps by number in one place only: as the whole antec
 4. Therefore, it rained. [1,2,3]
 ```
 
----
+A consequent reference lets the bridge feed modus tollens:
+
+```argcheck-accept modus tollens
+1. The street is wet.
+2. If it rained, then [1].
+3. It is not the case that the street is wet.
+4. Therefore, it is not the case that it rained. [2,3]
+```
 
 ## `schematic conjunctive modus ponens`
 

@@ -24,8 +24,10 @@ var (
 	terminalCitationPattern = regexp.MustCompile(`\. \[[1-9][0-9]*(?:,[1-9][0-9]*)*\]$`)
 	bracketReferencePattern = regexp.MustCompile(`\[([^\]]+)\]`)
 	numericReferencePattern = regexp.MustCompile(`^[1-9][0-9]*(?:,[1-9][0-9]*)*$`)
-	inlineStepBridgePattern = regexp.MustCompile(`^If ((?:\[[1-9][0-9]*(?:,[1-9][0-9]*)*\](?: and )?)+)(?:,? then |, ).+`)
-	fenceLinePattern        = regexp.MustCompile("^```[A-Za-z0-9_-]*$")
+	inlineStepBridgePattern = regexp.MustCompile(`^If ((?:\[[1-9][0-9]*(?:,[1-9][0-9]*)*\](?:,? and )?)+)(?:,? then |, ).+`)
+	// v31.1: a bridge may also name earlier steps as its whole consequent.
+	inlineStepConsequentPattern = regexp.MustCompile(`^If (.+?),? then ((?:\[[1-9][0-9]*(?:,[1-9][0-9]*)*\](?:,? and )?)+)\.?$`)
+	fenceLinePattern            = regexp.MustCompile("^```[A-Za-z0-9_-]*$")
 )
 
 type NumberedArgument struct {
@@ -403,11 +405,26 @@ func validateStatementBracketReferences(statement string, lineNumber int, stepNu
 
 func statementAllowsInlineStepReferences(statement string) bool {
 	statement = strings.TrimSpace(statement)
+	total := len(bracketReferencePattern.FindAllStringSubmatch(statement, -1))
+	// References may fill the whole consequent; the antecedent is then plain
+	// text or itself a whole-antecedent reference list.
+	if c := inlineStepConsequentPattern.FindStringSubmatch(statement); c != nil {
+		inConsequent := len(bracketReferencePattern.FindAllStringSubmatch(c[2], -1))
+		inAntecedent := len(bracketReferencePattern.FindAllStringSubmatch(c[1], -1))
+		if inAntecedent == 0 {
+			return total == inConsequent
+		}
+		if a := inlineStepBridgePattern.FindStringSubmatch("If " + c[1] + ", then x"); a != nil {
+			return total == inConsequent+len(bracketReferencePattern.FindAllStringSubmatch(a[1], -1)) &&
+				len(bracketReferencePattern.FindAllStringSubmatch(a[1], -1)) == inAntecedent
+		}
+		return false
+	}
 	matches := inlineStepBridgePattern.FindStringSubmatch(statement)
 	if len(matches) < 2 {
 		return false
 	}
-	return len(bracketReferencePattern.FindAllStringSubmatch(statement, -1)) == len(bracketReferencePattern.FindAllStringSubmatch(matches[1], -1))
+	return total == len(bracketReferencePattern.FindAllStringSubmatch(matches[1], -1))
 }
 
 func parseCitations(raw string) ([]int, error) {

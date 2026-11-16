@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var inlineStepBridgeExpansionPattern = regexp.MustCompile(`^If ((?:\[[1-9][0-9]*(?:,[1-9][0-9]*)*\](?: and )?)+)(?:,? then,? |, )(.+)$`)
+var inlineStepBridgeExpansionPattern = regexp.MustCompile(`^If ((?:\[[1-9][0-9]*(?:,[1-9][0-9]*)*\](?:,? and )?)+)(?:,? then,? |, )(.+)$`)
 
 // BridgeExpansion records one bracket-bridge statement replaced by
 // ExpandNumberedArgumentBridges.
@@ -36,49 +36,34 @@ func ExpandNumberedArgumentBridges(arg NumberedArgument) (NumberedArgument, []Br
 		if _, exists := statements[step.Number]; exists {
 			return NumberedArgument{}, nil, fmt.Errorf("duplicate numbered-argument step %d", step.Number)
 		}
-
-		matches := inlineStepBridgeExpansionPattern.FindStringSubmatch(step.Statement)
-		if matches == nil {
-			statements[step.Number] = step.Statement
-			continue
-		}
-
-		references := bracketReferencePattern.FindAllStringSubmatch(matches[1], -1)
-		parts := make([]string, 0, len(references))
-		for _, referenceMatch := range references {
-			if len(referenceMatch) < 2 {
-				continue
-			}
-			stepNumbers, err := parseCitations(referenceMatch[1])
-			if err != nil {
-				return NumberedArgument{}, nil, fmt.Errorf("step %d has invalid bridge reference %q: %w", step.Number, referenceMatch[0], err)
-			}
-			for _, referencedStep := range stepNumbers {
-				statement, ok := statements[referencedStep]
-				if !ok || referencedStep >= step.Number {
-					return NumberedArgument{}, nil, fmt.Errorf("step %d bridge references unavailable prior step %d", step.Number, referencedStep)
-				}
-				parts = append(parts, "it is the case that "+statement)
-			}
-		}
-		if len(parts) == 0 {
-			statements[step.Number] = step.Statement
-			continue
-		}
-
 		original := step.Statement
-		antecedent := parts[0]
-		if len(parts) > 1 {
-			antecedent = strings.Join(parts, ", and ")
+
+		// v31.1: references filling the whole consequent expand the same way.
+		if c := inlineStepConsequentPattern.FindStringSubmatch(step.Statement); c != nil && strings.Contains(c[2], "[") {
+			text, err := expandStepReferenceList(c[2], step.Number, statements)
+			if err != nil {
+				return NumberedArgument{}, nil, err
+			}
+			if text != "" {
+				step.Statement = "If " + c[1] + ", then " + text
+			}
 		}
-		step.Statement = "If " + antecedent + ", then " + matches[2]
-		step.Line = numberedArgumentStepLine(*step)
+
+		if matches := inlineStepBridgeExpansionPattern.FindStringSubmatch(step.Statement); matches != nil {
+			text, err := expandStepReferenceList(matches[1], step.Number, statements)
+			if err != nil {
+				return NumberedArgument{}, nil, err
+			}
+			if text != "" {
+				step.Statement = "If " + text + ", then " + matches[2]
+			}
+		}
+
+		if step.Statement != original {
+			step.Line = numberedArgumentStepLine(*step)
+			expansions = append(expansions, BridgeExpansion{Step: step.Number, Original: original, Expanded: step.Statement})
+		}
 		statements[step.Number] = step.Statement
-		expansions = append(expansions, BridgeExpansion{
-			Step:     step.Number,
-			Original: original,
-			Expanded: step.Statement,
-		})
 	}
 
 	return expanded, expansions, nil
@@ -101,4 +86,28 @@ func numberedArgumentStepLine(step NumberedArgumentStep) string {
 		statement = "Suppose " + statement
 	}
 	return prefix + fmt.Sprintf("%d. %s.", step.Number, statement)
+}
+
+// expandStepReferenceList turns "[1] and [2]" or "[1,2]" into
+// "it is the case that S1, and it is the case that S2", copying each earlier
+// step verbatim.
+func expandStepReferenceList(raw string, stepNumber int, statements map[int]string) (string, error) {
+	parts := make([]string, 0)
+	for _, referenceMatch := range bracketReferencePattern.FindAllStringSubmatch(raw, -1) {
+		if len(referenceMatch) < 2 {
+			continue
+		}
+		stepNumbers, err := parseCitations(referenceMatch[1])
+		if err != nil {
+			return "", fmt.Errorf("step %d has invalid bridge reference %q: %w", stepNumber, referenceMatch[0], err)
+		}
+		for _, referencedStep := range stepNumbers {
+			statement, ok := statements[referencedStep]
+			if !ok || referencedStep >= stepNumber {
+				return "", fmt.Errorf("step %d bridge references unavailable prior step %d", stepNumber, referencedStep)
+			}
+			parts = append(parts, "it is the case that "+statement)
+		}
+	}
+	return strings.Join(parts, ", and "), nil
 }
