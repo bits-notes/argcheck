@@ -100,6 +100,7 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 	}
 	// Observed by CheckEntailmentGate or the builtin validator, not here.
 	report := gateNumberedArgument(expanded, false)
+	addStepReferenceHints(&report, argument)
 	passedSteps := 0
 	for _, step := range report.Steps {
 		if step.Passed {

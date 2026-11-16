@@ -114,8 +114,9 @@ used subset and the inert citation(s) to drop.
 - **Canonical phrasing:** Write sentential negation as `It is not the case that X.`,
   disjunction as `Either X or Y.`, conjunction as `X and Y.`, and identity as
   `A is identical to B.` (or `A is identical with B.`).
-- **Inline bridge premises:** `If [1,2], then C.` expands steps `1` and `2`
-  verbatim into a conjunctive antecedent. Note that an ad hoc bridge puts the
+- **Inline bridge premises:** `If [1], then C.` or `If [1,2], then C.` expands
+  the referenced steps verbatim into the antecedent. References are allowed
+  only there; see "Step references" in `docs/rules.md`. An ad hoc bridge puts the
   inferential weight into that conditional premise rather than proving it.
 
 ### Fitch subproofs

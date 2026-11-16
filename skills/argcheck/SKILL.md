@@ -55,8 +55,10 @@ that passes on the used subset and the inert citation(s) to remove.
 - **Connectedness:** Every premise and every scoped step must support a later
   step (no orphan steps). Root-level premises may appear after intermediate
   conclusions as long as every citation points to an earlier step.
-- **Inline bridge premise:** `If [1,2], then C.` expands steps `1` and `2`
-  verbatim as a conjunctive antecedent.
+- **Inline bridge premise:** `If [1], then C.` or `If [1,2], then C.` expands the
+  referenced steps verbatim as the antecedent. References work only as the whole
+  antecedent (not in a consequent, under negation or mixed with text); write
+  `[1]`, not `(1)`. See "Step references" in `docs/rules.md`.
 - **Fitch subproofs:** Prefix each active depth level with `| `. Open an
   assumption with `Suppose X.` (or `Let a be an arbitrary F.` /
   `Let witness be arbitrary.` for universal generalization). Discharge a
