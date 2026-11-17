@@ -268,7 +268,7 @@ the unchanged v24 validation suite at baseline `7636479`: fixtures, golden
 cases, catalog cases, and generated oracle cases. Capture occurs at the gate
 boundary, after expansion, so dynamically constructed arguments are included.
 Arbitrary-name declarations and explicit-variable sentences are excluded.
-`tools/capture_legacy.py` reproduces the capture in a v24 checkout. Each row
+The legacy capture was produced from a v24 checkout. Each row
 records its sentence, source argument forms, and any named exception. Source
 forms are provenance, not independent semantic coverage of every rule.
 
@@ -557,10 +557,10 @@ Validation includes 20 valid and nine invalid fresh exercises, independent
 finite-model checks over domains 1–3, 39 surface-reading equivalence checks
 over domains 1–4, and Fitch local/discharge obligations. Empty extensions and
 co-denoting constants are included; bounded checks test that the checker never
-accepts an invalid argument (tested, not proved). A read-only corpus scan supplied 40 sentences from 38 source files,
-20 for each requested phrase pattern. Each is checked under modus ponens and
+accepts an invalid argument (tested, not proved). The public corpus retains 24 sentences of fewer than 30 words.
+Each is checked under modus ponens and
 an unrelated-premise rejection, comparing complete v26/v27 step reports.
-The source index records corpus-relative paths and line numbers.
+The source index records neutral source IDs and line numbers.
 
 ## v28: schematic substitution and premise placement
 

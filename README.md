@@ -184,6 +184,10 @@ quantifiers (`1`–`5`), and Russellian definite descriptions.
 
 ## Go library and development
 
+The library contains the deterministic entailment checker and numbered-argument
+parser and syntax validator. LLM output contracts and reconstruction, repair,
+canonicalization, and disputation workflows belong in their consuming application.
+
 ```go
 syntax := validation.Validate(ctx,
     validation.BuiltinSpec(validation.BuiltinNumberedArgumentSyntax), argument)

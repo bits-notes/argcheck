@@ -194,16 +194,3 @@ func TestFitchFreshNamesAndScopeControls(t *testing.T) {
 		t.Fatal(r)
 	}
 }
-
-func TestFitchRepairAndReconstructionRejectBeforeIndexing(t *testing.T) {
-	repair := `{"argument": "| 1. Suppose it rains.\n| 2. Therefore, it rains. [1]\n3. Therefore, if it rains, then it rains. [1-2]", "coverage_anchor":"as_found", "line_mapping":[{"repaired_line":1,"from_source_quote":"it rains"}], "dropped":[]}`
-	r := Validate(t.Context(), BuiltinSpec(BuiltinFormalizedRepairOutput), repair)
-	if r.Passed || !strings.Contains(r.Message, "Fitch") {
-		t.Fatal(r)
-	}
-	reconstruction := `{"argument": "| 1. Suppose it rains.\n| 2. Therefore, it rains. [1]\n3. Therefore, if it rains, then it rains. [1-2]", "lines":[{"line":1,"sentences":[]},{"line":2,"sentences":[]},{"line":3,"sentences":[]}]}`
-	r = ValidateNormalizedReconstructionOutput(t.Context(), reconstruction)
-	if r.Passed || !strings.Contains(r.Message, "Fitch") {
-		t.Fatal(r)
-	}
-}

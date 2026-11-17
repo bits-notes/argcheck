@@ -35,7 +35,7 @@ func TestCatalogV27CorpusRegression(t *testing.T) {
 		t.Fatal(e)
 	}
 	sentences := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(sentences) != 40 {
+	if len(sentences) != 24 {
 		t.Fatal(len(sentences))
 	}
 	for i, s := range sentences {
