@@ -93,6 +93,61 @@ func normalizeGateConditional(value string) string {
 	return value
 }
 
+// v31.2: "Y if X." (or "Y, if X.") states exactly "If X, then Y." This
+// rewrite is applied to whole step statements only, and only on a second pass
+// after the argument as written fails (see checkEntailmentGate), so it can
+// add verdicts but never remove one. It applies only when the reading is
+// unambiguous:
+//   - exactly one "if", not "only if", "even if", "as if", "if and only if",
+//     and no "unless" anywhere;
+//   - not an embedded question ("asked if", "wonder if", "curious if", ...);
+//   - the consequent is not a report or attitude ("says", "thinks", "that"),
+//     which could scope over the "if";
+//   - the consequent has no and/or/either/comma (scope would be ambiguous);
+//   - the antecedent has no further if/then/or (a conjunctive "X and Z" is fine).
+var postposedIfBlockedBefore = map[string]bool{
+	"only": true, "even": true, "as": true, "and": true, "or": true, "but": true,
+	"ask": true, "asks": true, "asked": true, "asking": true,
+	"wonder": true, "wonders": true, "wondered": true, "wondering": true,
+	"know": true, "knows": true, "knew": true, "see": true, "sees": true, "saw": true,
+	"check": true, "checks": true, "checked": true, "decide": true, "decides": true, "decided": true,
+	"tell": true, "tells": true, "told": true, "doubt": true, "doubts": true, "doubted": true,
+	"unsure": true, "sure": true, "whether": true, "question": true, "determine": true, "determines": true,
+	"determined": true, "test": true, "tests": true, "tested": true,
+	"curious": true, "uncertain": true, "unclear": true, "clear": true, "matter": true, "matters": true,
+	"inquire": true, "inquires": true, "inquired": true, "learn": true, "learns": true, "learned": true,
+	"find": true, "finds": true, "found": true, "remember": true, "remembers": true, "remembered": true,
+	"forget": true, "forgets": true, "forgot": true, "care": true, "cares": true, "cared": true,
+}
+
+var postposedConsequentUnsafe = regexp.MustCompile(`(?i)\b(?:and|or|either|if|then|unless|whether|that|says?|said|claims?|claimed|thinks?|thought|believes?|believed|reports?|reported|argues?|argued|states|stated|suggests?|suggested|insists?|insisted|denies|deny|denied|hopes?|hoped|fears?|feared|expects?|expected|predicts?|predicted|shows?|showed|shown|proves?|proved|according)\b|[,;:?!"()“”]`)
+var postposedAntecedentUnsafe = regexp.MustCompile(`(?i)\b(?:if|then|or|unless|whether)\b|[;:?!"()“”]`)
+
+func postposedConditional(value string) (string, bool) {
+	lower := strings.ToLower(value)
+	if strings.HasPrefix(lower, "if ") || strings.Contains(lower, "if and only if") || strings.Contains(lower, "unless") {
+		return "", false
+	}
+	if strings.Count(lower, " if ") != 1 {
+		return "", false
+	}
+	index := strings.Index(lower, " if ")
+	left := strings.TrimSpace(value[:index])
+	right := strings.TrimSpace(value[index+len(" if "):])
+	left = strings.TrimSpace(strings.TrimSuffix(left, ","))
+	if left == "" || right == "" {
+		return "", false
+	}
+	words := strings.Fields(strings.ToLower(left))
+	if postposedIfBlockedBefore[strings.Trim(words[len(words)-1], ",")] {
+		return "", false
+	}
+	if postposedConsequentUnsafe.MatchString(left) || postposedAntecedentUnsafe.MatchString(right) {
+		return "", false
+	}
+	return "If " + right + ", then " + left, true
+}
+
 var gateElidedCopula = regexp.MustCompile(`(?i)^([a-z]+|the [a-z]+(?: [a-z]+)?) (is|are|was|were) (.+)$`)
 var gateBarePredicate = regexp.MustCompile(`(?i)^(?:[a-z]+|(?:on|in|at) (?:the )?[a-z]+)$`)
 

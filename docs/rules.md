@@ -109,6 +109,14 @@ A consequent reference lets the bridge feed modus tollens:
 3. Therefore, streets get damp. [1,2]
 ```
 
+- **Postposed conditionals (v31.2):** `Y if X.` and `Y, if X.` read exactly as `If X, then Y.` wherever a conditional premise is accepted (modus ponens, modus tollens, hypothetical syllogism, conjunctive antecedents `Y if X and Z`, and step references `C if [1]`). The rewrite is skipped for `only if`, `even if`, `as if`, `if and only if`, any `unless`, embedded questions (`asked if`, `wonder if`, `curious if`, `whether`), a consequent that reports or attributes (`says`, `thinks`, `that`, ...), a consequent containing `and`/`or`/`either` or a comma, an antecedent containing `or`, and statements with more than one `if`. The rewrite applies to whole numbered statements, not to clauses inside another statement, and only when the argument as written fails, so it never turns a passing argument into a failing one.
+
+```argcheck-accept modus ponens
+1. Steve will wear a raincoat tomorrow if it rains.
+2. It rains.
+3. Therefore, Steve will wear a raincoat tomorrow. [1,2]
+```
+
 - **What it does not cover:** Synonym substitution (`wet` to `damp`), affirming the consequent, `"only if"` treated as `"if"`, causal/temporal connectives (`because`, `since`, `after`, `unless`), or counterfactual detachment to indicative mood (see `counterfactual modus ponens`).
 
 

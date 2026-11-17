@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v31.1)
+# Entailment Gate — Coverage and Known Limits (catalog v31.2)
 
 **Type:** reference
-**Status:** current as of catalog v31.1
+**Status:** current as of catalog v31.2
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v31.1**). Tests cover capture,
+form; the current catalog is **v31.2**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -817,3 +817,9 @@ boundary still refuses. v31 does not relax those boundaries to fit the corpus.
 A bridge premise may now name earlier steps as its whole consequent (`If A, then [1].`), and a comma may stand before `and` between references (`If [1], and [2], then C.`). A consequent reference expands exactly as an antecedent one does, to `it is the case that <the step's text>`, so it can feed modus tollens and chains. A step reached only through a bridge reference now counts as used for the connectivity check. The bridge itself must still be cited.
 
 This change only widens what is accepted. On the 1,482-argument internal corpus and the 281 freq-vs-bayes arguments, no verdict changed in either direction (against v30). Tests: `validation/step_references_test.go`, and the modus tollens example under "Step references" in `docs/rules.md`.
+
+## v31.2: postposed conditionals
+
+A numbered statement of the form `Y if X.` (or `Y, if X.`) may now serve as the conditional `If X, then Y.`, so it feeds modus ponens, modus tollens, hypothetical syllogism, conjunctive antecedents and step references (`C if [1].`). The rewrite is applied to whole statements only, and only on a second reading after the argument as written fails, so it can add verdicts but never remove one. It is skipped where the reading is ambiguous: `only if`, `even if`, `as if`, `if and only if`, any `unless`, embedded questions (`asked if`, `curious if`, `whether`), consequents that report or attribute (`says`, `thinks`, `that`), a consequent with `and`/`or`/`either` or a comma, an antecedent with `or`, and more than one `if`. The v9 whitelist of very simple clauses (`The lamp is lit if the switch is up.`) still applies inside clauses, as before.
+
+On the 1,482-argument internal corpus and the 281 freq-vs-bayes arguments, no verdict changed in either direction (against v31.1). Tests: `validation/postposed_if_test.go`, and the modus ponens example in `docs/rules.md`.

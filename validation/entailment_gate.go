@@ -8,7 +8,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v31.1"
+const EntailmentGateCatalogVersion = "v31.2"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -90,7 +90,35 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 	if !parseResult.Passed {
 		return EntailmentGateReport{Passed: false}, parseResult
 	}
+	report, result := gateParsedArgument(argument, false)
+	if result.Passed {
+		return report, result
+	}
+	// v31.2: a second reading with each whole-step "Y if X" as "If X, then Y".
+	// It runs only after the argument as written fails, so it never removes a
+	// verdict; the first reading's report stands unless the second passes.
+	if rewritten, ok := rewritePostposedSteps(argument); ok {
+		if altReport, altResult := gateParsedArgument(rewritten, true); altResult.Passed {
+			return altReport, altResult
+		}
+	}
+	return report, result
+}
 
+func rewritePostposedSteps(argument NumberedArgument) (NumberedArgument, bool) {
+	changed := false
+	steps := make([]NumberedArgumentStep, len(argument.Steps))
+	for i, step := range argument.Steps {
+		if rewritten, ok := postposedConditional(strings.TrimSuffix(strings.TrimSpace(step.Statement), ".")); ok {
+			step.Statement = rewritten
+			changed = true
+		}
+		steps[i] = step
+	}
+	return NumberedArgument{Steps: steps}, changed
+}
+
+func gateParsedArgument(argument NumberedArgument, postposed bool) (EntailmentGateReport, Result) {
 	expanded, expansions, err := ExpandNumberedArgumentBridges(argument)
 	if err != nil {
 		return EntailmentGateReport{Passed: false}, Result{
@@ -113,6 +141,9 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 		"passed_steps": passedSteps,
 		"expansions":   expansions,
 		"catalog":      EntailmentGateCatalogVersion,
+	}
+	if postposed {
+		details["postposed_conditionals"] = true
 	}
 	if report.Passed {
 		return report, Result{

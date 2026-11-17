@@ -6,7 +6,7 @@ description: Check a numbered argument for syntactically transparent validity wi
 # argcheck — deterministic validity check for numbered arguments
 
 `argcheck` runs two deterministic checks in Go (`numbered_argument_syntax`, then
-the catalog `v31.1` entailment gate) with no LLM and no network access.
+the catalog `v31.2` entailment gate) with no LLM and no network access.
 
 **Validity is syntactic: the gate is the standard. Never overrule a gate failure
 with your own judgment that a step "obviously follows."** If you think a step is
@@ -31,8 +31,8 @@ EOF
 - `argcheck file.txt` or stdin (`argcheck < file.txt`, `cat file.txt | argcheck -`).
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `INVALID`.
-- `--forms` lists all 121 accepted inference forms in catalog `v31.1`.
-- `--version` prints the catalog version and build stamp (`gate catalog v31.1; local argcheck@<commit>`).
+- `--forms` lists all 121 accepted inference forms in catalog `v31.2`.
+- `--version` prints the catalog version and build stamp (`gate catalog v31.2; local argcheck@<commit>`).
 - Exit codes: `0` valid, `1` invalid, `2` input or operational error.
 - If `argcheck` is not installed yet, install with
   `go install github.com/bits-notes/argcheck/cmd/argcheck@latest` or run
@@ -55,6 +55,7 @@ that passes on the used subset and the inert citation(s) to remove.
 - **Connectedness:** Every premise and every scoped step must support a later
   step (no orphan steps). Root-level premises may appear after intermediate
   conclusions as long as every citation points to an earlier step.
+- **Postposed conditional:** `Y if X.` (or `Y, if X.`) reads as `If X, then Y.`. Not for `only if`, `even if`, `as if`, embedded questions, or a consequent with `and`/`or`.
 - **Inline bridge premise:** `If [1], then C.` or `If [1,2], then C.` expands the
   referenced steps verbatim; `If A, then [1].` works too. References must fill a
   whole antecedent or consequent (not under negation or mixed with text); write

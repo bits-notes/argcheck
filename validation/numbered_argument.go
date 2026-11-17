@@ -405,6 +405,10 @@ func validateStatementBracketReferences(statement string, lineNumber int, stepNu
 
 func statementAllowsInlineStepReferences(statement string) bool {
 	statement = strings.TrimSpace(statement)
+	// v31.2: "C if [1]." is the postposed form of "If [1], then C.".
+	if rewritten, ok := postposedConditional(strings.TrimSuffix(statement, ".")); ok {
+		statement = rewritten
+	}
 	total := len(bracketReferencePattern.FindAllStringSubmatch(statement, -1))
 	// References may fill the whole consequent; the antecedent is then plain
 	// text or itself a whole-antecedent reference list.
