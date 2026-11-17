@@ -5,6 +5,8 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
 )
 
 // A relation has an ordered sequence of argument slots. Prefix entries bind slots, never
@@ -32,7 +34,7 @@ type relationNormal struct {
 }
 
 func relationWords(s string) bool {
-	if s == "" || strings.ContainsAny(s, ",;:\"`()") || opaqueContextWords.MatchString(s) {
+	if s == "" || strings.ContainsAny(s, ",;:\"`()") {
 		return false
 	}
 	for _, w := range strings.Fields(s) {
@@ -40,8 +42,39 @@ func relationWords(s string) bool {
 		case "every", "each", "some", "no", "all", "any", "that", "not", "is", "are", "am", "if", "then", "and", "or", "either":
 			return false
 		}
+		if opaqueContextWord(w) {
+			return false
+		}
 	}
 	return true
+}
+
+// opaqueContextWord reports whether opaqueContextWords matches inside one
+// whitespace-free word. Its alternatives contain no spaces, so a match in a
+// joined string is always a match inside one of its words: checking word by
+// word is exact. Results are cached per word, which keeps the long span loops in
+// relationCandidates and nplaceCandidates from re-running the regex over
+// the same words.
+var (
+	opaqueContextWordCache sync.Map
+	opaqueContextWordCount atomic.Int64
+)
+
+// opaqueContextWordCacheLimit bounds the cache in long-running servers; past it,
+// words are matched without caching.
+const opaqueContextWordCacheLimit = 200000
+
+func opaqueContextWord(w string) bool {
+	if v, ok := opaqueContextWordCache.Load(w); ok {
+		return v.(bool)
+	}
+	m := opaqueContextWords.MatchString(w)
+	if opaqueContextWordCount.Load() < opaqueContextWordCacheLimit {
+		if _, loaded := opaqueContextWordCache.LoadOrStore(w, m); !loaded {
+			opaqueContextWordCount.Add(1)
+		}
+	}
+	return m
 }
 func relationTermCandidate(s string) (relationTerm, bool) {
 	t := relationTerm{text: s}
@@ -111,9 +144,32 @@ func relationCandidates(statement string) []relationClause {
 		return nil
 	}
 	words := strings.Fields(s)
+	// relationWords rejects a span when any single word in it is rejected (its
+	// word regex and lists match whole words only), and the callers below strip
+	// at most the first word of a span ("is", a quantifier) before checking. So
+	// a rejected word anywhere after a span's first word rules the span out.
+	// Pre-marking words keeps this O(n^2) loop from re-running the regex over
+	// long joined strings; spans that survive still go through the exact checks.
+	blocked := make([]int, len(words)+1) // blocked[k] = rejected words among words[:k]
+	for k, w := range words {
+		blocked[k+1] = blocked[k]
+		if !relationWords(w) {
+			blocked[k+1]++
+		}
+	}
+	rejectedAfterFirst := func(a, b int) bool { return b-a > 1 && blocked[b]-blocked[a+1] > 0 }
 	var out []relationClause
 	for i := 1; i < len(words)-1; i++ {
+		if rejectedAfterFirst(0, i) {
+			break // every longer prefix contains the same rejected word
+		}
 		for j := i + 1; j < len(words); j++ {
+			if rejectedAfterFirst(i, j) {
+				break // every longer verb span contains the same rejected word
+			}
+			if rejectedAfterFirst(j, len(words)) {
+				continue
+			}
 			pieces := [2]string{strings.Join(words[:i], " "), strings.Join(words[j:], " ")}
 			verb := strings.Join(words[i:j], " ")
 			if !relationVerb(verb) {
