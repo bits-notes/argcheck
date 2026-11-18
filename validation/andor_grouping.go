@@ -244,7 +244,11 @@ func groupingProblem(s string) string {
 }
 
 func validateStatementGrouping(s string, line int) Result {
-	if operatorCoordinationAmbiguous(s) {
+	return allStrictRules().validateStatementGrouping(s, line)
+}
+
+func (policy strictRules) validateStatementGrouping(s string, line int) Result {
+	if policy.operatorCoordinationAmbiguous(s) {
 		return Result{Passed: false, Message: fmt.Sprintf("line %d sentence %q: %s", line, s+".", operatorGroupingMessage), Details: map[string]any{"line": line, "sentence": s}}
 	}
 	lower := strings.ToLower(s)

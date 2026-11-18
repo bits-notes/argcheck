@@ -77,10 +77,10 @@ func v13Pairs(op, statement string) []clausePair {
 	return nil
 }
 
-func v13MatchPattern(pattern v13Pattern, statement, label string, bindings map[string]string) schemaMatchOutcome {
+func (policy strictRules) v13MatchPattern(pattern v13Pattern, statement, label string, bindings map[string]string) schemaMatchOutcome {
 	if len(pattern.children) == 0 {
 		if bound, ok := bindings[pattern.op]; ok {
-			return evaluateIdentities(clauseIdentity{label, statement, "bound clause " + pattern.op, bound})
+			return policy.evaluateIdentities(clauseIdentity{label, statement, "bound clause " + pattern.op, bound})
 		}
 		bindings[pattern.op] = statement
 		return schemaMatchOutcome{matched: true, traction: true}
@@ -104,14 +104,14 @@ func v13MatchPattern(pattern v13Pattern, statement, label string, bindings map[s
 	}
 	outcome := schemaMatchOutcome{matched: true, traction: true}
 	for i, child := range pattern.children {
-		next := v13MatchPattern(child, parts[i], fmt.Sprintf("%s %s clause %d", label, pattern.op, i+1), bindings)
+		next := policy.v13MatchPattern(child, parts[i], fmt.Sprintf("%s %s clause %d", label, pattern.op, i+1), bindings)
 		outcome.matched = outcome.matched && next.matched
 		appendOutcome(&outcome, next)
 	}
 	return outcome
 }
 
-func v13MatchRules(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, rules ...v13Rule) schemaMatchOutcome {
+func (policy strictRules) v13MatchRules(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, rules ...v13Rule) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, rule := range rules {
 		if len(rule) != len(premises)+1 {
@@ -125,7 +125,7 @@ func v13MatchRules(premises []NumberedArgumentStep, conclusion NumberedArgumentS
 				step = premises[i]
 				label = fmt.Sprintf("premise %d", step.Number)
 			}
-			next := v13MatchPattern(pattern, step.Statement, label, bindings)
+			next := policy.v13MatchPattern(pattern, step.Statement, label, bindings)
 			outcome.matched = outcome.matched && next.matched
 			appendOutcome(&outcome, next)
 		}
@@ -140,57 +140,69 @@ func v13MatchRules(premises []NumberedArgumentStep, conclusion NumberedArgumentS
 	return best
 }
 
-func matchContraposition(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c,
+func (policy strictRules) matchContraposition(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c,
 		v13Rule{v13If(v13P, v13Q), v13If(v13Not(v13Q), v13Not(v13P))},
 		v13Rule{v13If(v13Not(v13Q), v13Not(v13P)), v13If(v13P, v13Q)})
 }
-func matchDeMorgan(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c,
+
+func (policy strictRules) matchDeMorgan(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c,
 		v13Rule{v13Not(v13And(v13P, v13Q)), v13Or(v13Not(v13P), v13Not(v13Q))},
 		v13Rule{v13Or(v13Not(v13P), v13Not(v13Q)), v13Not(v13And(v13P, v13Q))},
 		v13Rule{v13Not(v13Or(v13P, v13Q)), v13And(v13Not(v13P), v13Not(v13Q))},
 		v13Rule{v13And(v13Not(v13P), v13Not(v13Q)), v13Not(v13Or(v13P, v13Q))})
 }
-func matchCommutation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13And(v13P, v13Q), v13And(v13Q, v13P)}, v13Rule{v13Or(v13P, v13Q), v13Or(v13Q, v13P)})
+
+func (policy strictRules) matchCommutation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13And(v13P, v13Q), v13And(v13Q, v13P)}, v13Rule{v13Or(v13P, v13Q), v13Or(v13Q, v13P)})
 }
-func matchExportation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13If(v13And(v13P, v13Q), v13R), v13If(v13P, v13If(v13Q, v13R))})
+
+func (policy strictRules) matchExportation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13If(v13And(v13P, v13Q), v13R), v13If(v13P, v13If(v13Q, v13R))})
 }
-func matchImportation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13If(v13P, v13If(v13Q, v13R)), v13If(v13And(v13P, v13Q), v13R)})
+
+func (policy strictRules) matchImportation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13If(v13P, v13If(v13Q, v13R)), v13If(v13And(v13P, v13Q), v13R)})
 }
-func matchMaterialImplication(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13If(v13P, v13Q), v13Or(v13Not(v13P), v13Q)}, v13Rule{v13Or(v13Not(v13P), v13Q), v13If(v13P, v13Q)})
+
+func (policy strictRules) matchMaterialImplication(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13If(v13P, v13Q), v13Or(v13Not(v13P), v13Q)}, v13Rule{v13Or(v13Not(v13P), v13Q), v13If(v13P, v13Q)})
 }
-func matchDistribution(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c,
+
+func (policy strictRules) matchDistribution(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c,
 		v13Rule{v13And(v13P, v13Or(v13Q, v13R)), v13Or(v13And(v13P, v13Q), v13And(v13P, v13R))},
 		v13Rule{v13Or(v13And(v13P, v13Q), v13And(v13P, v13R)), v13And(v13P, v13Or(v13Q, v13R))},
 		v13Rule{v13Or(v13P, v13And(v13Q, v13R)), v13And(v13Or(v13P, v13Q), v13Or(v13P, v13R))},
 		v13Rule{v13And(v13Or(v13P, v13Q), v13Or(v13P, v13R)), v13Or(v13P, v13And(v13Q, v13R))})
 }
-func matchAbsorption(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13Or(v13P, v13And(v13P, v13Q)), v13P}, v13Rule{v13If(v13P, v13Q), v13If(v13P, v13And(v13P, v13Q))})
-}
-func matchDoubleNegationIntroduction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13P, v13Not(v13Not(v13P))})
-}
-func matchBiconditionalModusTollens(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13Iff(v13P, v13Q), v13Not(v13Q), v13Not(v13P)}, v13Rule{v13Iff(v13P, v13Q), v13Not(v13P), v13Not(v13Q)})
-}
-func matchBiconditionalChaining(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13Iff(v13P, v13Q), v13Iff(v13Q, v13R), v13Iff(v13P, v13R)})
-}
-func matchBiconditionalCommutation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13Iff(v13P, v13Q), v13Iff(v13Q, v13P)})
-}
-func matchNegatedConditional(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c, v13Rule{v13Not(v13If(v13P, v13Q)), v13P}, v13Rule{v13Not(v13If(v13P, v13Q)), v13Not(v13Q)})
+
+func (policy strictRules) matchAbsorption(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13Or(v13P, v13And(v13P, v13Q)), v13P}, v13Rule{v13If(v13P, v13Q), v13If(v13P, v13And(v13P, v13Q))})
 }
 
-func matchIdentitySymmetry(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchDoubleNegationIntroduction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13P, v13Not(v13Not(v13P))})
+}
+
+func (policy strictRules) matchBiconditionalModusTollens(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13Iff(v13P, v13Q), v13Not(v13Q), v13Not(v13P)}, v13Rule{v13Iff(v13P, v13Q), v13Not(v13P), v13Not(v13Q)})
+}
+
+func (policy strictRules) matchBiconditionalChaining(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13Iff(v13P, v13Q), v13Iff(v13Q, v13R), v13Iff(v13P, v13R)})
+}
+
+func (policy strictRules) matchBiconditionalCommutation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13Iff(v13P, v13Q), v13Iff(v13Q, v13P)})
+}
+
+func (policy strictRules) matchNegatedConditional(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c, v13Rule{v13Not(v13If(v13P, v13Q)), v13P}, v13Rule{v13Not(v13If(v13P, v13Q)), v13Not(v13Q)})
+}
+
+func (policy strictRules) matchIdentitySymmetry(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{mismatch: fmt.Sprintf("conclusion %q is not an identity with the same two terms reversed for premise %q", normalizeClause(c.Statement), normalizeClause(p[0].Statement))}
 	for _, from := range identityCandidates(p[0].Statement) {
 		for _, to := range identityCandidates(c.Statement) {
@@ -200,7 +212,7 @@ func matchIdentitySymmetry(p []NumberedArgumentStep, c NumberedArgumentStep) sch
 			if !referringTerm(from.left, false) || !referringTerm(from.right, false) || !referringTerm(to.left, false) || !referringTerm(to.right, false) {
 				continue
 			}
-			best = betterOutcome(best, evaluateIdentities(
+			best = betterOutcome(best, policy.evaluateIdentities(
 				clauseIdentity{"premise identity subject", from.left, "conclusion identity object", to.right},
 				clauseIdentity{"premise identity object", from.right, "conclusion identity subject", to.left}))
 		}
@@ -214,18 +226,20 @@ func matchIdentitySymmetry(p []NumberedArgumentStep, c NumberedArgumentStep) sch
 func v13ClassPair(pair clausePair) bool {
 	return v13PlainClause(pair.left) && v13PlainClause(pair.right) && len(instanceCandidates(pair.left)) == 0 && len(instanceCandidates(pair.right)) == 0
 }
-func v13CompareClasses(from, to clausePair, swap bool) schemaMatchOutcome {
+
+func (policy strictRules) v13CompareClasses(from, to clausePair, swap bool) schemaMatchOutcome {
 	if !v13ClassPair(from) || !v13ClassPair(to) {
 		return schemaMatchOutcome{}
 	}
 	if swap {
 		to = clausePair{to.right, to.left}
 	}
-	return evaluateTermIdentities(
+	return policy.evaluateTermIdentities(
 		clauseIdentity{"premise class", from.left, "conclusion class", to.left},
 		clauseIdentity{"premise predicate", from.right, "conclusion predicate", to.right})
 }
-func matchQuantifierNegation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+
+func (policy strictRules) matchQuantifierNegation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{mismatch: fmt.Sprintf("conclusion %q is not the corresponding particular negative or universal negative of the negated quantifier for premise %q", normalizeClause(c.Statement), normalizeClause(p[0].Statement))}
 	for _, negated := range negationCandidates(p[0].Statement) {
 		for _, pair := range universalCandidates(negated) {
@@ -234,55 +248,57 @@ func matchQuantifierNegation(p []NumberedArgumentStep, c NumberedArgumentStep) s
 				continue
 			}
 			for _, result := range particularNegativeCandidates(c.Statement) {
-				best = betterOutcome(best, v13CompareClasses(pair, result, false))
+				best = betterOutcome(best, policy.v13CompareClasses(pair, result, false))
 			}
 		}
 		for _, pair := range particularAffirmativeCandidates(negated) {
 			if !strings.HasPrefix(normalizeClause(c.Statement), "no ") {
 				continue
 			}
-			for _, result := range universalNegativeCandidates(c.Statement) {
-				best = betterOutcome(best, v13CompareClasses(pair, result, false))
+			for _, result := range policy.universalNegativeCandidates(c.Statement) {
+				best = betterOutcome(best, policy.v13CompareClasses(pair, result, false))
 			}
 		}
 	}
 	return best
 }
-func matchConversion(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+
+func (policy strictRules) matchConversion(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{mismatch: fmt.Sprintf("conclusion %q is not a particular affirmative or no-class statement with subject and predicate reversed for premise %q", normalizeClause(c.Statement), normalizeClause(p[0].Statement))}
-	parsers := []func(string) []clausePair{particularAffirmativeCandidates, universalNegativeCandidates}
+	parsers := []func(string) []clausePair{particularAffirmativeCandidates, policy.universalNegativeCandidates}
 	for i, parse := range parsers {
 		if i == 1 && (!strings.HasPrefix(normalizeClause(p[0].Statement), "no ") || !strings.HasPrefix(normalizeClause(c.Statement), "no ")) {
 			continue
 		}
 		for _, pair := range parse(p[0].Statement) {
 			for _, result := range parse(c.Statement) {
-				best = betterOutcome(best, v13CompareClasses(pair, result, true))
+				best = betterOutcome(best, policy.v13CompareClasses(pair, result, true))
 			}
 		}
 	}
 	return best
 }
-func matchUniversalModusTollens(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+
+func (policy strictRules) matchUniversalModusTollens(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{mismatch: fmt.Sprintf("conclusion %q is not the same denied instance of the universal class for premise %q", normalizeClause(c.Statement), normalizeClause(p[0].Statement))}
 	for _, universal := range universalCandidates(p[0].Statement) {
 		if !v13ClassPair(universal) || strings.HasPrefix(universal.right, "not ") {
 			continue
 		}
 		for _, denied := range negationCandidates(p[1].Statement) {
-			for _, instance := range groundInstanceCandidates(denied) {
+			for _, instance := range policy.groundInstanceCandidates(denied) {
 				if !v13ClassPair(instance) || quantifiedInstanceSubject(instance.left) {
 					continue
 				}
 				for _, resultNegated := range negationCandidates(c.Statement) {
-					for _, result := range groundInstanceCandidates(resultNegated) {
+					for _, result := range policy.groundInstanceCandidates(resultNegated) {
 						if !v13ClassPair(result) || quantifiedInstanceSubject(result.left) {
 							continue
 						}
-						candidate := evaluateTermIdentities(
+						candidate := policy.evaluateTermIdentities(
 							clauseIdentity{"universal predicate", universal.right, "denied instance predicate", instance.right},
 							clauseIdentity{"universal class", universal.left, "denied conclusion class", result.right})
-						subject := evaluateIdentities(clauseIdentity{"premise instance", instance.left, "conclusion instance", result.left})
+						subject := policy.evaluateIdentities(clauseIdentity{"premise instance", instance.left, "conclusion instance", result.left})
 						candidate.matched = candidate.matched && subject.matched
 						appendOutcome(&candidate, subject)
 						best = betterOutcome(best, candidate)
@@ -293,7 +309,8 @@ func matchUniversalModusTollens(p []NumberedArgumentStep, c NumberedArgumentStep
 	}
 	return best
 }
-func matchPossibilityIntroduction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+
+func (policy strictRules) matchPossibilityIntroduction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	s := normalizeClause(c.Statement)
 	const prefix = "possibly, "
 	if !strings.HasPrefix(s, prefix) || len(s) == len(prefix) {
@@ -303,7 +320,7 @@ func matchPossibilityIntroduction(p []NumberedArgumentStep, c NumberedArgumentSt
 	candidates := append([]string{p[0].Statement}, necessityCandidates(p[0].Statement)...)
 	best := schemaMatchOutcome{}
 	for _, clause := range candidates {
-		best = betterOutcome(best, evaluateIdentities(clauseIdentity{"premise clause", clause, "possible conclusion clause", result}))
+		best = betterOutcome(best, policy.evaluateIdentities(clauseIdentity{"premise clause", clause, "possible conclusion clause", result}))
 	}
 	return best
 }

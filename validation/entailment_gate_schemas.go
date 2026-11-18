@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"unicode"
 )
 
@@ -62,91 +63,115 @@ type clauseIdentity struct {
 	right      string
 }
 
-var entailmentSchemas = []entailmentSchema{
-	{name: "schematic conjunctive modus ponens", arity: variableArity, match: matchSchematicConjunctiveModusPonens},
-	{name: "conjunctive modus ponens", arity: variableArity, match: matchConjunctiveModusPonens},
-	{name: "modus ponens", arity: 2, match: matchModusPonens},
-	{name: "modus tollens", arity: 2, match: matchModusTollens},
-	{name: "hypothetical syllogism", arity: 2, match: matchHypotheticalSyllogism},
-	{name: "biconditional introduction", arity: 2, match: matchBiconditionalIntroduction},
-	{name: "biconditional elimination", arity: 1, match: matchBiconditionalElimination},
-	{name: "biconditional modus ponens", arity: 2, match: matchBiconditionalModusPonens},
-	{name: "conjunction introduction", arity: 2, match: matchConjunctionIntroduction},
-	{name: "n-ary conjunction introduction", arity: variableArity, match: matchNaryConjunctionIntroduction},
-	{name: "conjunction elimination", arity: 1, match: matchConjunctionElimination},
-	{name: "disjunction introduction", arity: 1, match: matchDisjunctionIntroduction},
-	{name: "disjunctive syllogism", arity: 2, match: matchDisjunctiveSyllogism},
-	{name: "double negation", arity: 1, match: matchDoubleNegation},
-	{name: "self-entailment", arity: 1, match: matchSelfEntailment},
-	{name: "identity transitivity", arity: 2, match: matchIdentityTransitivity},
-	{name: "universal syllogism", arity: 2, match: matchUniversalSyllogism},
-	{name: "universal negative syllogism", arity: 2, match: matchUniversalNegativeSyllogism},
-	{name: "universal negative instantiation", arity: 2, match: matchUniversalNegativeInstantiation},
-	{name: "schematic instantiation", arity: 2, match: matchSchematicInstantiation},
-	{name: "non-copular universal instantiation", arity: 2, match: matchNonCopularUniversalInstantiation},
-	{name: "universal instantiation", arity: 2, match: matchUniversalInstantiation},
-	{name: "existential generalization", arity: 1, match: matchExistentialGeneralization},
-	{name: "existential introduction", arity: variableArityAtLeastTwo, match: matchExistentialIntroduction},
-	{name: "existential counterexample", arity: 1, match: matchExistentialCounterexample},
-	{name: "necessity elimination", arity: 1, match: matchNecessityElimination},
-	{name: "existential syllogism", arity: 2, match: matchExistentialSyllogism},
-	{name: "existential negative syllogism", arity: 2, match: matchExistentialNegativeSyllogism},
-	{name: "schematic existential introduction", arity: 1, match: matchSchematicExistentialIntroduction},
-	{name: "identity substitution", arity: 2, match: matchIdentitySubstitution},
-	{name: "constructive dilemma", arity: variableArity, match: matchConstructiveDilemma},
-	{name: "simple dilemma", arity: variableArity, match: matchSimpleDilemma},
-	{name: "destructive dilemma", arity: variableArity, match: matchDestructiveDilemma},
-	// v13 forms follow all prior entries to preserve reported form names.
-	{name: "contraposition", arity: 1, match: matchContraposition},
-	{name: "De Morgan", arity: 1, match: matchDeMorgan},
-	{name: "commutation", arity: 1, match: matchCommutation},
-	{name: "exportation", arity: 1, match: matchExportation},
-	{name: "importation", arity: 1, match: matchImportation},
-	{name: "material implication", arity: 1, match: matchMaterialImplication},
-	{name: "distribution", arity: 1, match: matchDistribution},
-	{name: "absorption", arity: 1, match: matchAbsorption},
-	{name: "double negation introduction", arity: 1, match: matchDoubleNegationIntroduction},
-	{name: "biconditional modus tollens", arity: 2, match: matchBiconditionalModusTollens},
-	{name: "biconditional chaining", arity: 2, match: matchBiconditionalChaining},
-	{name: "biconditional commutation", arity: 1, match: matchBiconditionalCommutation},
-	{name: "negated conditional", arity: 1, match: matchNegatedConditional},
-	{name: "identity symmetry", arity: 1, match: matchIdentitySymmetry},
-	{name: "quantifier negation", arity: 1, match: matchQuantifierNegation},
-	{name: "conversion", arity: 1, match: matchConversion},
-	{name: "universal modus tollens", arity: 2, match: matchUniversalModusTollens},
-	{name: "possibility introduction", arity: 1, match: matchPossibilityIntroduction},
-	{name: "contradiction introduction", arity: 2, match: matchContradiction},
-	// v15 forms follow every existing one-step entry.
-	{name: "identity reflexivity", arity: 1, match: matchIdentityReflexivity},
-	{name: "modal duality", arity: 1, match: matchModalDuality},
-	{name: "modal distribution", arity: 1, match: matchModalDistribution},
-	// v17 forms are appended to make the parallel v16 rebase mechanical.
-	{name: "relational universal instantiation", arity: variableArityAtLeastTwo, match: matchV22RelationalInstantiation},
-	{name: "relational existential generalization", arity: 2, match: matchRelationalExistentialGeneralization},
-	{name: "relational universal negative instantiation", arity: 2, match: matchRelationalNegativeInstantiation},
-	{name: "relational scope conversion", arity: 1, match: matchRelationalScope},
-	// v19: VW counterfactuals are separate from every material rule above.
-	{name: "counterfactual modus ponens", arity: 2, match: matchCounterfactualMP},
-	{name: "counterfactual modus tollens", arity: 2, match: matchCounterfactualMT},
-	{name: "counterfactual to material", arity: 1, match: matchCounterfactualMaterial},
-	{name: "counterfactual consequent conjunction", arity: 2, match: matchCounterfactualConjunction},
-	{name: "counterfactual consequent conjunction elimination", arity: 1, match: matchCounterfactualConjunctionElimination},
-	{name: "counterfactual consequent disjunction introduction", arity: 1, match: matchCounterfactualDisjunction},
-	{name: "counterfactual dilemma", arity: variableArity, match: matchCounterfactualDilemma},
-	{name: "counterfactual reflexivity", arity: 1, match: matchCounterfactualReflexivity},
-	// v20: typed property quantification, with verbatim predicate content.
-	{name: "property abstraction", arity: 1, match: matchPropertyAbstraction},
-	{name: "property concretion", arity: 1, match: matchPropertyConcretion},
-	{name: "property instantiation", arity: 2, match: matchPropertyInstantiation},
-	{name: "property existential", arity: 1, match: matchPropertyExistential},
-	{name: "shared property", arity: 2, match: matchSharedProperty},
-	{name: "indiscernibility of identicals", arity: 1, match: matchIndiscernibilityOfIdenticals},
-	// v21: scope-bound property names and distinguishing properties.
-	{name: "property instantiation (arbitrary property)", arity: 2, match: matchNoPropertyScope, matchScoped: matchArbitraryPropertyInstantiation},
-	{name: "distinguishing property", arity: 2, match: matchDistinguishingProperty, matchScoped: matchScopedDistinguishingProperty},
-	{name: "distinguishing property nonidentity", arity: 1, match: matchDistinguishingPropertyNonidentity},
-	{name: "distinguishing property non-inclusion", arity: 1, match: matchDistinguishingPropertyNonInclusion},
-	{name: "relative clause inference", arity: relativeArity, match: matchRelativeClauses},
+// The public/default catalog and each diagnostic evaluation own their bound
+// matchers. Never replace global function pointers for a diagnostic retry.
+var entailmentSchemas = allStrictRules().schemas()
+
+// Cached catalogs contain immutable callbacks bound to a value copy of the
+// switches. Concurrent evaluations never change another evaluation's rules.
+var strictCatalogs sync.Map // map[strictRules][]entailmentSchema
+func (policy strictRules) schemas() []entailmentSchema {
+	if cached, ok := strictCatalogs.Load(policy); ok {
+		return cached.([]entailmentSchema)
+	}
+	built := policy.buildSchemas()
+	cached, _ := strictCatalogs.LoadOrStore(policy, built)
+	return cached.([]entailmentSchema)
+}
+
+func (policy strictRules) buildSchemas() []entailmentSchema {
+	schemas := []entailmentSchema{
+		{name: "schematic conjunctive modus ponens", arity: variableArity, match: policy.matchSchematicConjunctiveModusPonens},
+		{name: "conjunctive modus ponens", arity: variableArity, match: policy.matchConjunctiveModusPonens},
+		{name: "modus ponens", arity: 2, match: policy.matchModusPonens},
+		{name: "modus tollens", arity: 2, match: policy.matchModusTollens},
+		{name: "hypothetical syllogism", arity: 2, match: policy.matchHypotheticalSyllogism},
+		{name: "biconditional introduction", arity: 2, match: policy.matchBiconditionalIntroduction},
+		{name: "biconditional elimination", arity: 1, match: policy.matchBiconditionalElimination},
+		{name: "biconditional modus ponens", arity: 2, match: policy.matchBiconditionalModusPonens},
+		{name: "conjunction introduction", arity: 2, match: policy.matchConjunctionIntroduction},
+		{name: "n-ary conjunction introduction", arity: variableArity, match: policy.matchNaryConjunctionIntroduction},
+		{name: "conjunction elimination", arity: 1, match: policy.matchConjunctionElimination},
+		{name: "disjunction introduction", arity: 1, match: policy.matchDisjunctionIntroduction},
+		{name: "disjunctive syllogism", arity: 2, match: policy.matchDisjunctiveSyllogism},
+		{name: "double negation", arity: 1, match: policy.matchDoubleNegation},
+		{name: "self-entailment", arity: 1, match: policy.matchSelfEntailment},
+		{name: "identity transitivity", arity: 2, match: policy.matchIdentityTransitivity},
+		{name: "universal syllogism", arity: 2, match: policy.matchUniversalSyllogism},
+		{name: "universal negative syllogism", arity: 2, match: policy.matchUniversalNegativeSyllogism},
+		{name: "universal negative instantiation", arity: 2, match: policy.matchUniversalNegativeInstantiation},
+		{name: "schematic instantiation", arity: 2, match: policy.matchSchematicInstantiation},
+		{name: "non-copular universal instantiation", arity: 2, match: policy.matchNonCopularUniversalInstantiation},
+		{name: "universal instantiation", arity: 2, match: policy.matchUniversalInstantiation},
+		{name: "existential generalization", arity: 1, match: policy.matchExistentialGeneralization},
+		{name: "existential introduction", arity: variableArityAtLeastTwo, match: policy.matchExistentialIntroduction},
+		{name: "existential counterexample", arity: 1, match: policy.matchExistentialCounterexample},
+		{name: "necessity elimination", arity: 1, match: policy.matchNecessityElimination},
+		{name: "existential syllogism", arity: 2, match: policy.matchExistentialSyllogism},
+		{name: "existential negative syllogism", arity: 2, match: policy.matchExistentialNegativeSyllogism},
+		{name: "schematic existential introduction", arity: 1, match: policy.matchSchematicExistentialIntroduction},
+		{name: "identity substitution", arity: 2, match: policy.matchIdentitySubstitution},
+		{name: "constructive dilemma", arity: variableArity, match: policy.matchConstructiveDilemma},
+		{name: "simple dilemma", arity: variableArity, match: policy.matchSimpleDilemma},
+		{name: "destructive dilemma", arity: variableArity, match: policy.matchDestructiveDilemma},
+		// v13 forms follow all prior entries to preserve reported form names.
+		{name: "contraposition", arity: 1, match: policy.matchContraposition},
+		{name: "De Morgan", arity: 1, match: policy.matchDeMorgan},
+		{name: "commutation", arity: 1, match: policy.matchCommutation},
+		{name: "exportation", arity: 1, match: policy.matchExportation},
+		{name: "importation", arity: 1, match: policy.matchImportation},
+		{name: "material implication", arity: 1, match: policy.matchMaterialImplication},
+		{name: "distribution", arity: 1, match: policy.matchDistribution},
+		{name: "absorption", arity: 1, match: policy.matchAbsorption},
+		{name: "double negation introduction", arity: 1, match: policy.matchDoubleNegationIntroduction},
+		{name: "biconditional modus tollens", arity: 2, match: policy.matchBiconditionalModusTollens},
+		{name: "biconditional chaining", arity: 2, match: policy.matchBiconditionalChaining},
+		{name: "biconditional commutation", arity: 1, match: policy.matchBiconditionalCommutation},
+		{name: "negated conditional", arity: 1, match: policy.matchNegatedConditional},
+		{name: "identity symmetry", arity: 1, match: policy.matchIdentitySymmetry},
+		{name: "quantifier negation", arity: 1, match: policy.matchQuantifierNegation},
+		{name: "conversion", arity: 1, match: policy.matchConversion},
+		{name: "universal modus tollens", arity: 2, match: policy.matchUniversalModusTollens},
+		{name: "possibility introduction", arity: 1, match: policy.matchPossibilityIntroduction},
+		{name: "contradiction introduction", arity: 2, match: policy.matchContradiction},
+		// v15 forms follow every existing one-step entry.
+		{name: "identity reflexivity", arity: 1, match: matchIdentityReflexivity},
+		{name: "modal duality", arity: 1, match: policy.matchModalDuality},
+		{name: "modal distribution", arity: 1, match: policy.matchModalDistribution},
+		// v17 forms are appended to make the parallel v16 rebase mechanical.
+		{name: "relational universal instantiation", arity: variableArityAtLeastTwo, match: policy.matchV22RelationalInstantiation},
+		{name: "relational existential generalization", arity: 2, match: policy.matchRelationalExistentialGeneralization},
+		{name: "relational universal negative instantiation", arity: 2, match: policy.matchRelationalNegativeInstantiation},
+		{name: "relational scope conversion", arity: 1, match: policy.matchRelationalScope},
+		// v19: VW counterfactuals are separate from every material rule above.
+		{name: "counterfactual modus ponens", arity: 2, match: policy.matchCounterfactualMP},
+		{name: "counterfactual modus tollens", arity: 2, match: policy.matchCounterfactualMT},
+		{name: "counterfactual to material", arity: 1, match: policy.matchCounterfactualMaterial},
+		{name: "counterfactual consequent conjunction", arity: 2, match: policy.matchCounterfactualConjunction},
+		{name: "counterfactual consequent conjunction elimination", arity: 1, match: policy.matchCounterfactualConjunctionElimination},
+		{name: "counterfactual consequent disjunction introduction", arity: 1, match: policy.matchCounterfactualDisjunction},
+		{name: "counterfactual dilemma", arity: variableArity, match: policy.matchCounterfactualDilemma},
+		{name: "counterfactual reflexivity", arity: 1, match: policy.matchCounterfactualReflexivity},
+		// v20: typed property quantification, with verbatim predicate content.
+		{name: "property abstraction", arity: 1, match: policy.matchPropertyAbstraction},
+		{name: "property concretion", arity: 1, match: policy.matchPropertyConcretion},
+		{name: "property instantiation", arity: 2, match: matchPropertyInstantiation},
+		{name: "property existential", arity: 1, match: matchPropertyExistential},
+		{name: "shared property", arity: 2, match: matchSharedProperty},
+		{name: "indiscernibility of identicals", arity: 1, match: matchIndiscernibilityOfIdenticals},
+		// v21: scope-bound property names and distinguishing properties.
+		{name: "property instantiation (arbitrary property)", arity: 2, match: matchNoPropertyScope, matchScoped: matchArbitraryPropertyInstantiation},
+		{name: "distinguishing property", arity: 2, match: matchDistinguishingProperty, matchScoped: matchScopedDistinguishingProperty},
+		{name: "distinguishing property nonidentity", arity: 1, match: matchDistinguishingPropertyNonidentity},
+		{name: "distinguishing property non-inclusion", arity: 1, match: matchDistinguishingPropertyNonInclusion},
+		{name: "relative clause inference", arity: relativeArity, match: policy.matchRelativeClauses},
+	}
+	policy.guardSchemaPolarity(schemas)
+	schemas = append(schemas,
+		entailmentSchema{name: "unless elimination", arity: 2, match: policy.matchUnlessElimination},
+		entailmentSchema{name: "unless conversion", arity: 1, match: policy.matchUnlessConversion},
+	)
+	return schemas
 }
 
 // normalizeClause is the gate's only clause normalization: contractions, case,
@@ -171,12 +196,14 @@ func normalizeClause(value string) string {
 	return separatedQuantifierPattern.ReplaceAllString(value, "${1}thing")
 }
 
-func equalClauses(left, right string) bool {
-	return comparisonClause(left) == comparisonClause(right)
+func equalClauses(left, right string) bool { return allStrictRules().equalClauses(left, right) }
+
+func (policy strictRules) equalClauses(left, right string) bool {
+	return policy.comparisonClause(left) == policy.comparisonClause(right)
 }
 
-func comparisonClause(value string) string {
-	value = comparisonCommas(stripClauseWrappers(value))
+func (policy strictRules) comparisonClause(value string) string {
+	value = policy.comparisonCommas(stripClauseWrappers(value))
 	return strings.Join(strings.Fields(value), " ")
 }
 
@@ -463,6 +490,10 @@ func universalCandidates(statement string) []clausePair {
 // negation: "every S is not P" and bare generics ("Ss are not Ps") read as
 // universal negatives, never as "not every S is P".
 func universalNegativeCandidates(statement string) []clausePair {
+	return allStrictRules().universalNegativeCandidates(statement)
+}
+
+func (policy strictRules) universalNegativeCandidates(statement string) []clausePair {
 	original := statement
 	statement = normalizeClause(statement)
 	result := make([]clausePair, 0)
@@ -488,7 +519,7 @@ func universalNegativeCandidates(statement string) []clausePair {
 			break
 		}
 	}
-	if bare && bareNegativeSubjectAllowed(original) {
+	if bare && policy.bareNegativeSubjectAllowed(original) {
 		result = appendSplitCandidates(result, statement, " are not ", false)
 		result = appendSplitCandidates(result, statement, " is not ", false)
 		result = appendSplitCandidates(result, statement, " am not ", false)
@@ -523,9 +554,11 @@ func necessityCandidates(statement string) []string {
 	return nil
 }
 
-func equalTerms(left, right string) bool {
-	leftCandidates := termCandidates(left)
-	rightCandidates := termCandidates(right)
+func equalTerms(left, right string) bool { return allStrictRules().equalTerms(left, right) }
+
+func (policy strictRules) equalTerms(left, right string) bool {
+	leftCandidates := policy.termCandidates(left)
+	rightCandidates := policy.termCandidates(right)
 	for _, leftCandidate := range leftCandidates {
 		for _, rightCandidate := range rightCandidates {
 			if leftCandidate == rightCandidate {
@@ -536,9 +569,9 @@ func equalTerms(left, right string) bool {
 	return false
 }
 
-func termCandidates(value string) []string {
+func (policy strictRules) termCandidates(value string) []string {
 	value = normalizeClause(value)
-	value = comparisonCommas(value)
+	value = policy.comparisonCommas(value)
 	value = strings.Join(strings.Fields(value), " ")
 	for _, copula := range []string{"is ", "am ", "are "} {
 		if strings.HasPrefix(value, copula) {
@@ -553,7 +586,7 @@ func termCandidates(value string) []string {
 		}
 	}
 	result := []string{value}
-	if nonSingularStem.MatchString(value) {
+	if policy.noun_pluralia_tantum && nonSingularStem.MatchString(value) {
 		return result
 	}
 	words := strings.Fields(value)
@@ -579,7 +612,7 @@ func instanceCandidates(statement string) []clausePair {
 // groundInstanceCandidates enumerates copulas for an unquantified witness.
 // Callers must share the entire subject verbatim across witness premises and
 // any ground conclusion; a suffix inside a noun phrase is never a new witness.
-func groundInstanceCandidates(statement string) []clausePair {
+func (policy strictRules) groundInstanceCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
 	if hasOuterGateOperator(statement) || quantifiedInstanceSubject(statement) {
 		return nil
@@ -597,7 +630,7 @@ func groundInstanceCandidates(statement string) []clausePair {
 
 	result := make([]clausePair, 0)
 	for _, candidate := range instanceCandidates(statement) {
-		if embeddedBinding(candidate.left) {
+		if policy.embeddedBinding(candidate.left) {
 			continue
 		}
 		// A later copula can delimit a whole that-clause noun phrase, but
@@ -714,17 +747,21 @@ func replaceSchematicAlphabet(value string, extended bool) (string, schematicVar
 }
 
 func schematicTemplate(value string) (string, schematicVariableCounts) {
+	return allStrictRules().schematicTemplate(value)
+}
+
+func (policy strictRules) schematicTemplate(value string) (string, schematicVariableCounts) {
 	replaced, counts := replaceSchematicVariables(value)
-	return comparisonClause(replaced), counts
+	return policy.comparisonClause(replaced), counts
 }
 
-func unifySchematicTemplate(template, concrete string, initial schematicSubstitution) []schematicSubstitution {
-	templateRunes := []rune(comparisonClause(template))
-	concreteRunes := []rune(comparisonClause(concrete))
-	return unifySchematicRunes(templateRunes, concreteRunes, 0, 0, cloneSchematicSubstitution(initial))
+func (policy strictRules) unifySchematicTemplate(template, concrete string, initial schematicSubstitution) []schematicSubstitution {
+	templateRunes := []rune(policy.comparisonClause(template))
+	concreteRunes := []rune(policy.comparisonClause(concrete))
+	return policy.unifySchematicRunes(templateRunes, concreteRunes, 0, 0, cloneSchematicSubstitution(initial))
 }
 
-func unifySchematicRunes(
+func (policy strictRules) unifySchematicRunes(
 	template []rune,
 	concrete []rune,
 	templateIndex int,
@@ -743,7 +780,7 @@ func unifySchematicRunes(
 		if concreteIndex >= len(concrete) || template[templateIndex] != concrete[concreteIndex] {
 			return nil
 		}
-		return unifySchematicRunes(template, concrete, templateIndex+1, concreteIndex+1, substitution)
+		return policy.unifySchematicRunes(template, concrete, templateIndex+1, concreteIndex+1, substitution)
 	}
 
 	if bound, ok := substitution[variable]; ok {
@@ -756,7 +793,7 @@ func unifySchematicRunes(
 				return nil
 			}
 		}
-		return unifySchematicRunes(template, concrete, templateIndex+1, concreteIndex+len(boundRunes), substitution)
+		return policy.unifySchematicRunes(template, concrete, templateIndex+1, concreteIndex+len(boundRunes), substitution)
 	}
 
 	result := make([]schematicSubstitution, 0)
@@ -765,15 +802,15 @@ func unifySchematicRunes(
 		if containsSchematicMarker(segment) {
 			continue
 		}
-		if !schematicBindingAllowedAs(string(segment), substitution[clauseTermOverride] != "" || clauseSlotBefore(concrete, concreteIndex)) {
+		if !policy.schematicBindingAllowedAs(string(segment), substitution[clauseTermOverride] != "" || clauseSlotBefore(concrete, concreteIndex)) {
 			continue
 		}
-		if substitution[indefiniteSlotOverride] == "" && !indefiniteBindingPositionSafe(concrete, concreteIndex, string(segment)) {
+		if substitution[indefiniteSlotOverride] == "" && !policy.indefiniteBindingPositionSafe(concrete, concreteIndex, string(segment)) {
 			continue
 		}
 		next := cloneSchematicSubstitution(substitution)
 		next[variable] = string(segment)
-		result = append(result, unifySchematicRunes(template, concrete, templateIndex+1, end, next)...)
+		result = append(result, policy.unifySchematicRunes(template, concrete, templateIndex+1, end, next)...)
 	}
 	return result
 }
@@ -879,22 +916,22 @@ func appendSplitCandidatesPreservingCase(result []clausePair, statement, separat
 	}
 }
 
-func evaluateIdentities(identities ...clauseIdentity) schemaMatchOutcome {
-	return evaluateIdentityComparisons(equalClauses, identities...)
+func (policy strictRules) evaluateIdentities(identities ...clauseIdentity) schemaMatchOutcome {
+	return policy.evaluateIdentityComparisons(policy.equalClauses, identities...)
 }
 
-func evaluateTermIdentities(identities ...clauseIdentity) schemaMatchOutcome {
-	return evaluateIdentityComparisons(equalTerms, identities...)
+func (policy strictRules) evaluateTermIdentities(identities ...clauseIdentity) schemaMatchOutcome {
+	return policy.evaluateIdentityComparisons(policy.equalTerms, identities...)
 }
 
-func evaluateIdentityComparisons(equal func(string, string) bool, identities ...clauseIdentity) schemaMatchOutcome {
+func (policy strictRules) evaluateIdentityComparisons(equal func(string, string) bool, identities ...clauseIdentity) schemaMatchOutcome {
 	outcome := schemaMatchOutcome{traction: true}
 	for _, identity := range identities {
 		if equal(identity.left, identity.right) {
 			outcome.score++
 			continue
 		}
-		if why := punctuationDifference(identity.left, identity.right); why != "" {
+		if why := policy.punctuationDifference(identity.left, identity.right); why != "" {
 			outcome.mismatch = why
 			continue
 		}
@@ -927,7 +964,7 @@ func betterOutcome(current, candidate schemaMatchOutcome) schemaMatchOutcome {
 	return current
 }
 
-func matchConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	if len(premises) < 3 {
 		return schemaMatchOutcome{}
 	}
@@ -950,7 +987,7 @@ func matchConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion Num
 			}
 
 			for _, conjuncts := range conjunctiveCandidates {
-				candidate := evaluateConjunctiveModusPonensCandidate(
+				candidate := policy.evaluateConjunctiveModusPonensCandidate(
 					premises,
 					conditionalIndex,
 					conditional,
@@ -967,7 +1004,7 @@ func matchConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion Num
 	return best
 }
 
-func evaluateConjunctiveModusPonensCandidate(
+func (policy strictRules) evaluateConjunctiveModusPonensCandidate(
 	premises []NumberedArgumentStep,
 	conditionalIndex int,
 	conditional clausePair,
@@ -975,7 +1012,7 @@ func evaluateConjunctiveModusPonensCandidate(
 	conclusion NumberedArgumentStep,
 ) schemaMatchOutcome {
 	conditionalPremise := premises[conditionalIndex]
-	outcome := evaluateIdentities(clauseIdentity{
+	outcome := policy.evaluateIdentities(clauseIdentity{
 		fmt.Sprintf("premise %d consequent", conditionalPremise.Number), conditional.right,
 		fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
 	})
@@ -986,7 +1023,7 @@ func evaluateConjunctiveModusPonensCandidate(
 	for _, conjunct := range conjuncts {
 		matchedIndex := -1
 		for premiseIndex, premise := range premises {
-			if used[premiseIndex] || usedPremiseNumbers[premise.Number] || !equalClauses(conjunct, premise.Statement) {
+			if used[premiseIndex] || usedPremiseNumbers[premise.Number] || !policy.equalClauses(conjunct, premise.Statement) {
 				continue
 			}
 			matchedIndex = premiseIndex
@@ -1042,15 +1079,15 @@ func evaluateConjunctiveModusPonensCandidate(
 	return outcome
 }
 
-func matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
-	old := matchSchematicConjunctiveModusPonensAlphabet(premises, conclusion, schematicTemplate)
+func (policy strictRules) matchSchematicConjunctiveModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	old := policy.matchSchematicConjunctiveModusPonensAlphabet(premises, conclusion, policy.schematicTemplate)
 	if old.matched {
 		return old
 	}
-	return betterOutcome(old, matchSchematicConjunctiveModusPonensAlphabet(premises, conclusion, extendedSchematicTemplate))
+	return betterOutcome(old, policy.matchSchematicConjunctiveModusPonensAlphabet(premises, conclusion, policy.extendedSchematicTemplate))
 }
 
-func matchSchematicConjunctiveModusPonensAlphabet(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, templateOf func(string) (string, schematicVariableCounts)) schemaMatchOutcome {
+func (policy strictRules) matchSchematicConjunctiveModusPonensAlphabet(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, templateOf func(string) (string, schematicVariableCounts)) schemaMatchOutcome {
 	if len(premises) < 3 {
 		return schemaMatchOutcome{}
 	}
@@ -1096,7 +1133,7 @@ func matchSchematicConjunctiveModusPonensAlphabet(premises []NumberedArgumentSte
 				for index, conjunct := range conjuncts {
 					conjunctTemplates[index], _ = templateOf(conjunct)
 				}
-				candidate = evaluateSchematicConjunctiveModusPonensCandidate(
+				candidate = policy.evaluateSchematicConjunctiveModusPonensCandidate(
 					premises,
 					conditionalIndex,
 					antecedentTemplate,
@@ -1117,7 +1154,7 @@ func matchSchematicConjunctiveModusPonensAlphabet(premises []NumberedArgumentSte
 	return best
 }
 
-func evaluateSchematicConjunctiveModusPonensCandidate(
+func (policy strictRules) evaluateSchematicConjunctiveModusPonensCandidate(
 	premises []NumberedArgumentStep,
 	conditionalIndex int,
 	antecedentTemplate string,
@@ -1125,13 +1162,13 @@ func evaluateSchematicConjunctiveModusPonensCandidate(
 	conjunctTemplates []string,
 	conclusion NumberedArgumentStep,
 ) schemaMatchOutcome {
-	return searchSchematicConjuncts(premises, conditionalIndex, antecedentTemplate, consequentTemplate, conjunctTemplates, conclusion)
+	return policy.searchSchematicConjuncts(premises, conditionalIndex, antecedentTemplate, consequentTemplate, conjunctTemplates, conclusion)
 }
 
-func matchModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, conditional := range conditionalCandidates(premises[0].Statement) {
-		candidate := evaluateIdentities(
+		candidate := policy.evaluateIdentities(
 			clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), conditional.left, fmt.Sprintf("premise %d", premises[1].Number), premises[1].Statement},
 			clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), conditional.right, fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement},
 		)
@@ -1143,14 +1180,14 @@ func matchModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgume
 	return best
 }
 
-func matchModusTollens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchModusTollens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	negatedPremises := negationCandidates(premises[1].Statement)
 	negatedConclusions := negationCandidates(conclusion.Statement)
 	for _, conditional := range conditionalCandidates(premises[0].Statement) {
 		for _, negatedPremise := range negatedPremises {
 			for _, negatedConclusion := range negatedConclusions {
-				candidate := evaluateIdentities(
+				candidate := policy.evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), conditional.right, fmt.Sprintf("premise %d negated clause", premises[1].Number), negatedPremise},
 					clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), conditional.left, fmt.Sprintf("conclusion %d negated clause", conclusion.Number), negatedConclusion},
 				)
@@ -1164,12 +1201,12 @@ func matchModusTollens(premises []NumberedArgumentStep, conclusion NumberedArgum
 	return best
 }
 
-func matchHypotheticalSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchHypotheticalSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, first := range conditionalCandidates(premises[0].Statement) {
 		for _, second := range conditionalCandidates(premises[1].Statement) {
 			for _, result := range conditionalCandidates(conclusion.Statement) {
-				candidate := evaluateIdentities(
+				candidate := policy.evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), first.right, fmt.Sprintf("premise %d antecedent", premises[1].Number), second.left},
 					clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), first.left, fmt.Sprintf("conclusion %d antecedent", conclusion.Number), result.left},
 					clauseIdentity{fmt.Sprintf("premise %d consequent", premises[1].Number), second.right, fmt.Sprintf("conclusion %d consequent", conclusion.Number), result.right},
@@ -1184,12 +1221,12 @@ func matchHypotheticalSyllogism(premises []NumberedArgumentStep, conclusion Numb
 	return best
 }
 
-func matchBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, forward := range conditionalCandidates(premises[0].Statement) {
 		for _, reverse := range conditionalCandidates(premises[1].Statement) {
 			for _, biconditional := range biconditionalCandidates(conclusion.Statement) {
-				candidate := evaluateIdentities(
+				candidate := policy.evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), forward.left, fmt.Sprintf("conclusion %d left clause", conclusion.Number), biconditional.left},
 					clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), forward.right, fmt.Sprintf("conclusion %d right clause", conclusion.Number), biconditional.right},
 					clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[1].Number), reverse.left, fmt.Sprintf("conclusion %d right clause", conclusion.Number), biconditional.right},
@@ -1213,8 +1250,12 @@ func matchBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion 
 // premise commitment, rather than a derived biconditional introduction.
 //
 // Keeping every case in this predicate ensures the catalog and atomicity scan
-// share the exact parsing and clause-identity rules.
+// share the exact parsing and clause-identity policy.
 func MatchesBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) bool {
+	return allStrictRules().MatchesBiconditionalIntroduction(premises, conclusion)
+}
+
+func (policy strictRules) MatchesBiconditionalIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) bool {
 	if conclusion.Kind == numberedArgumentStepPremise {
 		return biconditionalEmbeddedInConditional(conclusion.Statement)
 	}
@@ -1222,14 +1263,14 @@ func MatchesBiconditionalIntroduction(premises []NumberedArgumentStep, conclusio
 		return false
 	}
 	for _, ordered := range orderedPremiseSelections(premises, 2) {
-		if matchBiconditionalIntroduction(ordered, conclusion).matched {
+		if policy.matchBiconditionalIntroduction(ordered, conclusion).matched {
 			return true
 		}
-		if matchModusPonens(ordered, conclusion).matched {
+		if policy.matchModusPonens(ordered, conclusion).matched {
 			return true
 		}
 	}
-	return matchConjunctiveModusPonens(premises, conclusion).matched
+	return policy.matchConjunctiveModusPonens(premises, conclusion).matched
 }
 
 func biconditionalEmbeddedInConditional(statement string) bool {
@@ -1242,12 +1283,12 @@ func biconditionalEmbeddedInConditional(statement string) bool {
 	return false
 }
 
-func matchBiconditionalElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchBiconditionalElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, biconditional := range biconditionalCandidates(premises[0].Statement) {
 		for _, conditional := range conditionalCandidates(conclusion.Statement) {
 			for _, direction := range []clausePair{biconditional, {left: biconditional.right, right: biconditional.left}} {
-				candidate := evaluateIdentities(
+				candidate := policy.evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), direction.left, fmt.Sprintf("conclusion %d antecedent", conclusion.Number), conditional.left},
 					clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), direction.right, fmt.Sprintf("conclusion %d consequent", conclusion.Number), conditional.right},
 				)
@@ -1261,11 +1302,11 @@ func matchBiconditionalElimination(premises []NumberedArgumentStep, conclusion N
 	return best
 }
 
-func matchBiconditionalModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchBiconditionalModusPonens(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, biconditional := range biconditionalCandidates(premises[0].Statement) {
 		for _, direction := range []clausePair{biconditional, {left: biconditional.right, right: biconditional.left}} {
-			candidate := evaluateIdentities(
+			candidate := policy.evaluateIdentities(
 				clauseIdentity{fmt.Sprintf("premise %d antecedent", premises[0].Number), direction.left, fmt.Sprintf("premise %d", premises[1].Number), premises[1].Statement},
 				clauseIdentity{fmt.Sprintf("premise %d consequent", premises[0].Number), direction.right, fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement},
 			)
@@ -1278,10 +1319,10 @@ func matchBiconditionalModusPonens(premises []NumberedArgumentStep, conclusion N
 	return best
 }
 
-func matchConjunctionIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchConjunctionIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, conjunction := range conjunctionCandidates(conclusion.Statement) {
-		candidate := evaluateIdentities(
+		candidate := policy.evaluateIdentities(
 			clauseIdentity{fmt.Sprintf("premise %d", premises[0].Number), premises[0].Statement, fmt.Sprintf("conclusion %d left conjunct", conclusion.Number), conjunction.left},
 			clauseIdentity{fmt.Sprintf("premise %d", premises[1].Number), premises[1].Statement, fmt.Sprintf("conclusion %d right conjunct", conclusion.Number), conjunction.right},
 		)
@@ -1293,7 +1334,7 @@ func matchConjunctionIntroduction(premises []NumberedArgumentStep, conclusion Nu
 	return best
 }
 
-func matchConjunctionElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchConjunctionElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	// Raw conjunction candidates also serve bridge antecedents, where cited
 	// clauses disambiguate scope. Elimination has no such evidence: an outer
 	// negation, conditional, disjunction or modal must remain intact.
@@ -1307,7 +1348,7 @@ func matchConjunctionElimination(premises []NumberedArgumentStep, conclusion Num
 			label string
 			value string
 		}{{"left conjunct", conjunction.left}, {"right conjunct", conjunction.right}} {
-			candidate := evaluateIdentities(clauseIdentity{
+			candidate := policy.evaluateIdentities(clauseIdentity{
 				fmt.Sprintf("premise %d %s", premises[0].Number, part.label), part.value,
 				fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
 			})
@@ -1320,14 +1361,14 @@ func matchConjunctionElimination(premises []NumberedArgumentStep, conclusion Num
 	return best
 }
 
-func matchDisjunctionIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchDisjunctionIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, disjunction := range disjunctionCandidates(conclusion.Statement) {
 		for _, part := range []struct {
 			label string
 			value string
 		}{{"left disjunct", disjunction.left}, {"right disjunct", disjunction.right}} {
-			candidate := evaluateIdentities(clauseIdentity{
+			candidate := policy.evaluateIdentities(clauseIdentity{
 				fmt.Sprintf("premise %d", premises[0].Number), premises[0].Statement,
 				fmt.Sprintf("conclusion %d %s", conclusion.Number, part.label), part.value,
 			})
@@ -1340,13 +1381,13 @@ func matchDisjunctionIntroduction(premises []NumberedArgumentStep, conclusion Nu
 	return best
 }
 
-func matchDisjunctiveSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchDisjunctiveSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, disjunction := range disjunctionCandidates(premises[0].Statement) {
 		for _, negated := range negationCandidates(premises[1].Statement) {
 			variants := [][2]string{{disjunction.left, disjunction.right}, {disjunction.right, disjunction.left}}
 			for _, variant := range variants {
-				candidate := evaluateIdentities(
+				candidate := policy.evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d negated clause", premises[1].Number), negated, fmt.Sprintf("premise %d disjunct", premises[0].Number), variant[0]},
 					clauseIdentity{fmt.Sprintf("premise %d remaining disjunct", premises[0].Number), variant[1], fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement},
 				)
@@ -1360,11 +1401,11 @@ func matchDisjunctiveSyllogism(premises []NumberedArgumentStep, conclusion Numbe
 	return best
 }
 
-func matchDoubleNegation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchDoubleNegation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, once := range negationCandidates(premises[0].Statement) {
 		for _, twice := range negationCandidates(once) {
-			candidate := evaluateIdentities(clauseIdentity{
+			candidate := policy.evaluateIdentities(clauseIdentity{
 				fmt.Sprintf("premise %d doubly negated clause", premises[0].Number), twice,
 				fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
 			})
@@ -1374,17 +1415,17 @@ func matchDoubleNegation(premises []NumberedArgumentStep, conclusion NumberedArg
 	return best
 }
 
-func matchSelfEntailment(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
-	if nonrestrictiveWeakening(premises[0].Statement, conclusion.Statement) {
+func (policy strictRules) matchSelfEntailment(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if policy.nonrestrictiveWeakening(premises[0].Statement, conclusion.Statement) {
 		return schemaMatchOutcome{matched: true, score: 1, traction: true}
 	}
-	return evaluateIdentities(clauseIdentity{
+	return policy.evaluateIdentities(clauseIdentity{
 		fmt.Sprintf("premise %d", premises[0].Number), premises[0].Statement,
 		fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
 	})
 }
 
-func matchIdentityTransitivity(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchIdentityTransitivity(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, first := range identityCandidates(premises[0].Statement) {
 		for _, second := range identityCandidates(premises[1].Statement) {
@@ -1395,7 +1436,7 @@ func matchIdentityTransitivity(premises []NumberedArgumentStep, conclusion Numbe
 					best = betterOutcome(best, schemaMatchOutcome{traction: true, mismatch: "identity transitivity needs referring terms, not quantifier phrases"})
 					continue
 				}
-				candidate := evaluateIdentities(
+				candidate := policy.evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d middle term", premises[0].Number), first.right, fmt.Sprintf("premise %d middle term", premises[1].Number), second.left},
 					clauseIdentity{fmt.Sprintf("premise %d first term", premises[0].Number), first.left, fmt.Sprintf("conclusion %d first term", conclusion.Number), result.left},
 					clauseIdentity{fmt.Sprintf("premise %d final term", premises[1].Number), second.right, fmt.Sprintf("conclusion %d final term", conclusion.Number), result.right},
@@ -1414,8 +1455,8 @@ func matchIdentityTransitivity(premises []NumberedArgumentStep, conclusion Numbe
 // Do not guess noun/verb boundaries in modified classes, relative clauses, or
 // coordinated/conditional predicates. Predicate agreement is exact: no verb
 // inflection or termCandidates tolerance is applied to the verb phrase.
-func matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
-	if outcome := matchRelationalUniversalInstantiation(premises, conclusion); outcome.matched {
+func (policy strictRules) matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if outcome := policy.matchRelationalUniversalInstantiation(premises, conclusion); outcome.matched {
 		return outcome
 	}
 	statement := normalizeClause(premises[0].Statement)
@@ -1444,7 +1485,7 @@ func matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conc
 		}
 	}
 	best := schemaMatchOutcome{}
-	for _, instance := range groundInstanceCandidates(premises[1].Statement) {
+	for _, instance := range policy.groundInstanceCandidates(premises[1].Statement) {
 		// A complex subject could hide an attitude report ("Ada believes whales
 		// are mammals"); substituting inside it would not be instantiation.
 		if len(strings.Fields(instance.left)) != 1 {
@@ -1455,16 +1496,16 @@ func matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conc
 		if !strings.HasPrefix(membership, instance.left+" is ") && !strings.HasPrefix(membership, instance.left+" are ") {
 			continue
 		}
-		candidate := evaluateTermIdentities(clauseIdentity{"universal class", class, "membership class", instance.right})
-		appendOutcome(&candidate, evaluateIdentities(clauseIdentity{"instantiated predicate", instance.left + " " + predicate, "conclusion", conclusion.Statement}))
+		candidate := policy.evaluateTermIdentities(clauseIdentity{"universal class", class, "membership class", instance.right})
+		appendOutcome(&candidate, policy.evaluateIdentities(clauseIdentity{"instantiated predicate", instance.left + " " + predicate, "conclusion", conclusion.Statement}))
 		candidate.matched = candidate.score == 2
 		// v29.1: a singular instance ("Rex is a square") may take the
 		// third-person-singular verb ("Rex has four sides"); the verbatim plural
 		// form stays accepted so no earlier certificate changes.
 		if !candidate.matched && strings.HasPrefix(membership, instance.left+" is ") {
 			if singular, ok := thirdPersonSingularPredicate(predicate); ok {
-				agreed := evaluateTermIdentities(clauseIdentity{"universal class", class, "membership class", instance.right})
-				appendOutcome(&agreed, evaluateIdentities(clauseIdentity{"instantiated predicate", instance.left + " " + singular, "conclusion", conclusion.Statement}))
+				agreed := policy.evaluateTermIdentities(clauseIdentity{"universal class", class, "membership class", instance.right})
+				appendOutcome(&agreed, policy.evaluateIdentities(clauseIdentity{"instantiated predicate", instance.left + " " + singular, "conclusion", conclusion.Statement}))
 				agreed.matched = agreed.score == 2
 				if agreed.matched {
 					candidate = agreed
@@ -1479,22 +1520,22 @@ func matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conc
 	return best
 }
 
-func matchUniversalInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchUniversalInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, universal := range universalCandidates(premises[0].Statement) {
-		for _, instance := range uiInstanceCandidates(premises[1].Statement) {
-			if quantifiedInstanceSubject(instance.left) || !schematicBindingAllowed(instance.left) {
+		for _, instance := range policy.uiInstanceCandidates(premises[1].Statement) {
+			if quantifiedInstanceSubject(instance.left) || !policy.schematicBindingAllowed(instance.left) {
 				continue
 			}
-			for _, result := range uiInstanceCandidates(conclusion.Statement) {
+			for _, result := range policy.uiInstanceCandidates(conclusion.Statement) {
 				candidate := schemaMatchOutcome{}
-				appendOutcome(&candidate, evaluateTermIdentities(
+				appendOutcome(&candidate, policy.evaluateTermIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d class", premises[0].Number), universal.left, fmt.Sprintf("premise %d predicate", premises[1].Number), instance.right},
 				))
-				appendOutcome(&candidate, evaluateIdentities(
+				appendOutcome(&candidate, policy.evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d instance", premises[1].Number), instance.left, fmt.Sprintf("conclusion %d instance", conclusion.Number), result.left},
 				))
-				appendOutcome(&candidate, evaluateTermIdentities(
+				appendOutcome(&candidate, policy.evaluateTermIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), universal.right, fmt.Sprintf("conclusion %d predicate", conclusion.Number), result.right},
 				))
 				candidate.matched = candidate.score == 3
@@ -1508,11 +1549,11 @@ func matchUniversalInstantiation(premises []NumberedArgumentStep, conclusion Num
 	return best
 }
 
-func scoreUniversalPredicateSwap(premise, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) scoreUniversalPredicateSwap(premise, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, source := range universalCandidates(premise.Statement) {
 		for _, target := range universalCandidates(conclusion.Statement) {
-			candidate := evaluateTermIdentities(
+			candidate := policy.evaluateTermIdentities(
 				clauseIdentity{fmt.Sprintf("premise %d class", premise.Number), source.left, fmt.Sprintf("conclusion %d class", conclusion.Number), target.left},
 				clauseIdentity{fmt.Sprintf("premise %d predicate", premise.Number), "is " + source.right, fmt.Sprintf("conclusion %d predicate", conclusion.Number), "is " + target.right},
 			)
@@ -1522,12 +1563,12 @@ func scoreUniversalPredicateSwap(premise, conclusion NumberedArgumentStep) schem
 	return best
 }
 
-func matchUniversalSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchUniversalSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, first := range universalCandidates(premises[0].Statement) {
 		for _, second := range universalCandidates(premises[1].Statement) {
 			for _, result := range universalCandidates(conclusion.Statement) {
-				candidate := evaluateTermIdentities(
+				candidate := policy.evaluateTermIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d class", premises[0].Number), first.left, fmt.Sprintf("conclusion %d class", conclusion.Number), result.left},
 					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), first.right, fmt.Sprintf("premise %d class", premises[1].Number), second.left},
 					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[1].Number), second.right, fmt.Sprintf("conclusion %d predicate", conclusion.Number), result.right},
@@ -1547,16 +1588,16 @@ func matchUniversalSyllogism(premises []NumberedArgumentStep, conclusion Numbere
 // Because E-propositions convert (no A is B entails no B is A), the E premise
 // and E conclusion are matched in either orientation; the middle term must be
 // the A premise's predicate, never its subject.
-func matchUniversalNegativeSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchUniversalNegativeSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, universal := range universalCandidates(premises[0].Statement) {
-		for _, negative := range universalNegativeCandidates(premises[1].Statement) {
-			for _, result := range universalNegativeCandidates(conclusion.Statement) {
+		for _, negative := range policy.universalNegativeCandidates(premises[1].Statement) {
+			for _, result := range policy.universalNegativeCandidates(conclusion.Statement) {
 				negativeOrientations := [][2]string{{negative.left, negative.right}, {negative.right, negative.left}}
 				resultOrientations := [][2]string{{result.left, result.right}, {result.right, result.left}}
 				for _, negativeTerms := range negativeOrientations {
 					for _, resultTerms := range resultOrientations {
-						candidate := evaluateTermIdentities(
+						candidate := policy.evaluateTermIdentities(
 							clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), universal.right, fmt.Sprintf("premise %d middle term", premises[1].Number), negativeTerms[0]},
 							clauseIdentity{fmt.Sprintf("premise %d class", premises[0].Number), universal.left, fmt.Sprintf("conclusion %d subject term", conclusion.Number), resultTerms[0]},
 							clauseIdentity{fmt.Sprintf("premise %d excluded term", premises[1].Number), negativeTerms[1], fmt.Sprintf("conclusion %d excluded term", conclusion.Number), resultTerms[1]},
@@ -1578,16 +1619,16 @@ func matchUniversalNegativeSyllogism(premises []NumberedArgumentStep, conclusion
 // universal negative syllogism, neither conversion nor term morphology is
 // permitted: the shared predicate, instance, and excluded class are compared
 // as clauses. The conclusion alone may add an indefinite article before G.
-func matchUniversalNegativeInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchUniversalNegativeInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, negated := range negationCandidates(conclusion.Statement) {
-		for _, instance := range groundInstanceCandidates(premises[0].Statement) {
-			for _, result := range groundInstanceCandidates(negated) {
-				for _, negative := range universalNegativeCandidates(premises[1].Statement) {
+		for _, instance := range policy.groundInstanceCandidates(premises[0].Statement) {
+			for _, result := range policy.groundInstanceCandidates(negated) {
+				for _, negative := range policy.universalNegativeCandidates(premises[1].Statement) {
 					for _, direction := range []clausePair{negative, {left: negative.right, right: negative.left}} {
-						if equalClauses(instance.left, result.left) &&
-							equalClausesWithOptionalIndefiniteArticle(instance.right, direction.left) &&
-							equalClausesWithOptionalIndefiniteArticle(result.right, direction.right) {
+						if policy.equalClauses(instance.left, result.left) &&
+							policy.equalClausesWithOptionalIndefiniteArticle(instance.right, direction.left) &&
+							policy.equalClausesWithOptionalIndefiniteArticle(result.right, direction.right) {
 							return schemaMatchOutcome{matched: true, traction: true, score: 3}
 						}
 					}
@@ -1596,18 +1637,18 @@ func matchUniversalNegativeInstantiation(premises []NumberedArgumentStep, conclu
 		}
 	}
 	for _, instance := range instanceCandidates(premises[0].Statement) {
-		if quantifiedInstanceSubject(instance.left) || !schematicBindingAllowed(instance.left) {
+		if quantifiedInstanceSubject(instance.left) || !policy.schematicBindingAllowed(instance.left) {
 			continue
 		}
-		for _, negative := range universalNegativeCandidates(premises[1].Statement) {
+		for _, negative := range policy.universalNegativeCandidates(premises[1].Statement) {
 			for _, result := range negativeInstanceCandidates(conclusion.Statement) {
 				candidate := schemaMatchOutcome{}
-				appendOutcome(&candidate, evaluateIdentities(
+				appendOutcome(&candidate, policy.evaluateIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), instance.right, fmt.Sprintf("premise %d predicate", premises[1].Number), negative.right},
 					clauseIdentity{fmt.Sprintf("premise %d instance", premises[0].Number), instance.left, fmt.Sprintf("conclusion %d instance", conclusion.Number), result.left},
 				))
-				appendOutcome(&candidate, evaluateIdentityComparisons(
-					equalClausesWithOptionalIndefiniteArticle,
+				appendOutcome(&candidate, policy.evaluateIdentityComparisons(
+					policy.equalClausesWithOptionalIndefiniteArticle,
 					clauseIdentity{fmt.Sprintf("premise %d restricted class", premises[1].Number), negative.left, fmt.Sprintf("conclusion %d excluded class", conclusion.Number), result.right},
 				))
 				candidate.matched = candidate.score == 3
@@ -1621,12 +1662,12 @@ func matchUniversalNegativeInstantiation(premises []NumberedArgumentStep, conclu
 	return best
 }
 
-func equalClausesWithOptionalIndefiniteArticle(left, right string) bool {
-	return stripOptionalIndefiniteArticle(left) == stripOptionalIndefiniteArticle(right)
+func (policy strictRules) equalClausesWithOptionalIndefiniteArticle(left, right string) bool {
+	return policy.stripOptionalIndefiniteArticle(left) == policy.stripOptionalIndefiniteArticle(right)
 }
 
-func stripOptionalIndefiniteArticle(value string) string {
-	value = comparisonClause(value)
+func (policy strictRules) stripOptionalIndefiniteArticle(value string) string {
+	value = policy.comparisonClause(value)
 	for _, article := range []string{"a ", "an "} {
 		if strings.HasPrefix(value, article) {
 			return strings.TrimPrefix(value, article)
@@ -1638,18 +1679,18 @@ func stripOptionalIndefiniteArticle(value string) string {
 // matchSchematicInstantiation certifies If A(vars), then B(vars); A(sigma);
 // therefore B(sigma), where vars are standalone uppercase X, Y, or Z and one
 // consistent non-empty substitution verifies every occurrence.
-func matchSchematicInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
-	if out := matchMonotoneUniversal(premises, conclusion); out.matched {
+func (policy strictRules) matchSchematicInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if out := policy.matchMonotoneUniversal(premises, conclusion); out.matched {
 		return out
 	}
-	old := matchSchematicInstantiationAlphabet(premises, conclusion, schematicTemplate)
+	old := policy.matchSchematicInstantiationAlphabet(premises, conclusion, policy.schematicTemplate)
 	if old.matched {
 		return old
 	}
-	return betterOutcome(old, matchSchematicInstantiationAlphabet(premises, conclusion, extendedSchematicTemplate))
+	return betterOutcome(old, policy.matchSchematicInstantiationAlphabet(premises, conclusion, policy.extendedSchematicTemplate))
 }
 
-func matchSchematicInstantiationAlphabet(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, templateOf func(string) (string, schematicVariableCounts)) schemaMatchOutcome {
+func (policy strictRules) matchSchematicInstantiationAlphabet(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, templateOf func(string) (string, schematicVariableCounts)) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, conditional := range conditionalCandidatesPreservingCase(premises[0].Statement) {
 		antecedentTemplate, antecedentVariables := templateOf(conditional.left)
@@ -1679,7 +1720,7 @@ func matchSchematicInstantiationAlphabet(premises []NumberedArgumentStep, conclu
 			continue
 		}
 
-		substitutions := unifySchematicTemplate(antecedentTemplate, premises[1].Statement, relaxedInitial(nil, premises...))
+		substitutions := policy.unifySchematicTemplate(antecedentTemplate, premises[1].Statement, relaxedInitial(nil, premises...))
 		if len(substitutions) == 0 {
 			candidate.score = 1
 			candidate.mismatch = fmt.Sprintf(
@@ -1701,7 +1742,7 @@ func matchSchematicInstantiationAlphabet(premises []NumberedArgumentStep, conclu
 				best = betterOutcome(best, schemaMatchOutcome{traction: true, score: 1, mismatch: reason})
 				continue
 			}
-			candidate = evaluateIdentities(
+			candidate = policy.evaluateIdentities(
 				clauseIdentity{
 					fmt.Sprintf("premise %d instantiated antecedent", premises[0].Number),
 					instantiatedAntecedent,
@@ -1724,11 +1765,11 @@ func matchSchematicInstantiationAlphabet(premises []NumberedArgumentStep, conclu
 	return best
 }
 
-func matchExistentialGeneralization(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchExistentialGeneralization(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
-	for _, instance := range groundInstanceCandidates(premises[0].Statement) {
+	for _, instance := range policy.groundInstanceCandidates(premises[0].Statement) {
 		for _, predicate := range unrestrictedExistentialPredicateCandidates(conclusion.Statement) {
-			candidate := evaluateIdentities(clauseIdentity{
+			candidate := policy.evaluateIdentities(clauseIdentity{
 				fmt.Sprintf("premise %d predicate", premises[0].Number), instance.right,
 				fmt.Sprintf("conclusion %d existential predicate", conclusion.Number), predicate,
 			})
@@ -1741,12 +1782,12 @@ func matchExistentialGeneralization(premises []NumberedArgumentStep, conclusion 
 	return best
 }
 
-func matchExistentialIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchExistentialIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, existential := range existentialIntroductionConclusionCandidates(conclusion.Statement) {
 		for witnessIndex, witnessPremise := range premises {
-			for _, witness := range groundInstanceCandidates(witnessPremise.Statement) {
-				candidate := evaluateTermIdentities(clauseIdentity{
+			for _, witness := range policy.groundInstanceCandidates(witnessPremise.Statement) {
+				candidate := policy.evaluateTermIdentities(clauseIdentity{
 					fmt.Sprintf("premise %d witness class", witnessPremise.Number), witness.right,
 					fmt.Sprintf("conclusion %d existential class", conclusion.Number), existential.class,
 				})
@@ -1754,7 +1795,7 @@ func matchExistentialIntroduction(premises []NumberedArgumentStep, conclusion Nu
 				candidate.traction = true
 
 				for _, predicates := range conjunctionPartitions(existential.matrix, len(premises)-1) {
-					if !matchExistentialPredicatePremises(premises, witnessIndex, witness.left, predicates) {
+					if !policy.matchExistentialPredicatePremises(premises, witnessIndex, witness.left, predicates) {
 						continue
 					}
 					candidate.score += len(predicates)
@@ -1777,7 +1818,7 @@ func matchExistentialIntroduction(premises []NumberedArgumentStep, conclusion Nu
 	return best
 }
 
-func matchExistentialPredicatePremises(
+func (policy strictRules) matchExistentialPredicatePremises(
 	premises []NumberedArgumentStep,
 	witnessIndex int,
 	subject string,
@@ -1794,8 +1835,8 @@ func matchExistentialPredicatePremises(
 			if used[premiseIndex] {
 				continue
 			}
-			for _, instance := range groundInstanceCandidates(premise.Statement) {
-				if !equalClauses(subject, instance.left) || !equalClauses(predicates[predicateIndex], instance.right) {
+			for _, instance := range policy.groundInstanceCandidates(premise.Statement) {
+				if !policy.equalClauses(subject, instance.left) || !policy.equalClauses(predicates[predicateIndex], instance.right) {
 					continue
 				}
 				used[premiseIndex] = true
@@ -1893,7 +1934,7 @@ func universalCounterexampleCandidates(statement string) []universalCounterexamp
 	return result
 }
 
-func matchExistentialCounterexample(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchExistentialCounterexample(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, negatedConclusion := range negationCandidates(conclusion.Statement) {
 		for _, existential := range existentialCounterexampleCandidates(premises[0].Statement) {
@@ -1903,14 +1944,14 @@ func matchExistentialCounterexample(premises []NumberedArgumentStep, conclusion 
 				case existential.unrestricted && universal.unrestricted:
 					candidate.score++
 				case !existential.unrestricted && !universal.unrestricted:
-					appendOutcome(&candidate, evaluateTermIdentities(clauseIdentity{
+					appendOutcome(&candidate, policy.evaluateTermIdentities(clauseIdentity{
 						fmt.Sprintf("premise %d existential class", premises[0].Number), existential.class,
 						fmt.Sprintf("conclusion %d universal class", conclusion.Number), universal.class,
 					}))
 				default:
 					candidate.mismatch = "the existential and universal do not have the same restricted or unrestricted domain"
 				}
-				appendOutcome(&candidate, evaluateIdentities(
+				appendOutcome(&candidate, policy.evaluateIdentities(
 					clauseIdentity{
 						fmt.Sprintf("premise %d restrictor", premises[0].Number), existential.restrictor,
 						fmt.Sprintf("conclusion %d restrictor", conclusion.Number), universal.restrictor,
@@ -1934,10 +1975,10 @@ func matchExistentialCounterexample(premises []NumberedArgumentStep, conclusion 
 // matchNecessityElimination certifies "Necessarily, P. Therefore, P." — the T
 // axiom, sound for the alethic reading of "necessarily" the regimented
 // register stipulates.
-func matchNecessityElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchNecessityElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, stripped := range necessityCandidates(premises[0].Statement) {
-		candidate := evaluateIdentities(clauseIdentity{
+		candidate := policy.evaluateIdentities(clauseIdentity{
 			fmt.Sprintf("premise %d de-necessitated clause", premises[0].Number), stripped,
 			fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
 		})
@@ -1949,15 +1990,15 @@ func matchNecessityElimination(premises []NumberedArgumentStep, conclusion Numbe
 	return best
 }
 
-func conjunctiveAntecedentModusPonensFailure(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) (string, bool) {
+func (policy strictRules) conjunctiveAntecedentModusPonensFailure(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) (string, bool) {
 	for _, premise := range premises {
 		for _, conditional := range conditionalCandidates(premise.Statement) {
-			if !equalClauses(conditional.right, conclusion.Statement) {
+			if !policy.equalClauses(conditional.right, conclusion.Statement) {
 				continue
 			}
 			matchedAntecedent := false
 			for _, cited := range premises {
-				if cited.Number != premise.Number && equalClauses(conditional.left, cited.Statement) {
+				if cited.Number != premise.Number && policy.equalClauses(conditional.left, cited.Statement) {
 					matchedAntecedent = true
 					break
 				}
@@ -2019,14 +2060,14 @@ func wordSet(value string) map[string]bool {
 // literally the conjunction of all of its three or more cited premises, in any
 // order: "A, B, and C", "A, B and C" or "A and B and C". The comparison is on
 // whole normalized clauses, so no conjunct is split or reinterpreted.
-func matchNaryConjunctionIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchNaryConjunctionIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	if len(premises) < 3 || len(premises) > 6 {
 		return schemaMatchOutcome{}
 	}
-	target := comparisonClause(conclusion.Statement)
+	target := policy.comparisonClause(conclusion.Statement)
 	parts := make([]string, len(premises))
 	for i, premise := range premises {
-		parts[i] = comparisonClause(premise.Statement)
+		parts[i] = policy.comparisonClause(premise.Statement)
 	}
 	matched := false
 	permuteClauses(parts, 0, func(order []string) bool {
@@ -2034,7 +2075,7 @@ func matchNaryConjunctionIntroduction(premises []NumberedArgumentStep, conclusio
 		listed := strings.Join(order[:last], ", ") + " and " + order[last]
 		oxford := strings.Join(order[:last], ", ") + ", and " + order[last]
 		chained := strings.Join(order, " and ")
-		matched = target == comparisonClause(listed) || target == comparisonClause(oxford) || target == comparisonClause(chained)
+		matched = target == policy.comparisonClause(listed) || target == policy.comparisonClause(oxford) || target == policy.comparisonClause(chained)
 		return matched
 	})
 	if matched {
@@ -2115,7 +2156,11 @@ func onlyGerund(lower string) bool {
 }
 
 func schematicBindingAllowed(binding string) bool {
-	return schematicBindingAllowedAs(binding, false)
+	return allStrictRules().schematicBindingAllowed(binding)
+}
+
+func (policy strictRules) schematicBindingAllowed(binding string) bool {
+	return policy.schematicBindingAllowedAs(binding, false)
 }
 
 // schematicBindingAllowedInSlot is schematicBindingAllowed for a binding that
@@ -2124,7 +2169,7 @@ func schematicBindingAllowed(binding string) bool {
 // clause. "that", "since", "after", "before" are not clause-only, so they
 // keep the term check.
 func schematicBindingAllowedInSlot(concrete []rune, start int, binding string) bool {
-	return schematicBindingAllowedAs(binding, clauseSlotBefore(concrete, start))
+	return allStrictRules().schematicBindingAllowedAs(binding, clauseSlotBefore(concrete, start))
 }
 
 var clauseSlotSubordinators = []string{"when", "whenever", "if", "because", "although", "though", "unless", "whether", "while"}
@@ -2139,19 +2184,23 @@ func clauseSlotBefore(concrete []rune, start int) bool {
 	return false
 }
 
-func schematicBindingAllowedAs(binding string, clauseSlot bool) bool {
+func (policy strictRules) schematicBindingAllowedAs(binding string, clauseSlot bool) bool {
 	lower := strings.ToLower(strings.TrimSpace(binding))
-	if modifiedQuantifierPhrase(lower) || (quantityPhrase(lower) && !upwardQuantity(lower)) {
+	if policy.modifiedQuantifierPhrase(lower) || (policy.quantityPhrase(lower) && !upwardQuantity(lower)) {
 		return false
 	}
 	if clauseSlot {
-		if embeddedClauseValue(lower) {
+		if policy.embeddedClauseValue(lower) {
 			return false
 		}
-	} else if embeddedBinding(lower) {
+	} else if policy.embeddedBinding(lower) {
 		return false
 	}
 	for _, prefix := range schematicBindingLeadingOperators {
+		// Earlier lexical guards overlap the modified-quantifier rule.
+		if !policy.slot_modified_quantifier && allStrictRules().modifiedQuantifierPhrase(lower) {
+			continue
+		}
 		if prefix == "only " && onlyGerund(lower) {
 			// "only asking obvious questions" names an activity; "only"
 			// does not quantify over a subject here.

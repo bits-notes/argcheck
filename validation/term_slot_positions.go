@@ -68,7 +68,10 @@ func termSubjectPositions(text, term string) (safe bool, count int) {
 
 // identitySubstitutionUnsafe returns a reason when a step that substitutes
 // identicals does so outside the safe positions, and "" when it is safe.
-func identitySubstitutionUnsafe(premises []string, conclusion string) string {
+func (policy strictRules) identitySubstitutionUnsafe(premises []string, conclusion string) string {
+	if !policy.identity_safe_position {
+		return ""
+	}
 	for i, identityPremise := range premises {
 		if !explicitIdentity(identityPremise) {
 			continue
@@ -134,7 +137,10 @@ var indefiniteHeads = map[string]bool{
 // In an object slot ("Lois is looking for a unicorn") the phrase need not pick
 // out anything, so binding it would let "a unicorn exists" through. Names,
 // definite descriptions and other bindings are unaffected.
-func indefiniteBindingPositionSafe(concrete []rune, start int, segment string) bool {
+func (policy strictRules) indefiniteBindingPositionSafe(concrete []rune, start int, segment string) bool {
+	if !policy.slot_indefinite_object {
+		return true
+	}
 	words := strings.Fields(strings.ToLower(segment))
 	if len(words) == 0 || !indefiniteHeads[words[0]] {
 		return true
@@ -159,11 +165,11 @@ const indefiniteSlotOverride rune = '\uFFFE'
 // indefiniteSlotDiagnosis explains a failed schematic match that fails only
 // because an indefinite would bind in an unsafe slot. It returns "" when the
 // match fails for another reason too.
-func indefiniteSlotDiagnosis(template string, premise NumberedArgumentStep, initial schematicSubstitution) string {
+func (policy strictRules) indefiniteSlotDiagnosis(template string, premise NumberedArgumentStep, initial schematicSubstitution) string {
 	relaxed := cloneSchematicSubstitution(initial)
 	relaxed[indefiniteSlotOverride] = "1"
-	concrete := []rune(comparisonClause(premise.Statement))
-	for _, substitution := range unifySchematicTemplate(template, premise.Statement, relaxed) {
+	concrete := []rune(policy.comparisonClause(premise.Statement))
+	for _, substitution := range policy.unifySchematicTemplate(template, premise.Statement, relaxed) {
 		for variable, value := range substitution {
 			if variable == indefiniteSlotOverride {
 				continue
@@ -176,7 +182,7 @@ func indefiniteSlotDiagnosis(template string, premise NumberedArgumentStep, init
 				continue
 			}
 			runeStart := len([]rune(string(concrete)[:start]))
-			if indefiniteBindingPositionSafe(concrete, runeStart, value) {
+			if policy.indefiniteBindingPositionSafe(concrete, runeStart, value) {
 				continue
 			}
 			return fmt.Sprintf(
@@ -234,7 +240,7 @@ const clauseTermOverride rune = '\uFFFD'
 // clauseTermStepMessage names the binding refused because it reads as a term
 // containing a clause ("physics exploits not known to humans": "exploits" can
 // be a verb), for a step that passes only without that check.
-func clauseTermStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
+func (policy strictRules) clauseTermStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
 	for _, id := range c.Citations {
 		conditional, ok := steps[id]
 		if !ok {
@@ -242,7 +248,7 @@ func clauseTermStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumen
 		}
 		for _, pair := range conditionalCandidatesPreservingCase(conditional.Statement) {
 			for _, conjunct := range conjunctiveAntecedentCandidatesOrSelf(pair.left) {
-				template, variables := schematicTemplate(conjunct)
+				template, variables := policy.schematicTemplate(conjunct)
 				if len(variables) == 0 {
 					continue
 				}
@@ -252,12 +258,12 @@ func clauseTermStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumen
 						continue
 					}
 					relaxed := schematicSubstitution{clauseTermOverride: "1"}
-					for _, substitution := range unifySchematicTemplate(template, premise.Statement, relaxed) {
+					for _, substitution := range policy.unifySchematicTemplate(template, premise.Statement, relaxed) {
 						for variable, value := range substitution {
 							if variable == clauseTermOverride || variable == indefiniteSlotOverride {
 								continue
 							}
-							if clauseInsideTerm(value) {
+							if policy.clauseInsideTerm(value) {
 								return fmt.Sprintf("premise %d would bind a schematic variable to %q, which reads as containing a clause (a word in it can be a verb with its own complement), so it is not certified as a single term. Write the phrase into the rule instead of a variable, or reword the term (for example with a determiner or a relative clause) so that no word in it can be read as its verb", premise.Number, value)
 							}
 						}
@@ -271,7 +277,7 @@ func clauseTermStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumen
 
 // indefiniteSlotStepMessage names the refused binding for a step that passes
 // only when an indefinite may bind in an object slot.
-func indefiniteSlotStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
+func (policy strictRules) indefiniteSlotStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
 	for _, id := range c.Citations {
 		conditional, ok := steps[id]
 		if !ok {
@@ -279,7 +285,7 @@ func indefiniteSlotStepMessage(c NumberedArgumentStep, steps map[int]NumberedArg
 		}
 		for _, pair := range conditionalCandidatesPreservingCase(conditional.Statement) {
 			for _, conjunct := range conjunctiveAntecedentCandidatesOrSelf(pair.left) {
-				template, variables := schematicTemplate(conjunct)
+				template, variables := policy.schematicTemplate(conjunct)
 				if len(variables) == 0 {
 					continue
 				}
@@ -288,7 +294,7 @@ func indefiniteSlotStepMessage(c NumberedArgumentStep, steps map[int]NumberedArg
 					if !ok || other == id {
 						continue
 					}
-					if reason := indefiniteSlotDiagnosis(template, premise, nil); reason != "" {
+					if reason := policy.indefiniteSlotDiagnosis(template, premise, nil); reason != "" {
 						return reason
 					}
 				}

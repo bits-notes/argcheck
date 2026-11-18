@@ -109,6 +109,10 @@ func (v numberedArgumentSyntaxValidator) Validate(ctx context.Context, output st
 }
 
 func ParseNumberedArgument(output string, options numberedArgumentOptions) (NumberedArgument, Result) {
+	return allStrictRules().ParseNumberedArgument(output, options)
+}
+
+func (policy strictRules) ParseNumberedArgument(output string, options numberedArgumentOptions) (NumberedArgument, Result) {
 	normalized := strings.ReplaceAll(output, "\r\n", "\n")
 	normalized = strings.ReplaceAll(normalized, "\r", "\n")
 	normalized = strings.TrimSpace(normalized)
@@ -155,7 +159,7 @@ func ParseNumberedArgument(output string, options numberedArgumentOptions) (Numb
 			}
 		}
 
-		step, result := parseNumberedArgumentLine(line, lineNumber)
+		step, result := policy.parseNumberedArgumentLine(line, lineNumber)
 		if !result.Passed {
 			return NumberedArgument{}, result
 		}
@@ -228,7 +232,11 @@ func ParseNumberedArgument(output string, options numberedArgumentOptions) (Numb
 // callers predate Fitch subproofs and drop scope and discharge edges. Use
 // ParseScopedNumberedArgumentAllowingNoConclusions where subproofs are handled.
 func ParseNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
-	arg, result := ParseScopedNumberedArgumentAllowingNoConclusions(output)
+	return allStrictRules().ParseNumberedArgumentAllowingNoConclusions(output)
+}
+
+func (policy strictRules) ParseNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
+	arg, result := policy.ParseScopedNumberedArgumentAllowingNoConclusions(output)
 	if result.Passed && arg.HasSubproofs() {
 		return NumberedArgument{}, Result{Passed: false, Message: "Fitch subproofs are not supported by this flat-argument transformation"}
 	}
@@ -238,7 +246,11 @@ func ParseNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument
 // ParseScopedNumberedArgumentAllowingNoConclusions is
 // ParseNumberedArgumentAllowingNoConclusions with Fitch subproofs permitted.
 func ParseScopedNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
-	return ParseNumberedArgument(output, numberedArgumentOptions{allowNoConclusions: true})
+	return allStrictRules().ParseScopedNumberedArgumentAllowingNoConclusions(output)
+}
+
+func (policy strictRules) ParseScopedNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
+	return policy.ParseNumberedArgument(output, numberedArgumentOptions{allowNoConclusions: true})
 }
 
 func unwrapOptionalFence(output string, options numberedArgumentOptions) (string, Result) {
@@ -265,17 +277,21 @@ func unwrapOptionalFence(output string, options numberedArgumentOptions) (string
 }
 
 func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentStep, Result) {
+	return allStrictRules().parseNumberedArgumentLine(line, lineNumber)
+}
+
+func (policy strictRules) parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentStep, Result) {
 	original := line
 	depth := 0
 	for strings.HasPrefix(line, "| ") {
 		depth++
 		line = strings.TrimPrefix(line, "| ")
 	}
-	step, result := parseNumberedArgumentBareLine(line, lineNumber)
+	step, result := policy.parseNumberedArgumentBareLine(line, lineNumber)
 	if !result.Passed {
 		return step, result
 	}
-	if grouping := validateStatementGrouping(strings.TrimPrefix(step.Statement, "Suppose "), lineNumber); !grouping.Passed {
+	if grouping := policy.validateStatementGrouping(strings.TrimPrefix(step.Statement, "Suppose "), lineNumber); !grouping.Passed {
 		return NumberedArgumentStep{}, grouping
 	}
 	step.Depth, step.Line = depth, original
@@ -310,7 +326,7 @@ func stripConclusionMarker(statement string) (string, string) {
 	return match[1], body
 }
 
-func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumentStep, Result) {
+func (policy strictRules) parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumentStep, Result) {
 	if matches := conclusionLinePattern.FindStringSubmatch(line); matches != nil {
 		number, _ := strconv.Atoi(matches[1])
 		citations, ranges, err := parseTerminalCitations(matches[3])
@@ -330,7 +346,7 @@ func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumen
 				Details: map[string]any{"line": lineNumber},
 			}
 		}
-		if result := validateStatementBracketReferences(statement, lineNumber, number); !result.Passed {
+		if result := policy.validateStatementBracketReferences(statement, lineNumber, number); !result.Passed {
 			return NumberedArgumentStep{}, result
 		}
 		return NumberedArgumentStep{
@@ -364,7 +380,7 @@ func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumen
 				Details: map[string]any{"line": lineNumber},
 			}
 		}
-		if result := validateStatementBracketReferences(strings.TrimPrefix(statement, "Suppose "), lineNumber, number); !result.Passed {
+		if result := policy.validateStatementBracketReferences(strings.TrimPrefix(statement, "Suppose "), lineNumber, number); !result.Passed {
 			return NumberedArgumentStep{}, result
 		}
 		return NumberedArgumentStep{
@@ -401,7 +417,7 @@ func numberedLineHint(line string) string {
 	return ""
 }
 
-func validateStatementBracketReferences(statement string, lineNumber int, stepNumber int) Result {
+func (policy strictRules) validateStatementBracketReferences(statement string, lineNumber int, stepNumber int) Result {
 	matches := bracketReferencePattern.FindAllStringSubmatch(statement, -1)
 	if len(matches) == 0 {
 		return Result{Passed: true}
@@ -418,7 +434,7 @@ func validateStatementBracketReferences(statement string, lineNumber int, stepNu
 			}
 		}
 	}
-	if !statementAllowsInlineStepReferences(statement) {
+	if !policy.statementAllowsInlineStepReferences(statement) {
 		return Result{
 			Passed:  false,
 			Message: fmt.Sprintf("line %d contains inline bracket references outside an explicit bridge premise", lineNumber),
@@ -450,10 +466,10 @@ func validateStatementBracketReferences(statement string, lineNumber int, stepNu
 	return Result{Passed: true}
 }
 
-func statementAllowsInlineStepReferences(statement string) bool {
+func (policy strictRules) statementAllowsInlineStepReferences(statement string) bool {
 	statement = strings.TrimSpace(statement)
 	// v31.2: "C if [1]." is the postposed form of "If [1], then C.".
-	if rewritten, ok := postposedConditional(strings.TrimSuffix(statement, ".")); ok {
+	if rewritten, ok := policy.postposedConditional(strings.TrimSuffix(statement, ".")); ok {
 		statement = rewritten
 	}
 	total := len(bracketReferencePattern.FindAllStringSubmatch(statement, -1))

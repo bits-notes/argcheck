@@ -238,7 +238,7 @@ func (r relationClause) nplaceExplicit(order []int) string {
 
 // Multiple cited memberships may instantiate distinct universal slots in one
 // step. Every membership must be consumed; existential slots are never named.
-func matchNplaceInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchNplaceInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	if len(p) < 3 || len(p) > 5 {
 		return schemaMatchOutcome{}
 	}
@@ -249,7 +249,7 @@ func matchNplaceInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) 
 				good := true
 				for i, m := range p {
 					if i != source {
-						ms := relationMembership(m.Statement)
+						ms := policy.relationMembership(m.Statement)
 						if len(ms) != 1 {
 							good = false
 							break
@@ -290,12 +290,12 @@ func matchNplaceInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) 
 	return schemaMatchOutcome{}
 }
 
-func matchV22RelationalInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchV22RelationalInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	if len(p) > 2 {
-		return matchNplaceInstantiation(p, c)
+		return policy.matchNplaceInstantiation(p, c)
 	}
 	for _, ordered := range orderedPremiseSelections(p, 2) {
-		if out := matchRelationalUniversalInstantiation(ordered, c); out.matched {
+		if out := policy.matchRelationalUniversalInstantiation(ordered, c); out.matched {
 			return out
 		}
 	}

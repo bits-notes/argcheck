@@ -14,31 +14,31 @@ var impersonalEmbedding = regexp.MustCompile(`^it (?:is|was|seems|seemed)\b.*\bt
 var nominalAttitudeHead = regexp.MustCompile(`^(?:the|a|an) (?:(?:false|true|alleged|reported|original|same|different) )*(?:claim|claims|report|reports|thought|thoughts|fear|fears|hope|hopes|dream|dreams|wish|wishes|suspect|suspects)$`)
 var nominalClause = regexp.MustCompile(`\s+(?:that|who|which|whom|whose)\s+`)
 
-func embeddedBinding(s string) bool {
-	return embeddedTerm(s, false)
+func (policy strictRules) embeddedBinding(s string) bool {
+	return policy.embeddedTerm(s, false)
 }
 
 // embeddedClauseValue is embeddedBinding for a variable in a clause slot
 // ("... even when U"): the value is meant to be a whole clause, so the
 // term-only check that refuses a verb plus complement inside a term
 // (clauseInsideTerm) does not apply. Every other embedding check still does.
-func embeddedClauseValue(s string) bool {
-	return embeddedTermChecks(s, false, false)
+func (policy strictRules) embeddedClauseValue(s string) bool {
+	return policy.embeddedTermChecks(s, false, false)
 }
 
 // embeddedClauseHead is the stricter test used for coordination under a
 // leading operator: only an attitude verb with a that/whether/if complement
 // counts ("we should expect X to possess Y" is not an embedding).
-func embeddedClauseHead(s string) bool {
-	return embeddedTerm(s, true)
+func (policy strictRules) embeddedClauseHead(s string) bool {
+	return policy.embeddedTerm(s, true)
 }
 
-func embeddedTerm(s string, needComplementizer bool) bool {
-	return embeddedTermChecks(s, needComplementizer, true)
+func (policy strictRules) embeddedTerm(s string, needComplementizer bool) bool {
+	return policy.embeddedTermChecks(s, needComplementizer, true)
 }
 
-func embeddedTermChecks(s string, needComplementizer, termSlot bool) bool {
-	if termSlot && !needComplementizer && clauseInsideTerm(s) {
+func (policy strictRules) embeddedTermChecks(s string, needComplementizer, termSlot bool) bool {
+	if termSlot && !needComplementizer && policy.clauseInsideTerm(s) {
 		return true
 	}
 	s = strings.ToLower(strings.TrimSpace(s))
@@ -143,6 +143,10 @@ var incompleteIfConsequent = regexp.MustCompile(`(?i)(?:\b(?:about|of|to|for|wit
 const operatorGroupingMessage = `coordination under a leading operator is ambiguous; use parentheses, e.g. "(Perhaps A) and B" or "Perhaps (A and B)", or explicit both...and / either...or`
 
 func operatorCoordinationAmbiguous(s string) bool {
+	return allStrictRules().operatorCoordinationAmbiguous(s)
+}
+
+func (policy strictRules) operatorCoordinationAmbiguous(s string) bool {
 	lowerSentence := strings.ToLower(s)
 	if !strings.Contains(lowerSentence, " and ") && !strings.Contains(lowerSentence, " or ") {
 		return false
@@ -172,7 +176,7 @@ func operatorCoordinationAmbiguous(s string) bool {
 	if strings.Contains(lower, " both ") || strings.Contains(lower, " either ") {
 		return false
 	}
-	if !sentenceOperator.MatchString(lower) && !impersonalEmbedding.MatchString(lower) && !embeddedClauseHead(lower) {
+	if !sentenceOperator.MatchString(lower) && !impersonalEmbedding.MatchString(lower) && !policy.embeddedClauseHead(lower) {
 		return false
 	}
 	// Only whole-clause coordination; preserve coordinated noun phrases.
@@ -186,7 +190,10 @@ var structuralModalComma = regexp.MustCompile(`^(necessarily|possibly),\s*`)
 
 var structuralCoordinationComma = regexp.MustCompile(`,\s+(and|or)\b`)
 
-func comparisonCommas(s string) string {
+func (policy strictRules) comparisonCommas(s string) string {
+	if !policy.comma_exact {
+		return strings.ReplaceAll(s, ",", "")
+	}
 	if !strings.Contains(s, ",") {
 		return s
 	}
@@ -209,12 +216,12 @@ func comparisonCommas(s string) string {
 var nonrestrictiveRelative = regexp.MustCompile(`^(the [^,]+), (which|who|whom|whose) ([^,]+), ((?:is|are|was|were) [^,]+)$`)
 
 // Directional weakening of a positive definite-subject predication, never identity.
-func nonrestrictiveWeakening(premise, conclusion string) bool {
+func (policy strictRules) nonrestrictiveWeakening(premise, conclusion string) bool {
 	p := normalizeClause(premise)
 	if !nonrestrictiveRelative.MatchString(p) || hasOuterGateOperator(p) {
 		return false
 	}
-	return equalClauses(nonrestrictiveRelative.ReplaceAllString(p, "$1 $2 $3 $4"), conclusion)
+	return policy.equalClauses(nonrestrictiveRelative.ReplaceAllString(p, "$1 $2 $3 $4"), conclusion)
 }
 
 var termDeterminers = wordSet("the a an this that these those his her its their my your our every some each any no all many most few several both either neither such what which whose one two three own other another")
@@ -228,7 +235,10 @@ var irregularFiniteVerbs = wordSet("thought said knew saw felt found held told h
 // term ends inside an embedded clause, whatever the verb, so this is a
 // structural rule rather than a list of attitude verbs. Text after a relative
 // marker (who/which/that) is part of a noun phrase and is not scanned.
-func clauseInsideTerm(term string) bool {
+func (policy strictRules) clauseInsideTerm(term string) bool {
+	if !policy.term_clause_inside {
+		return false
+	}
 	raw := strings.Fields(strings.TrimSpace(term))
 	for i := 1; i < len(raw)-1; i++ {
 		w := strings.ToLower(strings.Trim(raw[i], ",;:"))

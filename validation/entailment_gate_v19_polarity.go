@@ -180,7 +180,7 @@ func v19PolarityFailure(p []NumberedArgumentStep, c NumberedArgumentStep) string
 // does not weaken it. Mask whole non-material conditionals consistently and
 // ask the same schema to certify that purely opaque use. A fresh atom includes
 // no copula or variable slot, so this cannot manufacture quantifier structure.
-func v19OpaqueStep(p []NumberedArgumentStep, c NumberedArgumentStep, match func([]NumberedArgumentStep, NumberedArgumentStep) schemaMatchOutcome) bool {
+func (policy strictRules) v19OpaqueStep(p []NumberedArgumentStep, c NumberedArgumentStep, match func([]NumberedArgumentStep, NumberedArgumentStep) schemaMatchOutcome) bool {
 	atoms := map[string]string{}
 	prefix := "opaque_counterfactual_"
 	all := c.Statement
@@ -209,7 +209,7 @@ func v19OpaqueStep(p []NumberedArgumentStep, c NumberedArgumentStep, match func(
 	collect(c.Statement)
 	sort.Slice(occurrences, func(i, j int) bool { return len(occurrences[i]) < len(occurrences[j]) })
 	for _, statement := range occurrences {
-		key := comparisonClause(statement)
+		key := policy.comparisonClause(statement)
 		if atoms[key] == "" {
 			atoms[key] = fmt.Sprintf("%s%d", prefix, len(atoms))
 		}
@@ -217,7 +217,7 @@ func v19OpaqueStep(p []NumberedArgumentStep, c NumberedArgumentStep, match func(
 	mask := func(s string) string {
 		s = normalizeClausePreservingCase(s)
 		for _, statement := range occurrences {
-			s = regexp.MustCompile("(?i)"+regexp.QuoteMeta(statement)).ReplaceAllString(s, atoms[comparisonClause(statement)])
+			s = regexp.MustCompile("(?i)"+regexp.QuoteMeta(statement)).ReplaceAllString(s, atoms[policy.comparisonClause(statement)])
 		}
 		return s
 	}
@@ -234,7 +234,7 @@ func v19OpaqueStep(p []NumberedArgumentStep, c NumberedArgumentStep, match func(
 // This does not derive a cf by materializing its connective. In particular,
 // do not reparse the instantiated antecedent: a noun phrase substituted for X
 // may itself contain "if ... then ...".
-func v19OpaqueInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) bool {
+func (policy strictRules) v19OpaqueInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) bool {
 	if len(p) != 2 {
 		return false
 	}
@@ -242,15 +242,15 @@ func v19OpaqueInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) bo
 		if conditionalKind(pair.right, pair.left) != materialConditional {
 			continue
 		}
-		ant, _ := schematicTemplate(pair.left)
-		result, _ := schematicTemplate(pair.right)
-		for _, sub := range unifySchematicTemplate(ant, p[1].Statement, relaxedInitial(nil, p...)) {
+		ant, _ := policy.schematicTemplate(pair.left)
+		result, _ := policy.schematicTemplate(pair.right)
+		for _, sub := range policy.unifySchematicTemplate(ant, p[1].Statement, relaxedInitial(nil, p...)) {
 			a, okA := instantiateSchematicTemplate(ant, sub)
 			b, okB := instantiateSchematicTemplate(result, sub)
-			if !okA || !okB || !equalClauses(b, c.Statement) {
+			if !okA || !okB || !policy.equalClauses(b, c.Statement) {
 				continue
 			}
-			if equalClauses(a, p[1].Statement) {
+			if policy.equalClauses(a, p[1].Statement) {
 				return true
 			}
 		}
@@ -258,7 +258,7 @@ func v19OpaqueInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) bo
 	return false
 }
 
-func init() {
+func (policy strictRules) guardSchemaPolarity(entailmentSchemas []entailmentSchema) {
 	for i := range entailmentSchemas {
 		schema := entailmentSchemas[i]
 		if strings.HasPrefix(schema.name, "counterfactual") {
@@ -270,7 +270,7 @@ func init() {
 				return outcome
 			}
 			reason := v19PolarityFailure(p, c)
-			if reason == "" || v19OpaqueStep(p, c, schema.match) || (schema.name == "schematic instantiation" && v19OpaqueInstantiation(p, c)) {
+			if reason == "" || policy.v19OpaqueStep(p, c, schema.match) || (schema.name == "schematic instantiation" && policy.v19OpaqueInstantiation(p, c)) {
 				return outcome
 			}
 			return schemaMatchOutcome{refusal: true, traction: true, score: outcome.score, mismatch: schema.name + " refused: " + reason + ". " + counterfactualAvailable}

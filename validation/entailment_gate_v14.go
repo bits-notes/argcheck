@@ -11,12 +11,12 @@ import (
 // callers constructing an AST directly. Inner conclusions are gated normally.
 var fitchForms = []string{"conditional proof", "reductio", "proof by cases", "universal generalization", "existential elimination", "relational universal generalization", "relational existential elimination"}
 
-func matchContradiction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchContradiction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	if normalizeClause(c.Statement) != "contradiction" {
 		return schemaMatchOutcome{}
 	}
 	for _, n := range negationCandidates(p[1].Statement) {
-		if equalClauses(p[0].Statement, n) {
+		if policy.equalClauses(p[0].Statement, n) {
 			return schemaMatchOutcome{matched: true}
 		}
 	}
@@ -41,7 +41,7 @@ func fitchAssumptionStatement(s NumberedArgumentStep) string {
 	return s.Statement
 }
 
-func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+func (policy strictRules) gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	report := EntailmentGateStepReport{Step: c.Number, Depth: c.Depth, Citations: c.Citations, Ranges: c.Ranges, NearestForm: "Fitch discharge", Mismatch: "ranges and cited premises do not match a v14 discharge rule"}
 	accept := func(form string) EntailmentGateStepReport {
 		report.Passed = true
@@ -61,7 +61,7 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 				// does not interpret the counterfactual as a material conditional.
 			}
 			for _, pair := range v13Pairs("conditional", c.Statement) {
-				if equalClauses(first.Statement, pair.left) && equalClauses(last.Statement, pair.right) {
+				if policy.equalClauses(first.Statement, pair.left) && policy.equalClauses(last.Statement, pair.right) {
 					if v19PolarityFailure(nil, c) == "" {
 						return accept("conditional proof")
 					}
@@ -69,12 +69,12 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 			}
 			if normalizeClause(last.Statement) == "contradiction" {
 				for _, n := range negationCandidates(c.Statement) {
-					if equalClauses(n, first.Statement) {
+					if policy.equalClauses(n, first.Statement) {
 						return accept("reductio")
 					}
 				}
 				for _, n := range negationCandidates(first.Statement) {
-					if equalClauses(n, c.Statement) {
+					if policy.equalClauses(n, c.Statement) {
 						return accept("reductio")
 					}
 				}
@@ -83,7 +83,7 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 		if first.Kind == numberedArgumentStepArbitrary {
 			if arbitraryPropertyPattern.MatchString(first.Statement) {
 				report.NearestForm = "property generalization"
-				ok, reason := propertyGeneralization(first, last, c, steps)
+				ok, reason := policy.propertyGeneralization(first, last, c, steps)
 				if ok {
 					return accept("property generalization")
 				}
@@ -95,8 +95,8 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 			if m != nil && relativeMarker(normalizeClause(m[2])) {
 				if q, ok := relativeQuant(c.Statement); ok && q.kind == "every" {
 					guards, good := relativeNP(normalizeClause(m[2]), relativeHole)
-					if good && relativeAll(guards, q.guards) && relativeAll(q.guards, guards) && equalClauses(last.Statement, relativeFill(q.body, normalizeClause(m[1]))) {
-						if reason := fitchFreshName(m[1], first.Number, c, steps); reason != "" {
+					if good && policy.relativeAll(guards, q.guards) && policy.relativeAll(q.guards, guards) && policy.equalClauses(last.Statement, relativeFill(q.body, normalizeClause(m[1]))) {
+						if reason := policy.fitchFreshName(m[1], first.Number, c, steps); reason != "" {
 							report.Mismatch = reason
 							return report
 						}
@@ -105,7 +105,7 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 				}
 			}
 			if m != nil && v13PlainClause(m[2]) {
-				if reason := fitchFreshName(m[1], first.Number, c, steps); reason != "" {
+				if reason := policy.fitchFreshName(m[1], first.Number, c, steps); reason != "" {
 					report.Mismatch = reason
 					return report
 				}
@@ -117,7 +117,7 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 				prefix := m[1] + " is "
 				if strings.HasPrefix(last.Statement, prefix) {
 					predicate := strings.TrimPrefix(last.Statement, prefix)
-					if v13PlainClause(predicate) && equalClauses(c.Statement, "Every "+m[2]+" is "+predicate) {
+					if v13PlainClause(predicate) && policy.equalClauses(c.Statement, "Every "+m[2]+" is "+predicate) {
 						return accept("universal generalization")
 					}
 				}
@@ -133,13 +133,13 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 			matched := true
 			for _, r := range c.Ranges {
 				first, last := steps[r[0]], steps[r[1]]
-				if first.Kind != numberedArgumentStepAssumption || !equalClauses(last.Statement, c.Statement) {
+				if first.Kind != numberedArgumentStepAssumption || !policy.equalClauses(last.Statement, c.Statement) {
 					matched = false
 					break
 				}
 				found := false
 				for i, p := range parts {
-					if !used[i] && equalClauses(first.Statement, p) {
+					if !used[i] && policy.equalClauses(first.Statement, p) {
 						used[i] = true
 						found = true
 						break
@@ -160,16 +160,16 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 		report.NearestForm = "existential elimination"
 		r := c.Ranges[0]
 		first, last := steps[r[0]], steps[r[1]]
-		if first.Kind == numberedArgumentStepAssumption && equalClauses(last.Statement, c.Statement) {
-			if name := relativeEEName(first, steps[c.Citations[0]]); name != "" {
-				if reason := fitchFreshName(name, first.Number, c, steps); reason != "" {
+		if first.Kind == numberedArgumentStepAssumption && policy.equalClauses(last.Statement, c.Statement) {
+			if name := policy.relativeEEName(first, steps[c.Citations[0]]); name != "" {
+				if reason := policy.fitchFreshName(name, first.Number, c, steps); reason != "" {
 					report.Mismatch = reason
 					return report
 				}
 				return accept("existential elimination")
 			}
-			if name := relationalEEName(first, steps[c.Citations[0]]); name != "" {
-				if reason := fitchFreshName(name, first.Number, c, steps); reason != "" {
+			if name := policy.relationalEEName(first, steps[c.Citations[0]]); name != "" {
+				if reason := policy.fitchFreshName(name, first.Number, c, steps); reason != "" {
 					report.Mismatch = reason
 					return report
 				}
@@ -178,9 +178,9 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 			// Reuse the existing existential introduction grammar in reverse: the
 			// assumption supplies exactly the witness's membership and predicates.
 			for _, pair := range conjunctionCandidates(first.Statement) {
-				left := groundInstanceCandidates(pair.left)
-				right := groundInstanceCandidates(pair.right)
-				if len(left) != 1 || len(right) != 1 || !v13PlainClause(left[0].right) || !v13PlainClause(right[0].right) || !equalClauses(left[0].left, right[0].left) {
+				left := policy.groundInstanceCandidates(pair.left)
+				right := policy.groundInstanceCandidates(pair.right)
+				if len(left) != 1 || len(right) != 1 || !v13PlainClause(left[0].right) || !v13PlainClause(right[0].right) || !policy.equalClauses(left[0].left, right[0].left) {
 					continue
 				}
 				name := left[0].left
@@ -188,10 +188,10 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 					continue
 				}
 				witness := []NumberedArgumentStep{{Statement: pair.left}, {Statement: pair.right}}
-				if !matchExistentialIntroduction(witness, steps[c.Citations[0]]).matched {
+				if !policy.matchExistentialIntroduction(witness, steps[c.Citations[0]]).matched {
 					continue
 				}
-				if reason := fitchFreshName(name, first.Number, c, steps); reason != "" {
+				if reason := policy.fitchFreshName(name, first.Number, c, steps); reason != "" {
 					report.Mismatch = reason
 					return report
 				}
@@ -205,10 +205,10 @@ func gateFitchConclusion(c NumberedArgumentStep, steps map[int]NumberedArgumentS
 
 var fitchNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
 
-func fitchFreshName(name string, start int, conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
+func (policy strictRules) fitchFreshName(name string, start int, conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
 	match := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(name) + `\b`).MatchString
 	contains := func(s string) bool {
-		return match(s) || match(folDecodedLiteralText(s)) || folLiteralHasName(s, strings.ToLower(name))
+		return match(s) || match(folDecodedLiteralText(s)) || policy.folLiteralHasName(s, strings.ToLower(name))
 	}
 	for n := 1; n < start; n++ {
 		if contains(steps[n].Statement) {

@@ -49,12 +49,12 @@ func particularNegativeCandidates(statement string) []clausePair {
 // matchExistentialSyllogism certifies Darii: some S is M; every M is P;
 // therefore some S is P. The I premise is matched in its written orientation
 // only and the middle term must be the universal's subject (distributed).
-func matchExistentialSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchExistentialSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, particular := range particularAffirmativeCandidates(premises[0].Statement) {
 		for _, universal := range universalCandidates(premises[1].Statement) {
 			for _, result := range particularAffirmativeCandidates(conclusion.Statement) {
-				candidate := evaluateTermIdentities(
+				candidate := policy.evaluateTermIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), particular.right, fmt.Sprintf("premise %d class", premises[1].Number), universal.left},
 					clauseIdentity{fmt.Sprintf("premise %d subject", premises[0].Number), particular.left, fmt.Sprintf("conclusion %d subject", conclusion.Number), result.left},
 					clauseIdentity{fmt.Sprintf("premise %d predicate", premises[1].Number), universal.right, fmt.Sprintf("conclusion %d predicate", conclusion.Number), result.right},
@@ -72,13 +72,13 @@ func matchExistentialSyllogism(premises []NumberedArgumentStep, conclusion Numbe
 // matchExistentialNegativeSyllogism certifies Ferio (and, by E-conversion,
 // Festino): some S is M; no M is P (or no P is M); therefore some S is not P.
 // The O conclusion is never converted.
-func matchExistentialNegativeSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchExistentialNegativeSyllogism(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, particular := range particularAffirmativeCandidates(premises[0].Statement) {
-		for _, negative := range universalNegativeCandidates(premises[1].Statement) {
+		for _, negative := range policy.universalNegativeCandidates(premises[1].Statement) {
 			for _, result := range particularNegativeCandidates(conclusion.Statement) {
 				for _, terms := range [][2]string{{negative.left, negative.right}, {negative.right, negative.left}} {
-					candidate := evaluateTermIdentities(
+					candidate := policy.evaluateTermIdentities(
 						clauseIdentity{fmt.Sprintf("premise %d predicate", premises[0].Number), particular.right, fmt.Sprintf("premise %d middle term", premises[1].Number), terms[0]},
 						clauseIdentity{fmt.Sprintf("premise %d subject", premises[0].Number), particular.left, fmt.Sprintf("conclusion %d subject", conclusion.Number), result.left},
 						clauseIdentity{fmt.Sprintf("premise %d excluded term", premises[1].Number), terms[1], fmt.Sprintf("conclusion %d excluded term", conclusion.Number), result.right},
@@ -239,7 +239,7 @@ func startsCapitalizedWord(value string) bool {
 // matchSchematicExistentialIntroduction certifies A(t); therefore there is an
 // X such that A(X), where A(X) is A(t) with EVERY word-bounded occurrence of
 // the singular term t replaced by the one bound placeholder.
-func matchSchematicExistentialIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchSchematicExistentialIntroduction(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	match := schematicExistentialPattern.FindStringSubmatch(normalizeClausePreservingCase(conclusion.Statement))
 	if match == nil {
 		return schemaMatchOutcome{}
@@ -251,7 +251,7 @@ func matchSchematicExistentialIntroduction(premises []NumberedArgumentStep, conc
 		outcome.mismatch = fmt.Sprintf("conclusion %d matrix must use the bound placeholder %c and no other placeholder", conclusion.Number, variable)
 		return outcome
 	}
-	template := comparisonClause(replacedMatrix)
+	template := policy.comparisonClause(replacedMatrix)
 	if !strings.ContainsFunc(template, unicode.IsLetter) {
 		outcome.mismatch = fmt.Sprintf("conclusion %d matrix has no predicate besides the placeholder", conclusion.Number)
 		return outcome
@@ -265,7 +265,7 @@ func matchSchematicExistentialIntroduction(premises []NumberedArgumentStep, conc
 
 	marker := string(schematicVariableMarkers[variable])
 	outcome.mismatch = fmt.Sprintf("conclusion %d matrix is not premise %d with every occurrence of one singular term replaced by %c", conclusion.Number, premises[0].Number, variable)
-	for _, substitution := range unifySchematicTemplate(template, premiseText, relaxedInitial(nil, premises...)) {
+	for _, substitution := range policy.unifySchematicTemplate(template, premiseText, relaxedInitial(nil, premises...)) {
 		term := substitution[variable]
 		transparent, hasQuantifier := substitutionContext(premiseText, term)
 		if !transparent || !substitutionTerm(term, hasQuantifier) {
@@ -275,7 +275,7 @@ func matchSchematicExistentialIntroduction(premises []NumberedArgumentStep, conc
 		if !ok || count != counts[variable] {
 			continue
 		}
-		if comparisonClause(replaced) == template {
+		if policy.comparisonClause(replaced) == template {
 			return schemaMatchOutcome{matched: true, score: 1, traction: true}
 		}
 	}
@@ -287,7 +287,7 @@ func matchSchematicExistentialIntroduction(premises []NumberedArgumentStep, conc
 // word-bounded occurrence of the replaced name is substituted. Only the
 // explicit "is identical to" relation counts: a bare "a is b" cannot be told
 // apart from predication ("Ada is a doctor").
-func matchIdentitySubstitution(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchIdentitySubstitution(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	identities := identityCandidates(premises[0].Statement)
 	if len(identities) == 0 {
 		return schemaMatchOutcome{}
@@ -317,14 +317,14 @@ func matchIdentitySubstitution(premises []NumberedArgumentStep, conclusion Numbe
 			if !ok || count == 0 {
 				continue
 			}
-			if comparisonClause(replaced) == comparisonClause(conclusion.Statement) {
+			if policy.comparisonClause(replaced) == policy.comparisonClause(conclusion.Statement) {
 				return schemaMatchOutcome{matched: true, score: 1, traction: true}
 			}
 		}
 	}
 	// Say why when the term sits outside the safe positions, instead of the
 	// generic "not premise N with every occurrence replaced".
-	if reason := identitySubstitutionUnsafe(stepStatements(premises), conclusion.Statement); reason != "" {
+	if reason := policy.identitySubstitutionUnsafe(stepStatements(premises), conclusion.Statement); reason != "" {
 		outcome.mismatch = reason
 	}
 	return outcome

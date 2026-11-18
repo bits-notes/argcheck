@@ -44,16 +44,16 @@ func matchIdentityReflexivity(p []NumberedArgumentStep, c NumberedArgumentStep) 
 	return best
 }
 
-func matchModalDuality(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c,
+func (policy strictRules) matchModalDuality(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c,
 		v13Rule{v13Not(v15Diamond(v13Not(v13P))), v15Box(v13P)},
 		v13Rule{v15Box(v13P), v13Not(v15Diamond(v13Not(v13P)))},
 		v13Rule{v13Not(v15Box(v13Not(v13P))), v15Diamond(v13P)},
 		v13Rule{v15Diamond(v13P), v13Not(v15Box(v13Not(v13P)))})
 }
 
-func matchModalDistribution(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v13MatchRules(p, c,
+func (policy strictRules) matchModalDistribution(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v13MatchRules(p, c,
 		v13Rule{v15Box(v13If(v13P, v13Q)), v13If(v15Box(v13P), v15Box(v13Q))},
 		v13Rule{v15Box(v13If(v13P, v13Q)), v13If(v15Diamond(v13P), v15Diamond(v13Q))},
 		v13Rule{v15Box(v13And(v13P, v13Q)), v13And(v15Box(v13P), v15Box(v13Q))},

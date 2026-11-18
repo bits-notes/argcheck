@@ -88,7 +88,7 @@ func relativeMask(words []string) []string {
 
 // A cited premise must contribute to the proof, even when its unused atoms
 // may be discarded by conjunction elimination.
-func relativeUsed(p []NumberedArgumentStep, want []string) bool {
+func (policy strictRules) relativeUsed(p []NumberedArgumentStep, want []string) bool {
 	for _, step := range p {
 		facts, ok := relativeGround(step.Statement)
 		if !ok {
@@ -96,7 +96,7 @@ func relativeUsed(p []NumberedArgumentStep, want []string) bool {
 		}
 		used := false
 		for _, f := range facts {
-			if relativeContains(want, f) {
+			if policy.relativeContains(want, f) {
 				used = true
 			}
 		}
@@ -225,17 +225,19 @@ func relativeFacts(p []NumberedArgumentStep) ([]string, bool) {
 	}
 	return facts, true
 }
-func relativeContains(facts []string, s string) bool {
+
+func (policy strictRules) relativeContains(facts []string, s string) bool {
 	for _, f := range facts {
-		if equalClauses(f, s) {
+		if policy.equalClauses(f, s) {
 			return true
 		}
 	}
 	return false
 }
-func relativeAll(facts, want []string) bool {
+
+func (policy strictRules) relativeAll(facts, want []string) bool {
 	for _, w := range want {
-		if !relativeContains(facts, w) {
+		if !policy.relativeContains(facts, w) {
 			return false
 		}
 	}
@@ -252,7 +254,8 @@ func relativeNames(facts []string) []string {
 	}
 	return names
 }
-func matchRelativeClauses(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+
+func (policy strictRules) matchRelativeClauses(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	active := relativeMarker(strings.ToLower(c.Statement))
 	for _, s := range p {
 		active = active || relativeMarker(strings.ToLower(s.Statement))
@@ -263,7 +266,7 @@ func matchRelativeClauses(p []NumberedArgumentStep, c NumberedArgumentStep) sche
 	accept := func() schemaMatchOutcome { return schemaMatchOutcome{matched: true} }
 	facts, ok := relativeFacts(p)
 	if ok {
-		if target, ok := relativeGround(c.Statement); ok && relativeAll(facts, target) && relativeUsed(p, target) {
+		if target, ok := relativeGround(c.Statement); ok && policy.relativeAll(facts, target) && policy.relativeUsed(p, target) {
 			return accept()
 		}
 		if q, ok := relativeQuant(c.Statement); ok && q.kind == "some" {
@@ -273,7 +276,7 @@ func matchRelativeClauses(p []NumberedArgumentStep, c NumberedArgumentStep) sche
 					wants = append(wants, relativeFill(g, name))
 				}
 				body, ok := relativeGround(relativeFill(q.body, name))
-				if ok && relativeAll(facts, append(wants, body...)) && relativeUsed(p, append(wants, body...)) {
+				if ok && policy.relativeAll(facts, append(wants, body...)) && policy.relativeUsed(p, append(wants, body...)) {
 					return accept()
 				}
 			}
@@ -294,22 +297,22 @@ func matchRelativeClauses(p []NumberedArgumentStep, c NumberedArgumentStep) sche
 			for _, g := range q.guards {
 				wants = append(wants, relativeFill(g, name))
 			}
-			if !relativeAll(facts, wants) || !relativeUsed(rest, wants) {
+			if !policy.relativeAll(facts, wants) || !policy.relativeUsed(rest, wants) {
 				continue
 			}
 			body := relativeFill(q.body, name)
 			if q.kind == "no" {
-				if equalClauses(c.Statement, "it is not the case that "+body) {
+				if policy.equalClauses(c.Statement, "it is not the case that "+body) {
 					return accept()
 				}
 				continue
 			}
-			if equalClauses(body, c.Statement) {
+			if policy.equalClauses(body, c.Statement) {
 				return accept()
 			}
 			have, ok := relativeGround(body)
 			want, ok2 := relativeGround(c.Statement)
-			if ok && ok2 && relativeAll(have, want) {
+			if ok && ok2 && policy.relativeAll(have, want) {
 				return accept()
 			}
 		}
@@ -318,6 +321,10 @@ func matchRelativeClauses(p []NumberedArgumentStep, c NumberedArgumentStep) sche
 }
 
 func relativeEEName(first, existential NumberedArgumentStep) string {
+	return allStrictRules().relativeEEName(first, existential)
+}
+
+func (policy strictRules) relativeEEName(first, existential NumberedArgumentStep) string {
 	if !relativeMarker(normalizeClause(existential.Statement)) {
 		return ""
 	}
@@ -345,7 +352,7 @@ func relativeEEName(first, existential NumberedArgumentStep) string {
 			wants = append(wants, relativeFill(g, name))
 		}
 		body, bodyOK := relativeGround(relativeFill(q.body, name))
-		if fitchNamePattern.MatchString(name) && bodyOK && relativeAll(facts, append(wants, body...)) && relativeAll(append(wants, body...), facts) {
+		if fitchNamePattern.MatchString(name) && bodyOK && policy.relativeAll(facts, append(wants, body...)) && policy.relativeAll(append(wants, body...), facts) {
 			return name
 		}
 	}

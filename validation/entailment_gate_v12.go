@@ -26,16 +26,16 @@ const (
 	destructiveDilemma
 )
 
-func matchConstructiveDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
-	return matchDilemma(premises, conclusion, constructiveDilemma)
+func (policy strictRules) matchConstructiveDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	return policy.matchDilemma(premises, conclusion, constructiveDilemma)
 }
 
-func matchSimpleDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
-	return matchDilemma(premises, conclusion, simpleDilemma)
+func (policy strictRules) matchSimpleDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	return policy.matchDilemma(premises, conclusion, simpleDilemma)
 }
 
-func matchDestructiveDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
-	return matchDilemma(premises, conclusion, destructiveDilemma)
+func (policy strictRules) matchDestructiveDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	return policy.matchDilemma(premises, conclusion, destructiveDilemma)
 }
 
 // eitherDisjunctPartitions splits an explicit "Either D1 or D2 ... or Dn"
@@ -109,7 +109,7 @@ func negatedDisjuncts(parts []string) ([]string, bool) {
 	return result, true
 }
 
-func matchDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, kind dilemmaKind) schemaMatchOutcome {
+func (policy strictRules) matchDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentStep, kind dilemmaKind) schemaMatchOutcome {
 	n := len(premises) - 1
 	if n < 2 || n > maxDilemmaDisjuncts {
 		return schemaMatchOutcome{}
@@ -174,7 +174,7 @@ func matchDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentSt
 					}
 					resultSide = negated
 				}
-				if dilemmaBijection(conditionals, premiseSide, resultSide, kind, 0, make([]bool, n), make([]bool, n)) {
+				if policy.dilemmaBijection(conditionals, premiseSide, resultSide, kind, 0, make([]bool, n), make([]bool, n)) {
 					return schemaMatchOutcome{matched: true, score: n + 1, traction: true}
 				}
 			}
@@ -194,7 +194,7 @@ func matchDilemma(premises []NumberedArgumentStep, conclusion NumberedArgumentSt
 //     conclusion).
 //   - destructive: consequent = clause negated in a premise disjunct,
 //     antecedent = clause negated in a conclusion disjunct.
-func dilemmaBijection(conditionals [][]clausePair, premiseSide, resultSide []string, kind dilemmaKind, j int, usedPremise, usedResult []bool) bool {
+func (policy strictRules) dilemmaBijection(conditionals [][]clausePair, premiseSide, resultSide []string, kind dilemmaKind, j int, usedPremise, usedResult []bool) bool {
 	if j == len(conditionals) {
 		return true
 	}
@@ -204,15 +204,15 @@ func dilemmaBijection(conditionals [][]clausePair, premiseSide, resultSide []str
 			fromPremise, toResult = conditional.right, conditional.left
 		}
 		for p := range premiseSide {
-			if usedPremise[p] || !equalClauses(fromPremise, premiseSide[p]) {
+			if usedPremise[p] || !policy.equalClauses(fromPremise, premiseSide[p]) {
 				continue
 			}
 			for r := range resultSide {
-				if usedResult[r] || !equalClauses(toResult, resultSide[r]) {
+				if usedResult[r] || !policy.equalClauses(toResult, resultSide[r]) {
 					continue
 				}
 				usedPremise[p], usedResult[r] = true, true
-				if dilemmaBijection(conditionals, premiseSide, resultSide, kind, j+1, usedPremise, usedResult) {
+				if policy.dilemmaBijection(conditionals, premiseSide, resultSide, kind, j+1, usedPremise, usedResult) {
 					return true
 				}
 				usedPremise[p], usedResult[r] = false, false

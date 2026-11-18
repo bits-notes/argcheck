@@ -18,13 +18,6 @@ func v29UnlessForm(name string) bool {
 	return name == v29UnlessForms[0] || name == v29UnlessForms[1]
 }
 
-func init() {
-	entailmentSchemas = append(entailmentSchemas,
-		entailmentSchema{name: "unless elimination", arity: 2, match: matchUnlessElimination},
-		entailmentSchema{name: "unless conversion", arity: 1, match: matchUnlessConversion},
-	)
-}
-
 // unlessAnaphor marks an unless-clause whose pronoun may point back into a
 // quantified main clause ("Every student passes unless he fails"); the
 // propositional reading would then prove more than the sentence says.
@@ -33,7 +26,7 @@ func init() {
 var unlessAnaphor = regexp.MustCompile(`\b(?:i|me|my|mine|myself|you|your|yours|yourself|yourselves|he|him|his|himself|she|her|hers|herself|it|its|itself|we|us|our|ours|ourselves|they|them|their|theirs|themselves|this|that|these|those|one|ones|oneself|such|same|other|others|former|latter|there|then|thereof|therein|so)\b`)
 
 // unlessCandidates splits "P unless Q" and "Unless Q, P" at each "unless".
-func unlessCandidates(statement string) []clausePair {
+func (policy strictRules) unlessCandidates(statement string) []clausePair {
 	normalized := normalizeClause(statement)
 	var result []clausePair
 	if op, a, b, managed, why := gateGroupingPlan(normalized); managed {
@@ -51,7 +44,7 @@ func unlessCandidates(statement string) []clausePair {
 	}
 	kept := result[:0]
 	for _, pair := range result {
-		if pair.left != "" && pair.right != "" && !unlessAnaphor.MatchString(pair.right) {
+		if pair.left != "" && pair.right != "" && (!policy.unless_anaphor || !unlessAnaphor.MatchString(pair.right)) {
 			kept = append(kept, pair)
 		}
 	}
@@ -59,15 +52,15 @@ func unlessCandidates(statement string) []clausePair {
 }
 
 // unless elimination: "P unless Q", "it is not the case that Q" ⊢ "P".
-func matchUnlessElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchUnlessElimination(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	negated := negationCandidates(premises[1].Statement)
-	for _, pair := range unlessCandidates(premises[0].Statement) {
+	for _, pair := range policy.unlessCandidates(premises[0].Statement) {
 		if pair.left == "" || pair.right == "" {
 			continue
 		}
 		for _, q := range negated {
-			candidate := evaluateIdentities(
+			candidate := policy.evaluateIdentities(
 				clauseIdentity{fmt.Sprintf("premise %d unless-clause", premises[0].Number), pair.right, fmt.Sprintf("premise %d negated clause", premises[1].Number), q},
 				clauseIdentity{fmt.Sprintf("premise %d main clause", premises[0].Number), pair.left, fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement},
 			)
@@ -81,17 +74,17 @@ func matchUnlessElimination(premises []NumberedArgumentStep, conclusion Numbered
 }
 
 // unless conversion: "P unless Q" ⊣⊢ "if it is not the case that Q, then P".
-func matchUnlessConversion(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchUnlessConversion(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, direction := range [][2]NumberedArgumentStep{{premises[0], conclusion}, {conclusion, premises[0]}} {
 		unlessStep, conditionalStep := direction[0], direction[1]
-		for _, pair := range unlessCandidates(unlessStep.Statement) {
+		for _, pair := range policy.unlessCandidates(unlessStep.Statement) {
 			if pair.left == "" || pair.right == "" {
 				continue
 			}
 			for _, conditional := range conditionalCandidates(conditionalStep.Statement) {
 				for _, q := range negationCandidates(conditional.left) {
-					candidate := evaluateIdentities(
+					candidate := policy.evaluateIdentities(
 						clauseIdentity{fmt.Sprintf("step %d unless-clause", unlessStep.Number), pair.right, fmt.Sprintf("step %d negated antecedent", conditionalStep.Number), q},
 						clauseIdentity{fmt.Sprintf("step %d main clause", unlessStep.Number), pair.left, fmt.Sprintf("step %d consequent", conditionalStep.Number), conditional.right},
 					)

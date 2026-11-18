@@ -8,13 +8,18 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v42.0"
+const EntailmentGateCatalogVersion = "v42.1"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
 type EntailmentGateOptions struct {
 	AllowSingleFencedBlock bool `json:"allow_single_fenced_block"`
 	AllowBlankLines        bool `json:"allow_blank_lines"`
+	// StrictNotes attaches a note to each failing step that a single
+	// strictness rule refused (v42.1). It re-checks failing steps once per
+	// rule, so it is off by default; turn it on for human-facing reports, not
+	// inside retry loops.
+	StrictNotes bool `json:"strict_notes,omitempty"`
 }
 
 // EntailmentGateReport is the deterministic result for every conclusion in a
@@ -27,15 +32,16 @@ type EntailmentGateReport struct {
 // EntailmentGateStepReport records the matched schema or nearest failed form
 // for one conclusion step.
 type EntailmentGateStepReport struct {
-	Step          int      `json:"step"`
-	Depth         int      `json:"depth,omitempty"`
-	Ranges        [][2]int `json:"ranges,omitempty"`
-	Citations     []int    `json:"citations"`
-	Passed        bool     `json:"passed"`
-	Form          string   `json:"form,omitempty"`
-	NearestForm   string   `json:"nearest_form,omitempty"`
-	Mismatch      string   `json:"mismatch,omitempty"`
-	AmbiguityNote string   `json:"ambiguity_note,omitempty"`
+	Notes         []StrictNote `json:"notes,omitempty"`
+	Step          int          `json:"step"`
+	Depth         int          `json:"depth,omitempty"`
+	Ranges        [][2]int     `json:"ranges,omitempty"`
+	Citations     []int        `json:"citations"`
+	Passed        bool         `json:"passed"`
+	Form          string       `json:"form,omitempty"`
+	NearestForm   string       `json:"nearest_form,omitempty"`
+	Mismatch      string       `json:"mismatch,omitempty"`
+	AmbiguityNote string       `json:"ambiguity_note,omitempty"`
 }
 
 // InertCitationReport identifies a conclusion whose full citation set fails
@@ -73,6 +79,10 @@ func (v entailmentGateValidator) Validate(ctx context.Context, output string) Re
 // one options value may be supplied. Each gated step is passed to
 // gateStepObserver once, just before this returns.
 func CheckEntailmentGate(output string, options ...EntailmentGateOptions) (EntailmentGateReport, Result) {
+	return allStrictRules().CheckEntailmentGate(output, options...)
+}
+
+func (policy strictRules) CheckEntailmentGate(output string, options ...EntailmentGateOptions) (EntailmentGateReport, Result) {
 	if len(options) > 1 {
 		return EntailmentGateReport{}, Result{Passed: false, Message: "entailment_gate accepts at most one options value"}
 	}
@@ -80,18 +90,23 @@ func CheckEntailmentGate(output string, options ...EntailmentGateOptions) (Entai
 	if len(options) == 1 {
 		parseOptions.AllowSingleFencedBlock = options[0].AllowSingleFencedBlock
 		parseOptions.AllowBlankLines = options[0].AllowBlankLines
+		policy.notes = options[0].StrictNotes
 	}
-	report, result := checkEntailmentGate(output, parseOptions)
+	report, result := policy.checkEntailmentGate(output, parseOptions)
 	return observeGateReport(report), result
 }
 
 func checkEntailmentGate(output string, options numberedArgumentOptions) (EntailmentGateReport, Result) {
-	argument, parseResult := ParseNumberedArgument(output, options)
+	return allStrictRules().checkEntailmentGate(output, options)
+}
+
+func (policy strictRules) checkEntailmentGate(output string, options numberedArgumentOptions) (EntailmentGateReport, Result) {
+	argument, parseResult := policy.ParseNumberedArgument(output, options)
 	if !parseResult.Passed {
 		return EntailmentGateReport{Passed: false}, parseResult
 	}
 	argument = protectArgumentNameLetters(argument)
-	report, result := gateParsedArgument(argument, false)
+	report, result := policy.gateParsedArgument(argument, false)
 	result = cleanNameLetterMessage(&report, result)
 	if result.Passed {
 		return report, result
@@ -99,20 +114,23 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 	// v31.2: a second reading with each whole-step "Y if X" as "If X, then Y".
 	// It runs only after the argument as written fails, so it never removes a
 	// verdict; the first reading's report stands unless the second passes.
-	if rewritten, ok := rewritePostposedSteps(argument); ok {
-		if altReport, altResult := gateParsedArgument(rewritten, true); altResult.Passed {
+	if rewritten, ok := policy.rewritePostposedSteps(argument); ok {
+		if altReport, altResult := policy.gateParsedArgument(rewritten, true); altResult.Passed {
 			altResult = cleanNameLetterMessage(&altReport, altResult)
 			return altReport, altResult
 		}
 	}
+	if policy.notes {
+		attachStrictNotes(argument, &report)
+	}
 	return report, result
 }
 
-func rewritePostposedSteps(argument NumberedArgument) (NumberedArgument, bool) {
+func (policy strictRules) rewritePostposedSteps(argument NumberedArgument) (NumberedArgument, bool) {
 	changed := false
 	steps := make([]NumberedArgumentStep, len(argument.Steps))
 	for i, step := range argument.Steps {
-		if rewritten, ok := postposedConditional(strings.TrimSuffix(strings.TrimSpace(step.Statement), ".")); ok {
+		if rewritten, ok := policy.postposedConditional(strings.TrimSuffix(strings.TrimSpace(step.Statement), ".")); ok {
 			step.Statement = rewritten
 			changed = true
 		}
@@ -121,7 +139,7 @@ func rewritePostposedSteps(argument NumberedArgument) (NumberedArgument, bool) {
 	return NumberedArgument{Steps: steps}, changed
 }
 
-func gateParsedArgument(argument NumberedArgument, postposed bool) (EntailmentGateReport, Result) {
+func (policy strictRules) gateParsedArgument(argument NumberedArgument, postposed bool) (EntailmentGateReport, Result) {
 	expanded, expansions, err := ExpandNumberedArgumentBridges(argument)
 	if err != nil {
 		return EntailmentGateReport{Passed: false}, Result{
@@ -130,7 +148,7 @@ func gateParsedArgument(argument NumberedArgument, postposed bool) (EntailmentGa
 		}
 	}
 	// Observed by CheckEntailmentGate or the builtin validator, not here.
-	report := gateNumberedArgument(expanded, false)
+	report := policy.gateNumberedArgument(expanded, false)
 	addStepReferenceHints(&report, argument)
 	passedSteps := 0
 	for _, step := range report.Steps {
@@ -170,13 +188,21 @@ func gateParsedArgument(argument NumberedArgument, postposed bool) (EntailmentGa
 // GateNumberedArgument checks every conclusion step of an already-expanded
 // numbered argument.
 func GateNumberedArgument(arg NumberedArgument) EntailmentGateReport {
-	return gateNumberedArgument(arg, true)
+	return allStrictRules().GateNumberedArgument(arg)
+}
+
+func (policy strictRules) GateNumberedArgument(arg NumberedArgument) EntailmentGateReport {
+	report := policy.gateNumberedArgument(arg, false)
+	if policy.notes {
+		attachStrictNotes(arg, &report)
+	}
+	return observeGateReport(report)
 }
 
 // gateNumberedArgument builds the step report. Scope failures and
 // explicit-variable FOL parse failures return a one-step report. observe is
 // false when CheckEntailmentGate or the builtin validator reports those steps.
-func gateNumberedArgument(arg NumberedArgument, observe bool) EntailmentGateReport {
+func (policy strictRules) gateNumberedArgument(arg NumberedArgument, observe bool) EntailmentGateReport {
 	if result := checkNumberedArgumentScope(arg); !result.Passed {
 		report := EntailmentGateReport{Passed: false, Steps: []EntailmentGateStepReport{{NearestForm: "scope", Mismatch: result.Message}}}
 		return finishGateReport(report, observe)
@@ -184,7 +210,7 @@ func gateNumberedArgument(arg NumberedArgument, observe bool) EntailmentGateRepo
 	stepsByNumber := make(map[int]NumberedArgumentStep, len(arg.Steps))
 	for _, step := range arg.Steps {
 		if folExplicit(step.Statement) {
-			if _, err := parseFOL(step.Statement); err != nil {
+			if _, err := policy.parseFOL(step.Statement); err != nil {
 				report := EntailmentGateReport{Passed: false, Steps: []EntailmentGateStepReport{{Step: step.Number, NearestForm: "explicit-variable FOL", Mismatch: err.Error()}}}
 				return finishGateReport(report, observe)
 			}
@@ -197,18 +223,18 @@ func gateNumberedArgument(arg NumberedArgument, observe bool) EntailmentGateRepo
 		if step.Kind != numberedArgumentStepConclusion {
 			continue
 		}
-		stepReport := gateConclusionStep(step, stepsByNumber)
+		stepReport := policy.gateConclusionStep(step, stepsByNumber)
 		if stepReport.Passed {
-			if why := sentenceFrameFailure(step, stepsByNumber, stepReport.Form); why != "" {
+			if why := policy.sentenceFrameFailure(step, stepsByNumber, stepReport.Form); why != "" {
 				stepReport.Passed = false
 				stepReport.NearestForm, stepReport.Mismatch = stepReport.Form, why
 				stepReport.Form = ""
 			}
 		} else {
 			for _, id := range step.Citations {
-				why := punctuationDifference(stepsByNumber[id].Statement, step.Statement)
+				why := policy.punctuationDifference(stepsByNumber[id].Statement, step.Statement)
 				if why == "" {
-					why = punctuationSuffixDifference(stepsByNumber[id].Statement, step.Statement)
+					why = policy.punctuationSuffixDifference(stepsByNumber[id].Statement, step.Statement)
 				}
 				if why != "" {
 					stepReport.Mismatch = why
@@ -237,6 +263,10 @@ func finishGateReport(report EntailmentGateReport, observe bool) EntailmentGateR
 // never guesses whether semantically difficult residue contains an extra
 // citation.
 func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport {
+	return allStrictRules().NumberedArgumentInertCitations(arg)
+}
+
+func (policy strictRules) NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport {
 	stepsByNumber := make(map[int]NumberedArgumentStep, len(arg.Steps))
 	for _, step := range arg.Steps {
 		stepsByNumber[step.Number] = step
@@ -247,7 +277,7 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 		if conclusion.Kind != numberedArgumentStepConclusion || len(conclusion.Ranges) > 0 || len(conclusion.Citations) < 2 {
 			continue
 		}
-		if gateConclusionStep(conclusion, stepsByNumber).Passed {
+		if policy.gateConclusionStep(conclusion, stepsByNumber).Passed {
 			continue
 		}
 
@@ -255,7 +285,7 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 		for _, citation := range conclusion.Citations {
 			premises = append(premises, stepsByNumber[citation])
 		}
-		for _, schema := range entailmentSchemas {
+		for _, schema := range policy.schemas() {
 			if schema.arity < 0 || schema.arity >= len(premises) {
 				continue
 			}
@@ -270,7 +300,7 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 				for i, premise := range selection {
 					subsetConclusion.Citations[i] = premise.Number
 				}
-				if !gateConclusionStep(subsetConclusion, stepsByNumber).Passed {
+				if !policy.gateConclusionStep(subsetConclusion, stepsByNumber).Passed {
 					continue
 				}
 				used := make(map[int]bool, len(selection))
@@ -302,6 +332,10 @@ func NumberedArgumentInertCitations(arg NumberedArgument) []InertCitationReport 
 }
 
 func gateConclusionStepV26(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	return allStrictRules().gateConclusionStepV26(conclusion, steps)
+}
+
+func (policy strictRules) gateConclusionStepV26(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	counting := countingActive(conclusion.Statement)
 	for _, id := range conclusion.Citations {
 		counting = counting || countingActive(steps[id].Statement)
@@ -311,16 +345,20 @@ func gateConclusionStepV26(conclusion NumberedArgumentStep, steps map[int]Number
 	}
 	if counting {
 		// Keep existing successful proof recognition and reports unchanged.
-		old := gateConclusionStepLegacy(conclusion, steps)
+		old := policy.gateConclusionStepLegacy(conclusion, steps)
 		if old.Passed {
 			return old
 		}
-		return gateCounting(conclusion, steps)
+		return policy.gateCounting(conclusion, steps)
 	}
-	return gateConclusionStepLegacy(conclusion, steps)
+	return policy.gateConclusionStepLegacy(conclusion, steps)
 }
 
 func gateConclusionStepLegacy(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	return allStrictRules().gateConclusionStepLegacy(conclusion, steps)
+}
+
+func (policy strictRules) gateConclusionStepLegacy(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	// New explicit-variable sentences have fixed scope, never legacy scope
 	// permutations. Historical sentences retain their previous parser priority.
 	active := folExplicit(conclusion.Statement)
@@ -331,18 +369,18 @@ func gateConclusionStepLegacy(conclusion NumberedArgumentStep, steps map[int]Num
 		active = active || folExplicit(steps[span[0]].Statement) || folExplicit(steps[span[1]].Statement)
 	}
 	if active {
-		report := gateFOL(conclusion, steps)
+		report := policy.gateFOL(conclusion, steps)
 		if !report.Passed {
-			bridge := notationEquivalence(conclusion, steps)
+			bridge := policy.notationEquivalence(conclusion, steps)
 			if bridge.Passed || strings.Contains(bridge.Mismatch, "ambiguous") {
 				return bridge
 			}
 		}
 		return report
 	}
-	report := gateRelationalScopes(conclusion, steps)
+	report := policy.gateRelationalScopes(conclusion, steps)
 	if !report.Passed {
-		if fallback := gateFOL(conclusion, steps); fallback.Passed {
+		if fallback := policy.gateFOL(conclusion, steps); fallback.Passed {
 			return fallback
 		}
 	}
@@ -360,7 +398,7 @@ func gateConclusionStepLegacy(conclusion NumberedArgumentStep, steps map[int]Num
 		}
 	}
 	if !report.Passed {
-		bridge := notationEquivalence(conclusion, steps)
+		bridge := policy.notationEquivalence(conclusion, steps)
 		if bridge.Passed {
 			return bridge
 		}
@@ -368,7 +406,7 @@ func gateConclusionStepLegacy(conclusion NumberedArgumentStep, steps map[int]Num
 	return report
 }
 
-func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+func (policy strictRules) gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	report := EntailmentGateStepReport{
 		Step:      conclusion.Number,
 		Depth:     conclusion.Depth,
@@ -376,7 +414,7 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 		Citations: append([]int(nil), conclusion.Citations...),
 	}
 	if len(conclusion.Ranges) > 0 {
-		return gateFitchConclusion(conclusion, steps)
+		return policy.gateFitchConclusion(conclusion, steps)
 	}
 	premises := make([]NumberedArgumentStep, 0, len(conclusion.Citations))
 	for _, citation := range conclusion.Citations {
@@ -392,7 +430,7 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 
 	var refusedForm, refusedNote string
 	for _, set := range gateCandidateSets(premises, conclusion) {
-		for _, schema := range entailmentSchemas {
+		for _, schema := range policy.schemas() {
 			if set.formSuffix != "" && (v20PropertyForm(schema.name) || v21PropertyForm(schema.name)) {
 				continue
 			}
@@ -408,7 +446,7 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 					refusedForm, refusedNote = schema.name, outcome.mismatch
 				}
 				if outcome.matched && schema.name == "identity substitution" {
-					if reason := identitySubstitutionUnsafe(stepStatements(ordered), set.conclusion.Statement); reason != "" {
+					if reason := policy.identitySubstitutionUnsafe(stepStatements(ordered), set.conclusion.Statement); reason != "" {
 						if refusedNote == "" {
 							refusedForm, refusedNote = schema.name, reason
 						}
@@ -424,7 +462,7 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 		}
 	}
 
-	if form, note := accuracyRound2Failure(premises, conclusion); note != "" {
+	if form, note := policy.accuracyRound2Failure(premises, conclusion); note != "" {
 		report.NearestForm, report.Mismatch = form, note
 		return report
 	}
@@ -434,13 +472,13 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 		return report
 	}
 
-	if form, note := counterfactualFailure(premises, conclusion); note != "" {
+	if form, note := policy.counterfactualFailure(premises, conclusion); note != "" {
 		report.NearestForm, report.Mismatch = form, note
 		return report
 	}
 
 	if len(premises) < 3 {
-		if special, ok := conjunctiveAntecedentModusPonensFailure(premises, conclusion); ok {
+		if special, ok := policy.conjunctiveAntecedentModusPonensFailure(premises, conclusion); ok {
 			report.NearestForm = "modus ponens"
 			report.Mismatch = special
 			return report
@@ -450,7 +488,7 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 	best := schemaMatchOutcome{}
 	bestName := "none"
 	for _, set := range gateCandidateSets(premises, conclusion) {
-		for _, schema := range entailmentSchemas {
+		for _, schema := range policy.schemas() {
 			selections := orderedPremiseSelections(set.premises, schema.arity)
 			for _, ordered := range selections {
 				outcome := schema.match(ordered, set.conclusion)
@@ -467,7 +505,7 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 			}
 			if schema.name == "universal instantiation" {
 				for _, premise := range set.premises {
-					outcome := scoreUniversalPredicateSwap(premise, set.conclusion)
+					outcome := policy.scoreUniversalPredicateSwap(premise, set.conclusion)
 					if outcome.score > best.score || (outcome.score == best.score && outcome.traction && !best.traction) {
 						best = outcome
 						bestName = schema.name + set.formSuffix

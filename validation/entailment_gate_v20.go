@@ -30,9 +30,9 @@ func propertyBearer(s string) bool {
 
 // The complete bearer and predicate must be shared. In particular, a copula
 // within a definite description cannot be mistaken for its outer copula.
-func propertyCopulas(s string) []clausePair {
+func (policy strictRules) propertyCopulas(s string) []clausePair {
 	var result []clausePair
-	for _, pair := range groundInstanceCandidates(s) {
+	for _, pair := range policy.groundInstanceCandidates(s) {
 		if propertyBearer(pair.left) && propertyPredicate(pair.right) {
 			result = append(result, pair)
 		}
@@ -99,13 +99,13 @@ func propertyOuterNegation(s string) (string, bool) {
 	return strings.TrimPrefix(s, prefix), strings.HasPrefix(s, prefix)
 }
 
-func matchPropertyAbstraction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchPropertyAbstraction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	a, an := propertyOuterNegation(p[0].Statement)
 	b, bn := propertyOuterNegation(c.Statement)
 	if an != bn {
 		return schemaMatchOutcome{}
 	}
-	for _, pred := range propertyCopulas(a) {
+	for _, pred := range policy.propertyCopulas(a) {
 		for _, prop := range propertyPossessions(b) {
 			if pred == prop {
 				return schemaMatchOutcome{matched: true}
@@ -115,8 +115,8 @@ func matchPropertyAbstraction(p []NumberedArgumentStep, c NumberedArgumentStep) 
 	return schemaMatchOutcome{}
 }
 
-func matchPropertyConcretion(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return matchPropertyAbstraction([]NumberedArgumentStep{c}, p[0])
+func (policy strictRules) matchPropertyConcretion(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.matchPropertyAbstraction([]NumberedArgumentStep{c}, p[0])
 }
 
 func matchPropertyInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
@@ -166,13 +166,13 @@ func matchIndiscernibilityOfIdenticals(p []NumberedArgumentStep, c NumberedArgum
 	return schemaMatchOutcome{}
 }
 
-func propertyGeneralization(first, last, c NumberedArgumentStep, steps map[int]NumberedArgumentStep) (bool, string) {
+func (policy strictRules) propertyGeneralization(first, last, c NumberedArgumentStep, steps map[int]NumberedArgumentStep) (bool, string) {
 	last.Statement = fitchAssumptionStatement(last)
 	m := arbitraryPropertyPattern.FindStringSubmatch(first.Statement)
 	if m == nil || !propertyBearer(m[2]) {
 		return false, "arbitrary property must have a singular individual bearer"
 	}
-	if reason := fitchFreshName(m[1], first.Number, c, steps); reason != "" {
+	if reason := policy.fitchFreshName(m[1], first.Number, c, steps); reason != "" {
 		return false, reason
 	}
 	for _, inclusion := range propertyInclusions(c.Statement) {

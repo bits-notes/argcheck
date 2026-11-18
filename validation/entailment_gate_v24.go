@@ -65,14 +65,24 @@ func folSplit(s, sep string) (string, string, bool) {
 	}
 	return "", "", false
 }
-func parseFOL(text string) (*folFormula, error) {
+func parseFOL(text string) (*folFormula, error) { return allStrictRules().parseFOL(text) }
+
+func (policy strictRules) parseFOL(text string) (*folFormula, error) {
 	s := strings.ToLower(strings.TrimSuffix(strings.TrimSpace(text), "."))
-	return parseFOLScope(s, map[string]bool{}, folExplicit(s))
+	return policy.parseFOLScope(s, map[string]bool{}, folExplicit(s))
 }
 func parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, error) {
-	return parseFOLScopeMode(s, bound, strict, true)
+	return allStrictRules().parseFOLScope(s, bound, strict)
+}
+
+func (policy strictRules) parseFOLScope(s string, bound map[string]bool, strict bool) (*folFormula, error) {
+	return policy.parseFOLScopeMode(s, bound, strict, true)
 }
 func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (*folFormula, error) {
+	return allStrictRules().parseFOLScopeMode(s, bound, strict, extended)
+}
+
+func (policy strictRules) parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (*folFormula, error) {
 	s = folStrip(s)
 	bad := func() (*folFormula, error) {
 		return nil, fmt.Errorf("use every/some/no <variable> is such that, bind each variable once, and parenthesize compound scopes")
@@ -111,7 +121,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 			next[k] = b
 		}
 		next[v] = true
-		body, err := parseFOLScopeMode(strings.TrimSpace(s[m[1]:]), next, true, extended)
+		body, err := policy.parseFOLScopeMode(strings.TrimSpace(s[m[1]:]), next, true, extended)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +134,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 		return f, nil
 	}
 	if strings.HasPrefix(s, "it is not the case that ") {
-		f, e := parseFOLScopeMode(strings.TrimPrefix(s, "it is not the case that "), bound, strict, extended)
+		f, e := policy.parseFOLScopeMode(strings.TrimPrefix(s, "it is not the case that "), bound, strict, extended)
 		if e != nil {
 			return nil, e
 		}
@@ -136,7 +146,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 			a, b, ok = folSplit(s[3:], ", then ")
 		}
 		if ok {
-			return folParsePair("implies", strings.TrimSuffix(a, ","), b, bound, strict, extended)
+			return policy.folParsePair("implies", strings.TrimSuffix(a, ","), b, bound, strict, extended)
 		}
 		return bad()
 	}
@@ -145,7 +155,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 			return bad()
 		}
 		if op != "" && a != "" && b != "" {
-			return folParsePair(op, a, b, bound, strict, extended)
+			return policy.folParsePair(op, a, b, bound, strict, extended)
 		}
 	}
 	for _, p := range []struct{ sep, op string }{{" if and only if ", "iff"}, {" and ", "and"}, {" or ", "or"}} {
@@ -154,7 +164,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 			t = strings.TrimPrefix(t, "either ")
 		}
 		if a, b, ok := folSplit(t, p.sep); ok {
-			return folParsePair(p.op, a, b, bound, strict, extended)
+			return policy.folParsePair(p.op, a, b, bound, strict, extended)
 		}
 	}
 	// Name escapes are constants even when the same spelling is bound.
@@ -174,7 +184,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 			replacements[placeholder] = name
 			masked = strings.Replace(masked, literal, placeholder, 1)
 		}
-		f, err := parseFOLScopeMode(masked, bound, strict, extended)
+		f, err := policy.parseFOLScopeMode(masked, bound, strict, extended)
 		if err != nil {
 			return nil, err
 		}
@@ -204,7 +214,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 	// A historical opaque clause stays zero-place even when the narrow
 	// token parser could accidentally read its words as subject/verb/object.
 	if extended && !strings.Contains(s, " is such that ") {
-		fs, why := legacyFOLReadings(s)
+		fs, why := policy.legacyFOLReadings(s)
 		if why == "" && len(fs) == 1 && fs[0].op == "atom" && len(fs[0].terms) == 0 {
 			usesBound := false
 			for _, word := range strings.Fields(s) {
@@ -223,7 +233,7 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 	if strings.Contains(s, " is such that ") {
 		return bad()
 	}
-	fs, why := legacyFOLReadings(s)
+	fs, why := policy.legacyFOLReadings(s)
 	if why != "" || len(fs) != 1 {
 		return bad()
 	}
@@ -348,12 +358,12 @@ func parseFOLAtomCore(s string, bound map[string]bool, strict bool) (*folFormula
 	return &folFormula{op: "atom", symbol: symbol, terms: ts}, nil
 }
 
-func folParsePair(op, a, b string, scope map[string]bool, strict, extended bool) (*folFormula, error) {
-	x, e := parseFOLScopeMode(a, scope, strict, extended)
+func (policy strictRules) folParsePair(op, a, b string, scope map[string]bool, strict, extended bool) (*folFormula, error) {
+	x, e := policy.parseFOLScopeMode(a, scope, strict, extended)
 	if e != nil {
 		return nil, e
 	}
-	y, e := parseFOLScopeMode(b, scope, strict, extended)
+	y, e := policy.parseFOLScopeMode(b, scope, strict, extended)
 	if e != nil {
 		return nil, e
 	}
@@ -593,7 +603,8 @@ func folRule(ps []*folFormula, c *folFormula) string {
 	}
 	return ""
 }
-func gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+
+func (policy strictRules) gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	r := EntailmentGateStepReport{Step: c.Number, Depth: c.Depth, Citations: c.Citations, Ranges: c.Ranges, NearestForm: "explicit-variable FOL", Mismatch: "no one-step FOL rule matches; bind variables inside is such that and parenthesize scopes"}
 	accept := func(s string) EntailmentGateStepReport {
 		r.Passed = true
@@ -604,20 +615,20 @@ func gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) Entailm
 	}
 	parseClosed := func(text string) (*folFormula, error) {
 		s := strings.ToLower(strings.TrimSuffix(strings.TrimSpace(text), "."))
-		f, err := parseFOLScope(s, map[string]bool{}, true)
+		f, err := policy.parseFOLScope(s, map[string]bool{}, true)
 		if err != nil || folExplicit(s) {
 			return f, err
 		}
 		// Extending the atom alphabet must not let the FOL fallback choose a
 		// connective reading that the historical gate deliberately rejected.
-		if _, oldErr := parseFOLScopeMode(s, map[string]bool{}, true, false); oldErr != nil {
+		if _, oldErr := policy.parseFOLScopeMode(s, map[string]bool{}, true, false); oldErr != nil {
 			// The readable enumerator is not a precedence specification for
 			// unrestricted mixed connectives. New compound fallback inputs must
 			// use the renderer's explicit parentheses; old schemas handle prose.
 			if len(f.children) > 0 && s != f.Render() {
 				return nil, fmt.Errorf("parenthesize compound scopes for explicit FOL rules")
 			}
-			readings, why := legacyFOLReadings(s)
+			readings, why := policy.legacyFOLReadings(s)
 			if why != "" || len(readings) != 1 || !folSame(f, readings[0]) {
 				return nil, fmt.Errorf("requires one matching readable FOL reading; parenthesize scopes or use is such that")
 			}
@@ -654,7 +665,7 @@ func gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) Entailm
 				for _, id := range c.Citations {
 					cited = append(cited, steps[id].Statement)
 				}
-				if reason := identitySubstitutionUnsafe(cited, c.Statement); reason != "" {
+				if reason := policy.identitySubstitutionUnsafe(cited, c.Statement); reason != "" {
 					r.NearestForm, r.Mismatch = "identity substitution", reason
 					return r
 				}
@@ -672,7 +683,7 @@ func gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) Entailm
 		}
 		if len(ps) == 0 && first.Kind == numberedArgumentStepArbitrary {
 			m := arbitraryFOLPattern.FindStringSubmatch(first.Statement)
-			if m != nil && target.op == "every" && folSame(folSub(target.children[0], target.symbol, strings.ToLower(m[1])), end) && fitchFreshName(m[1], first.Number, c, steps) == "" {
+			if m != nil && target.op == "every" && folSame(folSub(target.children[0], target.symbol, strings.ToLower(m[1])), end) && policy.fitchFreshName(m[1], first.Number, c, steps) == "" {
 				return accept("universal generalization")
 			}
 		}
@@ -694,7 +705,7 @@ func gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) Entailm
 			// already present in its body.
 			if folSame(ps[0].children[0], start) {
 				name := "eigenwitness"
-				for fitchFreshName(name, first.Number, c, steps) != "" {
+				for policy.fitchFreshName(name, first.Number, c, steps) != "" {
 					name += "fresh"
 				}
 				if folSame(folSub(ps[0].children[0], ps[0].symbol, name), start) {
@@ -702,7 +713,7 @@ func gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) Entailm
 				}
 			}
 			name := folInstance(ps[0], start)
-			if name != "" && fitchFreshName(name, first.Number, c, steps) == "" {
+			if name != "" && policy.fitchFreshName(name, first.Number, c, steps) == "" {
 				return accept("existential elimination")
 			}
 		}

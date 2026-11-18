@@ -229,11 +229,11 @@ func folSymbolContains(f *folFormula, text string) bool {
 	return false
 }
 
-func folLiteralHasName(s, name string) bool {
+func (policy strictRules) folLiteralHasName(s, name string) bool {
 	if len(folLiteralSpans(s)) == 0 && !strings.HasPrefix(name, "\x00") {
 		return false
 	}
-	readings, _ := legacyFOLReadings(s)
+	readings, _ := policy.legacyFOLReadings(s)
 	for _, f := range readings {
 		for _, n := range folNames(f) {
 			if n == name {

@@ -9,9 +9,13 @@ import (
 // that candidate cannot be rendered. The old recognizers and their priority in
 // the old gate are unchanged. Non-FOL operators are not treated as FOL atoms.
 func legacyFOLReadings(text string) ([]*folFormula, string) {
+	return allStrictRules().legacyFOLReadings(text)
+}
+
+func (policy strictRules) legacyFOLReadings(text string) ([]*folFormula, string) {
 	s := folStrip(stripClauseWrappers(normalizeClause(text)))
 	if folExplicit(s) {
-		f, err := parseFOL(s)
+		f, err := policy.parseFOL(s)
 		if err != nil {
 			return nil, "malformed explicit scope"
 		}
@@ -25,7 +29,7 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 	}
 	// Parenthesized structured compounds already have a fixed boundary.
 	if strings.ContainsAny(s, "()") {
-		if f, err := parseFOLScopeMode(s, map[string]bool{}, folExplicit(s), false); err == nil {
+		if f, err := policy.parseFOLScopeMode(s, map[string]bool{}, folExplicit(s), false); err == nil {
 			return []*folFormula{f}, ""
 		}
 	}
@@ -55,8 +59,8 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 	pairs := func(op string, cs []clausePair) ([]*folFormula, string) {
 		var out []*folFormula
 		for _, c := range cs {
-			as, ae := legacyFOLReadings(c.left)
-			bs, be := legacyFOLReadings(c.right)
+			as, ae := policy.legacyFOLReadings(c.left)
+			bs, be := policy.legacyFOLReadings(c.right)
 			if ae != "" {
 				return nil, ae
 			}
@@ -76,7 +80,7 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 		return unique(out), ""
 	}
 	if ns := negationCandidates(s); len(ns) > 0 {
-		fs, why := legacyFOLReadings(ns[0])
+		fs, why := policy.legacyFOLReadings(ns[0])
 		if why != "" {
 			return nil, why
 		}
@@ -99,11 +103,11 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 	}
 	if relativeMarker(s) && !strings.Contains(s, " is such that ") {
 		if q, ok := relativeQuant(s); ok {
-			guards, why := legacyFOLConjunction(q.guards)
+			guards, why := policy.legacyFOLConjunction(q.guards)
 			if why != "" {
 				return nil, why
 			}
-			bodies, why := legacyFOLReadings(q.body)
+			bodies, why := policy.legacyFOLReadings(q.body)
 			if why != "" {
 				return nil, why
 			}
@@ -116,7 +120,7 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 			return unique(out), ""
 		}
 		if facts, ok := relativeGround(s); ok && !(len(facts) == 1 && facts[0] == s) {
-			return legacyFOLConjunction(facts)
+			return policy.legacyFOLConjunction(facts)
 		}
 	}
 	// Opaque predications stay zero-place atoms: exposing their subject as an
@@ -125,14 +129,14 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 		return []*folFormula{{op: "atom", symbol: s}}, ""
 	}
 	unary := func(pred, term string) *folFormula {
-		return &folFormula{op: "atom", symbol: "is/" + legacyFOLTerm(pred), terms: []string{term}}
+		return &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(pred), terms: []string{term}}
 	}
 	// Preserve candidate enumeration, including embedded-copula alternatives.
 	for _, family := range []struct {
 		kind string
 		cs   []clausePair
 	}{
-		{"no", universalNegativeCandidates(s)}, {"every", universalCandidates(s)},
+		{"no", policy.universalNegativeCandidates(s)}, {"every", universalCandidates(s)},
 		{"some-not", particularNegativeCandidates(s)}, {"some", particularAffirmativeCandidates(s)},
 	} {
 		// Bare negative instances must not be promoted to universal negatives.
@@ -172,7 +176,7 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 			if quantifiedIdentitySide(c.left) || quantifiedIdentitySide(c.right) {
 				continue
 			}
-			out = append(out, &folFormula{op: "equal", terms: []string{legacyFOLTerm(c.left), legacyFOLTerm(c.right)}})
+			out = append(out, &folFormula{op: "equal", terms: []string{policy.legacyFOLTerm(c.left), policy.legacyFOLTerm(c.right)}})
 		}
 		if len(out) == 0 {
 			return nil, "identity needs names on both sides, not quantifier phrases"
@@ -182,14 +186,14 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 	if cs := negativeInstanceCandidates(s); len(cs) > 0 {
 		var out []*folFormula
 		for _, c := range cs {
-			out = append(out, fol("not", unary(c.right, legacyFOLTerm(c.left))))
+			out = append(out, fol("not", unary(c.right, policy.legacyFOLTerm(c.left))))
 		}
 		return unique(out), ""
 	}
-	if cs := groundInstanceCandidates(s); len(cs) > 0 {
+	if cs := policy.groundInstanceCandidates(s); len(cs) > 0 {
 		var out []*folFormula
 		for _, c := range cs {
-			out = append(out, unary(c.right, legacyFOLTerm(c.left)))
+			out = append(out, unary(c.right, policy.legacyFOLTerm(c.left)))
 		}
 		return unique(out), ""
 	}
@@ -203,7 +207,7 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 			for _, order := range orders {
 				terms := make([]string, len(c.terms))
 				for i, t := range c.terms {
-					terms[i] = legacyFOLTerm(t.text)
+					terms[i] = policy.legacyFOLTerm(t.text)
 					if t.quant != "" {
 						terms[i] = fmt.Sprintf("$slot%d", i)
 					}
@@ -231,8 +235,10 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 	return []*folFormula{{op: "atom", symbol: s}}, ""
 }
 
-func legacyFOLTerm(s string) string {
-	t := termCandidates(s)[0]
+func legacyFOLTerm(s string) string { return allStrictRules().legacyFOLTerm(s) }
+
+func (policy strictRules) legacyFOLTerm(s string) string {
+	t := policy.termCandidates(s)[0]
 	// Surface names must never collide with the AST's internal variable namespace.
 	if strings.HasPrefix(t, "$") || strings.HasPrefix(t, "\x00") {
 		return "\x00" + t
@@ -253,10 +259,11 @@ func legacyFOLQuant(kind, v string, guard, body *folFormula) *folFormula {
 	q.symbol = v
 	return q
 }
-func legacyFOLConjunction(texts []string) ([]*folFormula, string) {
+
+func (policy strictRules) legacyFOLConjunction(texts []string) ([]*folFormula, string) {
 	var out []*folFormula
 	for _, s := range texts {
-		fs, why := legacyFOLReadings(s)
+		fs, why := policy.legacyFOLReadings(s)
 		if why != "" {
 			return nil, why
 		}
@@ -277,17 +284,19 @@ func legacyFOLConjunction(texts []string) ([]*folFormula, string) {
 
 // Rendering failures remain named coverage exceptions, not alternative readings
 // to discard. In particular a one-letter legacy name is not a bound variable.
-func legacyFOLRender(f *folFormula) (string, string) {
+func legacyFOLRender(f *folFormula) (string, string) { return allStrictRules().legacyFOLRender(f) }
+
+func (policy strictRules) legacyFOLRender(f *folFormula) (string, string) {
 	s := f.Render()
-	got, err := parseFOLScope(s, map[string]bool{}, true)
+	got, err := policy.parseFOLScope(s, map[string]bool{}, true)
 	if err != nil || !folSame(f, got) {
-		why := legacyFOLRenderReason(folRenderNames(f, nil, 0), map[string]bool{})
+		why := policy.legacyFOLRenderReason(folRenderNames(f, nil, 0), map[string]bool{})
 		if why == "" {
 			why = "rendered compound changes connective scope"
 		}
 		return "", why
 	}
-	readings, why := legacyFOLReadings(s)
+	readings, why := policy.legacyFOLReadings(s)
 	if why != "" || len(readings) != 1 || !folSame(f, readings[0]) {
 		return "", "rendered surface conflicts with historical parenthesized parsing"
 	}
@@ -296,7 +305,7 @@ func legacyFOLRender(f *folFormula) (string, string) {
 
 // Diagnose failures at their lexical leaf, retaining a reason on every ledger
 // row. A variable-shaped legacy constant cannot silently become a variable.
-func legacyFOLRenderReason(f *folFormula, bound map[string]bool) string {
+func (policy strictRules) legacyFOLRenderReason(f *folFormula, bound map[string]bool) string {
 	for _, term := range f.terms {
 		if folVariable.MatchString(term) {
 			return "legacy constant looks like an explicit variable (requires a name escape)"
@@ -311,15 +320,15 @@ func legacyFOLRenderReason(f *folFormula, bound map[string]bool) string {
 			next[k] = v
 		}
 		next[strings.TrimPrefix(f.symbol, "$")] = true
-		return legacyFOLRenderReason(f.children[0], next)
+		return policy.legacyFOLRenderReason(f.children[0], next)
 	}
 	for _, child := range f.children {
-		if why := legacyFOLRenderReason(child, bound); why != "" {
+		if why := policy.legacyFOLRenderReason(child, bound); why != "" {
 			return why
 		}
 	}
 	if f.op == "atom" || f.op == "equal" {
-		got, err := parseFOLScope(f.renderSurface(), bound, true)
+		got, err := policy.parseFOLScope(f.renderSurface(), bound, true)
 		if err != nil {
 			if len(f.terms) == 0 {
 				return "opaque clause conflicts with explicit scope or connective syntax"
@@ -334,12 +343,16 @@ func legacyFOLRenderReason(f *folFormula, bound map[string]bool) string {
 }
 
 func notationEquivalence(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	return allStrictRules().notationEquivalence(c, steps)
+}
+
+func (policy strictRules) notationEquivalence(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	r := EntailmentGateStepReport{Step: c.Number, Depth: c.Depth, Citations: c.Citations, Ranges: c.Ranges, NearestForm: "notation equivalence", Mismatch: "requires one premise and identical single readings"}
 	if len(c.Citations) != 1 || len(c.Ranges) != 0 {
 		return r
 	}
-	a, ae := legacyFOLReadings(steps[c.Citations[0]].Statement)
-	b, be := legacyFOLReadings(c.Statement)
+	a, ae := policy.legacyFOLReadings(steps[c.Citations[0]].Statement)
+	b, be := policy.legacyFOLReadings(c.Statement)
 	if len(a) > 1 || len(b) > 1 || strings.Contains(ae, "ambiguous") || strings.Contains(be, "ambiguous") {
 		r.Mismatch = "ambiguous sentence: use is such that to fix the reading"
 		return r

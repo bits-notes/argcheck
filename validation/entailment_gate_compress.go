@@ -18,11 +18,15 @@ type BridgeCompressionEntry struct {
 // CheckBridgeCompression parses a numbered argument and tests every
 // bracket-bridge premise for removability.
 func CheckBridgeCompression(output string) ([]BridgeCompressionEntry, Result) {
-	argument, parseResult := ParseNumberedArgument(output, numberedArgumentOptions{})
+	return allStrictRules().CheckBridgeCompression(output)
+}
+
+func (policy strictRules) CheckBridgeCompression(output string) ([]BridgeCompressionEntry, Result) {
+	argument, parseResult := policy.ParseNumberedArgument(output, numberedArgumentOptions{})
 	if !parseResult.Passed {
 		return nil, parseResult
 	}
-	entries, err := NumberedArgumentBridgeCompression(argument)
+	entries, err := policy.NumberedArgumentBridgeCompression(argument)
 	if err != nil {
 		return nil, Result{Passed: false, Message: err.Error()}
 	}
@@ -34,6 +38,10 @@ func CheckBridgeCompression(output string) ([]BridgeCompressionEntry, Result) {
 // unexpanded argument; gating runs against the expanded statements, so a
 // conclusion citing several bridges is tested one removal at a time.
 func NumberedArgumentBridgeCompression(arg NumberedArgument) ([]BridgeCompressionEntry, error) {
+	return allStrictRules().NumberedArgumentBridgeCompression(arg)
+}
+
+func (policy strictRules) NumberedArgumentBridgeCompression(arg NumberedArgument) ([]BridgeCompressionEntry, error) {
 	if arg.HasSubproofs() {
 		return nil, fmt.Errorf("Fitch subproofs are not supported by bridge compression")
 	}
@@ -74,7 +82,7 @@ func NumberedArgumentBridgeCompression(arg NumberedArgument) ([]BridgeCompressio
 			}
 			entry := BridgeCompressionEntry{BridgeStep: citation, Conclusion: conclusion.Number}
 			if len(trimmed.Citations) > 0 {
-				report := gateConclusionStep(trimmed, stepsByNumber)
+				report := policy.gateConclusionStep(trimmed, stepsByNumber)
 				entry.Removable = report.Passed
 				entry.Form = report.Form
 				if !report.Passed {

@@ -21,7 +21,11 @@ func (arg NumberedArgument) HasSubproofs() bool {
 // ParseFlatNumberedArgumentAllowingNoConclusions is for legacy transformations
 // that renumber/reconstruct lines without carrying scope or discharge edges.
 func ParseFlatNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
-	return ParseNumberedArgumentAllowingNoConclusions(output)
+	return allStrictRules().ParseFlatNumberedArgumentAllowingNoConclusions(output)
+}
+
+func (policy strictRules) ParseFlatNumberedArgumentAllowingNoConclusions(output string) (NumberedArgument, Result) {
+	return policy.ParseNumberedArgumentAllowingNoConclusions(output)
 }
 
 func parseTerminalCitations(raw string) ([]int, [][2]int, error) {

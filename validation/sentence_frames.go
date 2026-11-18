@@ -24,6 +24,10 @@ var frameNominalHeads = wordSet("value consciousness knowledge evidence informat
 var frameWord = regexp.MustCompile(`[A-Za-z][A-Za-z0-9'’-]*`)
 
 func sentenceFrameOpener(s string, steps map[int]NumberedArgumentStep) string {
+	return allStrictRules().sentenceFrameOpener(s, steps)
+}
+
+func (policy strictRules) sentenceFrameOpener(s string, steps map[int]NumberedArgumentStep) string {
 	s = strings.TrimSpace(expandGateContractions(s))
 	if s == "" || strings.HasPrefix(s, "(") || folExplicit(s) || onlyGerund(strings.ToLower(s)) {
 		return ""
@@ -50,22 +54,22 @@ func sentenceFrameOpener(s string, steps map[int]NumberedArgumentStep) string {
 	// name or gerund evidence ("According" ends in -ing but is a preposition).
 	// Strict: a fronted frame is refused with or without a comma.
 	for _, phrase := range frameAdverbialPhrases {
-		if strings.HasPrefix(lower+" ", phrase+" ") || strings.HasPrefix(lower, phrase+",") {
+		if policy.opener_frame && (strings.HasPrefix(lower+" ", phrase+" ") || strings.HasPrefix(lower, phrase+",")) {
 			return frameOpenerMessage(s[:len(phrase)])
 		}
 	}
 	for _, phrase := range frameComplexPrepositions {
-		if strings.HasPrefix(lower+" ", phrase+" ") {
+		if policy.opener_frame && strings.HasPrefix(lower+" ", phrase+" ") {
 			return frameOpenerMessage(frameSpan(s))
 		}
 	}
-	if framePrepositions[first] && !frameGerundSubject(strings.Fields(s)) {
+	if policy.opener_frame && framePrepositions[first] && !frameGerundSubject(strings.Fields(s)) {
 		return frameOpenerMessage(frameSpan(s))
 	}
-	if frameSentenceAdverbs[first] {
+	if policy.opener_adverb && frameSentenceAdverbs[first] {
 		return frameOpenerMessage(words[0])
 	}
-	if strings.HasSuffix(first, "ly") && !frameLyNouns[first] && !frameLyAdjectiveSubject(strings.Fields(s)) {
+	if policy.opener_adverb && strings.HasSuffix(first, "ly") && !frameLyNouns[first] && !frameLyAdjectiveSubject(strings.Fields(s)) {
 		return frameOpenerMessage(words[0])
 	}
 	// Bare-noun, gerund and adjective+noun subjects ("Beliefs ...", "Trying to
@@ -199,7 +203,10 @@ func framePlainClause(s string) bool {
 	return false
 }
 
-func sentenceCoordinationUnsafe(s string) bool {
+func (policy strictRules) sentenceCoordinationUnsafe(s string) bool {
+	if !policy.coordination_clause {
+		return false
+	}
 	s = strings.TrimSpace(s)
 	lower := strings.ToLower(s)
 	for _, prefix := range []string{"both ", "either ", "if ", "when ", "whenever ", "unless ", "it is the case both that "} {
@@ -211,7 +218,7 @@ func sentenceCoordinationUnsafe(s string) bool {
 		return false
 	}
 	if op, left, right, managed, why := groupingPlan(s); managed && why == "" && (op == "and" || op == "or") {
-		return sentenceCoordinationUnsafe(left) || sentenceCoordinationUnsafe(right)
+		return policy.sentenceCoordinationUnsafe(left) || policy.sentenceCoordinationUnsafe(right)
 	}
 	bs, _ := groupingBoundaries(s)
 	for i, b := range bs {
@@ -222,13 +229,13 @@ func sentenceCoordinationUnsafe(s string) bool {
 			continue
 		}
 		left := strings.TrimSpace(strings.TrimSuffix(s[:b.start], ","))
-		return !framePlainClause(left) || sentenceCoordinationUnsafe(s[b.end:])
+		return !framePlainClause(left) || policy.sentenceCoordinationUnsafe(s[b.end:])
 	}
 	return false
 }
 
-func punctuationDifference(a, b string) string {
-	a, b = comparisonClause(a), comparisonClause(b)
+func (policy strictRules) punctuationDifference(a, b string) string {
+	a, b = policy.comparisonClause(a), policy.comparisonClause(b)
 	if a != b && strings.ReplaceAll(a, ",", "") == strings.ReplaceAll(b, ",", "") {
 		return fmt.Sprintf("differs only in punctuation: '%s' vs '%s'", a, b)
 	}
@@ -237,9 +244,9 @@ func punctuationDifference(a, b string) string {
 
 // Whole-sentence reuse is never an inspection of that sentence. Apply the
 // guards at the final gate boundary so alternate FOL routes cannot bypass it.
-func sentenceFrameFailure(c NumberedArgumentStep, steps map[int]NumberedArgumentStep, form string) string {
+func (policy strictRules) sentenceFrameFailure(c NumberedArgumentStep, steps map[int]NumberedArgumentStep, form string) string {
 	for _, id := range c.Citations {
-		if equalClauses(steps[id].Statement, c.Statement) {
+		if policy.equalClauses(steps[id].Statement, c.Statement) {
 			return ""
 		}
 	}
@@ -264,10 +271,10 @@ func sentenceFrameFailure(c NumberedArgumentStep, steps map[int]NumberedArgument
 		if reused {
 			continue
 		}
-		if why := sentenceFrameOpener(s, steps); why != "" {
+		if why := policy.sentenceFrameOpener(s, steps); why != "" {
 			return why
 		}
-		if !strings.Contains(form, "n-ary") && (strings.Contains(form, "conjunction") || strings.Contains(form, "disjunction") || strings.Contains(form, "disjunctive syllogism")) && sentenceCoordinationUnsafe(s) {
+		if !strings.Contains(form, "n-ary") && (strings.Contains(form, "conjunction") || strings.Contains(form, "disjunction") || strings.Contains(form, "disjunctive syllogism")) && policy.sentenceCoordinationUnsafe(s) {
 			return frameCoordinationMessage
 		}
 	}
@@ -315,8 +322,8 @@ func frameSubject(words []string) bool {
 
 // Diagnostic only: compare the common predicate suffix after different
 // subjects (for example, a universal class and its named instance).
-func punctuationSuffixDifference(a, b string) string {
-	aw, bw := strings.Fields(comparisonClause(a)), strings.Fields(comparisonClause(b))
+func (policy strictRules) punctuationSuffixDifference(a, b string) string {
+	aw, bw := strings.Fields(policy.comparisonClause(a)), strings.Fields(policy.comparisonClause(b))
 	n := 0
 	for n < len(aw) && n < len(bw) && strings.Trim(aw[len(aw)-1-n], ",") == strings.Trim(bw[len(bw)-1-n], ",") {
 		n++
@@ -324,7 +331,7 @@ func punctuationSuffixDifference(a, b string) string {
 	if n < 3 {
 		return ""
 	}
-	return punctuationDifference(strings.Join(aw[len(aw)-n:], " "), strings.Join(bw[len(bw)-n:], " "))
+	return policy.punctuationDifference(strings.Join(aw[len(aw)-n:], " "), strings.Join(bw[len(bw)-n:], " "))
 }
 
 var modifiedQuantifierWords = wordSet("no none nobody nothing one two three four five six seven eight nine ten few all every each most many half any some several dozens hundreds thousands millions")
@@ -338,6 +345,13 @@ var quantifierModifierWords = wordSet("next close well just almost nearly about 
 // quantifier words after an open class of modifiers keeps the slot strict
 // without listing every adverb.
 func modifiedQuantifierPhrase(lower string) bool {
+	return allStrictRules().modifiedQuantifierPhrase(lower)
+}
+
+func (policy strictRules) modifiedQuantifierPhrase(lower string) bool {
+	if !policy.slot_modified_quantifier {
+		return false
+	}
 	words := strings.Fields(strings.ToLower(lower))
 	i := 0
 	for i < len(words) {
@@ -362,7 +376,10 @@ var quantityNouns = wordSet("minority majority fraction proportion percentage sh
 // ("a minority of robots", "half of the robots", "a handful of robots").
 // Such a phrase is not an individual. The numerals and quantity nouns are a
 // closed class.
-func quantityPhrase(lower string) bool {
+func (policy strictRules) quantityPhrase(lower string) bool {
+	if !policy.slot_quantity {
+		return false
+	}
 	words := strings.Fields(strings.ToLower(lower))
 	if len(words) == 0 {
 		return false

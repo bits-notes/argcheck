@@ -144,7 +144,7 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 
 	var verdicts []verdict
 	if !*prod || *both {
-		verdicts = append(verdicts, checkLocal(argument))
+		verdicts = append(verdicts, checkLocal(argument, !*quiet))
 	}
 	if *prod || *both {
 		remote, err := checkProd(remoteURL, remoteTool, argument)
@@ -216,7 +216,7 @@ func readInput(path string, stdin io.Reader) (string, error) {
 }
 
 // checkLocal runs syntax validation before checking transparent entailment.
-func checkLocal(argument string) verdict {
+func checkLocal(argument string, wantNotes bool) verdict {
 	ctx := context.Background()
 	syntax := validation.Validate(ctx, validation.BuiltinSpec(validation.BuiltinNumberedArgumentSyntax), argument)
 	result := verdict{
@@ -231,7 +231,7 @@ func checkLocal(argument string) verdict {
 	if parsed, r := validation.ParseScopedNumberedArgumentAllowingNoConclusions(argument); r.Passed && parsed.HasSubproofs() {
 		result.Argument = &parsed
 	}
-	_, entailment := validation.CheckEntailmentGate(argument)
+	_, entailment := validation.CheckEntailmentGate(argument, validation.EntailmentGateOptions{StrictNotes: wantNotes})
 	result.Entailment = &check{Passed: entailment.Passed, Message: entailment.Message, Details: entailment.Details}
 	result.Valid = entailment.Passed
 	if !result.Valid {
@@ -374,14 +374,15 @@ func entailmentMessage(v verdict) string {
 // stepReport is decoded from Details["steps"], which arrives either as typed
 // structs (local) or as JSON maps (prod).
 type stepReport struct {
-	Step        int      `json:"step"`
-	Depth       int      `json:"depth,omitempty"`
-	Ranges      [][2]int `json:"ranges,omitempty"`
-	Citations   []int    `json:"citations"`
-	Passed      bool     `json:"passed"`
-	Form        string   `json:"form"`
-	NearestForm string   `json:"nearest_form"`
-	Mismatch    string   `json:"mismatch"`
+	Notes       []validation.StrictNote `json:"notes,omitempty"`
+	Step        int                     `json:"step"`
+	Depth       int                     `json:"depth,omitempty"`
+	Ranges      [][2]int                `json:"ranges,omitempty"`
+	Citations   []int                   `json:"citations"`
+	Passed      bool                    `json:"passed"`
+	Form        string                  `json:"form"`
+	NearestForm string                  `json:"nearest_form"`
+	Mismatch    string                  `json:"mismatch"`
 }
 
 func stepsOf(c *check) []stepReport {
@@ -429,6 +430,15 @@ func printVerdict(w io.Writer, v verdict) {
 			continue
 		}
 		fmt.Fprintf(w, "step %d [%s]: FAIL: nearest form %s: %s\n", step.Step, cites, step.NearestForm, step.Mismatch)
+		for _, note := range step.Notes {
+			fmt.Fprintf(w, "  note [%s] %s: %s\n", note.ID, note.Name, note.Why)
+			for _, example := range note.AlsoRefuses {
+				fmt.Fprintf(w, "    also refuses: %s\n", strings.ReplaceAll(example, "\n", " "))
+			}
+			for _, fix := range note.Fix {
+				fmt.Fprintf(w, "    fix: %s\n", fix)
+			}
+		}
 		if report, ok := inert[step.Step]; ok {
 			fmt.Fprintf(w, "  hint: %s passes on [%s]; citation(s) [%s] do no work\n",
 				report.Form, joinInts(report.UsedCitations), joinInts(report.InertCitations))

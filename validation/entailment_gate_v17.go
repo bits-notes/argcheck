@@ -11,7 +11,7 @@ import (
 
 // A relation has an ordered sequence of argument slots. Prefix entries bind slots, never
 // substrings of the opaque verb. No predicate-logic engine or model search is
-// used by the gate: the rules below are restricted quantifier proof rules.
+// used by the gate: the rules below are restricted quantifier proof policy.
 type relationTerm struct{ quant, text string }
 type relationQuantifier struct {
 	kind, class string
@@ -305,9 +305,10 @@ func relationRemove(n relationNormal, i int, name string) relationNormal {
 	n.prefix = append(append([]relationQuantifier{}, n.prefix[:i]...), n.prefix[i+1:]...)
 	return n
 }
-func relationMembership(s string) []clausePair {
+
+func (policy strictRules) relationMembership(s string) []clausePair {
 	var out []clausePair
-	for _, m := range groundInstanceCandidates(s) {
+	for _, m := range policy.groundInstanceCandidates(s) {
 		class := m.right
 		for _, article := range []string{"a ", "an "} {
 			class = strings.TrimPrefix(class, article)
@@ -329,7 +330,7 @@ func relationHasQuantifier(s string) bool {
 	return false
 }
 
-func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule string) schemaMatchOutcome {
+func (policy strictRules) matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule string) schemaMatchOutcome {
 	if !relationHasQuantifier(p[0].Statement) && !relationHasQuantifier(c.Statement) && len(nplaceCandidates(p[0].Statement)) == 0 && len(nplaceCandidates(c.Statement)) == 0 {
 		return schemaMatchOutcome{}
 	}
@@ -343,7 +344,7 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 
 			memberships := []clausePair{{}}
 			if len(p) == 2 {
-				memberships = relationMembership(p[1].Statement)
+				memberships = policy.relationMembership(p[1].Statement)
 			}
 			for _, member := range memberships {
 				all := true
@@ -355,7 +356,7 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 							ok = relationEntails(x, y) && (len(x.prefix) > 0 || a.scaffold || b.scaffold || len(a.terms) > 2)
 						case "UI", "negative UI":
 							for i, q := range x.prefix {
-								if q.kind == "every" && q.class == member.right && q.slot > 0 && !extensionalRelation(a.verb) {
+								if q.kind == "every" && q.class == member.right && q.slot > 0 && !policy.extensionalRelation(a.verb) {
 									objectRefused = objectSlotMessage(q.kind+" "+q.class, a.verb)
 									continue
 								}
@@ -368,7 +369,7 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 							}
 						case "EG":
 							for i, q := range y.prefix {
-								if q.kind == "some" && q.class == member.right && q.slot > 0 && !extensionalRelation(b.verb) {
+								if q.kind == "some" && q.class == member.right && q.slot > 0 && !policy.extensionalRelation(b.verb) {
 									objectRefused = objectSlotMessage(q.kind+" "+q.class, b.verb)
 									continue
 								}
@@ -393,17 +394,21 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 	}
 	return schemaMatchOutcome{}
 }
-func matchRelationalUniversalInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return matchRelationalRule(p, c, "UI")
+
+func (policy strictRules) matchRelationalUniversalInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.matchRelationalRule(p, c, "UI")
 }
-func matchRelationalNegativeInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return matchRelationalRule(p, c, "negative UI")
+
+func (policy strictRules) matchRelationalNegativeInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.matchRelationalRule(p, c, "negative UI")
 }
-func matchRelationalExistentialGeneralization(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return matchRelationalRule(p, c, "EG")
+
+func (policy strictRules) matchRelationalExistentialGeneralization(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.matchRelationalRule(p, c, "EG")
 }
-func matchRelationalScope(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return matchRelationalRule(p, c, "scope")
+
+func (policy strictRules) matchRelationalScope(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.matchRelationalRule(p, c, "scope")
 }
 
 // Render the original (not dualized) quantifier reading. This is used only
@@ -561,8 +566,8 @@ func rewriteRelationScopes(statement string, occurrences []relationScopeOccurren
 
 // One reading is assigned to each distinct normalized clause, including
 // occurrences inside connectives, negations and Fitch range endpoints.
-func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
-	raw := gateConclusionStepUnscoped(c, steps)
+func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	raw := policy.gateConclusionStepUnscoped(c, steps)
 	ids := append([]int{}, c.Citations...)
 	for _, r := range c.Ranges {
 		ids = append(ids, r[0], r[1])
@@ -655,7 +660,7 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 	// A certificate that still works after replacing each ambiguous clause
 	// with a distinct opaque atom is uniform in its meaning. This proves all
 	// consistent scope assignments at once and preserves the original form.
-	// It also avoids imposing relational scaffold syntax on propositional rules.
+	// It also avoids imposing relational scaffold syntax on propositional policy.
 	if raw.Passed {
 		atoms := map[string]string{}
 		for i, ch := range choices {
@@ -672,7 +677,7 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 			}
 			atoms[ch.original] = atom
 		}
-		if proof := gateConclusionStepUnscoped(applyBindings(atoms), local); proof.Passed {
+		if proof := policy.gateConclusionStepUnscoped(applyBindings(atoms), local); proof.Passed {
 			return raw
 		}
 	}
@@ -702,7 +707,7 @@ func gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgument
 		visit = func(j int) {
 			if j == len(choices) {
 				target := applyBindings(bindings)
-				r := gateConclusionStepUnscoped(target, local)
+				r := policy.gateConclusionStepUnscoped(target, local)
 				if r.Passed {
 					any = true
 					if successful == nil {
@@ -824,10 +829,11 @@ func matchRelationalUG(last, c NumberedArgumentStep, name, class string) bool {
 	}
 	return false
 }
-func relationalEEName(first, existential NumberedArgumentStep) string {
+
+func (policy strictRules) relationalEEName(first, existential NumberedArgumentStep) string {
 	for _, pair := range conjunctionCandidates(first.Statement) {
 		for _, sides := range [][2]string{{pair.left, pair.right}, {pair.right, pair.left}} {
-			for _, m := range relationMembership(sides[0]) {
+			for _, m := range policy.relationMembership(sides[0]) {
 				if !fitchNamePattern.MatchString(m.left) {
 					continue
 				}
@@ -877,7 +883,10 @@ var extensionalCopulas = map[string]bool{
 	"is married to": true, "is next to": true, "is above": true, "is below": true,
 }
 
-func extensionalRelation(verb string) bool {
+func (policy strictRules) extensionalRelation(verb string) bool {
+	if !policy.relation_object_extensional {
+		return true
+	}
 	head, _, _ := strings.Cut(verb, "\x00")
 	head = strings.TrimSpace(head)
 	if extensionalCopulas[head] {

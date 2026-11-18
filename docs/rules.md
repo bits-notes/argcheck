@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v31.1`)
+# Inference Rule Catalog (`v42.1`)
 
-`english-arg-validator` checks each conclusion step against the 121 inference forms in gate catalog `v31.1` (`english-arg-validator --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions (including `it's (not) the case that` for `it is (not) the case that`), and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`english-arg-validator` checks each conclusion step against the 121 inference forms in gate catalog `v42.1` (`english-arg-validator --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions (including `it's (not) the case that` for `it is (not) the case that`), and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -3140,3 +3140,35 @@ Whitespace and a final period do not distinguish clauses.
 1. Alpha eats shoots and leaves.
 2. Therefore, Alpha eats, shoots, and leaves. [1]
 ```
+
+## Strictness notes
+
+A failed step can include up to three structured notes. A note appears only
+when retrying that step with the named strictness rule disabled, and all other
+rules enabled, certifies it. Rules that block a step together may produce no
+note. Notes never change the verdict or the existing mismatch explanation.
+Passing steps have no notes. A suggested new premise supplies a claim rather
+than proving it; replacing a quantified phrase with a name changes the claim.
+
+The table is generated from `validation/strict_notes.go`. Regenerate it with
+`go test ./validation -run '^TestDocsRulesStrictNotes$' -update-strict-notes`.
+The same test without the update flag fails if the table differs from the Go
+data. `TestStrictNotesExamples` checks every example and its concrete fix.
+
+<!-- strictness-notes:start -->
+| rule id | name | since | why | also refuses | fix |
+| --- | --- | --- | --- | --- | --- |
+| `opener.frame` | Fronted frame | v36.0 | A phrase before the subject may scope over the whole sentence: 'According to the report, A and B' attributes both claims, so A alone is not certified. | 1. If X is registered, then X is eligible.<br>2. In 2019 the firm is registered.<br>3. Therefore, in 2019 the firm is eligible. [1,2] | Move the time phrase after the predicate, including in the schema: "If X is registered in 2019, then X is eligible in 2019." |
+| `opener.adverb` | Fronted adverb | v37.0 | A sentence adverb may weaken or qualify the whole claim: 'Arguably A and B' may assert only that A and B is arguable. | 1. If X is safe, then X is useful.<br>2. Highly reliable machinery is safe.<br>3. Therefore, highly reliable machinery is useful. [1,2] | Start with the subject: "Machinery that is highly reliable is safe." Use the same wording in the conclusion. |
+| `coordination.clause` | Clause coordination after a verb | v36.0 | In 'The observer saw A and B left', 'and' may join two objects or two whole clauses, so splitting off 'B left' is not certified. | 1. The pump malfunctioned.<br>2. The valve stuck.<br>3. Therefore, the pump malfunctioned and the valve stuck. [1,2] | Write "Both the pump malfunctioned and the valve stuck." |
+| `comma.exact` | Commas must match | v36.0 | A comma can change grouping ('A, and B or C' differs from 'A and B or C'), so clauses must repeat their punctuation exactly. | 1. Every device is small, light and portable.<br>2. Alpha is a device.<br>3. Therefore, Alpha is small, light, and portable. [1,2] | Repeat the clause with exactly the same commas wherever it is reused. |
+| `identity.safe_position` | Identity substitution only in subjects | v35.0 | Substituting co-referring names inside an attitude or other opaque context can change truth. The catalog therefore permits identity substitution only in identity sentences and plain clause subjects. | 1. Alpha is identical to Beta.<br>2. The robot kicks Alpha.<br>3. Therefore, the robot kicks Beta. [1,2] | State the substituted sentence as a premise: "The robot kicks Beta." This supplies the missing claim; it does not prove it from the original premises. |
+| `slot.indefinite_object` | Indefinite in an object position | v39.0 | An indefinite object need not pick anything out: 'The robot is looking for a unicorn' does not establish that a unicorn exists. | 1. If the robot admires X, then X is admirable.<br>2. The robot admires a hero.<br>3. Therefore, a hero is admirable. [1,2] | Use a name in the slot: "The robot admires Alpha." Conclude "Alpha is admirable." This changes the premise to identify a particular hero. |
+| `slot.modified_quantifier` | Modified quantifier in a term slot | v36.0 | A modified quantifier ('more than two robots', 'nearly all firms') is not an individual, so it cannot fill X or instantiate a universal. | 1. If X is red, then X is warm.<br>2. Nearly every robot is red.<br>3. Therefore, nearly every robot is warm. [1,2] | Use a name in the slot: "Alpha is red." Conclude "Alpha is warm." This certifies an individual instance rather than the quantified claim. |
+| `slot.quantity` | Quantity expression in a term slot | v38.0 | A quantity phrase ('two robots', 'a minority of voters', 'zero cases') may mean exactly that many, so it is not an individual for X or for instantiation. | 1. If X is registered, then X is eligible.<br>2. A group of robots is registered.<br>3. Therefore, a group of robots is eligible. [1,2] | Name the group: "The team is registered." Conclude "The team is eligible." |
+| `term.clause_inside` | Clause inside a term | v37.0 | A term that contains a finite verb with a complement may hide an attitude or embedded claim: 'the observer reckons Alpha is red' does not give that Alpha is red. | 1. If X are useful, then X are valuable.<br>2. Software exploits not known to humans are useful.<br>3. Therefore, software exploits not known to humans are valuable. [1,2] | Name the thing: "The exploits are useful." Conclude "The exploits are valuable." |
+| `noun.pluralia_tantum` | Plural-only noun | v37.0 | Some -s nouns are not plurals of the stripped word ('tongs' is not more than one 'tong'), so singular/plural matching is refused for them. | 1. All glasses are fragile.<br>2. The cup is a glass.<br>3. Therefore, the cup is fragile. [1,2] | Use the singular noun consistently: "Every glass is fragile." |
+| `conditional.postposed_if` | Postposed 'if' after a verb or adjective | v37.0 | A verb or adjective before 'if' can introduce a whether-question rather than a condition; postposed conditionals are recognized only in conservative surface forms. | 1. The machine vibrates if the motor runs.<br>2. The motor runs.<br>3. Therefore, the machine vibrates. [1,2] | Write "If the motor runs, then the machine vibrates." |
+| `relation.object_extensional` | Instantiation into an object position | v38.0 | The object of an unlisted verb may be intensional: awaiting every guest does not license the same substitutions as greeting every guest. Object instantiation is restricted to a closed verb list. | 1. The robot admires every hero.<br>2. Alpha is a hero.<br>3. Therefore, the robot admires Alpha. [1,2] | State the instance as a premise: "The robot admires Alpha." This supplies the missing claim; it does not prove it from the original premises. |
+| `unless.anaphor` | Pronoun across 'unless' | v38.0 | A pronoun after 'unless' may point back into the main clause, so 'A unless it is dead' cannot be split into independent clauses. | 1. The alarm sounds unless this battery is dead.<br>2. It is not the case that this battery is dead.<br>3. Therefore, the alarm sounds. [1,2] | Replace "this battery" with "the battery" in both premises. |
+<!-- strictness-notes:end -->

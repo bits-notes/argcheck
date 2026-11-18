@@ -197,9 +197,9 @@ func v19CF(a, b v13Pattern) v13Pattern { return v13Pattern{"counterfactual", []v
 
 // Enumerate mappings against the cited clauses. Each alternative gets its own
 // bindings: a failed candidate must never bind a variable for the next one.
-func v19Match(pattern v13Pattern, s string, bindings map[string]string, raw bool) []map[string]string {
+func (policy strictRules) v19Match(pattern v13Pattern, s string, bindings map[string]string, raw bool) []map[string]string {
 	if len(pattern.children) == 0 {
-		if bound, ok := bindings[pattern.op]; ok && !equalClauses(bound, s) {
+		if bound, ok := bindings[pattern.op]; ok && !policy.equalClauses(bound, s) {
 			return nil
 		}
 		next := make(map[string]string, len(bindings)+1)
@@ -214,7 +214,7 @@ func v19Match(pattern v13Pattern, s string, bindings map[string]string, raw bool
 		if len(neg) == 0 {
 			return nil
 		}
-		return v19Match(pattern.children[0], neg[0], bindings, raw)
+		return policy.v19Match(pattern.children[0], neg[0], bindings, raw)
 	}
 	var pairs []clausePair
 	if pattern.op == "counterfactual" {
@@ -231,13 +231,14 @@ func v19Match(pattern v13Pattern, s string, bindings map[string]string, raw bool
 	}
 	var out []map[string]string
 	for _, pair := range pairs {
-		for _, b := range v19Match(pattern.children[0], pair.left, bindings, raw) {
-			out = append(out, v19Match(pattern.children[1], pair.right, b, raw)...)
+		for _, b := range policy.v19Match(pattern.children[0], pair.left, bindings, raw) {
+			out = append(out, policy.v19Match(pattern.children[1], pair.right, b, raw)...)
 		}
 	}
 	return out
 }
-func v19Rules(p []NumberedArgumentStep, c NumberedArgumentStep, raw bool, rules ...v13Rule) schemaMatchOutcome {
+
+func (policy strictRules) v19Rules(p []NumberedArgumentStep, c NumberedArgumentStep, raw bool, rules ...v13Rule) schemaMatchOutcome {
 	for _, rule := range rules {
 		if len(rule) != len(p)+1 {
 			continue
@@ -250,7 +251,7 @@ func v19Rules(p []NumberedArgumentStep, c NumberedArgumentStep, raw bool, rules 
 			}
 			var next []map[string]string
 			for _, bindings := range states {
-				next = append(next, v19Match(pattern, s, bindings, raw)...)
+				next = append(next, policy.v19Match(pattern, s, bindings, raw)...)
 			}
 			states = next
 			if len(states) == 0 {
@@ -263,8 +264,9 @@ func v19Rules(p []NumberedArgumentStep, c NumberedArgumentStep, raw bool, rules 
 	}
 	return schemaMatchOutcome{}
 }
-func matchCounterfactualMP(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	result := v19Rules(p, c, false, v13Rule{v19CF(v13P, v13Q), v13P, v13Q})
+
+func (policy strictRules) matchCounterfactualMP(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	result := policy.v19Rules(p, c, false, v13Rule{v19CF(v13P, v13Q), v13P, v13Q})
 	if result.matched {
 		return result
 	}
@@ -279,37 +281,44 @@ func matchCounterfactualMP(p []NumberedArgumentStep, c NumberedArgumentStep) sch
 		}
 		virtual := append([]NumberedArgumentStep(nil), p...)
 		virtual[0].Statement = "If " + pair.left + ", then " + pair.right
-		if matchSchematicInstantiation(virtual, c).matched {
+		if policy.matchSchematicInstantiation(virtual, c).matched {
 			return schemaMatchOutcome{matched: true, traction: true, score: 3}
 		}
 	}
 	return result
 }
-func matchCounterfactualMT(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v19Rules(p, c, false, v13Rule{v19CF(v13P, v13Q), v13Not(v13Q), v13Not(v13P)})
+
+func (policy strictRules) matchCounterfactualMT(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v19Rules(p, c, false, v13Rule{v19CF(v13P, v13Q), v13Not(v13Q), v13Not(v13P)})
 }
-func matchCounterfactualMaterial(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v19Rules(p, c, false, v13Rule{v19CF(v13P, v13Q), v13If(v13P, v13Q)}, v13Rule{v19CF(v13P, v13Q), v13Or(v13Not(v13P), v13Q)})
+
+func (policy strictRules) matchCounterfactualMaterial(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v19Rules(p, c, false, v13Rule{v19CF(v13P, v13Q), v13If(v13P, v13Q)}, v13Rule{v19CF(v13P, v13Q), v13Or(v13Not(v13P), v13Q)})
 }
-func v19ConsequentRules(p []NumberedArgumentStep, c NumberedArgumentStep, rules ...v13Rule) schemaMatchOutcome {
-	out := v19Rules(p, c, false, rules...)
+
+func (policy strictRules) v19ConsequentRules(p []NumberedArgumentStep, c NumberedArgumentStep, rules ...v13Rule) schemaMatchOutcome {
+	out := policy.v19Rules(p, c, false, rules...)
 	if out.matched {
 		return out
 	}
 	// Closure of consequents can compare the would clauses verbatim even when
 	// bare-verb content is unavailable. This mode never detaches plain content.
-	return v19Rules(p, c, true, rules...)
+	return policy.v19Rules(p, c, true, rules...)
 }
-func matchCounterfactualConjunction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v19ConsequentRules(p, c, v13Rule{v19CF(v13P, v13Q), v19CF(v13P, v13R), v19CF(v13P, v13And(v13Q, v13R))})
+
+func (policy strictRules) matchCounterfactualConjunction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v19ConsequentRules(p, c, v13Rule{v19CF(v13P, v13Q), v19CF(v13P, v13R), v19CF(v13P, v13And(v13Q, v13R))})
 }
-func matchCounterfactualConjunctionElimination(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v19ConsequentRules(p, c, v13Rule{v19CF(v13P, v13And(v13Q, v13R)), v19CF(v13P, v13Q)}, v13Rule{v19CF(v13P, v13And(v13Q, v13R)), v19CF(v13P, v13R)})
+
+func (policy strictRules) matchCounterfactualConjunctionElimination(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v19ConsequentRules(p, c, v13Rule{v19CF(v13P, v13And(v13Q, v13R)), v19CF(v13P, v13Q)}, v13Rule{v19CF(v13P, v13And(v13Q, v13R)), v19CF(v13P, v13R)})
 }
-func matchCounterfactualDisjunction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
-	return v19ConsequentRules(p, c, v13Rule{v19CF(v13P, v13Q), v19CF(v13P, v13Or(v13Q, v13R))}, v13Rule{v19CF(v13P, v13Q), v19CF(v13P, v13Or(v13R, v13Q))})
+
+func (policy strictRules) matchCounterfactualDisjunction(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+	return policy.v19ConsequentRules(p, c, v13Rule{v19CF(v13P, v13Q), v19CF(v13P, v13Or(v13Q, v13R))}, v13Rule{v19CF(v13P, v13Q), v19CF(v13P, v13Or(v13R, v13Q))})
 }
-func matchCounterfactualDilemma(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+
+func (policy strictRules) matchCounterfactualDilemma(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	// Reuse only the bijection/Boolean shape of all three existing dilemmas.
 	// Every conditional must be would, and every side must have plain content.
 	choices := make([][]clausePair, len(p))
@@ -328,7 +337,7 @@ func matchCounterfactualDilemma(p []NumberedArgumentStep, c NumberedArgumentStep
 	visit = func(i int) bool {
 		if i == len(p) {
 			for _, kind := range []dilemmaKind{simpleDilemma, constructiveDilemma, destructiveDilemma} {
-				if matchDilemma(virtual, c, kind).matched {
+				if policy.matchDilemma(virtual, c, kind).matched {
 					return true
 				}
 			}
@@ -347,9 +356,10 @@ func matchCounterfactualDilemma(p []NumberedArgumentStep, c NumberedArgumentStep
 	}
 	return schemaMatchOutcome{matched: visit(0)}
 }
-func matchCounterfactualReflexivity(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+
+func (policy strictRules) matchCounterfactualReflexivity(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	for _, pair := range counterfactualPlainPairs(c.Statement) {
-		if !equalClauses(pair.left, pair.right) {
+		if !policy.equalClauses(pair.left, pair.right) {
 			continue
 		}
 		re := regexp.MustCompile(`(^|[^\pL\pN_])` + regexp.QuoteMeta(normalizeClause(pair.left)) + `($|[^\pL\pN_])`)
@@ -357,7 +367,7 @@ func matchCounterfactualReflexivity(p []NumberedArgumentStep, c NumberedArgument
 			return schemaMatchOutcome{matched: true, traction: true, score: 2}
 		}
 		for _, source := range counterfactualPlainPairs(p[0].Statement) {
-			if equalClauses(pair.left, source.left) || equalClauses(pair.left, source.right) {
+			if policy.equalClauses(pair.left, source.left) || policy.equalClauses(pair.left, source.right) {
 				return schemaMatchOutcome{matched: true, traction: true, score: 2}
 			}
 		}
@@ -399,7 +409,7 @@ func counterfactualRuleNote(rule, statement string) string {
 // Diagnose only after every genuine schema has failed. Masking the mood words
 // here is a shape probe for the old material rule, never a proof or a rewrite
 // passed back into the gate. It names every formerly certifiable refusal.
-func counterfactualFailure(p []NumberedArgumentStep, c NumberedArgumentStep) (string, string) {
+func (policy strictRules) counterfactualFailure(p []NumberedArgumentStep, c NumberedArgumentStep) (string, string) {
 	all := append(append([]NumberedArgumentStep(nil), p...), c)
 	var source string
 	for _, step := range all {
@@ -421,7 +431,7 @@ func counterfactualFailure(p []NumberedArgumentStep, c NumberedArgumentStep) (st
 	}
 	conclusion := c
 	conclusion.Statement = mask(normalizeClausePreservingCase(c.Statement))
-	for _, schema := range entailmentSchemas {
+	for _, schema := range policy.schemas() {
 		if strings.HasPrefix(schema.name, "counterfactual") || !schemaAcceptsPremiseCount(schema, len(p)) {
 			continue
 		}
@@ -451,7 +461,7 @@ func counterfactualFailure(p []NumberedArgumentStep, c NumberedArgumentStep) (st
 			continue
 		}
 		for _, ordered := range orderedPremiseSelections(p, len(p)) {
-			if v19Rules(ordered, c, false, excluded.rule).matched {
+			if policy.v19Rules(ordered, c, false, excluded.rule).matched {
 				return excluded.name, counterfactualRuleNote(excluded.name, source)
 			}
 		}
@@ -469,7 +479,7 @@ func counterfactualFailure(p []NumberedArgumentStep, c NumberedArgumentStep) (st
 				other := p[1-i].Statement
 				matches := func(surface, plain string) bool {
 					for _, candidate := range counterfactualPlain(surface) {
-						if equalClauses(candidate, plain) {
+						if policy.equalClauses(candidate, plain) {
 							return true
 						}
 					}

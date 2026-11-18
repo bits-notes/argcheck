@@ -35,7 +35,7 @@ func schematicDisplay(template string) string {
 
 // A branch uses each cited line at most once. Equivalent states with the same
 // remaining premises have identical continuations; memoization changes no verdict.
-func searchSchematicConjuncts(ps []NumberedArgumentStep, ci int, ant, cons string, conjuncts []string, c NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) searchSchematicConjuncts(ps []NumberedArgumentStep, ci int, ant, cons string, conjuncts []string, c NumberedArgumentStep) schemaMatchOutcome {
 	n := len(conjuncts)
 	if n > len(ps)-1 {
 		return schemaMatchOutcome{traction: true, mismatch: fmt.Sprintf("premise %d antecedent has %d conjuncts but only %d other cited premises", ps[ci].Number, n, len(ps)-1)}
@@ -64,7 +64,7 @@ func searchSchematicConjuncts(ps []NumberedArgumentStep, ci int, ant, cons strin
 			} else if reason := repeatedSlotMismatch(ant, cons, state); reason != "" {
 				candidate.mismatch = reason
 			} else {
-				appendOutcome(&candidate, evaluateIdentities(clauseIdentity{fmt.Sprintf("premise %d instantiated consequent", ps[ci].Number), want, fmt.Sprintf("conclusion %d", c.Number), c.Statement}))
+				appendOutcome(&candidate, policy.evaluateIdentities(clauseIdentity{fmt.Sprintf("premise %d instantiated consequent", ps[ci].Number), want, fmt.Sprintf("conclusion %d", c.Number), c.Statement}))
 				if candidate.mismatch == "" && n+1 != len(ps) {
 					candidate.mismatch = "cited premises unused by the conjunctive antecedent"
 				}
@@ -78,7 +78,7 @@ func searchSchematicConjuncts(ps []NumberedArgumentStep, ci int, ant, cons strin
 			if used[p.Number] {
 				continue
 			}
-			for _, next := range unifySchematicTemplate(conjuncts[at], p.Statement, relaxedInitial(state, p)) {
+			for _, next := range policy.unifySchematicTemplate(conjuncts[at], p.Statement, relaxedInitial(state, p)) {
 				found = true
 				used[p.Number] = true
 				if visit(at+1, next) {
@@ -202,7 +202,7 @@ func v28IdentityContext(statement, term string) bool {
 	return false
 }
 
-func matchV28Identity(ps []NumberedArgumentStep, c NumberedArgumentStep) bool {
+func (policy strictRules) matchV28Identity(ps []NumberedArgumentStep, c NumberedArgumentStep) bool {
 	if len(ps) != 2 {
 		return false
 	}
@@ -224,7 +224,7 @@ func matchV28Identity(ps []NumberedArgumentStep, c NumberedArgumentStep) bool {
 					continue
 				}
 				replaced, n, ok := replaceTermOccurrences(premise, d[0], d[1])
-				if ok && n > 0 && equalClauses(replaced, target) {
+				if ok && n > 0 && policy.equalClauses(replaced, target) {
 					return true
 				}
 			}
@@ -233,15 +233,19 @@ func matchV28Identity(ps []NumberedArgumentStep, c NumberedArgumentStep) bool {
 	return false
 }
 
-func extendedSchematicTemplate(value string) (string, schematicVariableCounts) {
+func (policy strictRules) extendedSchematicTemplate(value string) (string, schematicVariableCounts) {
 	replaced, counts := replaceSchematicAlphabet(value, true)
-	return comparisonClause(replaced), counts
+	return policy.comparisonClause(replaced), counts
 }
 
 // v28 preserves every successful historical certificate before trying the new
-// whole-term identity register. Ranged and explicit proofs keep their own rules.
+// whole-term identity register. Ranged and explicit proofs keep their own policy.
 func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
-	report := gateConclusionStepStrict(c, steps)
+	return allStrictRules().gateConclusionStep(c, steps)
+}
+
+func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	report := policy.gateConclusionStepStrict(c, steps)
 	if report.Passed {
 		return report
 	}
@@ -250,23 +254,23 @@ func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentSt
 	// whichever other form came nearest.
 	relaxed := make(map[int]NumberedArgumentStep, len(steps))
 	for id, step := range steps {
-		step.relaxIndefinite = true
+		step.relaxIndefinite = policy.slot_indefinite_object
 		relaxed[id] = step
 	}
-	if retry := gateConclusionStepStrict(c, relaxed); retry.Passed {
+	if retry := policy.gateConclusionStepStrict(c, relaxed); retry.Passed {
 		report.NearestForm = retry.Form
-		report.Mismatch = indefiniteSlotStepMessage(c, steps)
+		report.Mismatch = policy.indefiniteSlotStepMessage(c, steps)
 		return report
 	}
 	// task_eb737ad9: a term refused because a word in it can be read as a verb
 	// stays refused, but the message names the binding.
 	clauseRelaxed := make(map[int]NumberedArgumentStep, len(steps))
 	for id, step := range steps {
-		step.relaxClauseTerm = true
+		step.relaxClauseTerm = policy.term_clause_inside
 		clauseRelaxed[id] = step
 	}
-	if retry := gateConclusionStepStrict(c, clauseRelaxed); retry.Passed {
-		if message := clauseTermStepMessage(c, steps); message != "" {
+	if retry := policy.gateConclusionStepStrict(c, clauseRelaxed); retry.Passed {
+		if message := policy.clauseTermStepMessage(c, steps); message != "" {
 			report.NearestForm = retry.Form
 			report.Mismatch = message
 		}
@@ -274,8 +278,8 @@ func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentSt
 	return report
 }
 
-func gateConclusionStepStrict(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
-	old := gateConclusionStepV27(c, steps)
+func (policy strictRules) gateConclusionStepStrict(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	old := policy.gateConclusionStepV27(c, steps)
 	if old.Passed {
 		return old
 	}
@@ -286,8 +290,8 @@ func gateConclusionStepStrict(c NumberedArgumentStep, steps map[int]NumberedArgu
 			p.Statement = fitchAssumptionStatement(p)
 			ps = append(ps, p)
 		}
-		if matchV28Identity(ps, c) {
-			if reason := identitySubstitutionUnsafe(stepStatements(ps), c.Statement); reason != "" {
+		if policy.matchV28Identity(ps, c) {
+			if reason := policy.identitySubstitutionUnsafe(stepStatements(ps), c.Statement); reason != "" {
 				old.NearestForm, old.Mismatch = "identity substitution", reason
 				return old
 			}

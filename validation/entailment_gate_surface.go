@@ -131,7 +131,7 @@ var postposedIfBlockedBefore = map[string]bool{
 var postposedConsequentUnsafe = regexp.MustCompile(`(?i)\b(?:and|or|either|if|then|unless|whether|that|says?|said|claims?|claimed|thinks?|thought|believes?|believed|reports?|reported|argues?|argued|states|stated|suggests?|suggested|insists?|insisted|denies|deny|denied|hopes?|hoped|fears?|feared|expects?|expected|predicts?|predicted|shows?|showed|shown|proves?|proved|according)\b|[,;:?!"()“”]`)
 var postposedAntecedentUnsafe = regexp.MustCompile(`(?i)\b(?:if|then|or|unless|whether)\b|[;:?!"()“”]`)
 
-func postposedConditional(value string) (string, bool) {
+func (policy strictRules) postposedConditional(value string) (string, bool) {
 	lower := strings.ToLower(value)
 	if strings.HasPrefix(lower, "if ") || strings.Contains(lower, "if and only if") || strings.Contains(lower, "unless") {
 		return "", false
@@ -147,17 +147,17 @@ func postposedConditional(value string) (string, bool) {
 		return "", false
 	}
 	words := strings.Fields(strings.ToLower(left))
-	if postposedIfBlockedBefore[strings.Trim(words[len(words)-1], ",")] {
+	if policy.conditional_postposed_if && postposedIfBlockedBefore[strings.Trim(words[len(words)-1], ",")] {
 		return "", false
 	}
-	if questionStem.MatchString(left) || incompleteIfConsequent.MatchString(left) || postposedConsequentUnsafe.MatchString(left) || postposedAntecedentUnsafe.MatchString(right) {
+	if policy.conditional_postposed_if && (questionStem.MatchString(left) || incompleteIfConsequent.MatchString(left) || postposedConsequentUnsafe.MatchString(left) || postposedAntecedentUnsafe.MatchString(right)) {
 		return "", false
 	}
 	// v37.0: a verb right before "if" may take the if-clause as its object
 	// ("The observer ponders if A"). Refuse unless it is a listed intransitive
 	// ("dies if") or a participle after a copula ("is cancelled if"); after a
 	// pronoun subject any word there is a verb ("they ponder if").
-	if len(words) >= 2 {
+	if policy.conditional_postposed_if && len(words) >= 2 {
 		last := strings.Trim(words[len(words)-1], ",")
 		prev := strings.Trim(words[len(words)-2], ",")
 		copula := prev == "is" || prev == "are" || prev == "was" || prev == "were" || prev == "be" || prev == "been" || prev == "being"

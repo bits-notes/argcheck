@@ -54,23 +54,25 @@ func countDefinition(kind string, n int, body *folFormula) *folFormula {
 		return fol("and", lo, hi)
 	}
 }
-func countAtom(s string) (*folFormula, error) {
+
+func (policy strictRules) countAtom(s string) (*folFormula, error) {
 	// The two new lexical verbs are private: old candidate sets are unchanged.
 	for _, verb := range []string{" signed ", " wrote "} {
 		if a, b, ok := strings.Cut(s, verb); ok && !strings.Contains(b, verb) {
 			if !relationWords(a) || !relationWords(b) {
 				break
 			}
-			return &folFormula{op: "atom", symbol: strings.TrimSpace(verb), terms: []string{legacyFOLTerm(a), legacyFOLTerm(b)}}, nil
+			return &folFormula{op: "atom", symbol: strings.TrimSpace(verb), terms: []string{policy.legacyFOLTerm(a), policy.legacyFOLTerm(b)}}, nil
 		}
 	}
-	fs, why := legacyFOLReadings(s)
+	fs, why := policy.legacyFOLReadings(s)
 	if why != "" || len(fs) != 1 {
 		return nil, fmt.Errorf("counting requires one unambiguous predicate reading")
 	}
 	return fs[0], nil
 }
-func countPredicate(s string) (*folFormula, error) {
+
+func (policy strictRules) countPredicate(s string) (*folFormula, error) {
 	words := strings.Fields(s)
 	end := -1
 	relative := false
@@ -95,7 +97,7 @@ func countPredicate(s string) (*folFormula, error) {
 		if strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") {
 			class = strings.TrimSuffix(class, "s")
 		}
-		return &folFormula{op: "atom", symbol: "is/" + legacyFOLTerm(class), terms: []string{"$count"}}, nil
+		return &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(class), terms: []string{"$count"}}, nil
 	}
 	if end < 1 {
 		return nil, fmt.Errorf("counting requires a class and predicate")
@@ -116,9 +118,9 @@ func countPredicate(s string) (*folFormula, error) {
 	if strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") {
 		class = strings.TrimSuffix(class, "s")
 	}
-	guard := &folFormula{op: "atom", symbol: "is/" + legacyFOLTerm(class), terms: []string{"$count"}}
+	guard := &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(class), terms: []string{"$count"}}
 	atom := func(text string) (*folFormula, error) {
-		f, e := countAtom(text)
+		f, e := policy.countAtom(text)
 		if e != nil {
 			return nil, e
 		}
@@ -152,7 +154,9 @@ func countPredicate(s string) (*folFormula, error) {
 	}
 	return fol("and", guard, body), nil
 }
-func countParse(text string) (*folFormula, error) {
+func countParse(text string) (*folFormula, error) { return allStrictRules().countParse(text) }
+
+func (policy strictRules) countParse(text string) (*folFormula, error) {
 	s := folStrip(normalizeClause(text))
 	if m := countingPrefix.FindStringSubmatch(s); m != nil {
 		n, _ := strconv.Atoi(m[2])
@@ -164,7 +168,7 @@ func countParse(text string) (*folFormula, error) {
 		if n < 1 || n > 5 {
 			return nil, fmt.Errorf("counting bound is 5; use one to five or digits 1 to 5")
 		}
-		body, e := countPredicate(m[3])
+		body, e := policy.countPredicate(m[3])
 		if e != nil {
 			return nil, e
 		}
@@ -176,13 +180,13 @@ func countParse(text string) (*folFormula, error) {
 		if !ok {
 			return nil, fmt.Errorf("only requires a named copular instance")
 		}
-		instance, e := countAtom(rest)
+		instance, e := policy.countAtom(rest)
 		if e != nil {
 			return nil, e
 		}
 		p := strings.TrimPrefix(strings.TrimPrefix(b, "a "), "an ")
-		body := &folFormula{op: "atom", symbol: "is/" + legacyFOLTerm(p), terms: []string{"$count"}}
-		return fol("and", instance, countUnique(body, legacyFOLTerm(a))), nil
+		body := &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(p), terms: []string{"$count"}}
+		return fol("and", instance, countUnique(body, policy.legacyFOLTerm(a))), nil
 	}
 	if strings.HasPrefix(s, "no ") && strings.Contains(s, " other than ") {
 		cl, rest, _ := strings.Cut(strings.TrimPrefix(s, "no "), " other than ")
@@ -197,18 +201,18 @@ func countParse(text string) (*folFormula, error) {
 		if at < 1 {
 			return nil, fmt.Errorf("other than requires a name and predicate")
 		}
-		name := legacyFOLTerm(strings.Join(words[:at], " "))
-		body, e := countPredicate(cl + " " + strings.Join(words[at:], " "))
+		name := policy.legacyFOLTerm(strings.Join(words[:at], " "))
+		body, e := policy.countPredicate(cl + " " + strings.Join(words[at:], " "))
 		if e != nil {
 			return nil, e
 		}
 		return countUnique(body, name), nil
 	}
 	if folExplicit(s) {
-		return parseFOL(s)
+		return policy.parseFOL(s)
 	}
 	if strings.HasPrefix(s, "it is not the case that ") {
-		f, e := countParse(strings.TrimPrefix(s, "it is not the case that "))
+		f, e := policy.countParse(strings.TrimPrefix(s, "it is not the case that "))
 		if e != nil {
 			return nil, e
 		}
@@ -217,27 +221,28 @@ func countParse(text string) (*folFormula, error) {
 	if strings.HasPrefix(s, "if ") {
 		a, b, ok := folSplit(s[3:], " then ")
 		if ok {
-			return countPair("implies", strings.TrimSuffix(a, ","), b)
+			return policy.countPair("implies", strings.TrimSuffix(a, ","), b)
 		}
 	}
 	for _, p := range []struct{ sep, op string }{{" if and only if ", "iff"}, {" and ", "and"}, {" or ", "or"}} {
 		if a, b, ok := folSplit(s, p.sep); ok {
-			return countPair(p.op, a, b)
+			return policy.countPair(p.op, a, b)
 		}
 	}
 	if strings.HasPrefix(s, "some ") {
-		if body, e := countPredicate(strings.TrimPrefix(s, "some ")); e == nil {
+		if body, e := policy.countPredicate(strings.TrimPrefix(s, "some ")); e == nil {
 			return countQ("some", "$count", body), nil
 		}
 	}
-	return countAtom(s)
+	return policy.countAtom(s)
 }
-func countPair(op, a, b string) (*folFormula, error) {
-	x, e := countParse(a)
+
+func (policy strictRules) countPair(op, a, b string) (*folFormula, error) {
+	x, e := policy.countParse(a)
 	if e != nil {
 		return nil, e
 	}
-	y, e := countParse(b)
+	y, e := policy.countParse(b)
 	if e != nil {
 		return nil, e
 	}
@@ -384,16 +389,17 @@ func countingRule(ps []*folFormula, c *folFormula) string {
 	}
 	return ""
 }
-func gateCounting(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+
+func (policy strictRules) gateCounting(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	r := EntailmentGateStepReport{Step: c.Number, Depth: c.Depth, Citations: c.Citations, Ranges: c.Ranges, NearestForm: "counting definition", Mismatch: "requires the identity-based counting definition and matching predicates"}
-	target, e := countParse(c.Statement)
+	target, e := policy.countParse(c.Statement)
 	if e != nil {
 		r.Mismatch = e.Error()
 		return r
 	}
 	var ps []*folFormula
 	for _, id := range c.Citations {
-		p, e := countParse(steps[id].Statement)
+		p, e := policy.countParse(steps[id].Statement)
 		if e != nil {
 			r.Mismatch = e.Error()
 			return r
@@ -414,7 +420,7 @@ func gateCounting(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) En
 	translated := map[int]NumberedArgumentStep{}
 	for id, s := range steps {
 		if s.Kind != numberedArgumentStepArbitrary {
-			f, e := countParse(s.Statement)
+			f, e := policy.countParse(s.Statement)
 			if e == nil {
 				s.Statement = f.Render()
 			}
@@ -422,5 +428,5 @@ func gateCounting(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) En
 		translated[id] = s
 	}
 	c.Statement = target.Render()
-	return gateFOL(c, translated)
+	return policy.gateFOL(c, translated)
 }

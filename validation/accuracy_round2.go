@@ -122,16 +122,18 @@ func round2Singular(word string) string {
 
 // Preserve spelling for the positive term register. Quantifier phrases are
 // never names merely because their first word starts a sentence.
-func instanceSubjectAllowed(s string) bool {
+func instanceSubjectAllowed(s string) bool { return allStrictRules().instanceSubjectAllowed(s) }
+
+func (policy strictRules) instanceSubjectAllowed(s string) bool {
 	lower := strings.ToLower(strings.TrimSpace(s))
-	if modifiedQuantifierPhrase(lower) || quantityPhrase(lower) {
+	if policy.modifiedQuantifierPhrase(lower) || policy.quantityPhrase(lower) {
 		return false
 	}
 	// Single-letter constants include Fitch arbitrary names such as a.
 	if len(s) == 1 && s[0] >= 'a' && s[0] <= 'z' {
 		return true
 	}
-	if !schematicBindingAllowed(lower) || quantifiedInstanceSubject(lower) {
+	if !policy.schematicBindingAllowed(lower) || quantifiedInstanceSubject(lower) {
 		return false
 	}
 	for _, p := range []string{"the ", "a ", "an "} {
@@ -169,7 +171,7 @@ var instanceQuantifierHeads = map[string]bool{
 
 var instanceQuantifierPhrases = []string{"one of ", "some of ", "many of ", "most of ", "all but "}
 
-func uiInstanceCandidates(statement string) []clausePair {
+func (policy strictRules) uiInstanceCandidates(statement string) []clausePair {
 	if hasOuterGateOperator(normalizeClause(statement)) {
 		return nil
 	}
@@ -182,7 +184,7 @@ func uiInstanceCandidates(statement string) []clausePair {
 			if subjectHasConnective(pair.left) {
 				continue
 			}
-			if instanceSubjectAllowed(pair.left) {
+			if policy.instanceSubjectAllowed(pair.left) {
 				result = append(result, clausePair{normalizeClause(pair.left), normalizeClause(pair.right)})
 			}
 		}
@@ -190,16 +192,16 @@ func uiInstanceCandidates(statement string) []clausePair {
 	return result
 }
 
-func bareNegativeSubjectAllowed(statement string) bool {
+func (policy strictRules) bareNegativeSubjectAllowed(statement string) bool {
 	for _, sep := range []string{" is not ", " are not ", " am not "} {
 		if a, _, ok := strings.Cut(statement, sep); ok {
-			if instanceSubjectAllowed(a) {
+			if policy.instanceSubjectAllowed(a) {
 				return true
 			}
 			// Bare plural class generics (including modified classes such as
 			// "conscious experiences") remain supported, unlike quantified NPs.
 			words := strings.Fields(strings.ToLower(a))
-			if len(words) == 0 || !schematicBindingAllowed(a) {
+			if len(words) == 0 || !policy.schematicBindingAllowed(a) {
 				return false
 			}
 			for _, word := range words {
@@ -215,13 +217,13 @@ func bareNegativeSubjectAllowed(statement string) bool {
 
 // Diagnostic only: called after all certification routes failed. It must never
 // veto a valid alternative proof using the same premises.
-func accuracyRound2Failure(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) (string, string) {
+func (policy strictRules) accuracyRound2Failure(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) (string, string) {
 	for _, p := range premises {
 		s := normalizeClause(p.Statement)
 		if identityOpaqueExtra.MatchString(s) && len(premises) > 1 {
 			for _, q := range premises {
 				if len(identityCandidates(q.Statement)) > 0 {
-					if reason := identitySubstitutionUnsafe(stepStatements(premises), conclusion.Statement); reason != "" {
+					if reason := policy.identitySubstitutionUnsafe(stepStatements(premises), conclusion.Statement); reason != "" {
 						return "identity substitution", reason
 					}
 					return "identity substitution", "identity substitution is blocked in an opaque intensional context"
@@ -230,7 +232,7 @@ func accuracyRound2Failure(premises []NumberedArgumentStep, conclusion NumberedA
 		}
 		if len(premises) == 2 {
 			for _, q := range premises {
-				if q.Number != p.Number && matchSchematicInstantiationAlphabet([]NumberedArgumentStep{p, q}, conclusion, nameBindingTemplate).matched {
+				if q.Number != p.Number && policy.matchSchematicInstantiationAlphabet([]NumberedArgumentStep{p, q}, conclusion, policy.nameBindingTemplate).matched {
 					return "schematic instantiation", "schema letters inside a proper name are literal, not variables"
 				}
 			}
@@ -254,7 +256,7 @@ func accuracyRound2Failure(premises []NumberedArgumentStep, conclusion NumberedA
 // Diagnostic counterfactual only: restore the old treatment of name suffixes.
 // A successful match here (after normal certification failed) localizes the
 // failure to the forbidden name binding rather than an unrelated mismatch.
-func nameBindingTemplate(s string) (string, schematicVariableCounts) {
+func (policy strictRules) nameBindingTemplate(s string) (string, schematicVariableCounts) {
 	rs := []rune(s)
 	for i, r := range rs {
 		if marker, ok := schematicVariableMarkers[r]; ok && (i == 0 || !unicode.IsLetter(rs[i-1])) && (i == len(rs)-1 || !unicode.IsLetter(rs[i+1])) && schemaLetterInName(rs, i) {
@@ -262,7 +264,7 @@ func nameBindingTemplate(s string) (string, schematicVariableCounts) {
 		}
 	}
 	// Counts must include the name markers as well as the real variables.
-	template, counts := extendedSchematicTemplate(string(rs))
+	template, counts := policy.extendedSchematicTemplate(string(rs))
 	for _, r := range rs {
 		if variable, ok := schematicVariableForMarker(r); ok {
 			counts[variable]++
@@ -273,7 +275,7 @@ func nameBindingTemplate(s string) (string, schematicVariableCounts) {
 
 // Upward-monotone quantified subjects are lifted through a class inclusion,
 // not treated as individual UI witnesses. Keep this in the schematic family.
-func matchMonotoneUniversal(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
+func (policy strictRules) matchMonotoneUniversal(p []NumberedArgumentStep, c NumberedArgumentStep) schemaMatchOutcome {
 	if len(universalCandidates(p[0].Statement)) == 0 {
 		return schemaMatchOutcome{}
 	}
@@ -291,7 +293,7 @@ func matchMonotoneUniversal(p []NumberedArgumentStep, c NumberedArgumentStep) sc
 		if !strings.HasPrefix(instance.left, "most ") && !strings.HasPrefix(instance.left, "more than ") {
 			continue
 		}
-		if !schematicBindingAllowed(instance.left) || len(instanceCandidates(instance.left)) > 0 {
+		if !policy.schematicBindingAllowed(instance.left) || len(instanceCandidates(instance.left)) > 0 {
 			continue
 		}
 		// Replacing only the whole subject preserves the quantifier; a compound
@@ -304,7 +306,7 @@ func matchMonotoneUniversal(p []NumberedArgumentStep, c NumberedArgumentStep) sc
 			ps[1].Statement = "Witness" + strings.TrimPrefix(normalizeClause(p[1].Statement), instance.left)
 			cs := c
 			cs.Statement = "Witness" + strings.TrimPrefix(normalizeClause(c.Statement), result.left)
-			if out := matchUniversalInstantiation(ps, cs); out.matched {
+			if out := policy.matchUniversalInstantiation(ps, cs); out.matched {
 				return out
 			}
 		}

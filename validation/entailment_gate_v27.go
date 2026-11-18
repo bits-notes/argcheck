@@ -8,12 +8,12 @@ import (
 
 // Descriptions are a private fallback. Keep the v26 verdict and report whenever
 // it succeeds, and keep its diagnostic whenever this extension declines.
-func gateConclusionStepV27(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
-	old := gateConclusionStepV26(c, steps)
+func (policy strictRules) gateConclusionStepV27(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	old := policy.gateConclusionStepV26(c, steps)
 	if old.Passed {
 		return old
 	}
-	if next := gateDescriptions(c, steps); next.Passed {
+	if next := policy.gateDescriptions(c, steps); next.Passed {
 		return next
 	}
 	return old
@@ -61,12 +61,13 @@ func descriptionParts(s string) (string, string, bool) {
 func descriptionDefinition(g, p *folFormula) *folFormula {
 	return fol("and", countQ("some", "$count", fol("and", g, p)), countDefinition("at most", 1, g))
 }
-func descriptionOpaque(s string) bool {
+
+func (policy strictRules) descriptionOpaque(s string) bool {
 	// Relative markers are structural only in a leading description restrictor.
 	if cl, tail, ok := descriptionParts(s); ok {
 		// A restrictor that ends inside an embedded clause ("the observer
 		// reckons alpha" + "is red") is not a description, whatever the verb.
-		if clauseInsideTerm("the " + cl) {
+		if policy.clauseInsideTerm("the " + cl) {
 			return true
 		}
 		for _, marker := range []string{" that ", " who ", " which "} {
@@ -88,9 +89,10 @@ func descriptionName(text string) string {
 	}
 	return ""
 }
-func descriptionGuard(cl string) (*folFormula, error) {
+
+func (policy strictRules) descriptionGuard(cl string) (*folFormula, error) {
 	if !relativeMarker(cl) {
-		f, e := countAtom("countwitness is a " + cl)
+		f, e := policy.countAtom("countwitness is a " + cl)
 		if e != nil {
 			return nil, e
 		}
@@ -102,7 +104,7 @@ func descriptionGuard(cl string) (*folFormula, error) {
 	}
 	var gs []*folFormula
 	for _, fact := range facts {
-		f, e := countAtom(fact)
+		f, e := policy.countAtom(fact)
 		if e != nil {
 			return nil, e
 		}
@@ -111,17 +113,21 @@ func descriptionGuard(cl string) (*folFormula, error) {
 	return countAnd(gs...), nil
 }
 func descriptionParse(text string) ([]*folFormula, error) {
+	return allStrictRules().descriptionParse(text)
+}
+
+func (policy strictRules) descriptionParse(text string) ([]*folFormula, error) {
 	s := folStrip(normalizeClause(text))
 	original := folStrip(normalizeClausePreservingCase(text))
 	if folExplicit(s) {
-		f, e := parseFOL(s)
+		f, e := policy.parseFOL(s)
 		if e != nil {
 			return nil, e
 		}
 		return []*folFormula{f}, nil
 	}
 	if strings.HasPrefix(s, "it is not the case that ") {
-		fs, e := descriptionParse(original[len("it is not the case that "):])
+		fs, e := policy.descriptionParse(original[len("it is not the case that "):])
 		if e != nil {
 			return nil, e
 		}
@@ -132,7 +138,7 @@ func descriptionParse(text string) ([]*folFormula, error) {
 	}
 	if strings.HasPrefix(s, "if ") {
 		if a, b, ok := folSplit(s[3:], " then "); ok {
-			return descriptionPair("implies", strings.TrimSuffix(original[3:3+len(a)], ","), original[len(original)-len(b):])
+			return policy.descriptionPair("implies", strings.TrimSuffix(original[3:3+len(a)], ","), original[len(original)-len(b):])
 		}
 	}
 	// This fallback has no precedence convention for readable compounds.
@@ -149,13 +155,13 @@ func descriptionParse(text string) ([]*folFormula, error) {
 			if folStrip(a) == a || folStrip(b) == b {
 				return nil, fmt.Errorf("parenthesize description compound operands")
 			}
-			return descriptionPair(pair.op, original[:len(a)], original[len(original)-len(b):])
+			return policy.descriptionPair(pair.op, original[:len(a)], original[len(original)-len(b):])
 		}
 	}
 	// Opaque clauses remain whole propositions, with no replaceable name slots.
 	for _, prefix := range []string{"an ", "a "} {
 		if strings.HasPrefix(s, prefix) {
-			fs, e := descriptionParse("The " + original[len(prefix):])
+			fs, e := policy.descriptionParse("The " + original[len(prefix):])
 			if e != nil || len(fs) != 1 {
 				return nil, fmt.Errorf("unsupported indefinite description")
 			}
@@ -165,24 +171,24 @@ func descriptionParse(text string) ([]*folFormula, error) {
 			return nil, fmt.Errorf("unsupported indefinite description")
 		}
 	}
-	if descriptionOpaque(s) {
+	if policy.descriptionOpaque(s) {
 		return []*folFormula{{op: "atom", symbol: "opaque/" + s}}, nil
 	}
 	if cl, tail, ok := descriptionParts(s); ok {
-		g, e := descriptionGuard(cl)
+		g, e := policy.descriptionGuard(cl)
 		if e != nil {
 			return nil, e
 		}
 		if name := descriptionName(text); name != "" {
 			tail = "is identical to " + name
 		}
-		p, e := descriptionPredication(tail)
+		p, e := policy.descriptionPredication(tail)
 		if e != nil {
 			return nil, e
 		}
 		g = descriptionRelations(g)
 		if strings.HasPrefix(tail, "is not ") {
-			positive, e := descriptionPredication("is " + strings.TrimPrefix(tail, "is not "))
+			positive, e := policy.descriptionPredication("is " + strings.TrimPrefix(tail, "is not "))
 			if e != nil {
 				return nil, e
 			}
@@ -197,15 +203,19 @@ func descriptionParse(text string) ([]*folFormula, error) {
 			return []*folFormula{{op: "equal", terms: []string{a, name}}}, nil
 		}
 	}
-	f, e := countParse(s)
+	f, e := policy.countParse(s)
 	if e != nil {
 		return nil, e
 	}
 	return []*folFormula{descriptionRelations(f)}, nil
 }
 func descriptionPredication(tail string) (*folFormula, error) {
+	return allStrictRules().descriptionPredication(tail)
+}
+
+func (policy strictRules) descriptionPredication(tail string) (*folFormula, error) {
 	// Capitalized bare-name copulas have already become explicit identities.
-	f, e := countAtom("countwitness " + tail)
+	f, e := policy.countAtom("countwitness " + tail)
 	if e != nil {
 		return nil, e
 	}
@@ -221,12 +231,13 @@ func descriptionPredication(tail string) (*folFormula, error) {
 	}
 	return descriptionRelations(folSub(f, "countwitness", "$count")), nil
 }
-func descriptionPair(op, a, b string) ([]*folFormula, error) {
-	as, e := descriptionParse(a)
+
+func (policy strictRules) descriptionPair(op, a, b string) ([]*folFormula, error) {
+	as, e := policy.descriptionParse(a)
 	if e != nil {
 		return nil, e
 	}
-	bs, e := descriptionParse(b)
+	bs, e := policy.descriptionParse(b)
 	if e != nil {
 		return nil, e
 	}
@@ -342,21 +353,22 @@ func descriptionRule(ps []*folFormula, c *folFormula) string {
 func descriptionSurfaceKey(text string) string {
 	return normalizeClause(text) + "|name=" + descriptionName(text)
 }
-func descriptionSurfaceGuards(text string, spellings map[string]string) bool {
+
+func (policy strictRules) descriptionSurfaceGuards(text string, spellings map[string]string) bool {
 	s := folStrip(normalizeClause(text))
 	if folExplicit(s) {
 		return true
 	}
 	if strings.HasPrefix(s, "it is not the case that ") {
-		return descriptionSurfaceGuards(s[len("it is not the case that "):], spellings)
+		return policy.descriptionSurfaceGuards(s[len("it is not the case that "):], spellings)
 	}
 	if strings.HasPrefix(s, "if ") {
 		if a, b, ok := folSplit(s[3:], " then "); ok {
-			return descriptionSurfaceGuards(strings.TrimSuffix(a, ","), spellings) && descriptionSurfaceGuards(b, spellings)
+			return policy.descriptionSurfaceGuards(strings.TrimSuffix(a, ","), spellings) && policy.descriptionSurfaceGuards(b, spellings)
 		}
 	}
 	if cl, _, ok := descriptionParts(s); ok {
-		g, e := descriptionGuard(cl)
+		g, e := policy.descriptionGuard(cl)
 		if e != nil {
 			return false
 		}
@@ -369,7 +381,7 @@ func descriptionSurfaceGuards(text string, spellings map[string]string) bool {
 	}
 	for _, sep := range []string{" and ", " or "} {
 		if a, b, ok := folSplit(s, sep); ok {
-			return descriptionSurfaceGuards(a, spellings) && descriptionSurfaceGuards(b, spellings)
+			return policy.descriptionSurfaceGuards(a, spellings) && policy.descriptionSurfaceGuards(b, spellings)
 		}
 	}
 	return true
@@ -386,6 +398,10 @@ func descriptionPresent(f *folFormula) bool {
 	return false
 }
 func gateDescriptions(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	return allStrictRules().gateDescriptions(c, steps)
+}
+
+func (policy strictRules) gateDescriptions(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	r := EntailmentGateStepReport{Step: c.Number, Depth: c.Depth, Citations: c.Citations, Ranges: c.Ranges}
 	ids := append([]int{}, c.Citations...)
 	for _, span := range c.Ranges {
@@ -405,7 +421,7 @@ func gateDescriptions(c NumberedArgumentStep, steps map[int]NumberedArgumentStep
 	// Assign readings once per verbatim clause, including repeated citations.
 	spellings := map[string]string{}
 	for _, s := range texts {
-		if !descriptionSurfaceGuards(s, spellings) {
+		if !policy.descriptionSurfaceGuards(s, spellings) {
 			return r
 		}
 	}
@@ -417,7 +433,7 @@ func gateDescriptions(c NumberedArgumentStep, steps map[int]NumberedArgumentStep
 		if _, ok := choices[key]; ok {
 			continue
 		}
-		fs, e := descriptionParse(s)
+		fs, e := policy.descriptionParse(s)
 		if e != nil {
 			return r
 		}
@@ -461,7 +477,7 @@ func gateDescriptions(c NumberedArgumentStep, steps map[int]NumberedArgumentStep
 		}
 		next := c
 		next.Statement = target.Render()
-		result := gateFOL(next, translated)
+		result := policy.gateFOL(next, translated)
 		form = "definition"
 		return result.Passed
 	}

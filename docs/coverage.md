@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v42.0)
+# Entailment Gate — Coverage and Known Limits (catalog v42.1)
 
 **Type:** reference
-**Status:** current as of catalog v42.0
+**Status:** current as of catalog v42.1
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v42.0**). Tests cover capture,
+form; the current catalog is **v42.1**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -1261,6 +1261,16 @@ intensional verb 2, embedded subject after an adjunct 1 (counted as
 non-initial by this surface rule). In the measured run, 56 of the 57 passed
 again after a supplied-step rewrite; the other then hit the separate
 nested-quantifier limit of the relational grammar.
+
+## v42.1: strictness notes
+
+No verdict changes. Failed steps can carry up to three structured notes with
+rule IDs, explanations, legitimate examples the rule also refuses, and fixes.
+Each note is witnessed by a retry of that step with only its rule disabled.
+Passing steps and the existing mismatch text are unchanged. Notes are exposed
+in library reports, JSON, and normal CLI output; quiet output is unchanged.
+See [Strictness notes](rules.md#strictness-notes) for the generated catalog and
+its regeneration command. Tests verify every documented example and fix.
 
 ## v42.0: four false positives from the AI-safety map inventory
 

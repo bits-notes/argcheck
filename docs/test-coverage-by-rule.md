@@ -2,7 +2,7 @@
 
 Positive is the number of gated steps the validation tests accepted with that form. Negative is the number of gated steps they rejected with that form as `nearest_form`.
 
-Catalog version: `v38.0`.
+Catalog version: `v42.1`.
 
 The table lists every form `english-arg-validator --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.
 
@@ -168,3 +168,10 @@ modal introduction/elimination/substitution and counterfactual might detachment.
 System-T controls and the explicit v27 empty-restrictor countermodel pin the
 unchanged boundaries. The modus ponens entry in `docs/rules.md` includes
 executable accepted/rejected modal examples. Catalog v31 still has 121 forms.
+
+## Catalog v42.1 strictness notes
+
+`TestStrictNotesExamples` covers all thirteen rule IDs, unchanged baseline
+verdicts and mismatch text, and certifying fixes. `TestDocsRulesStrictNotes`
+keeps the generated [strictness table](rules.md#strictness-notes) synchronized
+with the Go catalog.

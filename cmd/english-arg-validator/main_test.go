@@ -64,7 +64,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v42.0", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v42.1", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -176,7 +176,7 @@ func TestArgcheckVersion(t *testing.T) {
 	t.Cleanup(func() { commit = old })
 	commit = "v28-test-commit"
 	code, out := runArgcheck(t, "", "--version")
-	if code != exitValid || !strings.Contains(out, "catalog v42.0") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
+	if code != exitValid || !strings.Contains(out, "catalog v42.1") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
 		t.Fatalf("%d: %s", code, out)
 	}
 	if code, _ := runArgcheck(t, "", "--version-typo"); code != exitError {
@@ -248,7 +248,7 @@ func TestArgcheckRemoteAndBoth(t *testing.T) {
 			return
 		}
 		seenTool = req.Params.Name
-		v := checkLocal(req.Params.Arguments["argument"])
+		v := checkLocal(req.Params.Arguments["argument"], true)
 		if flip {
 			v.Valid = !v.Valid
 		}
@@ -283,5 +283,21 @@ func TestArgcheckRemoteAndBoth(t *testing.T) {
 	code, out = runArgcheck(t, valid, "--both", "--quiet")
 	if code != exitDivergent || out != "DIVERGENT\n" {
 		t.Fatalf("--both --quiet diverge: code=%d out=%q", code, out)
+	}
+}
+
+func TestStrictNoteOutput(t *testing.T) {
+	text := "1. The machine vibrates if the motor runs.\n2. The motor runs.\n3. Therefore, the machine vibrates. [1,2]"
+	code, out := runArgcheck(t, text)
+	if code == 0 || !strings.Contains(out, "  note [conditional.postposed_if] Postposed 'if' after a verb or adjective:") || !strings.Contains(out, "    also refuses:") || !strings.Contains(out, "    fix:") {
+		t.Fatalf("missing note lines: %d %s", code, out)
+	}
+	code, out = runArgcheck(t, text, "--quiet")
+	if code == 0 || strings.Contains(out, "note [") {
+		t.Fatalf("quiet output changed: %d %s", code, out)
+	}
+	code, out = runArgcheck(t, text, "--json")
+	if code == 0 || !strings.Contains(out, `"notes"`) || !strings.Contains(out, `"conditional.postposed_if"`) {
+		t.Fatalf("JSON omits notes: %d %s", code, out)
 	}
 }
