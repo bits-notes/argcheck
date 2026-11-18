@@ -20999,24 +20999,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it rains or it rains and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it rains or it rains and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it rains or it snows",
@@ -21028,22 +21025,19 @@
     "sentence": "either it rains and it rains or it snows and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it rains or it snows and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it rains or it snows and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it rains or the street is wet",
@@ -21055,22 +21049,19 @@
     "sentence": "either it rains and it rains or the street is wet and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it rains or the street is wet and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it rains or the street is wet and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or it is not the case that it rains",
@@ -21101,24 +21092,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or it rains and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or it rains and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or it snows",
@@ -21130,22 +21118,19 @@
     "sentence": "either it rains and it snows or it snows and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or it snows and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or it snows and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or the street is wet",
@@ -21157,22 +21142,19 @@
     "sentence": "either it rains and it snows or the street is wet and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or the street is wet and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and it snows or the street is wet and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or it is not the case that it rains",
@@ -21203,24 +21185,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or it rains and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or it rains and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or it snows",
@@ -21232,22 +21211,19 @@
     "sentence": "either it rains and the street is wet or it snows and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or it snows and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or it snows and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or the street is wet",
@@ -21259,22 +21235,19 @@
     "sentence": "either it rains and the street is wet or the street is wet and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or the street is wet and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains and the street is wet or the street is wet and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it rains or it is not the case that it rains",
@@ -21455,22 +21428,19 @@
     "sentence": "either it snows and it rains or it rains and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it rains or it rains and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it rains or it rains and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it rains or it snows",
@@ -21483,24 +21453,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it rains or it snows and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it rains or it snows and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it rains or the street is wet",
@@ -21512,22 +21479,19 @@
     "sentence": "either it snows and it rains or the street is wet and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it rains or the street is wet and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it rains or the street is wet and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or it is not the case that it rains",
@@ -21557,22 +21521,19 @@
     "sentence": "either it snows and it snows or it rains and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or it rains and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or it rains and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or it snows",
@@ -21585,24 +21546,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or it snows and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or it snows and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or the street is wet",
@@ -21614,22 +21572,19 @@
     "sentence": "either it snows and it snows or the street is wet and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or the street is wet and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and it snows or the street is wet and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or it is not the case that it rains",
@@ -21659,22 +21614,19 @@
     "sentence": "either it snows and the street is wet or it rains and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or it rains and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or it rains and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or it snows",
@@ -21687,24 +21639,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or it snows and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or it snows and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or the street is wet",
@@ -21716,22 +21665,19 @@
     "sentence": "either it snows and the street is wet or the street is wet and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or the street is wet and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows and the street is wet or the street is wet and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either it snows or it is not the case that it rains",
@@ -22080,22 +22026,19 @@
     "sentence": "either the street is wet and it rains or it rains and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it rains or it rains and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it rains or it rains and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it rains or it snows",
@@ -22107,22 +22050,19 @@
     "sentence": "either the street is wet and it rains or it snows and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it rains or it snows and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it rains or it snows and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it rains or the street is wet",
@@ -22135,24 +22075,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it rains or the street is wet and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it rains or the street is wet and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or it is not the case that it rains",
@@ -22182,22 +22119,19 @@
     "sentence": "either the street is wet and it snows or it rains and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or it rains and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or it rains and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or it snows",
@@ -22209,22 +22143,19 @@
     "sentence": "either the street is wet and it snows or it snows and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or it snows and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or it snows and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or the street is wet",
@@ -22237,24 +22168,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or the street is wet and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and it snows or the street is wet and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or it is not the case that it rains",
@@ -22284,22 +22212,19 @@
     "sentence": "either the street is wet and the street is wet or it rains and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or it rains and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or it rains and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or it snows",
@@ -22311,22 +22236,19 @@
     "sentence": "either the street is wet and the street is wet or it snows and it rains",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or it snows and it snows",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or it snows and the street is wet",
     "forms": [
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or the street is wet",
@@ -22339,24 +22261,21 @@
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or the street is wet and it snows",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet and the street is wet or the street is wet and the street is wet",
     "forms": [
       "distribution",
       "self-entailment"
-    ],
-    "exception": "multiple non-alpha-equivalent readings"
+    ]
   },
   {
     "sentence": "either the street is wet or it is not the case that it rains",

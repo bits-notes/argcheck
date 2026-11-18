@@ -43,9 +43,13 @@ func matchDestructiveDilemma(premises []NumberedArgumentStep, conclusion Numbere
 // choice of boundaries (disjunction is associative, so any grouping is a
 // sound reading of the top-level either-or). The leading "either" is required:
 // it fixes the disjunction's scope at the whole statement, so "It is not the
-// case that A or B" is never read as a disjunction here.
+// case that A or B" is never read as a disjunction here. Explicit parentheses
+// or a main-connective comma now provide the same scope guarantee.
 func eitherDisjunctPartitions(statement string, partCount int) [][]string {
 	statement = normalizeClause(statement)
+	if _, _, _, managed, _ := gateGroupingPlan(statement); managed {
+		return groupedDisjunctionPartitions(statement, partCount)
+	}
 	if !strings.HasPrefix(statement, "either ") {
 		return nil
 	}

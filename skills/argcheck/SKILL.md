@@ -6,7 +6,7 @@ description: Check a numbered argument for syntactically transparent validity wi
 # argcheck — deterministic validity check for numbered arguments
 
 `argcheck` runs two deterministic checks in Go (`numbered_argument_syntax`, then
-the catalog `v31.3` entailment gate) with no LLM and no network access.
+the catalog `v32.0` entailment gate) with no LLM and no network access.
 
 **Validity is syntactic: the gate is the standard. Never overrule a gate failure
 with your own judgment that a step "obviously follows."** If you think a step is
@@ -31,8 +31,8 @@ EOF
 - `argcheck file.txt` or stdin (`argcheck < file.txt`, `cat file.txt | argcheck -`).
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `INVALID`.
-- `--forms` lists all 121 accepted inference forms in catalog `v31.3`.
-- `--version` prints the catalog version and build stamp (`gate catalog v31.3; local argcheck@<commit>`).
+- `--forms` lists all 121 accepted inference forms in catalog `v32.0`.
+- `--version` prints the catalog version and build stamp (`gate catalog v32.0; local argcheck@<commit>`).
 - Exit codes: `0` valid, `1` invalid, `2` input or operational error.
 - If `argcheck` is not installed yet, install with
   `go install github.com/bits-notes/argcheck/cmd/argcheck@latest` or run
@@ -221,3 +221,31 @@ What `argcheck` does not do:
 
 See `docs/rules.md` in the `argcheck` repository for all 121 forms with accepted
 and rejected examples, and `docs/coverage.md` for full grammar boundaries.
+
+## Make and/or scope explicit
+
+Never mix top-level `and` and `or` without grouping, including inside `If ...,
+then ...` or `every x is such that ...`. The syntax diagnostic identifies the
+line and sentence and asks you to use `either...or / both...and`, a comma, or
+parentheses. Parentheses group whole clauses and must balance; `[n]` remains a
+step reference. Keep parentheses in source quotations and repairs.
+
+- `(Ann sings and Bob dances) or Cal reads` and `Ann sings and Bob dances, or
+  Cal reads` are disjunctions; neither licenses extracting `Ann sings`.
+- `Ann sings and (Bob dances or Cal reads)` and `Ann sings, and Bob dances or
+  Cal reads` are conjunctions and do license that extraction.
+- Leading `either`/`both` opens the first operand; a single comma still marks the
+  main connective. `Both Ann sings and Bob dances, or Cal reads` is a disjunction.
+  With no comma, the either/both connective is main and its second operand runs
+  to the end: `Either Ann sings or Bob dances and Cal reads` = A or (B and C).
+- Multiple comma boundaries in a mixed clause are ambiguous. Rewrite with
+  parentheses. Single-connective lists retain their existing behavior.
+
+Opaque complements, relative clauses, `unless`, quoted text, `whether or not`,
+and noun-phrase coordination are conservatively exempt. The exemption can
+also hide ambiguity in an outer connective in the same clause; do not treat
+syntax acceptance as evidence of a transparent internal logical structure.
+See `docs/rules.md` for executable examples and the scope limitation.
+Existing identifiers such as `definition (a)` and parenthetical annotations
+inside atomic clauses retain their opaque reading. Only whole-clause boundary
+parentheses create logical groups; parentheses must always balance.

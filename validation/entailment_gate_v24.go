@@ -42,7 +42,7 @@ func folStrip(s string) string {
 				break
 			}
 		}
-		if !whole {
+		if !whole || depth != 0 {
 			break
 		}
 		s = strings.TrimSpace(s[1 : len(s)-1])
@@ -139,6 +139,14 @@ func parseFOLScopeMode(s string, bound map[string]bool, strict, extended bool) (
 			return folParsePair("implies", strings.TrimSuffix(a, ","), b, bound, strict, extended)
 		}
 		return bad()
+	}
+	if op, a, b, managed, why := gateGroupingPlan(s); managed {
+		if why != "" {
+			return bad()
+		}
+		if op != "" && a != "" && b != "" {
+			return folParsePair(op, a, b, bound, strict, extended)
+		}
 	}
 	for _, p := range []struct{ sep, op string }{{" if and only if ", "iff"}, {" and ", "and"}, {" or ", "or"}} {
 		t := s

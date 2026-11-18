@@ -52,6 +52,15 @@ func TestCatalogV26NonNumericParity(t *testing.T) {
 			}
 			// Neutral subject makes even the truncated corpus snippets sentences.
 			sentence := "The record says " + strings.TrimSpace(phrase)
+			// A truncated corpus quotation contains a dangling closing
+			// parenthesis. Grouping syntax now rejects it before parity checks.
+			if i == 1 {
+				_, syntax := ParseNumberedArgument(v26Argument([]string{"q"}, sentence), numberedArgumentOptions{})
+				if syntax.Passed || !strings.Contains(syntax.Message, "unbalanced parentheses: unexpected closing parenthesis") {
+					t.Fatalf("expected unmatched-parenthesis syntax failure: %s", syntax.Message)
+				}
+				return
+			}
 			v26AssertLegacyParity(t, v26Argument([]string{"If p then " + sentence, "p"}, sentence), false)
 			// Also preserve legacy refusals and their diagnostics.
 			v26AssertLegacyParity(t, v26Argument([]string{"q"}, sentence), false)

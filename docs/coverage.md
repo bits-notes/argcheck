@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v31.3)
+# Entailment Gate — Coverage and Known Limits (catalog v32.0)
 
 **Type:** reference
-**Status:** current as of catalog v31.3
+**Status:** current as of catalog v32.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v31.3**). Tests cover capture,
+form; the current catalog is **v32.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -835,3 +835,23 @@ matching, so the verdict does not depend on which marker is used. An unmarked
 but has no valid terminal citations is a syntax failure. Inline references
 (`If [1], then P.`) keep the line a premise. There are no verdict changes on
 the corpus (2,476 arguments).
+
+## v32.0: explicit and/or grouping
+
+And/or grouping is checked at numbered-argument parsing, before entailment.
+Whole-clause parentheses, a single main-connective comma, and leading
+either/or or both/and fix scope; ambiguous mixtures and unbalanced parentheses
+fail with line/sentence diagnostics. Single-connective lists and square-bracket
+step references retain their behavior. `validation/andor_grouping_test.go`
+covers these forms and opaque-context exemptions. The exemptions conservatively
+cover containing clauses and can miss outer ambiguity; see the grouping
+section of `docs/rules.md` for this known limitation.
+Existing parenthetical definition/condition/proposition labels remain atomic;
+truncated text with an unmatched parenthesis now fails syntax intentionally.
+A connective counts only when it joins whole clauses (see the grouping
+section of `docs/rules.md`), so phrase-level coordination such as `a bad or
+catastrophic outcome` is not flagged. Corpus (2,476 arguments): 2 arguments
+newly fail syntax, both because a single-letter term inside a noun phrase reads
+as a clause start: `corpus-ai-safety-carlsmith-a6d0e28c4a` (`a version of X or
+still less of Y or Z or U` beside an `and` chain) and `wilkinson-2022 A112`
+(`Z − 2e or Z − 3e`; already invalid before).

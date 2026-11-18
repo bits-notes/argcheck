@@ -269,6 +269,9 @@ func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentSte
 	if !result.Passed {
 		return step, result
 	}
+	if grouping := validateStatementGrouping(strings.TrimPrefix(step.Statement, "Suppose "), lineNumber); !grouping.Passed {
+		return NumberedArgumentStep{}, grouping
+	}
 	step.Depth, step.Line = depth, original
 	if step.Kind == numberedArgumentStepPremise {
 		if strings.HasPrefix(step.Statement, "Suppose ") {

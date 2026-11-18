@@ -2842,3 +2842,106 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ```
 
 - **What it does not cover:** The converse conditional `if Q, then not P` (the exclusive reading), or an unless-clause containing a personal pronoun.
+
+## Grouping conjunctions and disjunctions
+
+A clause cannot mix top-level `and` and `or` without visible scope. This is a
+syntax failure, before entailment checking, on premises and conclusions alike,
+including conditional antecedents/consequents and explicit quantified scopes.
+The diagnostic names the line and quotes the original sentence, then says
+`use either...or / both...and, a comma, or parentheses to group`.
+
+Use whole-clause parentheses: `(Ann sings and Bob dances) or Cal reads` is a
+disjunction; `Ann sings and (Bob dances or Cal reads)` is a conjunction.
+Parentheses must balance and remain visible in statement echoes and mismatch
+excerpts. Square brackets such as `[1]` still mean step references, not grouping.
+
+A single comma immediately before the main connective also fixes scope:
+`Ann sings and Bob dances, or Cal reads` means `(Ann sings and Bob dances) or
+Cal reads`; `Ann sings, and Bob dances or Cal reads` means `Ann sings and
+(Bob dances or Cal reads)`. Multiple commas in a mixed clause, including lists
+such as `Ann sings, Bob dances and Cal reads, or Dan sleeps`, are ambiguous;
+use parentheses instead. Plain lists containing only one kind of connective
+retain their existing behavior, including `Ann sings, Bob dances, and Cal reads`
+and `Ann sings, Bob dances, or Cal reads`.
+
+A leading `either` or `both` opens the first operand of its connective, so
+`Either Ann sings and Bob dances or Cal reads` is a disjunction whose first
+disjunct is `Ann sings and Bob dances`. A single comma still marks the main
+connective: `Either Ann sings and Bob dances, or Cal reads` is a disjunction,
+and so is `Both Ann sings and Bob dances, or Cal reads` (its left disjunct is
+`both Ann sings and Bob dances`). `Either Ann sings, or Bob dances and Cal reads`
+is a disjunction with `Bob dances and Cal reads` as its right disjunct. With no
+comma, the either/both connective is the main one and its second operand runs
+to the end: `Either Ann sings or Bob dances and Cal reads` means `Ann sings or
+(Bob dances and Cal reads)`, and `Both Ann sings and Bob dances or Cal reads`
+means `Ann sings and (Bob dances or Cal reads)`. Parenthesize
+operands if a longer scaffold has further mixed connectives: each operand must
+itself have unambiguous scope.
+
+```argcheck-accept conjunction elimination
+1. Ann sings and (Bob dances or Cal reads).
+2. Therefore, Ann sings. [1]
+```
+
+```argcheck-accept conjunction elimination
+1. Ann sings, and Bob dances or Cal reads.
+2. Therefore, Ann sings. [1]
+```
+
+```argcheck-accept disjunctive syllogism
+1. (Ann sings and Bob dances) or Cal reads.
+2. It is not the case that Ann sings and Bob dances.
+3. Therefore, Cal reads. [1,2]
+```
+
+```argcheck-reject conjunction elimination
+1. Ann sings and Bob dances or Cal reads.
+2. Therefore, Ann sings. [1]
+```
+
+```argcheck-reject conjunction elimination
+1. Ann sings and Bob dances, or Cal reads.
+2. Therefore, Ann sings. [1]
+```
+
+```argcheck-reject conjunction elimination
+1. Both Ann sings and Bob dances, or Cal reads.
+2. Therefore, Ann sings. [1]
+```
+
+```argcheck-reject conjunction elimination
+1. Ann sings, and Bob dances, or Cal reads.
+2. Therefore, Ann sings. [1]
+```
+
+The check conservatively exempts opaque attitude/modal complements, `unless`,
+relative clauses, quoted text, `whether or not`, and bare noun-phrase
+coordination. For example, it does not impose a logical scope on `Ann believes
+that Bob dances or Cal reads and Dan sleeps`, `Everyone who sings or dances
+and reads is happy`, or `Ann and Bob are friends or colleagues`. **Known
+limitation:** these exemptions cover the containing clause, so an ungrouped
+outer connective alongside such an embedded context can escape this syntax
+check. Syntax acceptance does not certify an inference inside an opaque clause.
+Use explicit clause grouping and separate proof steps when that distinction
+matters. Literal `atom{...}` and `name{...}` contents are not grouping syntax.
+
+Only connectives that join whole clauses count. A connective joins clauses
+when the text after it opens a clause: a capitalized word or single-letter
+term (a name, schematic letter or variable), a pronoun, a quantifier such as
+`every` or `nobody`, a logical operator, or a determiner followed by a verb
+before the next connective (`or the dog barks`). Lower-case content words
+continue a noun or verb phrase, so `U is a bad or catastrophic outcome`,
+`fumbling or bumbling` and `degrees of evidence or a special probability logic`
+do not count as a clause-level `or`. The entailment gate keeps its earlier
+reading for such sentences. **Known limitations:** this is a surface test, not
+a parser. Names written in lower case are not recognized as clause starts, and
+a single-letter term inside a noun phrase (`a version of Y or Z`) is treated as
+a clause start.
+
+Existing parenthetical identifiers such as `definition (a)`, `condition (b)`,
+and `proposition (e)` remain atomic labels, not logical grouping. Parenthetical annotations
+inside atomic clauses, such as `significant (p < 0.01)`, retain their old opaque
+reading. Parentheses around words, such as `Ann (sings)`, do not create a
+logical group. Only parentheses at whole-clause boundaries are interpreted as
+logical grouping; all parentheses must still balance.

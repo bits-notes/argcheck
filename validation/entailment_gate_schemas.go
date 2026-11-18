@@ -164,6 +164,7 @@ func normalizeClause(value string) string {
 	if strings.HasSuffix(value, ".") {
 		value = strings.TrimSuffix(value, ".")
 	}
+	value = stripGroupedClause(value)
 	value = normalizeGateConditional(value)
 	value = expandGateElidedDisjunction(value)
 	value = strings.ToLower(value)
@@ -250,7 +251,7 @@ func normalizeClausePreservingCase(value string) string {
 	if strings.HasSuffix(value, ".") {
 		value = strings.TrimSuffix(value, ".")
 	}
-	return expandGateElidedDisjunction(normalizeGateConditional(value))
+	return expandGateElidedDisjunction(normalizeGateConditional(stripGroupedClause(value)))
 }
 
 func negationCandidates(statement string) []string {
@@ -284,6 +285,9 @@ func hasOuterGateOperator(statement string) bool {
 
 func conjunctionCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
+	if pairs, managed := groupedCandidates(statement, "and"); managed {
+		return pairs
+	}
 	result := make([]clausePair, 0)
 	if strings.HasPrefix(statement, "it is the case both that") {
 		remainder := statement[len("it is the case both that"):]
@@ -340,6 +344,9 @@ func conjunctiveAntecedentCandidatesPreservingCase(statement string, partCount i
 // once. Unsplit "and" tokens remain inside a conjunct, whose entire text must
 // still match a cited premise. The cap bounds the search to at most 2^12 choices.
 func plainAndPartitions(statement string, partCount int) [][]string {
+	if _, _, _, managed, _ := gateGroupingPlan(statement); managed {
+		return conjunctionPartitions(statement, partCount)
+	}
 	const separator = " and "
 	lower := strings.ToLower(statement)
 	count := strings.Count(lower, separator)
@@ -377,6 +384,9 @@ func plainAndPartitions(statement string, partCount int) [][]string {
 
 func conjunctionCandidatesPreservingCase(statement string) []clausePair {
 	statement = normalizeClausePreservingCase(statement)
+	if pairs, managed := groupedCandidates(statement, "and"); managed {
+		return pairs
+	}
 	result := make([]clausePair, 0)
 	lower := strings.ToLower(statement)
 	if strings.HasPrefix(lower, "it is the case both that") {
@@ -409,6 +419,9 @@ func splitPreservingCase(statement, separator string) []string {
 
 func disjunctionCandidates(statement string) []clausePair {
 	statement = normalizeClause(statement)
+	if pairs, managed := groupedCandidates(statement, "or"); managed {
+		return pairs
+	}
 	if hasOuterGateOperator(statement) || strings.HasPrefix(statement, "it is the case both that") {
 		return nil
 	}
@@ -857,9 +870,9 @@ func evaluateIdentityComparisons(equal func(string, string) bool, identities ...
 			outcome.mismatch = fmt.Sprintf(
 				"%s %q does not match %s %q verbatim",
 				identity.leftLabel,
-				normalizeClause(identity.left),
+				diagnosticClause(identity.left),
 				identity.rightLabel,
-				normalizeClause(identity.right),
+				diagnosticClause(identity.right),
 			)
 		}
 	}
