@@ -3,7 +3,7 @@
 `english-arg-validator` (formerly `argcheck`) is a deterministic checker in Go for transparently valid numbered
 arguments. It runs offline with no LLM and no network access by default: every
 conclusion step must instantiate a named inference form from the catalog
-(currently **v34.0**, 121 forms) using only its cited earlier steps, with clauses
+(currently **v35.0**, 121 forms) using only its cited earlier steps, with clauses
 matched word for word after light surface normalization.
 
 Coverage: complete for propositional logic and for function-free first-order
@@ -41,7 +41,7 @@ english-arg-validator < argument.txt      # read from stdin
 cat argument.txt | english-arg-validator -
 english-arg-validator --quiet argument.txt
 english-arg-validator --json argument.txt
-english-arg-validator --forms             # list all 121 inference forms in catalog v34.0
+english-arg-validator --forms             # list all 121 inference forms in catalog v35.0
 english-arg-validator --version           # print catalog version and build stamp
 ```
 
@@ -71,7 +71,7 @@ Input (`valid.txt`):
 Output (`english-arg-validator valid.txt`, exit `0`):
 
 ```text
-VALID  (gate catalog v34.0; local english-arg-validator@ef44658)
+VALID  (gate catalog v35.0; local english-arg-validator@ef44658)
 syntax: ok
 step 3 [1,2]: ok: modus ponens
 ```
@@ -92,7 +92,7 @@ not certified (`uncertified.txt`):
 Output (`english-arg-validator uncertified.txt`, exit `1`):
 
 ```text
-NOT CERTIFIED  (gate catalog v34.0; local english-arg-validator@ef44658)
+NOT CERTIFIED  (gate catalog v35.0; local english-arg-validator@ef44658)
 syntax: ok
 step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
 ```
@@ -164,7 +164,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
     "passed": true,
     "message": "output passes entailment_gate",
     "details": {
-      "catalog": "v34.0",
+      "catalog": "v35.0",
       "expansions": [],
       "gated_steps": 1,
       "passed_steps": 1,
@@ -173,7 +173,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
       ]
     }
   },
-  "entailment_catalog": "v34.0",
+  "entailment_catalog": "v35.0",
   "backend": "local",
   "version": "english-arg-validator@ef44658"
 }
@@ -183,7 +183,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
 existing clients. A failing check means english-arg-validator found no accepted rule for some
 step, not that the argument is invalid.
 
-`--forms` prints the catalog header (`entailment gate catalog v34.0 (...)`)
+`--forms` prints the catalog header (`entailment gate catalog v35.0 (...)`)
 followed by all 121 accepted form names, covering propositional schemas,
 syllogisms, schematic rules (`U`, `V`, `W`, `X`, `Y`, `Z` up to 10 conjuncts),
 identity, system-T modals, counterfactuals, properties, n-place relations,

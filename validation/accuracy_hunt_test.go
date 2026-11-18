@@ -164,9 +164,9 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H151", "1. Alpha is identical to Beta.\n2. The observer dreams about Alpha.\n3. Therefore, The observer dreams about Beta. [1,2]\n", false},
 		{"H152", "1. Alpha is identical to Beta.\n2. The observer seeks Alpha.\n3. Therefore, The observer seeks Beta. [1,2]\n", false},
 		{"H153", "1. Alpha is identical to Beta.\n2. The observer wants Alpha.\n3. Therefore, The observer wants Beta. [1,2]\n", false},
-		{"H154", "1. Alpha is identical to Beta.\n2. The observer painted Alpha.\n3. Therefore, The observer painted Beta. [1,2]\n", true},
+		{"H154", "1. Alpha is identical to Beta.\n2. The observer painted Alpha.\n3. Therefore, The observer painted Beta. [1,2]\n", false}, // v35.0: object position
 		{"H155", "1. Alpha is identical to Beta.\n2. Alpha was red.\n3. Therefore, Beta was red. [1,2]\n", true},
-		{"H156", "1. Alpha is identical to Beta.\n2. Alpha might be red.\n3. Therefore, Beta might be red. [1,2]\n", false},
+		{"H156", "1. Alpha is identical to Beta.\n2. Alpha might be red.\n3. Therefore, Beta might be red. [1,2]\n", true}, // v35.0: a name as the subject of a modal sentence
 		{"H157", "1. Alpha is identical to Beta.\n2. Alpha is called red.\n3. Therefore, Beta is called red. [1,2]\n", false},
 		{"H158", "1. Alpha is identical to Beta.\n2. Alpha is named red.\n3. Therefore, Beta is named red. [1,2]\n", false},
 		{"H159", "1. Alpha is identical to Beta.\n2. Alpha is similar to Gamma.\n3. Therefore, Beta is similar to Gamma. [1,2]\n", true},

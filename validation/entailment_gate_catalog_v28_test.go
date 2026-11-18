@@ -17,8 +17,10 @@ func v28Check(t *testing.T, text string, valid bool) {
 func TestCatalogV28Identity(t *testing.T) {
 	for _, tc := range []struct{ name, identity, premise, conclusion, negative string }{
 		{"predicate and", "Ada is identical to Ben", "Ada is necessary and often obligatory", "Ben is necessary and often obligatory", "Ben is necessary and never obligatory"},
-		{"gerund object", "Standing as an equal is identical to being recognized as a peer", "Every citizen deserves standing as an equal", "Every citizen deserves being recognized as a peer", "No citizen deserves being recognized as a peer"},
-		{"coordinated name", "Smith and Wesson is identical to the gunmaker", "Ada admires Smith and Wesson", "Ada admires the gunmaker", "Ben admires the gunmaker"},
+		// v35.0: substitution is certified in clause subjects, so the gerund
+		// and coordinated-name terms are tested as subjects.
+		{"gerund subject", "Standing as an equal is identical to being recognized as a peer", "Standing as an equal is valuable", "Being recognized as a peer is valuable", "Being recognized as a peer is not valuable"},
+		{"coordinated name", "Smith and Wesson is identical to the gunmaker", "Smith and Wesson is a company", "The gunmaker is a company", "The gunmaker is a person"},
 		{"negative predicate", "Hesperus is identical to Phosphorus", "Hesperus is not a star", "Phosphorus is not a star", "Phosphorus is a star"},
 		{"identical with", "Ada is identical with Ben", "Ada is identical with Cy", "Ben is identical with Cy", "Ben is identical with Dee"},
 	} {
@@ -99,7 +101,10 @@ func TestCatalogV28IdentityOracle(t *testing.T) {
 			if !nOracleInvalid(ps, rcSurface(tc.bad, tc.pbad)) {
 				t.Fatal("negative has no countermodel")
 			}
-			v28Check(t, v26Argument([]string{tc.id, tc.p}, tc.c), true)
+			// v35.0: valid, but the replaced term is an object, which the
+			// safe-position rule does not certify.
+			objectPosition := tc.name == "gerund object" || tc.name == "coordinated name"
+			v28Check(t, v26Argument([]string{tc.id, tc.p}, tc.c), !objectPosition)
 			v28Check(t, v26Argument([]string{tc.id, tc.p}, tc.bad), false)
 		})
 	}

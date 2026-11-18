@@ -8,7 +8,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v34.0"
+const EntailmentGateCatalogVersion = "v35.0"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -388,6 +388,14 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 				}
 				if outcome.refusal && refusedNote == "" {
 					refusedForm, refusedNote = schema.name, outcome.mismatch
+				}
+				if outcome.matched && schema.name == "identity substitution" {
+					if reason := identitySubstitutionUnsafe(stepStatements(ordered), set.conclusion.Statement); reason != "" {
+						if refusedNote == "" {
+							refusedForm, refusedNote = schema.name, reason
+						}
+						continue
+					}
 				}
 				if outcome.matched {
 					report.Passed = true

@@ -61,7 +61,7 @@ func TestAccuracyRound2Cases(t *testing.T) {
 3. Therefore, very few philosophers are happy. [1,2]`, "quantifier phrase"},
 		{"s01_lois", `1. Lois is looking for Superman.
 2. Superman is identical to Clark.
-3. Therefore, Lois is looking for Clark. [1,2]`, "opaque intensional"},
+3. Therefore, Lois is looking for Clark. [1,2]`, "subject of a plain sentence"},
 		{"w01_planx", `1. If Plan X fails, then Plan X is abandoned.
 2. Plan B fails.
 3. Therefore, Plan B is abandoned. [1,2]`, "proper name"},
@@ -102,7 +102,6 @@ func TestAccuracyRound2ValidControls(t *testing.T) {
 		"theory":       "1. If the theory of X is true, then X is useful.\n2. The theory of gravity is true.\n3. Therefore, gravity is useful. [1,2]",
 		"ui":           "1. Every billionaire is mortal.\n2. Alice is a billionaire.\n3. Therefore, Alice is mortal. [1,2]",
 		"princes":      "1. All princes are male.\n2. Charles is a prince.\n3. Therefore, Charles is male. [1,2]",
-		"painted":      "1. Lois painted Superman.\n2. Superman is identical to Clark.\n3. Therefore, Lois painted Clark. [1,2]",
 		"long binding": "1. If X are useful, then X are valuable.\n2. Hand-coded objectives alongside algorithmic training signals are useful.\n3. Therefore, hand-coded objectives alongside algorithmic training signals are valuable. [1,2]",
 		"gerund":       "1. If X is useful, then X is valuable.\n2. Asking questions is useful.\n3. Therefore, asking questions is valuable. [1,2]",
 		"description":  "1. If X is useful, then X is valuable.\n2. The putative counterexample to Clark's analysis is useful.\n3. Therefore, the putative counterexample to Clark's analysis is valuable. [1,2]",
@@ -122,7 +121,10 @@ func TestAccuracyRound2IdentityContexts(t *testing.T) {
 	for _, verb := range []string{"is looking for", "looks for", "seeks", "wants", "needs", "is searching for", "hopes for", "fears", "believes", "imagines", "worships", "painted", "met", "kicked", "is near"} {
 		t.Run(verb, func(t *testing.T) {
 			arg := "1. Lois " + verb + " Superman.\n2. Superman is identical to Clark.\n3. Therefore, Lois " + verb + " Clark. [1,2]"
-			want := verb == "painted" || verb == "met" || verb == "kicked" || verb == "is near"
+			// v35.0: identity substitution is certified only in identity
+			// sentences and clause subjects, so every object position is
+			// refused, extensional verbs included.
+			want := false
 			ok, _, msg := checkRulesDocArgument(arg)
 			if ok != want {
 				t.Fatalf("VALID=%v, want %v: %s", ok, want, msg)

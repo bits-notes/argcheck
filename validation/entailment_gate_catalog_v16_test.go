@@ -40,10 +40,10 @@ var catalogV16GapCases = []struct{ name, argument, wantForm string }{
 3. Therefore, Ngo's claim is false. [1,2]`, "identity substitution"},
 	{"v16 whole object substitution", `1. The claim that the store is nearby is identical to Ngo's claim.
 2. Ada repeats The claim that the store is nearby.
-3. Therefore, Ada repeats Ngo's claim. [1,2]`, "identity substitution"},
+3. Therefore, Ada repeats Ngo's claim. [1,2]`, ""}, // v35.0: object position
 	{"v16 whole object reverse substitution", `1. The claim that the store is nearby is identical to Ngo's claim.
 2. Ada repeats Ngo's claim.
-3. Therefore, Ada repeats The claim that the store is nearby. [1,2]`, "identity substitution"},
+3. Therefore, Ada repeats The claim that the store is nearby. [1,2]`, ""}, // v35.0: object position
 	{"v16 mismatched witnesses", `1. The claim that the store is nearby is false.
 2. The claim that the station is nearby is a claim.
 3. Therefore, Some claim is false. [1,2]`, ""},

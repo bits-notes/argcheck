@@ -300,6 +300,15 @@ func matchIdentitySubstitution(premises []NumberedArgumentStep, conclusion Numbe
 		for _, direction := range [][2]string{{identity.left, identity.right}, {identity.right, identity.left}} {
 			transparent, premiseQuantifier := substitutionContext(premiseText, direction[0])
 			conclusionTransparent, conclusionQuantifier := substitutionContext(normalizeClausePreservingCase(conclusion.Statement), direction[1])
+			// A proper name as the subject of a modal sentence keeps its
+			// reference ("Superman can fly" gives "Clark can fly"). Only for
+			// identity substitution, not for existential introduction.
+			if !transparent && modalSubjectName(premiseText, direction[0]) {
+				transparent = true
+			}
+			if !conclusionTransparent && modalSubjectName(normalizeClausePreservingCase(conclusion.Statement), direction[1]) {
+				conclusionTransparent = true
+			}
 			hasQuantifier := premiseQuantifier || conclusionQuantifier
 			if !transparent || !conclusionTransparent || !substitutionTerm(identity.left, hasQuantifier) || !substitutionTerm(identity.right, hasQuantifier) {
 				continue
@@ -312,6 +321,11 @@ func matchIdentitySubstitution(premises []NumberedArgumentStep, conclusion Numbe
 				return schemaMatchOutcome{matched: true, score: 1, traction: true}
 			}
 		}
+	}
+	// Say why when the term sits outside the safe positions, instead of the
+	// generic "not premise N with every occurrence replaced".
+	if reason := identitySubstitutionUnsafe(stepStatements(premises), conclusion.Statement); reason != "" {
+		outcome.mismatch = reason
 	}
 	return outcome
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -41,8 +42,27 @@ func TestEntailmentGateV16AcceptedCompatibility(t *testing.T) {
 			if i == 46 {
 				tc.Forms = []string{"schematic instantiation"}
 			}
+			// v35.0: identity substitution is certified only in identity
+			// sentences and clause subjects. These golden cases substitute
+			// into an object, so they are now refused with the position reason.
+			if v35ObjectSubstitution[i] {
+				report := GateNumberedArgument(tc.Argument)
+				if report.Passed {
+					t.Fatal("object-position substitution certified")
+				}
+				refused := false
+				for _, step := range report.Steps {
+					refused = refused || strings.Contains(step.Mismatch, "subject of a plain sentence")
+				}
+				if !refused {
+					t.Fatalf("missing the position reason: %+v", report.Steps)
+				}
+				return
+			}
 			assertAcceptedStepParity(t, tc.Argument, tc.Forms)
 		})
 	}
 	t.Logf("all %d accepted v16 arguments retain their per-step form names", len(golden.Cases))
 }
+
+var v35ObjectSubstitution = map[int]bool{14: true, 15: true, 906: true, 907: true}

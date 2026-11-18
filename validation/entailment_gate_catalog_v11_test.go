@@ -108,8 +108,11 @@ func TestCatalogV11IdentitySubstitution(t *testing.T) {
 	runV11Cases(t, []v11Case{
 		{"forward", "1. Hesperus is identical to Phosphorus.\n2. Hesperus is visible at dusk.\n3. Therefore, Phosphorus is visible at dusk. [1,2]", "identity substitution"},
 		{"symmetric", "1. Hesperus is identical to Phosphorus.\n2. Phosphorus is visible at dawn.\n3. Therefore, Hesperus is visible at dawn. [1,2]", "identity substitution"},
-		{"every occurrence", "1. Ada is identical to the countess.\n2. Ada praised Ada's tutor.\n3. Therefore, the countess praised the countess's tutor. [1,2]", "identity substitution"},
-		{"object under quantifier", "1. Ada is identical to Lovelace.\n2. Every critic praised Ada.\n3. Therefore, every critic praised Lovelace. [1,2]", "identity substitution"},
+		// v35.0: identity substitution is certified only in identity sentences
+		// and clause subjects, so these object positions are refused.
+		{"every occurrence", "1. Ada is identical to the countess.\n2. Ada praised Ada's tutor.\n3. Therefore, the countess praised the countess's tutor. [1,2]", ""},
+		{"object under quantifier", "1. Ada is identical to Lovelace.\n2. Every critic praised Ada.\n3. Therefore, every critic praised Lovelace. [1,2]", ""},
+		{"subject substitution", "1. Ada is identical to Lovelace.\n2. Ada praised every critic.\n3. Therefore, Lovelace praised every critic. [1,2]", "identity substitution"},
 		{"partial replacement", "1. Ada is identical to the countess.\n2. Ada praised Ada's tutor.\n3. Therefore, the countess praised Ada's tutor. [1,2]", ""},
 		{"wrong term", "1. Hesperus is identical to Phosphorus.\n2. Hesperus is visible at dusk.\n3. Therefore, Mars is visible at dusk. [1,2]", ""},
 		{"predication is not identity", "1. Ada is a doctor.\n2. Ada praised Ben.\n3. Therefore, a doctor praised Ben. [1,2]", ""},

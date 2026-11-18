@@ -2360,24 +2360,66 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 
 ## `FOL identity substitution`
 
-- **Schema:** `a is identical to b`; `Φ(a)` ⊢ `Φ(a/b)` (replacing one or more free occurrences of `a` with `b`, or `b` with `a`, including inside quantifier scopes).
+- **Schema:** `a is identical to b`; `Φ(a)` ⊢ `Φ(a/b)` (replacing one or more free occurrences of `a` with `b`, or `b` with `a`, including inside quantifier scopes), where every replaced occurrence is in a safe position (see "Identity substitution: safe positions" below).
 - **Accepted:**
 
 ```argcheck-accept FOL identity substitution
 1. alice is identical to blair.
-2. every x is such that (x admires alice).
-3. Therefore, every x is such that (x admires blair). [1,2]
+2. every x is such that (alice admires x).
+3. Therefore, every x is such that (blair admires x). [1,2]
 ```
 
 - **Rejected near-miss:**
 
 ```argcheck-reject FOL identity substitution
 1. alice is identical to blair.
+2. every x is such that (alice admires x).
+3. Therefore, every x is such that (casey admires x). [1,2]
+```
+
+```argcheck-reject FOL identity substitution
+1. alice is identical to blair.
 2. every x is such that (x admires alice).
-3. Therefore, every x is such that (x admires casey). [1,2]
+3. Therefore, every x is such that (x admires blair). [1,2]
 ```
 
 - **What it does not cover:** Zero replacements (`Φ(a)` unchanged; use `FOL reiteration`), bare `"is"` instead of `is identical to`, or substituting non-identical constants.
+
+### Identity substitution: safe positions (v35.0)
+
+Identity substitution is certified only in known-safe positions, an allowlist
+rather than a list of opaque verbs:
+
+- in identity sentences (`A is identical to B`, so identity chains work);
+- where every replaced occurrence is the grammatical subject of a plain clause:
+  the start of the sentence, or of a clause after `if`, `then`, `and`, `or`,
+  `it is (not) the case that`, `such that` or an opening parenthesis. A proper
+  name stays substitutable as the subject of a modal sentence (`Superman can
+  fly` gives `Clark can fly`).
+
+Every other position is not certified: objects of verbs (`Lois is looking for
+Superman`, `Lois admires Superman`, `Lois kissed Superman`), passives (`is
+admired by`) and raising forms (`is believed to`, `is said to`), and anything
+inside a that-clause. The message names the reason. If such a step is sound,
+state it as a premise.
+
+```argcheck-accept identity substitution
+1. Superman can fly.
+2. Superman is identical to Clark.
+3. Therefore, Clark can fly. [1,2]
+```
+
+```argcheck-reject identity substitution
+1. Lois is looking for Superman.
+2. Superman is identical to Clark.
+3. Therefore, Lois is looking for Clark. [1,2]
+```
+
+```argcheck-reject identity substitution
+1. Superman is admired by Lois.
+2. Superman is identical to Clark.
+3. Therefore, Clark is admired by Lois. [1,2]
+```
 
 ---
 

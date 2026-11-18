@@ -1,6 +1,9 @@
 package validation
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 // Parentheses alone delimit both sides of a scaffolded biconditional, even when
 // either side contains another scaffold: "(X) if and only if (Y)". A leading
@@ -120,6 +123,32 @@ func substitutionContext(statement, term string) (bool, bool) {
 		return true, false
 	}
 	return transparentContext(statement)
+}
+
+var leadingModal = regexp.MustCompile(`(?i)^\s*(?:can|could|may|might|must|would|will|should)\b`)
+
+// modalSubjectName allows a capitalized proper name that is the subject of a
+// plain modal sentence ("Superman can fly"): a name keeps its reference
+// across possibilities, so the modal does not block substitution. Other opaque
+// words and descriptions ("the president must ...") stay blocked.
+func modalSubjectName(statement, term string) bool {
+	trimmed := strings.TrimSpace(statement)
+	if !strings.HasPrefix(strings.ToLower(trimmed), strings.ToLower(term)+" ") {
+		return false
+	}
+	// Identity terms arrive lower-cased; the statement keeps the spelling.
+	if term == "" || !startsCapitalizedWord(trimmed) || strings.HasPrefix(strings.ToLower(term), "the ") {
+		return false
+	}
+	rest := trimmed[len(term):]
+	if !leadingModal.MatchString(rest) {
+		return false
+	}
+	after := leadingModal.ReplaceAllString(rest, "")
+	if ok, _ := transparentContext(after); !ok {
+		return false
+	}
+	return true
 }
 
 func substitutionTerm(term string, hasQuantifier bool) bool {

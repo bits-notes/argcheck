@@ -253,6 +253,10 @@ func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentSt
 			ps = append(ps, p)
 		}
 		if matchV28Identity(ps, c) {
+			if reason := identitySubstitutionUnsafe(stepStatements(ps), c.Statement); reason != "" {
+				old.NearestForm, old.Mismatch = "identity substitution", reason
+				return old
+			}
 			old.Passed = true
 			old.Form = "identity substitution"
 			old.NearestForm = ""

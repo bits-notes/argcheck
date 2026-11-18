@@ -649,6 +649,16 @@ func gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) Entailm
 	}
 	if len(c.Ranges) == 0 {
 		if form := folRule(ps, target); form != "" {
+			if form == "identity substitution" {
+				var cited []string
+				for _, id := range c.Citations {
+					cited = append(cited, steps[id].Statement)
+				}
+				if reason := identitySubstitutionUnsafe(cited, c.Statement); reason != "" {
+					r.NearestForm, r.Mismatch = "identity substitution", reason
+					return r
+				}
+			}
 			return accept(form)
 		}
 		return r

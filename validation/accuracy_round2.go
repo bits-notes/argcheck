@@ -218,6 +218,9 @@ func accuracyRound2Failure(premises []NumberedArgumentStep, conclusion NumberedA
 		if identityOpaqueExtra.MatchString(s) && len(premises) > 1 {
 			for _, q := range premises {
 				if len(identityCandidates(q.Statement)) > 0 {
+					if reason := identitySubstitutionUnsafe(stepStatements(premises), conclusion.Statement); reason != "" {
+						return "identity substitution", reason
+					}
 					return "identity substitution", "identity substitution is blocked in an opaque intensional context"
 				}
 			}

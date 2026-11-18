@@ -77,9 +77,11 @@ func nplaceExercises() []nplaceExercise {
 		ts[slot] = "z"
 		ee := fmt.Sprintf("1. %s.\n| 2. Suppose z is a %s and %s.\n| 3. Therefore, z is a %s. [2]\n| 4. Therefore, %s. [2]\n| 5. Therefore, %s. [4,3]\n6. Therefore, %s. [1,2-5]", existential.text, classes[slot], render(ts), classes[slot], render(ts), existential.text, existential.text)
 		out = append(out, nplaceExercise{fmt.Sprintf("%d-place Fitch EE", arity), ee, []nOracleSurface{existential}, existential, true})
+		// v35.0: identity substitution is certified in clause subjects, so
+		// the exercise renames the subject (slot 0), not an object.
 		renamed := append([]string{}, names...)
-		renamed[slot] = "Cedar"
-		add(fmt.Sprintf("%d-place identity", arity), []nOracleSurface{ground, nIdentity(names[slot]+" is identical to Cedar", names[slot], "Cedar")}, nGround(render(renamed), pred, renamed...), true)
+		renamed[0] = "Cedar"
+		add(fmt.Sprintf("%d-place identity", arity), []nOracleSurface{ground, nIdentity(names[0]+" is identical to Cedar", names[0], "Cedar")}, nGround(render(renamed), pred, renamed...), true)
 	}
 	alt := nQuantified("Alice gave a book to Bob", "gave/to", []string{"Alice", "", "Bob"}, map[int]string{1: "some book"}, nil)
 	add("double-object to preposition", []nOracleSurface{a1p}, alt, true)
@@ -123,7 +125,7 @@ func nplaceExercises() []nplaceExercise {
 	return out
 }
 func TestCatalogV22(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v34.0" {
+	if EntailmentGateCatalogVersion != "v35.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range nplaceExercises() {

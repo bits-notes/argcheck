@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v34.0)
+# Entailment Gate — Coverage and Known Limits (catalog v35.0)
 
 **Type:** reference
-**Status:** current as of catalog v34.0
+**Status:** current as of catalog v35.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v34.0**). Tests cover capture,
+form; the current catalog is **v35.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -976,3 +976,34 @@ The existing valid `most` and `more than` class-inclusion inferences now report
 schematic instantiation rather than treating a quantified subject as an
 individual UI witness. Fitch arbitrary names and modified bare plural class
 generics retain their accepted readings.
+
+## v35.0: identity substitution only in safe positions
+
+Identity substitution (Leibniz's law) is certified only in known-safe positions,
+an allowlist instead of a list of opaque verbs. A position is safe when the
+substituted premise and the conclusion are explicit identity sentences
+(identity chains), or when every replaced occurrence is the grammatical subject
+of a plain clause. That means the start of the sentence, or of a clause after
+`if`, `then`, `and`, `or`, `it is (not) the case that`, `such that` or an
+opening parenthesis, and not followed by a passive (`is admired by`) or raising
+form (`is believed to`). A capitalized proper name stays substitutable as the
+subject of a modal sentence (`Superman can fly` gives `Clark can fly`). Every
+other position is not certified, extensional objects (`Lois kissed Superman`)
+included, and the message names the reason. The check runs on every route that
+certifies identity substitution: the surface rule, the whole-term identity
+register and the FOL rule. This closes the `is looking for` / `thinking about` /
+`admires` class without listing verbs.
+
+Not changed: schematic instantiation into a non-subject slot. Limiting
+indefinite bindings (`a unicorn`) to subject or predicate position closes
+`If Lois is looking for X, then X exists; Lois is looking for a unicorn;
+therefore a unicorn exists`, but on the corpus it refused 134 of 2,476 valid
+arguments, so it is a known gap pending a narrower rule. Existential
+generalization and universal instantiation from an object position were
+already not certified.
+
+Corpus impact (2,476 arguments, against v34.0): 2 valid arguments now fail.
+One is the rules.md example `every x is such that (x admires alice)`, which
+substitutes into an object (the example now uses a subject); the other is
+askell-2018 A609 (substitution inside `is a qualitative duplicate of ...`).
+0 invalid-to-valid changes.

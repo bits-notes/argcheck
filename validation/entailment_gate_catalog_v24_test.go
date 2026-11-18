@@ -151,9 +151,11 @@ func TestCatalogV24RuleInventory(t *testing.T) {
 					ps = []*folFormula{a}
 					c = &folFormula{op: "equal", terms: []string{"alice", "alice"}}
 				case "identity-E":
-					a = fol("and", a, foAtom("admires", "alice", "alice"))
-					ps = []*folFormula{&folFormula{op: "equal", terms: []string{"alice", "blair"}}, a}
-					c = folSub(a, "alice", "blair")
+					// v35.0: substitution is certified in clause subjects, so
+					// the generated instance replaces a subject.
+					// Fresh names keep every replaced occurrence a subject.
+					ps = []*folFormula{&folFormula{op: "equal", terms: []string{"casey", "dana"}}, fol("and", a, foAtom("is/red", "casey"))}
+					c = fol("and", a, foAtom("is/red", "dana"))
 				case "implies-I":
 					c = fol("implies", a, a)
 					argument = fmt.Sprintf("| 1. Suppose %s.\n| 2. Therefore, %s. [1]\n3. Therefore, %s. [1-2]", a.Render(), a.Render(), c.Render())
@@ -204,7 +206,7 @@ func v24Exercises() []v24Exercise {
 		{"identity body", []string{"every x is such that x is identical to x"}, "alice is identical to alice", true},
 		{"negative body", []string{"no x is such that x admires blair"}, "it is not the case that (alice admires blair)", true},
 		{"conjunction body", []string{"every x is such that (x is red) and (x admires blair)"}, "(alice is red) and (alice admires blair)", true},
-		{"identity substitution", []string{"alice is identical to blair", "every x is such that x admires alice"}, "every x is such that x admires blair", true},
+		{"identity substitution", []string{"alice is identical to blair", "every x is such that alice admires x"}, "every x is such that blair admires x", true},
 		{"four slots", []string{"every x is such that x sends x to x from x"}, "alice sends alice to alice from alice", true},
 		{"deep alternation", []string{"every x is such that some y is such that every z is such that some u is such that every v is such that some w is such that every a is such that some b is such that x sends y to a from b"}, "some y is such that every z is such that some u is such that every v is such that some w is such that every a is such that some b is such that alice sends y to a from b", true},
 		{"double object", []string{"some y is such that every x is such that x gave y a book"}, "some y is such that every x is such that x gave y a book", true},
@@ -285,7 +287,11 @@ func TestCatalogV24ScopeAndIdentityGuards(t *testing.T) {
 	// Selective replacement, with the same name used twice in the atom.
 	ps := []*folFormula{{op: "equal", terms: []string{"alice", "blair"}}, v24Q("every", "$x", &folFormula{op: "atom", symbol: "sends/to", terms: []string{"$x", "alice", "alice"}})}
 	c := v24Q("every", "$y", &folFormula{op: "atom", symbol: "sends/to", terms: []string{"$y", "blair", "alice"}})
-	v24Check(t, v24Flat(ps, c))
+	// v35.0: the replaced name is an object, which the safe-position rule
+	// refuses; the formula is still valid, so no countermodel exists.
+	if _, r := CheckEntailmentGate(v24Flat(ps, c)); r.Passed {
+		t.Fatal("object-position identity substitution certified")
+	}
 	if finiteCountermodel(ps, c, 3) {
 		t.Fatal("selective substitution")
 	}
