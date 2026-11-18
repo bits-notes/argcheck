@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v40.0)
+# Entailment Gate — Coverage and Known Limits (catalog v41.0)
 
 **Type:** reference
-**Status:** current as of catalog v40.0
+**Status:** current as of catalog v41.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v40.0**). Tests cover capture,
+form; the current catalog is **v41.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -1196,6 +1196,14 @@ operand to remain opaque. A complement's own parentheses do not make its
 content asserted. Unknown intransitive verbs can be conservatively refused;
 use explicit grouping for those cases. No corpus impact percentage was
 measured in this run.
+
+## v41.0: "Both A and B" conjunctions
+
+- The clause-coordination refusal (v36.0) tells the writer to use `Both ...
+  and ...`, but conjunction introduction and elimination did not split that
+  form, so following the hint still failed. `Both A and B` now has conjuncts A
+  and B. Mixed `Both A and B or C` and a `both` inside an attitude report stay
+  refused.
 
 ## v40.0: admires is not extensional
 

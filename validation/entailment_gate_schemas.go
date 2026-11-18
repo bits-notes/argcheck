@@ -296,6 +296,13 @@ func conjunctionCandidates(statement string) []clausePair {
 			result = appendSplitCandidates(result, remainder, ", and that ", true)
 		}
 	}
+	// v41.0: "Both A and B" is the coordination form the clause-coordination
+	// hint recommends, so its conjuncts are A and B.
+	if strings.HasPrefix(statement, "both ") {
+		remainder := statement[len("both "):]
+		result = appendSplitCandidates(result, remainder, ", and ", false)
+		result = appendSplitCandidates(result, remainder, " and ", false)
+	}
 	result = appendSplitCandidates(result, statement, ", and that ", true)
 	result = appendSplitCandidates(result, statement, ", and ", false)
 	result = appendSplitCandidates(result, statement, " and ", false)
@@ -395,6 +402,11 @@ func conjunctionCandidatesPreservingCase(statement string) []clausePair {
 			remainder = strings.TrimLeft(remainder, ", ")
 			result = appendSplitCandidatesPreservingCase(result, remainder, ", and that ", true)
 		}
+	}
+	if strings.HasPrefix(lower, "both ") {
+		remainder := statement[len("both "):]
+		result = appendSplitCandidatesPreservingCase(result, remainder, ", and ", false)
+		result = appendSplitCandidatesPreservingCase(result, remainder, " and ", false)
 	}
 	result = appendSplitCandidatesPreservingCase(result, statement, ", and that ", true)
 	result = appendSplitCandidatesPreservingCase(result, statement, ", and ", false)

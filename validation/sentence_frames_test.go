@@ -229,3 +229,26 @@ func TestAdmiresNotExtensional(t *testing.T) {
 		t.Errorf("greets control: want VALID")
 	}
 }
+
+// v41.0: "Both A and B", the form the clause-coordination hint recommends,
+// gives conjunction introduction and elimination.
+func TestBothConjunction(t *testing.T) {
+	valid := []string{
+		"1. Mary had all the physical information.\n2. Mary's previous knowledge was incomplete.\n3. Therefore, both Mary had all the physical information and Mary's previous knowledge was incomplete. [1,2]\n",
+		"1. Both Ann sings and Bob dances.\n2. Therefore, Bob dances. [1]\n",
+	}
+	for _, text := range valid {
+		if report, _ := CheckEntailmentGate(text); !report.Passed {
+			t.Errorf("want VALID: %q %+v", text, report.Steps)
+		}
+	}
+	refused := []string{
+		"1. Both Ann sings and Bob dances or Cal reads.\n2. Therefore, Bob dances. [1]\n",
+		"1. Ann believes both Bob sings and Cal dances.\n2. Therefore, Cal dances. [1]\n",
+	}
+	for _, text := range refused {
+		if report, _ := CheckEntailmentGate(text); report.Passed {
+			t.Errorf("want NOT CERTIFIED: %q", text)
+		}
+	}
+}
