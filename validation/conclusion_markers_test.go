@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -49,7 +50,7 @@ func TestConclusionMarkersRequireTerminalCitations(t *testing.T) {
 				input := "1. If it rains, then the ground is wet.\n2. It rains.\n3. " + marker + separator + "the ground is wet" + ending
 				_, result := ParseNumberedArgument(input, numberedArgumentOptions{})
 				want := fmt.Sprintf("line 3 starts with %s, but does not have valid terminal citations", marker)
-				if result.Passed || result.Message != want {
+				if result.Passed || !strings.HasPrefix(result.Message, want+": ") {
 					t.Errorf("%q: got %+v, want %q", input, result, want)
 				}
 			}

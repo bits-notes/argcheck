@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v32.1)
+# Entailment Gate — Coverage and Known Limits (catalog v32.2)
 
 **Type:** reference
-**Status:** current as of catalog v32.1
+**Status:** current as of catalog v32.2
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v32.1**). Tests cover capture,
+form; the current catalog is **v32.2**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -863,3 +863,11 @@ A failing check now prints `NOT CERTIFIED` instead of `INVALID` (text output and
 beside the existing boolean `valid`. A failure means that argcheck found no
 accepted rule for some step. It does not show that the argument is invalid. Exit
 codes, step-level `FAIL` lines and messages are unchanged. No verdict changes.
+
+## v32.2: specific syntax hints
+
+Syntax failures now say what to fix for the common slips: a missing step
+number, a sentence without a final period, citations without the period before
+them, and a conclusion marker without terminal citations (the expected
+`... wet. [1,2]` shape). A lowercase `therefore,` has been accepted since v31.3.
+Message-only: no verdict changes on the corpus (2,476 arguments).

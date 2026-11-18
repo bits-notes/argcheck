@@ -342,7 +342,7 @@ func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumen
 		if marker, _ := stripConclusionMarker(body[1]); marker != "" {
 			return NumberedArgumentStep{}, Result{
 				Passed:  false,
-				Message: fmt.Sprintf("line %d starts with %s, but does not have valid terminal citations", lineNumber, marker),
+				Message: fmt.Sprintf("line %d starts with %s, but does not have valid terminal citations: end the line with a period, a space and the cited step numbers in square brackets, e.g. \"... wet. [1,2]\"", lineNumber, marker),
 				Details: map[string]any{"line": lineNumber},
 			}
 		}
@@ -371,9 +371,28 @@ func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumen
 
 	return NumberedArgumentStep{}, Result{
 		Passed:  false,
-		Message: fmt.Sprintf("line %d is not a valid premise or conclusion", lineNumber),
+		Message: fmt.Sprintf("line %d is not a valid premise or conclusion%s", lineNumber, numberedLineHint(line)),
 		Details: map[string]any{"line": lineNumber},
 	}
+}
+
+// numberedLineHint says what to fix in a line that is neither a premise nor
+// a conclusion, for the common slips.
+func numberedLineHint(line string) string {
+	body := numberedLineBodyPattern.FindStringSubmatch(line)
+	if body == nil {
+		return `: start the line with its step number, a period and a space, e.g. "1. "`
+	}
+	text := strings.TrimSpace(body[1])
+	switch {
+	case text == "":
+		return ": the line has a step number but no sentence"
+	case strings.HasSuffix(text, "]"):
+		return `: end the sentence with a period before the citations, e.g. "... wet. [1,2]"`
+	case !strings.HasSuffix(text, "."):
+		return ": end the sentence with a period"
+	}
+	return ""
 }
 
 func validateStatementBracketReferences(statement string, lineNumber int, stepNumber int) Result {
