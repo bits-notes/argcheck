@@ -5,26 +5,6 @@ import (
 	"strings"
 )
 
-var gateMarkerLine = regexp.MustCompile(`(?m)^([1-9][0-9]*\. )(?i:so|thus|hence|therefore),? (.+\. \[[1-9][0-9]*(?:,[1-9][0-9]*)*\])$`)
-
-// In the numbered proof register, a leading inference marker on a cited step
-// announces the inference; it contributes nothing to the asserted proposition.
-// Keep this adaptation local to the gate, not the strict syntax validator.
-func normalizeGateMarkers(output string) string {
-	output = strings.ReplaceAll(strings.ReplaceAll(output, "\r\n", "\n"), "\r", "\n")
-	return gateMarkerLine.ReplaceAllStringFunc(output, func(line string) string {
-		match := gateMarkerLine.FindStringSubmatch(line)
-		lower := strings.ToLower(match[2])
-		// Degree/manner phrases are content, not inference markers.
-		for _, prefix := range []string{"many ", "much ", "few ", "little ", "far ", "long ", "that ", "called "} {
-			if strings.HasPrefix(lower, prefix) {
-				return line
-			}
-		}
-		return match[1] + "Therefore, " + match[2]
-	})
-}
-
 var gateContraction = regexp.MustCompile(`(?i)\b(?:doesn't|don't|didn't|isn't|aren't|wasn't|weren't|hasn't|haven't|hadn't|won't|wouldn't|can't|couldn't|shouldn't|mustn't|needn't|cannot)\b`)
 
 // These are spelling expansions of the same auxiliary and negation, not

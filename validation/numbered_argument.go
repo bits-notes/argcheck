@@ -20,8 +20,9 @@ const (
 
 var (
 	premiseLinePattern      = regexp.MustCompile(`^([1-9][0-9]*)\. (.+)\.$`)
-	conclusionLinePattern   = regexp.MustCompile(`^([1-9][0-9]*)\. Therefore, (.+)\. \[([1-9][0-9]*(?:-[1-9][0-9]*)?(?:,[1-9][0-9]*(?:-[1-9][0-9]*)?)*)\]$`)
-	terminalCitationPattern = regexp.MustCompile(`\. \[[1-9][0-9]*(?:,[1-9][0-9]*)*\]$`)
+	conclusionLinePattern   = regexp.MustCompile(`^([1-9][0-9]*)\. (.+)\. \[([1-9][0-9]*(?:-[1-9][0-9]*)?(?:,[1-9][0-9]*(?:-[1-9][0-9]*)?)*)\]$`)
+	conclusionMarkerPattern = regexp.MustCompile(`(?i)^(therefore|so|thus|hence)(,\s*|\s+)`)
+	numberedLineBodyPattern = regexp.MustCompile(`^[1-9][0-9]*\. (.*)$`)
 	bracketReferencePattern = regexp.MustCompile(`\[([^\]]+)\]`)
 	numericReferencePattern = regexp.MustCompile(`^[1-9][0-9]*(?:,[1-9][0-9]*)*$`)
 	inlineStepBridgePattern = regexp.MustCompile(`^If ((?:\[[1-9][0-9]*(?:,[1-9][0-9]*)*\](?:,? and )?)+)(?:,? then |, ).+`)
@@ -280,6 +281,26 @@ func parseNumberedArgumentLine(line string, lineNumber int) (NumberedArgumentSte
 	return step, result
 }
 
+// stripConclusionMarker is shared by syntax and gate parsing. A comma or
+// whitespace boundary prevents words such as "Sophie" from becoming markers.
+func stripConclusionMarker(statement string) (string, string) {
+	match := conclusionMarkerPattern.FindStringSubmatch(statement)
+	if match == nil {
+		return "", statement
+	}
+	body := statement[len(match[0]):]
+	// Preserve the existing distinction between inferential "So" and degree
+	// phrases such as "So many" when there is no separating comma.
+	if strings.EqualFold(match[1], "so") && !strings.HasPrefix(match[2], ",") {
+		for _, prefix := range []string{"many ", "much ", "few ", "little ", "far ", "long ", "that ", "called "} {
+			if strings.HasPrefix(strings.ToLower(body), prefix) {
+				return "", statement
+			}
+		}
+	}
+	return match[1], body
+}
+
 func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumentStep, Result) {
 	if matches := conclusionLinePattern.FindStringSubmatch(line); matches != nil {
 		number, _ := strconv.Atoi(matches[1])
@@ -291,7 +312,8 @@ func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumen
 				Details: map[string]any{"line": lineNumber},
 			}
 		}
-		statement := strings.TrimSpace(matches[2])
+		_, body := stripConclusionMarker(matches[2])
+		statement := strings.TrimSpace(body)
 		if statement == "" {
 			return NumberedArgumentStep{}, Result{
 				Passed:  false,
@@ -312,23 +334,20 @@ func parseNumberedArgumentBareLine(line string, lineNumber int) (NumberedArgumen
 		}, Result{Passed: true}
 	}
 
+	// Diagnose markers even when malformed citations prevent a premise match.
+	if body := numberedLineBodyPattern.FindStringSubmatch(line); body != nil {
+		if marker, _ := stripConclusionMarker(body[1]); marker != "" {
+			return NumberedArgumentStep{}, Result{
+				Passed:  false,
+				Message: fmt.Sprintf("line %d starts with %s, but does not have valid terminal citations", lineNumber, marker),
+				Details: map[string]any{"line": lineNumber},
+			}
+		}
+	}
+
 	if matches := premiseLinePattern.FindStringSubmatch(line); matches != nil {
 		number, _ := strconv.Atoi(matches[1])
 		statement := strings.TrimSpace(matches[2])
-		if strings.HasPrefix(statement, "Therefore,") {
-			return NumberedArgumentStep{}, Result{
-				Passed:  false,
-				Message: fmt.Sprintf("line %d starts with Therefore, but does not have valid terminal citations", lineNumber),
-				Details: map[string]any{"line": lineNumber},
-			}
-		}
-		if terminalCitationPattern.MatchString(line) {
-			return NumberedArgumentStep{}, Result{
-				Passed:  false,
-				Message: fmt.Sprintf("line %d has terminal citations but does not start with Therefore,", lineNumber),
-				Details: map[string]any{"line": lineNumber},
-			}
-		}
 		if statement == "" {
 			return NumberedArgumentStep{}, Result{
 				Passed:  false,

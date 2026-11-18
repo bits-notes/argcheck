@@ -69,15 +69,6 @@ func TestNumberedArgumentSyntaxValidator_InvalidAntiExamples(t *testing.T) {
 		wantMessage string
 	}{
 		{
-			name: "missing conclusion marker",
-			output: strings.Join([]string{
-				"1. All cats are animals.",
-				"2. All animals are things.",
-				"3. All cats are things. [1,2]",
-			}, "\n"),
-			wantMessage: "line 3 is not a valid premise or conclusion",
-		},
-		{
 			name: "forward reference",
 			output: strings.Join([]string{
 				"1. Therefore, Socrates is mortal. [2,3]",
@@ -93,15 +84,6 @@ func TestNumberedArgumentSyntaxValidator_InvalidAntiExamples(t *testing.T) {
 				"2. All animals are things.",
 				"Now, combining these two well-known facts:",
 				"3. Therefore, all cats are things. [1,2]",
-			}, "\n"),
-			wantMessage: "line 3 is not a valid premise or conclusion",
-		},
-		{
-			name: "missing therefore with terminal citations",
-			output: strings.Join([]string{
-				"1. All cats are animals.",
-				"2. All animals are things.",
-				"3. All cats are things. [1,2]",
 			}, "\n"),
 			wantMessage: "line 3 is not a valid premise or conclusion",
 		},
@@ -129,7 +111,7 @@ func TestNumberedArgumentSyntaxValidator_InvalidAntiExamples(t *testing.T) {
 				"2. All animals are things.",
 				"3. Therefore, all cats are things. [1, 2]",
 			}, "\n"),
-			wantMessage: "line 3 is not a valid premise or conclusion",
+			wantMessage: "line 3 starts with Therefore, but does not have valid terminal citations",
 		},
 		{
 			name: "final premise",

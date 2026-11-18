@@ -6,6 +6,37 @@ The checker is complete for propositional logic and for function-free first-orde
 
 Every `argcheck-accept <form>` and `argcheck-reject <form>` fenced block in this document is executed by `validation/docs_rules_test.go`.
 
+## Numbered format
+
+Premises have the form `1. Statement.`. Derived steps end with a period and
+terminal citations: `3. Statement. [1,2]`. An optional leading `Therefore`,
+`So`, `Thus`, or `Hence` is case-insensitive and may have a comma. A marker
+without valid terminal citations is a syntax error. Markers match whole words;
+ordinary words beginning with the same letters are unaffected. Degree phrases
+such as `So many` without a comma remain statement content.
+
+Only terminal citations identify a derived step. Inline references such as
+`If [1,2], then P.` and `P if [1].` remain bridge premises. Re-rendered derived
+steps use canonical `Therefore,`.
+
+```argcheck-accept modus ponens
+1. If it rains, then the ground is wet.
+2. It rains.
+3. So, the ground is wet. [1,2]
+```
+
+```argcheck-accept modus ponens
+1. If it rains, then the ground is wet.
+2. It rains.
+3. The ground is wet. [1,2]
+```
+
+```argcheck-reject modus ponens
+1. If it rains, then the ground is wet.
+2. It rains.
+3. So, the ground is wet.
+```
+
 ## Step references
 
 A premise may name earlier steps by number in one place only: a bridge premise whose whole antecedent, whole consequent, or both are step references.

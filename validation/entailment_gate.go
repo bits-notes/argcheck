@@ -8,7 +8,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v31.2"
+const EntailmentGateCatalogVersion = "v31.3"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -86,7 +86,7 @@ func CheckEntailmentGate(output string, options ...EntailmentGateOptions) (Entai
 }
 
 func checkEntailmentGate(output string, options numberedArgumentOptions) (EntailmentGateReport, Result) {
-	argument, parseResult := ParseNumberedArgument(normalizeGateMarkers(output), options)
+	argument, parseResult := ParseNumberedArgument(output, options)
 	if !parseResult.Passed {
 		return EntailmentGateReport{Passed: false}, parseResult
 	}

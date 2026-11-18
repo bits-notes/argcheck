@@ -3,7 +3,7 @@
 `argcheck` is a deterministic checker in Go for transparently valid numbered
 arguments. It runs offline with no LLM and no network access by default: every
 conclusion step must instantiate a named inference form from the catalog
-(currently **v31.2**, 121 forms) using only its cited earlier steps, with clauses
+(currently **v31.3**, 121 forms) using only its cited earlier steps, with clauses
 matched word for word after light surface normalization.
 
 Coverage: complete for propositional logic and for function-free first-order
@@ -41,7 +41,7 @@ argcheck < argument.txt      # read from stdin
 cat argument.txt | argcheck -
 argcheck --quiet argument.txt
 argcheck --json argument.txt
-argcheck --forms             # list all 121 inference forms in catalog v31.2
+argcheck --forms             # list all 121 inference forms in catalog v31.3
 argcheck --version           # print catalog version and build stamp
 ```
 
@@ -71,7 +71,7 @@ Input (`valid.txt`):
 Output (`argcheck valid.txt`, exit `0`):
 
 ```text
-VALID  (gate catalog v31.2; local argcheck@ef44658)
+VALID  (gate catalog v31.3; local argcheck@ef44658)
 syntax: ok
 step 3 [1,2]: ok: modus ponens
 ```
@@ -91,7 +91,7 @@ rejected (`invalid.txt`):
 Output (`argcheck invalid.txt`, exit `1`):
 
 ```text
-INVALID  (gate catalog v31.2; local argcheck@ef44658)
+INVALID  (gate catalog v31.3; local argcheck@ef44658)
 syntax: ok
 step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
 ```
@@ -103,9 +103,13 @@ used subset and the inert citation(s) to drop.
 ## The numbered format
 
 - **Premises:** `1. Statement.` — one declarative sentence per line, ending in a
-  period, with no `Therefore,` prefix and no trailing citation brackets.
-- **Conclusions:** `3. Therefore, statement. [1,2]` — starts with `Therefore,`,
-  ends in a period followed by bracketed citations to earlier steps.
+  period, with no inference marker and no trailing citation brackets.
+- **Conclusions:** `3. Therefore, statement. [1,2]` — ends in a period followed by
+  bracketed citations to earlier steps. The leading `Therefore`, `So`, `Thus`,
+  or `Hence` is optional, case-insensitive, and accepts an optional comma.
+  A marker without terminal citations is a syntax error. Inline references
+  (`If [1,2], then P.` or `P if [1].`) remain premises. Re-rendered steps use
+  canonical `Therefore,`.
 - **Structure:** Steps are numbered sequentially from `1` with no blank lines,
   leading/trailing spaces, code fences, or commentary. The final step must be a
   conclusion. Every premise and every scoped step must support a later step (no
@@ -158,7 +162,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
     "passed": true,
     "message": "output passes entailment_gate",
     "details": {
-      "catalog": "v31.2",
+      "catalog": "v31.3",
       "expansions": [],
       "gated_steps": 1,
       "passed_steps": 1,
@@ -167,13 +171,13 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
       ]
     }
   },
-  "entailment_catalog": "v31.2",
+  "entailment_catalog": "v31.3",
   "backend": "local",
   "version": "argcheck@ef44658"
 }
 ```
 
-`--forms` prints the catalog header (`entailment gate catalog v31.2 (...)`)
+`--forms` prints the catalog header (`entailment gate catalog v31.3 (...)`)
 followed by all 121 accepted form names, covering propositional schemas,
 syllogisms, schematic rules (`U`, `V`, `W`, `X`, `Y`, `Z` up to 10 conjuncts),
 identity, system-T modals, counterfactuals, properties, n-place relations,

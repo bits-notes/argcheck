@@ -69,6 +69,8 @@ func ExpandNumberedArgumentBridges(arg NumberedArgument) (NumberedArgument, []Br
 	return expanded, expansions, nil
 }
 
+// numberedArgumentStepLine renders every derived step with canonical Therefore,
+// regardless of the optional marker used in the input.
 func numberedArgumentStepLine(step NumberedArgumentStep) string {
 	prefix := strings.Repeat("| ", step.Depth)
 	if step.Kind == numberedArgumentStepConclusion {

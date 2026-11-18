@@ -6,7 +6,7 @@ description: Check a numbered argument for syntactically transparent validity wi
 # argcheck — deterministic validity check for numbered arguments
 
 `argcheck` runs two deterministic checks in Go (`numbered_argument_syntax`, then
-the catalog `v31.2` entailment gate) with no LLM and no network access.
+the catalog `v31.3` entailment gate) with no LLM and no network access.
 
 **Validity is syntactic: the gate is the standard. Never overrule a gate failure
 with your own judgment that a step "obviously follows."** If you think a step is
@@ -31,8 +31,8 @@ EOF
 - `argcheck file.txt` or stdin (`argcheck < file.txt`, `cat file.txt | argcheck -`).
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `INVALID`.
-- `--forms` lists all 121 accepted inference forms in catalog `v31.2`.
-- `--version` prints the catalog version and build stamp (`gate catalog v31.2; local argcheck@<commit>`).
+- `--forms` lists all 121 accepted inference forms in catalog `v31.3`.
+- `--version` prints the catalog version and build stamp (`gate catalog v31.3; local argcheck@<commit>`).
 - Exit codes: `0` valid, `1` invalid, `2` input or operational error.
 - If `argcheck` is not installed yet, install with
   `go install github.com/bits-notes/argcheck/cmd/argcheck@latest` or run
@@ -46,9 +46,12 @@ that passes on the used subset and the inert citation(s) to remove.
 ## Format (strict)
 
 - **Premise:** `1. Statement.` — one line ending in a period, with no
-  `Therefore,` prefix and no trailing brackets.
-- **Conclusion:** `3. Therefore, statement. [1,2]` — requires both `Therefore,`
-  and trailing citations to earlier steps.
+  inference marker and no trailing citation brackets.
+- **Conclusion:** `3. Therefore, statement. [1,2]` — requires trailing citations to
+  earlier steps. The leading `Therefore`, `So`, `Thus`, or `Hence` is optional,
+  case-insensitive, and accepts an optional comma. A marker without terminal
+  citations is a syntax error. Inline references remain premises. Re-rendered
+  steps use canonical `Therefore,`.
 - **Numbering and layout:** Sequential from `1`, with no blank lines, no leading
   or trailing spaces, no code fences, and no inline commentary. The final step
   must be a conclusion.

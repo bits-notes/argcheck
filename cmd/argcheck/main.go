@@ -72,6 +72,9 @@ Reads a numbered argument (file, or stdin) in the gate's format:
   2. Another premise.
   3. Therefore, conclusion. [1,2]
 
+Derived steps require terminal citations. Therefore, So, Thus, and Hence are
+optional leading markers (case-insensitive, with an optional comma).
+
 Clauses must match word for word (after case and whitespace normalization).
 This is deliberate and will not change: if two wordings mean the same thing,
 state that as a premise.
