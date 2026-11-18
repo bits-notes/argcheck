@@ -127,7 +127,7 @@ visible identity or conditional premise.
 - **Universals and syllogisms:** `Every man is mortal.` + `Socrates is a man.`
   passes; `All men are mortal.` fails against singular `a man`. For class
   syllogisms, `Every A is a B.` / `All A are B.` and `No B is C.` work.
-- **Connectives:** disjunction is `Either X or Y.`; conjunction is `X and Y.`;
+- **Connectives:** disjunction is `Either X or Y.`; conjunction is `X and Y.` (or `Both X and Y.` when X ends in a verb phrase);
   biconditional is `X if and only if Y.` or parenthesized `(X) if and only if (Y)`
   (optionally prefixed by `It is the case that`) when either side contains
   another connective. `It holds that` is ordinary text.
@@ -137,6 +137,38 @@ visible identity or conditional premise.
 - **"X rather than Y" conclusions:** state the dichotomy premise explicitly
   (`Either we should use X or we should use Y.`), refute one side, and apply
   disjunctive syllogism.
+
+### Strict conventions (catalog v35 and later)
+
+The gate refuses phrasings that are ambiguous in English, even when the
+inference is fine. Each refusal names its fix; apply exactly that fix.
+
+- **Subject first.** No fronted adverb, `-ly` word or prepositional frame
+  before the subject (`Clearly, ...`, `Of course ...`, `In theory ...`,
+  `Under the treaty, ...`, `According to the report, ...`), with or without a
+  comma. Move timing and place after the verb (`The firm cut prices in 2019.`).
+  Keep an attribution as the subject: `The report says that the pump failed.`,
+  plus `If the report says that the pump failed, then the pump failed.` when
+  the bare claim is needed.
+- **Clause coordination.** Join whole clauses with `Both A and B`,
+  `Either A or B`, or parentheses `(A) and (B)`. A bare `A and B` after a verb
+  phrase may be read as one coordinated object and is refused. Commas count:
+  `A, and B` and `A and B` are different clauses, so repeat one form exactly.
+- **Identity.** `Superman is identical to Clark.` substitutes only where the
+  name is the subject of a clause. State any other substituted sentence as its
+  own premise.
+- **Schematic slots and instances.** Fill `X` (or name the instance of
+  `Every S is P`) with a name or a definite description. Not a quantity or
+  hedged phrase (`more than two robots`, `a minority of voters`,
+  `nearly all firms`, `zero cases`), and not a phrase containing a clause
+  (`the observer who reckons Alpha is red`). An indefinite (`a hero`,
+  `some firm`) binds `X` only as a clause subject or after `is`
+  (`Bruce is a hero`), never as an object.
+- **Objects of verbs.** `Lois admires every hero.` does not give
+  `Lois admires Bruce.` for most verbs, since the object of `admires`, `seeks`,
+  `wants` may not pick anything out. State the instance as a premise.
+- **When the message says "state ... as a premise",** add that line as a
+  premise and keep the rest of the argument unchanged.
 
 ### Schematic rules and definitions
 
