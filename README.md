@@ -3,7 +3,7 @@
 `english-arg-validator` (formerly `argcheck`) is a deterministic checker in Go for transparently valid numbered
 arguments. It runs offline with no LLM and no network access by default: every
 conclusion step must instantiate a named inference form from the catalog
-(currently **v41.0**, 121 forms) using only its cited earlier steps, with clauses
+(currently **v42.0**, 121 forms) using only its cited earlier steps, with clauses
 matched word for word after light surface normalization.
 
 Coverage: complete for propositional logic and for function-free first-order
@@ -37,7 +37,7 @@ An eleven-step argument about an outage. Each "Therefore" line cites the earlier
 `english-arg-validator incident.txt` certifies every derived step and names the rule it matched:
 
 ```text
-VALID  (gate catalog v41.0; local english-arg-validator@f28a796)
+VALID  (gate catalog v42.0; local english-arg-validator@853afe2)
 syntax: ok
 step 4 [2,3]: ok: modus tollens
 step 5 [1,4]: ok: disjunctive syllogism
@@ -49,7 +49,7 @@ step 11 [5,9,10]: ok: conjunctive modus ponens
 One natural slip: write premise 3 as "The checkout request did not time out." English readers see the same claim, but the checker matches clauses word for word, so step 4 is no longer certified:
 
 ```text
-NOT CERTIFIED  (gate catalog v41.0; local english-arg-validator@f28a796)
+NOT CERTIFIED  (gate catalog v42.0; local english-arg-validator@853afe2)
 syntax: ok
 step 4 [2,3]: FAIL: nearest form modus ponens: premise 2 antecedent "the network failed" does not match premise 3 "the checkout request did not time out" verbatim
 step 5 [1,4]: ok: disjunctive syllogism
@@ -85,7 +85,7 @@ english-arg-validator < argument.txt      # read from stdin
 cat argument.txt | english-arg-validator -
 english-arg-validator --quiet argument.txt
 english-arg-validator --json argument.txt
-english-arg-validator --forms             # list all 121 inference forms in catalog v41.0
+english-arg-validator --forms             # list all 121 inference forms in catalog v42.0
 english-arg-validator --version           # print catalog version and build stamp
 ```
 
@@ -115,7 +115,7 @@ Input (`valid.txt`):
 Output (`english-arg-validator valid.txt`, exit `0`):
 
 ```text
-VALID  (gate catalog v41.0; local english-arg-validator@f28a796)
+VALID  (gate catalog v42.0; local english-arg-validator@853afe2)
 syntax: ok
 step 3 [1,2]: ok: modus ponens
 ```
@@ -136,7 +136,7 @@ not certified (`uncertified.txt`):
 Output (`english-arg-validator uncertified.txt`, exit `1`):
 
 ```text
-NOT CERTIFIED  (gate catalog v41.0; local english-arg-validator@f28a796)
+NOT CERTIFIED  (gate catalog v42.0; local english-arg-validator@853afe2)
 syntax: ok
 step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
 ```
@@ -208,7 +208,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
     "passed": true,
     "message": "output passes entailment_gate",
     "details": {
-      "catalog": "v41.0",
+      "catalog": "v42.0",
       "expansions": [],
       "gated_steps": 1,
       "passed_steps": 1,
@@ -217,7 +217,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
       ]
     }
   },
-  "entailment_catalog": "v41.0",
+  "entailment_catalog": "v42.0",
   "backend": "local",
   "version": "english-arg-validator@ef44658"
 }
@@ -227,7 +227,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
 existing clients. A failing check means english-arg-validator found no accepted rule for some
 step, not that the argument is invalid.
 
-`--forms` prints the catalog header (`entailment gate catalog v41.0 (...)`)
+`--forms` prints the catalog header (`entailment gate catalog v42.0 (...)`)
 followed by all 121 accepted form names, covering propositional schemas,
 syllogisms, schematic rules (`U`, `V`, `W`, `X`, `Y`, `Z` up to 10 conjuncts),
 identity, system-T modals, counterfactuals, properties, n-place relations,

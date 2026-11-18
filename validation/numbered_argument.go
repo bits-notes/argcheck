@@ -46,6 +46,9 @@ type NumberedArgumentStep struct {
 	// relaxIndefinite is set only on copies used to diagnose a refusal: it
 	// lets schematic unification bind an indefinite in an object slot.
 	relaxIndefinite bool
+	// relaxClauseTerm likewise lets a term that reads as containing a clause
+	// bind a variable, only to name it in the refusal message.
+	relaxClauseTerm bool
 }
 
 type numberedArgumentOptions struct {

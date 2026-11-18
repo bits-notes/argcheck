@@ -765,7 +765,7 @@ func unifySchematicRunes(
 		if containsSchematicMarker(segment) {
 			continue
 		}
-		if !schematicBindingAllowed(string(segment)) {
+		if !schematicBindingAllowedAs(string(segment), substitution[clauseTermOverride] != "" || clauseSlotBefore(concrete, concreteIndex)) {
 			continue
 		}
 		if substitution[indefiniteSlotOverride] == "" && !indefiniteBindingPositionSafe(concrete, concreteIndex, string(segment)) {
@@ -2115,11 +2115,40 @@ func onlyGerund(lower string) bool {
 }
 
 func schematicBindingAllowed(binding string) bool {
+	return schematicBindingAllowedAs(binding, false)
+}
+
+// schematicBindingAllowedInSlot is schematicBindingAllowed for a binding that
+// starts at concrete[start]: in a clause slot (right after an unambiguous
+// clause subordinator such as "when" or "because") the value may be a whole
+// clause. "that", "since", "after", "before" are not clause-only, so they
+// keep the term check.
+func schematicBindingAllowedInSlot(concrete []rune, start int, binding string) bool {
+	return schematicBindingAllowedAs(binding, clauseSlotBefore(concrete, start))
+}
+
+var clauseSlotSubordinators = []string{"when", "whenever", "if", "because", "although", "though", "unless", "whether", "while"}
+
+func clauseSlotBefore(concrete []rune, start int) bool {
+	prefix := strings.TrimSpace(strings.ToLower(string(concrete[:start])))
+	for _, word := range clauseSlotSubordinators {
+		if prefix == word || strings.HasSuffix(prefix, " "+word) || strings.HasSuffix(prefix, ","+word) {
+			return true
+		}
+	}
+	return false
+}
+
+func schematicBindingAllowedAs(binding string, clauseSlot bool) bool {
 	lower := strings.ToLower(strings.TrimSpace(binding))
 	if modifiedQuantifierPhrase(lower) || (quantityPhrase(lower) && !upwardQuantity(lower)) {
 		return false
 	}
-	if embeddedBinding(lower) {
+	if clauseSlot {
+		if embeddedClauseValue(lower) {
+			return false
+		}
+	} else if embeddedBinding(lower) {
 		return false
 	}
 	for _, prefix := range schematicBindingLeadingOperators {

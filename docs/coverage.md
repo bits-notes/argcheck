@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v41.0)
+# Entailment Gate — Coverage and Known Limits (catalog v42.0)
 
 **Type:** reference
-**Status:** current as of catalog v41.0
+**Status:** current as of catalog v42.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v41.0**). Tests cover capture,
+form; the current catalog is **v42.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -1261,3 +1261,32 @@ intensional verb 2, embedded subject after an adjunct 1 (counted as
 non-initial by this surface rule). In the measured run, 56 of the 57 passed
 again after a supplied-step rewrite; the other then hit the separate
 nested-quantifier limit of the relational grammar.
+
+## v42.0: four false positives from the AI-safety map inventory
+
+Each relaxation applies only where no reading is ambiguous; ambiguous cases
+stay refused.
+
+- **-ly nouns and adjectives.** Words ending in -ly that are nouns
+  (`assembly`, `subassembly`, `monopoly`, `anomaly`, ...) or adjectives that
+  only open a noun-phrase subject (`friendly`, `ugly`, `lovely`, `costly`, ...;
+  closed lists in `sentence_frames.go`) no longer count as sentence adverbs at
+  the start of a step: `Subassembly organization is natural ...`, `Friendly
+  action depends on ...`. Adverb-capable words (`likely`, `only`, `early`,
+  `daily`) and any -ly word followed by a comma stay refused.
+- **Clause values in clause slots.** A schematic variable right after
+  `when`, `whenever`, `if`, `because`, `although`, `though`, `unless`,
+  `whether` or `while` stands for a clause, so its value may be a whole clause
+  with a verb and complement (`... even when U` with U = `machines are noisy`).
+  The term-only check (`clauseInsideTerm`) is skipped there; every other
+  binding check still applies. `that`, `since`, `after` and `before` can open a
+  term, so they keep the term check.
+- **Gerund subjects.** An -ing preposition (`considering`, `regarding`,
+  `concerning`, `including`, ...) opening a step is a gerund subject when no
+  comma follows before the main verb, no other subject intervenes, and a
+  singular finite verb follows within six words (`Considering brain emulation
+  invites caution`). With a comma or its own subject (`Considering the cost,
+  the team stops`; `Considering the cost we stop`) it stays a refused frame.
+- **Noun/verb homonyms in terms** (`physics exploits not known to humans`)
+  stay refused, since `exploits` can be read as the verb, but the message now
+  names the refused binding and suggests writing the phrase into the rule.

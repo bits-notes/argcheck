@@ -59,13 +59,13 @@ func sentenceFrameOpener(s string, steps map[int]NumberedArgumentStep) string {
 			return frameOpenerMessage(frameSpan(s))
 		}
 	}
-	if framePrepositions[first] {
+	if framePrepositions[first] && !frameGerundSubject(strings.Fields(s)) {
 		return frameOpenerMessage(frameSpan(s))
 	}
 	if frameSentenceAdverbs[first] {
 		return frameOpenerMessage(words[0])
 	}
-	if strings.HasSuffix(first, "ly") && !frameLyNouns[first] {
+	if strings.HasSuffix(first, "ly") && !frameLyNouns[first] && !frameLyAdjectiveSubject(strings.Fields(s)) {
 		return frameOpenerMessage(words[0])
 	}
 	// Bare-noun, gerund and adjective+noun subjects ("Beliefs ...", "Trying to
@@ -115,7 +115,26 @@ func frameOpenerMessage(opener string) string {
 // Non-ly sentence adverbs (closed class as far as English allows).
 // "almost"/"nearly" before every/all are quantifier openers handled above.
 var frameSentenceAdverbs = wordSet("perhaps maybe still even just only also too indeed surely certainly again already yet sometimes often once always never seldom soon now today tomorrow yesterday tonight however nevertheless nonetheless moreover furthermore meanwhile otherwise instead anyway anyhow regardless overall altogether hence thus therefore so then thereby accordingly consequently admittedly allegedly supposedly reportedly apparently evidently ostensibly arguably presumably possibly probably else almost nearly quite rather somewhat")
-var frameLyNouns = wordSet("family italy reply assembly supply ally rally bully belly jelly lily july only early daily holy")
+var frameLyNouns = wordSet("family italy reply assembly subassembly supply ally rally bully belly jelly lily july only early daily holy monopoly anomaly homily melancholy butterfly")
+
+// frameLyAdjectives are -ly adjectives that are not used as sentence
+// adverbs, so at the start of a step they open a noun-phrase subject
+// ("Friendly action depends on ..."). Adverb-capable -ly words ("likely",
+// "only", "early", "daily") are deliberately absent.
+var frameLyAdjectives = wordSet("friendly unfriendly ugly lovely lonely costly elderly orderly cowardly scholarly worldly motherly fatherly brotherly sisterly neighborly heavenly ghostly")
+
+// frameLyAdjectiveSubject reports an -ly adjective opening a noun-phrase
+// subject: the adjective is followed directly (no comma) by another word.
+func frameLyAdjectiveSubject(words []string) bool {
+	if len(words) < 2 {
+		return false
+	}
+	first := strings.ToLower(words[0])
+	if strings.ContainsAny(first, ",;:") || !frameLyAdjectives[first] {
+		return false
+	}
+	return true
+}
 
 const frameCoordinationMessage = "clause coordination after a verb is not certified; write 'Both ... and ...', use parentheses, or split into two premises."
 
@@ -396,4 +415,47 @@ func upwardQuantity(lower string) bool {
 		return true
 	}
 	return false
+}
+
+// frameIngPrepositions are -ing words that are both prepositions ("Considering
+// the cost, we stop") and gerunds ("Considering brain emulation invites
+// caution").
+var frameIngPrepositions = wordSet("considering regarding concerning following including excluding barring pending excepting")
+
+var frameGerundFiniteVerbs = wordSet("is was has does can will would should may might must remains seems requires invites")
+
+var frameGerundBlockers = wordSet("we they he she it i you one there this that these those")
+
+// frameGerundSubject reports an -ing preposition used as a gerund subject:
+// no comma before the main verb, no other subject in between, and a
+// singular finite verb within six words. Anything else stays an opener.
+func frameGerundSubject(words []string) bool {
+	if len(words) < 3 || strings.ContainsAny(words[0], ",;:") || !frameIngPrepositions[strings.ToLower(words[0])] {
+		return false
+	}
+	for index := 1; index < len(words) && index <= 6; index++ {
+		raw := words[index]
+		if strings.ContainsAny(words[index-1], ",;:") {
+			return false
+		}
+		word := strings.ToLower(strings.Trim(raw, ",;:."))
+		if frameGerundBlockers[word] {
+			return false
+		}
+		if index >= 2 && (frameGerundFiniteVerbs[word] || (strings.HasSuffix(word, "s") && !strings.HasSuffix(word, "ss") && frameGerundVerbLike(words, index))) {
+			return true
+		}
+	}
+	return false
+}
+
+// frameGerundVerbLike accepts an -s word as the finite verb only when the
+// word before it is not a determiner or preposition (so "the costs" stays a noun).
+func frameGerundVerbLike(words []string, index int) bool {
+	previous := strings.ToLower(strings.Trim(words[index-1], ",;:."))
+	switch previous {
+	case "the", "a", "an", "its", "their", "his", "her", "our", "my", "your", "of", "for", "to", "in", "on", "with", "by", "and", "or":
+		return false
+	}
+	return true
 }

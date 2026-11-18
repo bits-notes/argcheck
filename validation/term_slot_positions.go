@@ -207,14 +207,66 @@ func indefiniteRestatement(statement, phrase string) string {
 // relaxedInitial returns the initial substitution for a schematic match,
 // carrying indefiniteSlotOverride when any premise is a diagnostic copy.
 func relaxedInitial(initial schematicSubstitution, premises ...NumberedArgumentStep) schematicSubstitution {
+	var next schematicSubstitution
 	for _, premise := range premises {
-		if premise.relaxIndefinite {
-			next := cloneSchematicSubstitution(initial)
-			next[indefiniteSlotOverride] = "1"
-			return next
+		if premise.relaxIndefinite || premise.relaxClauseTerm {
+			if next == nil {
+				next = cloneSchematicSubstitution(initial)
+			}
+			if premise.relaxIndefinite {
+				next[indefiniteSlotOverride] = "1"
+			}
+			if premise.relaxClauseTerm {
+				next[clauseTermOverride] = "1"
+			}
 		}
 	}
-	return initial
+	if next == nil {
+		return initial
+	}
+	return next
+}
+
+// clauseTermOverride is a reserved substitution key: when set, a term that
+// reads as containing a clause may bind a variable. Diagnosis only.
+const clauseTermOverride rune = '\uFFFD'
+
+// clauseTermStepMessage names the binding refused because it reads as a term
+// containing a clause ("physics exploits not known to humans": "exploits" can
+// be a verb), for a step that passes only without that check.
+func clauseTermStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
+	for _, id := range c.Citations {
+		conditional, ok := steps[id]
+		if !ok {
+			continue
+		}
+		for _, pair := range conditionalCandidatesPreservingCase(conditional.Statement) {
+			for _, conjunct := range conjunctiveAntecedentCandidatesOrSelf(pair.left) {
+				template, variables := schematicTemplate(conjunct)
+				if len(variables) == 0 {
+					continue
+				}
+				for _, other := range c.Citations {
+					premise, ok := steps[other]
+					if !ok || other == id {
+						continue
+					}
+					relaxed := schematicSubstitution{clauseTermOverride: "1"}
+					for _, substitution := range unifySchematicTemplate(template, premise.Statement, relaxed) {
+						for variable, value := range substitution {
+							if variable == clauseTermOverride || variable == indefiniteSlotOverride {
+								continue
+							}
+							if clauseInsideTerm(value) {
+								return fmt.Sprintf("premise %d would bind a schematic variable to %q, which reads as containing a clause (a word in it can be a verb with its own complement), so it is not certified as a single term. Write the phrase into the rule instead of a variable, or reword the term (for example with a determiner or a relative clause) so that no word in it can be read as its verb", premise.Number, value)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return ""
 }
 
 // indefiniteSlotStepMessage names the refused binding for a step that passes

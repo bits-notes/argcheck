@@ -18,6 +18,14 @@ func embeddedBinding(s string) bool {
 	return embeddedTerm(s, false)
 }
 
+// embeddedClauseValue is embeddedBinding for a variable in a clause slot
+// ("... even when U"): the value is meant to be a whole clause, so the
+// term-only check that refuses a verb plus complement inside a term
+// (clauseInsideTerm) does not apply. Every other embedding check still does.
+func embeddedClauseValue(s string) bool {
+	return embeddedTermChecks(s, false, false)
+}
+
 // embeddedClauseHead is the stricter test used for coordination under a
 // leading operator: only an attitude verb with a that/whether/if complement
 // counts ("we should expect X to possess Y" is not an embedding).
@@ -26,7 +34,11 @@ func embeddedClauseHead(s string) bool {
 }
 
 func embeddedTerm(s string, needComplementizer bool) bool {
-	if !needComplementizer && clauseInsideTerm(s) {
+	return embeddedTermChecks(s, needComplementizer, true)
+}
+
+func embeddedTermChecks(s string, needComplementizer, termSlot bool) bool {
+	if termSlot && !needComplementizer && clauseInsideTerm(s) {
 		return true
 	}
 	s = strings.ToLower(strings.TrimSpace(s))

@@ -252,3 +252,56 @@ func TestBothConjunction(t *testing.T) {
 		}
 	}
 }
+
+// task_eb737ad9: four false positives found by the AI-safety map inventory.
+// Each relaxation is limited to readings that are not ambiguous.
+func TestInventoryFalsePositivesV42(t *testing.T) {
+	certified := []string{
+		// -ly nouns and -ly adjectives opening a noun-phrase subject.
+		"1. If X is natural for large networks, then X is common.\n2. Subassembly organization is natural for large networks.\n3. Therefore, subassembly organization is common. [1,2]",
+		"1. If X depends on factual tests, then X needs data.\n2. Friendly action depends on factual tests.\n3. Therefore, Friendly action needs data. [1,2]",
+		// A whole clause as the value of a clause-slot variable.
+		"1. Rex runs fast even when machines are noisy.\n2. If X runs fast even when U, then X wins even when U.\n3. Therefore, Rex wins even when machines are noisy. [1,2]",
+		"1. The plan fails because costs are high.\n2. If the plan fails because U, then U.\n3. Therefore, costs are high. [1,2]",
+		// A gerund subject: no comma, no other subject, a finite verb follows.
+		"1. If considering X invites caution, then X is risky.\n2. Considering brain emulation invites caution.\n3. Therefore, brain emulation is risky. [1,2]",
+	}
+	for _, text := range certified {
+		if _, result := CheckEntailmentGate(text); !result.Passed {
+			t.Fatalf("should be certified (%s):\n%s", result.Message, text)
+		}
+	}
+	refused := []string{
+		// Adverb-capable -ly words and comma-separated -ly words stay openers.
+		"1. If X arrives, then X wins.\n2. Likely the team arrives.\n3. Therefore, likely the team wins. [1,2]",
+		"1. If X is designed, then X is safe.\n2. Friendly, the robot is designed.\n3. Therefore, the robot is safe. [1,2]",
+		// A participial frame (comma, or its own subject) stays an opener.
+		"1. If considering X, the team stops, then X is risky.\n2. Considering the cost, the team stops.\n3. Therefore, the cost is risky. [1,2]",
+		"1. If considering X we stop, then X is risky.\n2. Considering the cost we stop.\n3. Therefore, the cost is risky. [1,2]",
+	}
+	for _, text := range refused {
+		if _, result := CheckEntailmentGate(text); result.Passed {
+			t.Fatalf("should stay refused:\n%s", text)
+		}
+	}
+	// A term that reads as containing a clause stays refused (a noun/verb
+	// homonym may be ambiguous), but the message names the binding.
+	homonym := "1. If X are available threat channels, then X are dangerous.\n2. Physics exploits not known to humans are available threat channels.\n3. Therefore, physics exploits not known to humans are dangerous. [1,2]"
+	report, result := CheckEntailmentGate(homonym)
+	if result.Passed {
+		t.Fatal("homonym term should stay refused")
+	}
+	message := ""
+	for _, step := range report.Steps {
+		if !step.Passed {
+			message = step.Mismatch
+		}
+	}
+	if !strings.Contains(message, `"physics exploits not known to humans"`) || !strings.Contains(message, "reads as containing a clause") {
+		t.Fatalf("message should name the refused term, got %q", message)
+	}
+	// A that-clause slot is not treated as clause-only (that can open a term).
+	if clauseSlotBefore([]rune("he believes that "), len([]rune("he believes that "))) {
+		t.Fatal("that is not a clause-only subordinator")
+	}
+}

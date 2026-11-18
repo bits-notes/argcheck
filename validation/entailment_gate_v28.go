@@ -256,6 +256,20 @@ func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentSt
 	if retry := gateConclusionStepStrict(c, relaxed); retry.Passed {
 		report.NearestForm = retry.Form
 		report.Mismatch = indefiniteSlotStepMessage(c, steps)
+		return report
+	}
+	// task_eb737ad9: a term refused because a word in it can be read as a verb
+	// stays refused, but the message names the binding.
+	clauseRelaxed := make(map[int]NumberedArgumentStep, len(steps))
+	for id, step := range steps {
+		step.relaxClauseTerm = true
+		clauseRelaxed[id] = step
+	}
+	if retry := gateConclusionStepStrict(c, clauseRelaxed); retry.Passed {
+		if message := clauseTermStepMessage(c, steps); message != "" {
+			report.NearestForm = retry.Form
+			report.Mismatch = message
+		}
 	}
 	return report
 }
