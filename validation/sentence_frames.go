@@ -334,3 +334,66 @@ func modifiedQuantifierPhrase(lower string) bool {
 	}
 	return modifiedQuantifierWords[strings.Trim(words[i], ",;:")]
 }
+
+var quantityNumerals = wordSet("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred thousand million billion dozen dozens hundreds thousands millions billions umpteen")
+var quantityNouns = wordSet("minority majority fraction proportion percentage share handful couple number lot lots loads tons plenty bunch group dozen score third quarter half tenth fifth sixth eighth part portion bulk rest remainder")
+
+// quantityPhrase reports a term that starts with a quantity expression: a
+// numeral or digit ("zero robots", "two robots"), or a quantity noun
+// ("a minority of robots", "half of the robots", "a handful of robots").
+// Such a phrase is not an individual. The numerals and quantity nouns are a
+// closed class.
+func quantityPhrase(lower string) bool {
+	words := strings.Fields(strings.ToLower(lower))
+	if len(words) == 0 {
+		return false
+	}
+	first := strings.Trim(words[0], ",;:")
+	if quantityNumerals[first] || (first != "" && first[0] >= '0' && first[0] <= '9') {
+		// A numeral counts things only before a plural noun ("zero robots",
+		// "two robots"); "zero probability" and "one mind" name a value or
+		// an individual.
+		if len(words) < 2 {
+			return false
+		}
+		next := strings.Trim(words[1], ",;:")
+		return strings.HasSuffix(next, "s") && !strings.HasSuffix(next, "ss")
+	}
+	if (first == "a" || first == "an" || first == "the") && len(words) > 2 {
+		head := strings.Trim(words[1], ",;:")
+		if strings.Trim(words[2], ",;:") != "of" || !quantityNouns[head] {
+			return false
+		}
+		// "the proportion of X", "the number of X" name a value; with "the",
+		// only the partitive heads quantify ("the majority of robots").
+		if first == "the" {
+			switch head {
+			case "majority", "minority", "bulk", "rest", "remainder", "half":
+				return true
+			}
+			return false
+		}
+		return true
+	}
+	return quantityNouns[first] && len(words) > 1 && strings.Trim(words[1], ",;:") == "of"
+}
+
+// upwardQuantity is the part of quantityPhrase that is safe in a schematic
+// slot ("a majority of robots are red" and "if X is red, X is warm" give "a
+// majority of robots are warm"). Numerals ("two" may mean exactly two), zero,
+// minorities, fractions and halves are not.
+func upwardQuantity(lower string) bool {
+	words := strings.Fields(strings.ToLower(lower))
+	if len(words) < 3 {
+		return false
+	}
+	i := 0
+	if words[0] == "a" || words[0] == "an" || words[0] == "the" {
+		i = 1
+	}
+	switch words[i] {
+	case "majority", "lot", "lots", "loads", "tons", "plenty", "bulk":
+		return true
+	}
+	return false
+}

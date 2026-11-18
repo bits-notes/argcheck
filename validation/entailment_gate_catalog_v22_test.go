@@ -77,7 +77,7 @@ func nplaceExercises() []nplaceExercise {
 		ts[slot] = "z"
 		ee := fmt.Sprintf("1. %s.\n| 2. Suppose z is a %s and %s.\n| 3. Therefore, z is a %s. [2]\n| 4. Therefore, %s. [2]\n| 5. Therefore, %s. [4,3]\n6. Therefore, %s. [1,2-5]", existential.text, classes[slot], render(ts), classes[slot], render(ts), existential.text, existential.text)
 		out = append(out, nplaceExercise{fmt.Sprintf("%d-place Fitch EE", arity), ee, []nOracleSurface{existential}, existential, true})
-		// v37.0: identity substitution is certified in clause subjects, so
+		// v38.0: identity substitution is certified in clause subjects, so
 		// the exercise renames the subject (slot 0), not an object.
 		renamed := append([]string{}, names...)
 		renamed[0] = "Cedar"
@@ -125,7 +125,7 @@ func nplaceExercises() []nplaceExercise {
 	return out
 }
 func TestCatalogV22(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v37.0" {
+	if EntailmentGateCatalogVersion != "v38.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range nplaceExercises() {

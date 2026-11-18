@@ -151,7 +151,7 @@ func TestCatalogV24RuleInventory(t *testing.T) {
 					ps = []*folFormula{a}
 					c = &folFormula{op: "equal", terms: []string{"alice", "alice"}}
 				case "identity-E":
-					// v37.0: substitution is certified in clause subjects, so
+					// v38.0: substitution is certified in clause subjects, so
 					// the generated instance replaces a subject.
 					// Fresh names keep every replaced occurrence a subject.
 					ps = []*folFormula{&folFormula{op: "equal", terms: []string{"casey", "dana"}}, fol("and", a, foAtom("is/red", "casey"))}
@@ -287,7 +287,7 @@ func TestCatalogV24ScopeAndIdentityGuards(t *testing.T) {
 	// Selective replacement, with the same name used twice in the atom.
 	ps := []*folFormula{{op: "equal", terms: []string{"alice", "blair"}}, v24Q("every", "$x", &folFormula{op: "atom", symbol: "sends/to", terms: []string{"$x", "alice", "alice"}})}
 	c := v24Q("every", "$y", &folFormula{op: "atom", symbol: "sends/to", terms: []string{"$y", "blair", "alice"}})
-	// v37.0: the replaced name is an object, which the safe-position rule
+	// v38.0: the replaced name is an object, which the safe-position rule
 	// refuses; the formula is still valid, so no countermodel exists.
 	if _, r := CheckEntailmentGate(v24Flat(ps, c)); r.Passed {
 		t.Fatal("object-position identity substitution certified")

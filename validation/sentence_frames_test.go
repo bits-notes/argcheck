@@ -174,3 +174,42 @@ func TestStructuralTermRules(t *testing.T) {
 		}
 	}
 }
+
+// v38.0: the remaining blocklist-audit rows are closed classes or structural
+// rules. Each refused case was VALID on v37.0.
+func TestAuditPart2Rules(t *testing.T) {
+	refused := map[string]string{
+		"hesitant if":        "1. Bob is hesitant if Alpha is red.\n2. Alpha is red.\n3. Therefore, Bob is hesitant. [1,2]\n",
+		"minority schematic": "1. If X is red, then X is warm.\n2. A minority of robots is red.\n3. Therefore, A minority of robots is warm. [1,2]\n",
+		"minority UI":        "1. Every red thing is warm.\n2. A minority of robots is a red thing.\n3. Therefore, A minority of robots is warm. [1,2]\n",
+		"zero schematic":     "1. If X is red, then X is warm.\n2. Zero robots is red.\n3. Therefore, Zero robots is warm. [1,2]\n",
+		"unless one":         "1. A battery powers the alarm unless one is dead.\n2. Therefore, if it is not the case that one is dead, then a battery powers the alarm. [1]\n",
+		"unless this":        "1. The alarm sounds unless this is dead.\n2. Therefore, if it is not the case that this is dead, then the alarm sounds. [1]\n",
+		"object UI awaits":   "1. Lois awaits every guest.\n2. Bruce is a guest.\n3. Therefore, Lois awaits Bruce. [1,2]\n",
+		"object UI craves":   "1. Lois craves every pastry.\n2. Bruce is a pastry.\n3. Therefore, Lois craves Bruce. [1,2]\n",
+		"object EG seeks":    "1. Lois seeks Bruce.\n2. Bruce is a unicorn.\n3. Therefore, Lois seeks some unicorn. [1,2]\n",
+		"cf strengthening":   "1. If Bob had struck the match, then it would have lit.\n2. Therefore, if Bob had struck the match and the match had been wet, then it would have lit. [1]\n",
+		"cf contraposition":  "1. If Bob had been rich, then Bob would have been happy.\n2. Therefore, if Bob had not been happy, then Bob would not have been rich. [1]\n",
+		"cf chaining":        "1. If Bob had been rich, then Bob would have bought a boat.\n2. If Bob had bought a boat, then Bob would have drowned.\n3. Therefore, if Bob had been rich, then Bob would have drowned. [1,2]\n",
+		"outer necessarily":  "1. Necessarily the server crashed and the network failed.\n2. Therefore, the network failed. [1]\n",
+		"outer possibly":     "1. Possibly the server crashed and the network failed.\n2. Therefore, the network failed. [1]\n",
+		"grouping in belief": "1. Ann believes that Bob dances or Cal reads and Dan sleeps.\n2. Therefore, Dan sleeps. [1]\n",
+	}
+	for name, text := range refused {
+		if report, _ := CheckEntailmentGate(text); report.Passed {
+			t.Errorf("%s: want NOT CERTIFIED", name)
+		}
+	}
+	valid := map[string]string{
+		"majority schematic": "1. If X is red, then X is warm.\n2. A majority of robots is red.\n3. Therefore, a majority of robots is warm. [1,2]\n",
+		"value term":         "1. If X is a small number, then X is finite.\n2. Zero probability is a small number.\n3. Therefore, Zero probability is finite. [1,2]\n",
+		"the proportion":     "1. If X is a prior, then X is subjective.\n2. The proportion of true hypotheses is a prior.\n3. Therefore, The proportion of true hypotheses is subjective. [1,2]\n",
+		"unless plain":       "1. The alarm sounds unless the battery is dead.\n2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]\n",
+		"subject UI":         "1. Every courier sends Parcel to Bob.\n2. Alice is a courier.\n3. Therefore, Alice sends Parcel to Bob. [1,2]\n",
+	}
+	for name, text := range valid {
+		if report, _ := CheckEntailmentGate(text); !report.Passed {
+			t.Errorf("%s: want VALID: %+v", name, report.Steps)
+		}
+	}
+}

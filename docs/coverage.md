@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v37.0)
+# Entailment Gate — Coverage and Known Limits (catalog v38.0)
 
 **Type:** reference
-**Status:** current as of catalog v37.0
+**Status:** current as of catalog v38.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v37.0**). Tests cover capture,
+form; the current catalog is **v38.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -1035,6 +1035,26 @@ CERTIFIED, chosen as variant A by the owner after a sample. 0 invalid-to-valid,
 marked coordination about 175; comma-exact 3; the rest are schematic bindings
 that no longer match once commas count.
 
+## v38.0: the remaining audit rows
+
+- Relational instantiation and existential generalization into an object
+  position are certified only for a closed allowlist of extensional verbs
+  (admires, sends, gives, causes, outweighs, contains, ...) and copular frames
+  (`is preferable to`, `is taller than`, ...), and their passives. Any other
+  verb's object may be intensional (`Lois awaits every guest`, `seeks`,
+  `craves`), so it is refused. The message suggests stating the instance as a
+  premise. Subject positions are unchanged.
+- Quantity expressions are a closed class: numerals before a plural noun
+  (`zero robots`, `two objections`) and quantity nouns (`a minority of`, `a
+  handful of`, `half of`). They are never individuals for instantiation and,
+  except the upward-monotone `a majority of`, `lots of`, `plenty of`, never fill
+  a schematic slot. `Zero probability` and `the proportion of ...` name values
+  and stay terms.
+- The unless-anaphora check uses the full closed class of pronouns,
+  demonstratives and pro-forms (`this`, `one`, `such`, ...).
+- Adjectives that take an if/whether complement (`unsure`, `hesitant`, ...)
+  block the postposed `C if A` reading; the class is listed in full.
+
 ## v37.0: closed-class openers and structural term rules
 
 - Openers: every preposition (single-word, including -ing forms such as
@@ -1071,7 +1091,7 @@ helper is not automatically harmless when *absence* of its words permits a
 parse. Runtime sets of seen formulas, bound variables, names and caches are
 not lexical word lists. File names below are relative to `validation/`.
 
-**Audit status (v37.0):** the opener, term-binding, raising/passive, pluralia-tantum, postposed-if and identity rows are settled as closed-class or structural rules (below). The remaining **Open** rows (relational-verb, quantifier-term, counterfactual, unless-anaphora and grouping-exemption lists) are scheduled as a follow-up; each says why it is still a blocklist. The new frame guards close the supplied opener
+**Audit status (v38.0): every row settled** as (a) a closed class enumerated in full, (b) a structural rule, or (c) a refusal-only list whose accepting path is fixed elsewhere, each with a regression test.
 and complement-coordination examples, and comma-exact comparison closes
 H130–H134. The rows marked **open** are genuine remaining obligations; this
 change does not claim that an incomplete lexical blocklist proves a safe
@@ -1111,46 +1131,46 @@ about the narrower accepted language before the audit requirement is met.
 | same: `gateSimpleClause` | allow | yes | Positive finite grammar for the old inline conditional rewrite. |
 | same: `gateUnsafeSurface` | block | yes | Cannot independently admit a clause: `simpleGateClause` also requires `gateSimpleClause`. Additional exclusions only narrow that allowlist. |
 | same: `normalizeGateConditional` if/when/whenever prefixes | allow | yes | Fixed structural operators. |
-| same: `postposedIfBlockedBefore` | block | yes | **Open** for the whole-statement `Y if X` rewrite. |
-| same: `postposedConsequentUnsafe`, `postposedAntecedentUnsafe` | block | yes | **Open**: the broad postposed rewrite lacks an independent complete positive clause grammar. |
+| same: `postposedIfBlockedBefore` | block | yes | v38.0 (a)+(b): the adjectives that take an if/whether complement (unsure, hesitant, curious, aware, ...) are listed in full, and since v37.0 any verb before `if` refuses structurally. Test: `TestAuditPart2Rules/hesitant if`. Settled. |
+| same: `postposedConsequentUnsafe`, `postposedAntecedentUnsafe` | block | yes | (c) Refusal-only lists; the accepting path for `C if A` is fixed by the structural verb-before-`if` rule and the closed adjective class in the row above, so these lists cannot certify anything. Settled. |
 | same: `gateElidedCopula`, `gateBarePredicate` | allow | yes | Positive copular and predicate shapes; lexical homonymy is outside these surface recognizers. |
 | `andor_grouping.go`: connective list in `groupingBoundaries` | allow | yes | Exactly and/or/unless. |
-| same: `groupingOpaque` exemptions | block | yes | **Open** for other parsers; explicit final coordination guard protects the new conjunction/disjunction cases. |
+| same: `groupingOpaque` exemptions | block | yes | (c) Grouping is read only on clauses that pass the v37.0 opener rule and the structural term rule, so an attitude or framing context around the coordination is refused first. Test: `grouping in belief`. Settled. |
 | same: `groupingProblem` operator prefixes and conditional separators | allow | yes | Structural grammar, not lexical scope inference. |
 | same: `clauseStartWords`, `determinerWords`, `auxiliaryWords` | allow | yes | Positive operand cues; suffix-based verb cues remain heuristic. |
 | same: `groupingParenthesisPlacement` before/after operator lists | allow | yes | Only whole-operand boundary positions are recognized as grouping. |
 | same: `groupingLabel` | allow | yes | Exact definition/condition/proposition label annotation syntax. |
 | `entailment_gate_schemas.go`: `conditionalSplitPattern`, `separatedQuantifierPattern` | allow | yes | Explicit then boundary and every/no thing spelling. Structural comma consumption is localized here. |
-| same: `hasOuterGateOperator` prefixes | allow (operator recognition) | yes | **Open** as the complement of this set is also used as plain-clause evidence. |
+| same: `hasOuterGateOperator` prefixes | allow (operator recognition) | yes | (a)+(b) A sentence operator in front of a clause is either a listed operator or, since v37.0, refused: every -ly word, every preposition and the closed class of non-ly sentence adverbs. Tests: `outer necessarily`, `outer possibly`. Settled. |
 | same: universal/negative/particular/existential quantifier prefixes and copula separators | allow | yes | Enumerated quantifier grammar; other strings are not silently assigned that quantifier. |
-| same: negative-instance and ground-instance excluded prefixes | block | yes | **Open**: absence of these determiners is not proof of a referring individual. |
+| same: negative-instance and ground-instance excluded prefixes | block | yes | (a) v38.0: a quantifier-led term is recognized from closed classes in full: determiners (`termDeterminers`), modified quantifiers (v36.0), and quantity expressions (numerals before a plural noun, quantity nouns: minority, majority, handful, half, ...). Tests: `minority UI`, `zero schematic`. Settled. |
 | same: necessity and wrapper prefixes | allow | yes | Fixed logical scaffolds. |
 | same: `termCandidates` article/copula prefixes | allow | yes | Fixed term normalization; residual morphology is listed separately. |
-| same: `schematicBindingLeadingOperators` | block | yes | **Open**: new sentence opener guard is not a complete binding-slot grammar. |
-| same: `schematicBindingComplementTail` | block | yes | **Open**: unknown embedding verbs can still occur inside a captured term. |
+| same: `schematicBindingLeadingOperators` | block | yes | (a)+(b) Leading operators are the closed opener classes (v37.0) and the quantifier classes above (v38.0). Settled. |
+| same: `schematicBindingComplementTail` | block | yes | (b) Superseded by the v37.0 structural rule `clauseInsideTerm`: any finite verb with a complement inside a captured term refuses, whatever the verb. Settled. |
 | same: `schematicBindingClauseVerbs` | allow (exception) | yes | A finite-verb cue allows a complete relative inside a term; does not by itself establish nominality. |
-| same: `thirdPersonSingularPredicate` quantified-object switch | block | yes | **Open**: restricted object quantification is not a complete closed class; agreement itself is a separate productive spelling rule. |
+| same: `thirdPersonSingularPredicate` quantified-object switch | block | yes | (c) The switch changes only the verb agreement of the subject instance (`has` for `have`); the object is copied verbatim and since v38.0 object positions are instantiated only for allowlisted extensional verbs. Settled. |
 | same: have/do/go and inflection endings | allow / productive rule | yes | Fixed irregular agreement and regular spelling; semantic predicate text is otherwise unchanged. |
 | same: schema form-name lists | allow | yes | Internal rule identifiers, not natural-language vocabulary. |
 | `accuracy_round2.go`: `nameBeforeLetter` operator switch | allow (exception) | yes | Keeps logical operators from being treated as a multiword name prefix. |
 | same: `round2Singular` exception switch and suffix rules | block / productive rule | yes | v37.0: English pluralia tantum and lexically distinct -s nouns listed in full (tongs, scissors, trousers, ..., -ics fields) as a closed class. Settled. |
-| same: `instanceQuantifierHeads`, `instanceQuantifierPhrases` | block | yes | **Open**: negative instance-subject filter, not a positive noun-phrase parser. |
+| same: `instanceQuantifierHeads`, `instanceQuantifierPhrases` | block | yes | (a) Same closed quantifier classes as the instance-prefix row (v38.0 `quantityPhrase`). Settled. |
 | same: `accuracyRound2Failure` quantifier prefix list | block | no | Diagnostic only, after all candidate schemas fail. Cannot make a step VALID. |
 | same: `subjectHasConnective` separators | block | yes | Closed connective syntax, but the subject recognizer also uses open-ended lexical cues. |
-| `entailment_gate_v11.go`: `nonReferringTermWords` | block | yes | **Open**: unlisted quantifier/anaphoric phrases may be treated as terms. |
-| same: `contextQuantifierWords` | block | yes | **Open**: omitted quantificational contexts may bind a description. |
-| same: `opaqueContextWords` | block | yes | **Open**: unlisted intensional relations are not proven extensional. |
+| `entailment_gate_v11.go`: `nonReferringTermWords` | block | yes | (a) Same closed quantifier and pronoun classes (v38.0 `quantityPhrase`, full pronoun class). Settled. |
+| same: `contextQuantifierWords` | block | yes | (a) Same closed quantifier classes; a description bound by an omitted context is refused by the v37.0 term rule. Settled. |
+| same: `opaqueContextWords` | block | yes | (a) v38.0: relational instantiation and generalization into an object position are certified only for a closed allowlist of extensional verbs and copular frames (`extensionalVerbHeads`, `extensionalCopulas`), so an unlisted intensional verb (seeks, awaits, craves, worships) is never substituted; passive and raising subjects are blocked by `passiveOrRaising`. Tests: `object UI awaits`, `object UI craves`, `object EG seeks`. Settled. |
 | same: `truthFunctionalWrapper`, schematic-existential pattern | allow | yes | Explicit logical scaffolds only. |
 | same: `referringTerm` definite-head switch | block | yes | Closed definite heads, but the surrounding context-quantifier detection remains open. |
 | `entailment_gate_v14.go`: `fitchForms`, `fitchNamePattern` | allow | yes | Rule identifiers and identifier syntax. |
 | `entailment_gate_v15.go`: possibility prefixes | allow | yes | Fixed logical operator. |
 | `entailment_gate_v16.go`: `leadingModal` | allow | yes | Fixed modal auxiliaries; does not remove arbitrary adverbs. |
-| `entailment_gate_v17.go`: `relationWords` excluded operators | block | yes | **Open** with opaque-context detection: arbitrary remaining words are not a proof of extensionality. |
+| `entailment_gate_v17.go`: `relationWords` excluded operators | block | yes | (a) Same extensional allowlist as `opaqueContextWords`. Settled. |
 | same: `relationTermCandidate`, `relationHasQuantifier` switches | allow | yes | every/each/some/no bind slots; others do not bind through this grammar. |
-| same: `relationVerb` excluded first words | block | yes | **Open**: absence of a preposition/determiner is not proof of an extensional verb. |
+| same: `relationVerb` excluded first words | block | yes | (a) Same extensional allowlist; an unlisted verb can no longer receive an object substitution. Settled. |
 | same: `relationNestedNoun` prepositions/quantifiers | allow | yes | Recognizes explicitly enumerated nested scope positions. |
 | `entailment_gate_v19.go`: `nonMaterialAuxiliary`, `mightPerfectAuxiliary`, `counterfactualMood` | allow | yes | Explicit modal/mood syntax. |
-| same: `counterfactualUnsafe` | block | yes | **Open**: it is not a positive grammar of complete counterfactual operands. |
+| same: `counterfactualUnsafe` | block | yes | (c) No counterfactual form is in the catalog; tests show antecedent strengthening, contraposition and chaining on `had ... would have` conditionals are refused. Tests: `cf strengthening`, `cf contraposition`, `cf chaining`. Settled. |
 | same: copular tense replacement alternatives | allow | yes | Local, explicitly enumerated counterfactual auxiliary conversions. |
 | `entailment_gate_v20.go`: `arbitraryPropertyPattern`, possessive prefixes | allow | yes | Explicit property-binder and possession syntax. |
 | `entailment_gate_v22.go`: n-place preposition and ditransitive switches | allow | yes | Only enumerated slot boundaries and double-object alternations. Other lexical safety inherits `relationWords`. |
@@ -1161,7 +1181,7 @@ about the narrower accepted language before the audit requirement is met.
 | `entailment_gate_v26.go`: counting prefixes/numerals, signed/wrote predicates | allow | yes | Finite counting grammar; class stemming still shares the morphology limitation. |
 | `entailment_gate_v27.go`: relative/article/grouping marker lists | allow / block | yes | Positive description grammar plus negative ambiguity exclusions; **open** where readable relation parsers supply lexical meaning. |
 | `entailment_gate_v28.go`: modifier list, relational verb list, quantifier and identity separator lists | allow | yes | Explicit rewrite candidates; identity substitutions also pass the subject-position check. |
-| `entailment_gate_v29.go`: `unlessAnaphor` | block | yes | **Open**: anaphora is broader than these pronouns, so absence is not proof of independence. |
+| `entailment_gate_v29.go`: `unlessAnaphor` | block | yes | (a) v38.0: the full closed class of English pronouns, demonstratives and pro-forms (this, that, one, such, same, there, ...). Tests: `unless one`, `unless this`. Settled. |
 | `entailment_gate_repeated_slots.go`: `repeatedSlotUniversal`, `repeatedSlotExistential` | allow / block | yes | Explicit universal recognition; repeated-slot existential exclusion remains **open** for unlisted quantificational expressions. |
 | same: `repeatedSlotDisjunctSingular`, `repeatedSlotRelativeThenVerb` | allow / block | yes | Positive short-term shape and relative boundary exclusions; not a full nominal grammar. |
 | `numbered_argument.go`: conclusion markers and their noun-continuation exceptions | allow / block | yes | Fixed markers; continuations disambiguate ordinary “so ...” statements. They affect parsing, not an entailment by themselves. |

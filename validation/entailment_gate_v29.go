@@ -28,7 +28,9 @@ func init() {
 // unlessAnaphor marks an unless-clause whose pronoun may point back into a
 // quantified main clause ("Every student passes unless he fails"); the
 // propositional reading would then prove more than the sentence says.
-var unlessAnaphor = regexp.MustCompile(`\b(?:he|she|it|they|him|her|them|his|hers|its|their|theirs|himself|herself|itself|themselves)\b`)
+// v38.0: the full closed class of English pronouns, demonstratives and
+// anaphoric pro-forms, so no unlisted anaphor can point back across "unless".
+var unlessAnaphor = regexp.MustCompile(`\b(?:i|me|my|mine|myself|you|your|yours|yourself|yourselves|he|him|his|himself|she|her|hers|herself|it|its|itself|we|us|our|ours|ourselves|they|them|their|theirs|themselves|this|that|these|those|one|ones|oneself|such|same|other|others|former|latter|there|then|thereof|therein|so)\b`)
 
 // unlessCandidates splits "P unless Q" and "Unless Q, P" at each "unless".
 func unlessCandidates(statement string) []clausePair {

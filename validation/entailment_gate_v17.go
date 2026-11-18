@@ -334,11 +334,13 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 		return schemaMatchOutcome{}
 	}
 
+	objectRefused := ""
 	for _, a := range relationCandidates(p[0].Statement) {
 		for _, b := range relationCandidates(c.Statement) {
 			if a.verb != b.verb {
 				continue
 			}
+
 			memberships := []clausePair{{}}
 			if len(p) == 2 {
 				memberships = relationMembership(p[1].Statement)
@@ -353,6 +355,10 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 							ok = relationEntails(x, y) && (len(x.prefix) > 0 || a.scaffold || b.scaffold || len(a.terms) > 2)
 						case "UI", "negative UI":
 							for i, q := range x.prefix {
+								if q.kind == "every" && q.class == member.right && q.slot > 0 && !extensionalRelation(a.verb) {
+									objectRefused = objectSlotMessage(q.kind+" "+q.class, a.verb)
+									continue
+								}
 								if q.kind == "every" && q.class == member.right {
 									reduced := relationRemove(x, i, member.left)
 									if relationEntailsWithMember(reduced, y, member) && (rule == "UI" && !x.negative || rule == "negative UI" && x.negative) {
@@ -362,6 +368,10 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 							}
 						case "EG":
 							for i, q := range y.prefix {
+								if q.kind == "some" && q.class == member.right && q.slot > 0 && !extensionalRelation(b.verb) {
+									objectRefused = objectSlotMessage(q.kind+" "+q.class, b.verb)
+									continue
+								}
 								if q.kind == "some" && q.class == member.right && relationEntailsWithMember(x, relationRemove(y, i, member.left), member) {
 									ok = true
 								}
@@ -377,6 +387,9 @@ func matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule 
 				}
 			}
 		}
+	}
+	if objectRefused != "" {
+		return schemaMatchOutcome{refusal: true, traction: true, mismatch: objectRefused}
 	}
 	return schemaMatchOutcome{}
 }
@@ -843,4 +856,45 @@ func relationalEEName(first, existential NumberedArgumentStep) string {
 		}
 	}
 	return ""
+}
+
+// extensionalVerbHeads is a closed allowlist (v38.0) of relation heads whose
+// object positions are extensional: instantiating or generalizing an object
+// of one of these verbs is sound. An object of any other verb may be
+// intensional ("Lois seeks every unicorn", "awaits", "craves", "worships"),
+// so it is not certified. Creation verbs (write, build, draw) and attitude
+// verbs are deliberately absent.
+var extensionalVerbHeads = wordSet("admire admires admired send sends sent give gives gave given outweigh outweighs outweighed cause causes caused kick kicks kicked hit hits own owns owned contain contains contained include includes included precede precedes preceded follow follows followed exceed exceeds exceeded meet meets met touch touches touched beat beats defeat defeats defeated attack attacks attacked cite cites cited entail entails entailed imply implies implied refute refutes refuted contradict contradicts contradicted produce produces produced kill kills killed visit visits visited help helps helped marry marries married employ employs employed pay pays paid read reads teach teaches taught serve serves served feed feeds fed call calls called")
+
+// extensionalCopulas are "is ... to/than/of/by" relation frames with
+// extensional arguments, listed in full.
+var extensionalCopulas = map[string]bool{
+	"is preferable to": true, "is better than": true, "is worse than": true, "is taller than": true,
+	"is shorter than": true, "is larger than": true, "is smaller than": true, "is older than": true,
+	"is younger than": true, "is heavier than": true, "is lighter than": true, "is greater than": true,
+	"is less than": true, "is more than": true, "is part of": true, "is adjacent to": true,
+	"is north of": true, "is south of": true, "is east of": true, "is west of": true,
+	"is married to": true, "is next to": true, "is above": true, "is below": true,
+}
+
+func extensionalRelation(verb string) bool {
+	head, _, _ := strings.Cut(verb, "\x00")
+	head = strings.TrimSpace(head)
+	if extensionalCopulas[head] {
+		return true
+	}
+	words := strings.Fields(head)
+	if len(words) == 0 {
+		return false
+	}
+	// A passive of an allowlisted verb ("is admired by").
+	if (words[0] == "is" || words[0] == "are" || words[0] == "was" || words[0] == "were") && len(words) == 3 && words[2] == "by" {
+		return extensionalVerbHeads[words[1]]
+	}
+	return len(words) == 1 && extensionalVerbHeads[words[0]]
+}
+
+func objectSlotMessage(term, verb string) string {
+	head, _, _ := strings.Cut(verb, "\x00")
+	return fmt.Sprintf("instantiation and generalization into an object position are certified only for verbs on the extensional list; %q here is an object of %q, which may be intensional (as in 'seeks', 'awaits'). If the step is sound, state the instance as a premise", term, strings.TrimSpace(head))
 }

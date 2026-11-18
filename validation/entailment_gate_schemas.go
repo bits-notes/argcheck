@@ -2101,7 +2101,7 @@ func onlyGerund(lower string) bool {
 
 func schematicBindingAllowed(binding string) bool {
 	lower := strings.ToLower(strings.TrimSpace(binding))
-	if modifiedQuantifierPhrase(lower) {
+	if modifiedQuantifierPhrase(lower) || (quantityPhrase(lower) && !upwardQuantity(lower)) {
 		return false
 	}
 	if embeddedBinding(lower) {

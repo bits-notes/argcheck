@@ -103,15 +103,26 @@ func normalizeGateConditional(value string) string {
 //   - the consequent has no and/or/either/comma (scope would be ambiguous);
 //   - the antecedent has no further if/then/or (a conjunctive "X and Z" is fine).
 var postposedIfBlockedBefore = map[string]bool{
+	// v38.0: the closed class of adjectives that take an if/whether
+	// complement ("unsure if", "hesitant if"), listed in full.
+	"unsure": true, "uncertain": true, "unclear": true, "clear": true, "sure": true, "certain": true,
+	"doubtful": true, "dubious": true, "curious": true, "undecided": true, "ambivalent": true,
+	"agnostic": true, "skeptical": true, "sceptical": true, "aware": true, "unaware": true,
+	"conscious": true, "ignorant": true, "mindful": true, "puzzled": true, "confused": true,
+	"divided": true, "indifferent": true, "concerned": true, "worried": true, "anxious": true,
+	"interested": true, "eager": true, "keen": true, "careful": true, "hesitant": true,
+	"unsettled": true, "open": true, "debatable": true, "questionable": true, "unknown": true,
+	"known": true, "obvious": true, "evident": true, "apparent": true, "irrelevant": true,
+	"relevant": true, "important": true, "immaterial": true, "doubtless": true,
 	"only": true, "even": true, "as": true, "and": true, "or": true, "but": true,
 	"ask": true, "asks": true, "asked": true, "asking": true,
 	"wonder": true, "wonders": true, "wondered": true, "wondering": true,
 	"know": true, "knows": true, "knew": true, "see": true, "sees": true, "saw": true,
 	"check": true, "checks": true, "checked": true, "decide": true, "decides": true, "decided": true,
 	"tell": true, "tells": true, "told": true, "doubt": true, "doubts": true, "doubted": true,
-	"unsure": true, "sure": true, "whether": true, "question": true, "determine": true, "determines": true,
+	"whether": true, "question": true, "determine": true, "determines": true,
 	"determined": true, "test": true, "tests": true, "tested": true,
-	"curious": true, "uncertain": true, "unclear": true, "clear": true, "matter": true, "matters": true,
+	"matter": true, "matters": true,
 	"inquire": true, "inquires": true, "inquired": true, "learn": true, "learns": true, "learned": true,
 	"find": true, "finds": true, "found": true, "remember": true, "remembers": true, "remembered": true,
 	"forget": true, "forgets": true, "forgot": true, "care": true, "cares": true, "cared": true,
