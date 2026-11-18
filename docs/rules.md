@@ -140,7 +140,7 @@ A consequent reference lets the bridge feed modus tollens:
 3. Therefore, streets get damp. [1,2]
 ```
 
-- **Postposed conditionals (v31.2):** `Y if X.` and `Y, if X.` read exactly as `If X, then Y.` wherever a conditional premise is accepted (modus ponens, modus tollens, hypothetical syllogism, conjunctive antecedents `Y if X and Z`, and step references `C if [1]`). The rewrite is skipped for `only if`, `even if`, `as if`, `if and only if`, any `unless`, embedded questions (`asked if`, `wonder if`, `curious if`, `whether`), a consequent that reports or attributes (`says`, `thinks`, `that`, ...), a consequent containing `and`/`or`/`either` or a comma, an antecedent containing `or`, and statements with more than one `if`. The rewrite applies to whole numbered statements, not to clauses inside another statement, and only when the argument as written fails, so it never turns a passing argument into a failing one.
+- **Postposed conditionals (v31.2):** `Y if X.` and `Y, if X.` read exactly as `If X, then Y.` wherever a conditional premise is accepted (modus ponens, modus tollens, hypothetical syllogism, conjunctive antecedents `Y if X and Z`, and step references `C if [1]`). The rewrite is skipped for `only if`, `even if`, `as if`, `if and only if`, any `unless`, embedded questions (including intervening objects/adverbs, progressive or perfect verbs, and preposition-final complements: `asks the robot if`, `wonders aloud if`, `is checking if`, `has forgotten if`, `is curious about if`), a consequent that reports or attributes (`says`, `thinks`, `that`, ...), a consequent containing `and`/`or`/`either` or a comma, an antecedent containing `or`, and statements with more than one `if`. The rewrite applies to whole numbered statements, not to clauses inside another statement, and only when the argument as written fails, so it never turns a passing argument into a failing one.
 
 ```argcheck-accept modus ponens
 1. Steve will wear a raincoat tomorrow if it rains.
@@ -2915,11 +2915,13 @@ itself have unambiguous scope.
 2. Therefore, Ann sings. [1]
 ```
 
-The check conservatively exempts opaque attitude/modal complements, `unless`,
-relative clauses, quoted text, `whether or not`, and bare noun-phrase
-coordination. For example, it does not impose a logical scope on `Ann believes
-that Bob dances or Cal reads and Dan sleeps`, `Everyone who sings or dances
-and reads is happy`, or `Ann and Bob are friends or colleagues`. **Known
+Leading attitudes, impersonal `It is <adjective> that` reports, and sentence
+adverbs now require explicit grouping when followed by whole-clause
+coordination. For example, `Perhaps A and B` must be written `(Perhaps A) and B`
+or `Perhaps (A and B)`, or with explicit `both...and` / `either...or`.
+The check still exempts `unless`, relative clauses, quoted text, `whether or not`,
+and bare noun-phrase coordination, such as `Everyone who sings or dances
+and reads is happy` or `Ann and Bob are friends or colleagues`. **Known
 limitation:** these exemptions cover the containing clause, so an ungrouped
 outer connective alongside such an embedded context can escape this syntax
 check. Syntax acceptance does not certify an inference inside an opaque clause.
@@ -2945,3 +2947,60 @@ inside atomic clauses, such as `significant (p < 0.01)`, retain their old opaque
 reading. Parentheses around words, such as `Ann (sings)`, do not create a
 logical group. Only parentheses at whole-clause boundaries are interpreted as
 logical grouping; all parentheses must still balance.
+
+## English extraction and matching boundaries
+
+Schematic X/Y/Z slots and universal-instantiation subjects cannot swallow a
+clause-embedding operator. Existential witnesses have the same embedding guard.
+Attitude/report verbs, including complements without `that`, impersonal
+`It is <adjective> that` clauses, and leading sentence adverbs are guarded by
+lexical recognition. Nominal relative clauses retain their internal negation;
+whole attitude reports remain usable as atomic premises. This is a conservative
+surface register, not a complete English noun-phrase parser.
+
+Schematic bindings and universal-instantiation subjects reject `exactly N`,
+`only`, `all but`, `almost every/all`, `nearly`, `at most`, `fewer than`, `few`,
+`no`, `none`, and `neither`. Upward determiner forms remain available, including
+`every`, `each`, `all`, `some`, `a`, `an`, `the`, `most`, `many`, `several`,
+`more than N`, and `at least N`. Existential generalization has its own existence
+requirements; for example, the accepted `almost every` witness form is preserved.
+
+Plural matching does not strip suffixes from `clothes`, `species`, `means`,
+`goods`, `news`, `odds`, `thanks`, `series`, `savings`, `earnings`, `belongings`,
+`remains`, `surroundings`, `axes`, `arms`, `customs`, or `glasses`. These words
+still match themselves. Ordinary `premises` / `premise` matching is unchanged.
+
+Identity substitution also refuses intensional adverbs (`allegedly`,
+`supposedly`, `reportedly`), attitude complements such as `dreams about`, and
+naming predicates (`is called`, `is named`, `is known as`). These predications
+must not acquire substitutable subject terms during readable FOL conversion.
+Extensional predicates such as `painted`, `near`, `similar to`, `was`,
+`almost red`, and `fake robot` retain their previous behavior.
+
+A comma before `which`, `who`, `whom` or `whose` (a non-restrictive relative)
+is significant for restatement and identity matching. Other commas are not,
+so verb-list punctuation (`eats, shoots, and leaves`) is a known gap.
+Non-restrictive to restrictive relative-clause weakening is directional, not
+clause identity.
+
+```argcheck-reject schematic instantiation
+1. If X is red, then X is warm.
+2. The observer imagines Alpha is red.
+3. Therefore, The observer imagines Alpha is warm. [1,2]
+```
+
+```argcheck-accept self-entailment
+1. Alpha eats, shoots, and leaves.
+2. Therefore, Alpha eats, shoots and leaves. [1]
+```
+
+```argcheck-accept modus ponens
+1. The ground is wet if it rains.
+2. It rains.
+3. Therefore, The ground is wet. [1,2]
+```
+
+Leading concessive `Even if A, then B` supplies the ordinary conditional
+commitment `If A, then B`, so modus ponens is accepted. This does not extend the
+postposed `B even if A` register. `Only if A, then B` and `Unless A, then B`
+still do not license the forward step from A to B.

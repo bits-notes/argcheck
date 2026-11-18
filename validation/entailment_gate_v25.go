@@ -119,6 +119,11 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 			return legacyFOLConjunction(facts)
 		}
 	}
+	// Opaque predications stay zero-place atoms: exposing their subject as an
+	// FOL term would permit identity substitution through an attitude or name.
+	if identityOpaqueExtra.MatchString(s) {
+		return []*folFormula{{op: "atom", symbol: s}}, ""
+	}
 	unary := func(pred, term string) *folFormula {
 		return &folFormula{op: "atom", symbol: "is/" + legacyFOLTerm(pred), terms: []string{term}}
 	}

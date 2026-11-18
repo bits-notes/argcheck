@@ -17,4 +17,4 @@
 17. The putative counterexample to Clark’s analysis is an objection to a theory of knowledge.
 18. If X is an objection to a theory of knowledge and X is identical to Y and supplementing the description with that ground blocks X, then Y is blocked by supplementing the description with that ground.
 19. Therefore, the Saunders–Champawat putative counterexample to Clark is blocked by supplementing the description with that ground. [15,16,17,18]
-20. Therefore, Clark’s analysis says that Smith does not know that Jones owns a Ford now and the Saunders–Champawat putative counterexample to Clark is blocked by supplementing the description with that ground. [11,19]
+20. Therefore, (Clark’s analysis says that Smith does not know that Jones owns a Ford now) and (the Saunders–Champawat putative counterexample to Clark is blocked by supplementing the description with that ground). [11,19]

@@ -239,6 +239,9 @@ func groupingProblem(s string) string {
 }
 
 func validateStatementGrouping(s string, line int) Result {
+	if operatorCoordinationAmbiguous(s) {
+		return Result{Passed: false, Message: fmt.Sprintf("line %d sentence %q: %s", line, s+".", operatorGroupingMessage), Details: map[string]any{"line": line, "sentence": s}}
+	}
 	lower := strings.ToLower(s)
 	if !strings.ContainsAny(s, "()") && !(strings.Contains(lower, " and ") && strings.Contains(lower, " or ")) {
 		return Result{Passed: true}

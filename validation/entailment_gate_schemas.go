@@ -176,7 +176,7 @@ func equalClauses(left, right string) bool {
 }
 
 func comparisonClause(value string) string {
-	value = strings.ReplaceAll(stripClauseWrappers(value), ",", "")
+	value = comparisonCommas(stripClauseWrappers(value))
 	return strings.Join(strings.Fields(value), " ")
 }
 
@@ -525,7 +525,7 @@ func equalTerms(left, right string) bool {
 
 func termCandidates(value string) []string {
 	value = normalizeClause(value)
-	value = strings.ReplaceAll(value, ",", "")
+	value = comparisonCommas(value)
 	value = strings.Join(strings.Fields(value), " ")
 	for _, copula := range []string{"is ", "am ", "are "} {
 		if strings.HasPrefix(value, copula) {
@@ -540,6 +540,9 @@ func termCandidates(value string) []string {
 		}
 	}
 	result := []string{value}
+	if nonSingularStem.MatchString(value) {
+		return result
+	}
 	if strings.HasSuffix(value, "s") && len(value) > 1 {
 		result = append(result, strings.TrimSuffix(value, "s"))
 	}
@@ -579,6 +582,9 @@ func groundInstanceCandidates(statement string) []clausePair {
 
 	result := make([]clausePair, 0)
 	for _, candidate := range instanceCandidates(statement) {
+		if embeddedBinding(candidate.left) {
+			continue
+		}
 		// A later copula can delimit a whole that-clause noun phrase, but
 		// cannot promote an embedded assertion or modal report to a witness.
 		if strings.Contains(candidate.left, " that ") || len(instanceCandidates(candidate.left)) > 0 {
@@ -1343,6 +1349,9 @@ func matchDoubleNegation(premises []NumberedArgumentStep, conclusion NumberedArg
 }
 
 func matchSelfEntailment(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if nonrestrictiveWeakening(premises[0].Statement, conclusion.Statement) {
+		return schemaMatchOutcome{matched: true, score: 1, traction: true}
+	}
 	return evaluateIdentities(clauseIdentity{
 		fmt.Sprintf("premise %d", premises[0].Number), premises[0].Statement,
 		fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
@@ -1448,7 +1457,7 @@ func matchUniversalInstantiation(premises []NumberedArgumentStep, conclusion Num
 	best := schemaMatchOutcome{}
 	for _, universal := range universalCandidates(premises[0].Statement) {
 		for _, instance := range instanceCandidates(premises[1].Statement) {
-			if quantifiedInstanceSubject(instance.left) {
+			if quantifiedInstanceSubject(instance.left) || !schematicBindingAllowed(instance.left) {
 				continue
 			}
 			for _, result := range instanceCandidates(conclusion.Statement) {
@@ -1561,7 +1570,7 @@ func matchUniversalNegativeInstantiation(premises []NumberedArgumentStep, conclu
 		}
 	}
 	for _, instance := range instanceCandidates(premises[0].Statement) {
-		if quantifiedInstanceSubject(instance.left) {
+		if quantifiedInstanceSubject(instance.left) || !schematicBindingAllowed(instance.left) {
 			continue
 		}
 		for _, negative := range universalNegativeCandidates(premises[1].Statement) {
@@ -1993,9 +2002,9 @@ func matchNaryConjunctionIntroduction(premises []NumberedArgumentStep, conclusio
 	matched := false
 	permuteClauses(parts, 0, func(order []string) bool {
 		last := len(order) - 1
-		listed := strings.Join(order[:last], " ") + " and " + order[last]
+		listed := strings.Join(order[:last], ", ") + " and " + order[last]
 		chained := strings.Join(order, " and ")
-		matched = target == listed || target == chained
+		matched = target == comparisonClause(listed) || target == comparisonClause(chained)
 		return matched
 	})
 	if matched {
@@ -2061,6 +2070,7 @@ func EntailmentGateForms() []string {
 var schematicBindingLeadingOperators = []string{
 	"not every ", "not all ", "not each ", "not any ", "not one ", "not a ", "not an ",
 	"not many ", "not the case ", "no ", "nobody", "none ", "nothing", "no one", "never ",
+	"exactly ", "only ", "all but ", "almost every ", "almost all ", "nearly ",
 	"neither ", "few ", "fewer ", "at most ", "less than ", "hardly ", "scarcely ",
 	"it is not ", "it isn't ", "it's not ", "it is false", "it is untrue",
 	"it is unlikely", "it is possible", "it is doubtful",
@@ -2068,9 +2078,22 @@ var schematicBindingLeadingOperators = []string{
 
 var schematicBindingComplementTail = regexp.MustCompile(`(?:^|\s)(?:den(?:y|ies|ied)|doubt(?:s|ed)?|believ(?:e|es|ed)|think(?:s)?|thought|claim(?:s|ed)?|say(?:s)?|said|hold(?:s)?|held|argu(?:e|es|ed)|assert(?:s|ed)?|suppos(?:e|es|ed)|assum(?:e|es|ed)|fear(?:s|ed)?|hop(?:e|es|ed)|know(?:s)?|knew|suspect(?:s|ed)?|show(?:s|ed)?|prov(?:e|es|ed)|suggest(?:s|ed)?|predict(?:s|ed)?|expect(?:s|ed)?|wish(?:es|ed)?|false|possible|likely|unlikely|probable|improbable|doubtful|certain)\s+(?:that|whether)\s+(\S+(?:\s+\S+){0,3})$`)
 
+func onlyGerund(lower string) bool {
+	words := strings.Fields(lower)
+	return len(words) > 1 && words[0] == "only" && strings.HasSuffix(words[1], "ing")
+}
+
 func schematicBindingAllowed(binding string) bool {
 	lower := strings.ToLower(strings.TrimSpace(binding))
+	if embeddedBinding(lower) {
+		return false
+	}
 	for _, prefix := range schematicBindingLeadingOperators {
+		if prefix == "only " && onlyGerund(lower) {
+			// "only asking obvious questions" names an activity; "only"
+			// does not quantify over a subject here.
+			continue
+		}
 		if strings.HasPrefix(lower+" ", prefix) {
 			return false
 		}

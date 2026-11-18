@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v32.3)
+# Entailment Gate — Coverage and Known Limits (catalog v33.0)
 
 **Type:** reference
-**Status:** current as of catalog v32.3
+**Status:** current as of catalog v33.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v32.3**). Tests cover capture,
+form; the current catalog is **v33.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -879,3 +879,62 @@ apostrophe) are read exactly as `it is the case that X` and `it is not the case
 that X`, wherever the full forms are accepted. Other uses of `it's` (`it's
 raining`) stay ordinary clauses. No verdict changes on the corpus (2,476
 arguments).
+
+## v33.0: English accuracy boundaries (H001–H185 regression set)
+
+- Embedded reports, attitudes (with or without `that`), impersonal clause
+  introductions, and sentence adverbs cannot become schematic terms, witnesses,
+  or universal-instantiation subjects.
+- Non-upward quantifier phrases cannot become schematic terms or UI subjects.
+  Existential-generalization controls retain their separate existence rules.
+- Whole-clause coordination under a leading operator requires explicit scope:
+  parentheses or `both...and` / `either...or`. The syntax diagnostic gives both
+  parenthesized readings instead of silently choosing one.
+- Listed plural-only, lexically distinct, and ambiguous `-s` nouns no longer
+  match their stripped stems.
+- Intensional adverbs, attitude complements, and naming predicates block
+  identity substitution, including the readable FOL conversion route.
+- A comma before `which`, `who`, `whom` or `whose` (a non-restrictive relative)
+  survives clause and term comparison. Every other comma is insignificant, as
+  before. Non-restrictive relative weakening is handled directionally.
+- Postposed `if` refuses embedded-question verb families, intervening objects
+  and adverbs, and incomplete preposition/progressive/perfect endings.
+
+How the guards are scoped (after measuring them on the 2,476-argument corpus):
+an attitude or report word blocks a term only when it is used as a verb near
+the start of the term: after a short subject phrase, before any preposition,
+subordinator or comma, and not after a determiner, possessive or adjective
+compound. A past form (`imagined`, `expected`) needs a `that`/`whether`/`if`
+complement, and a verb without a complementizer must leave at most four words
+of the term after it. `only` before a gerund (`only asking obvious questions`)
+is not a quantifier. Coordination under a leading operator is ambiguous only
+when the operator is a sentence adverb, an `it is ... that` frame, or an
+attitude verb with a `that`/`whether`/`if` complement, and no comma precedes
+the connective.
+
+Corpus impact (2,476 arguments): 5 valid arguments newly fail syntax under the
+operator-coordination rule. Three are real ambiguities: `Clark's analysis says
+that A and the counterexample is blocked ...` (corpus-analytic-philosophy-maps-56bc431d8d),
+`once the instrument is known, A and B` (fvb F53) and `it seems plausible that
+... and ...` (askell-2018 A1215). Two are false positives: `Smith knows that A
+and S knows that B` (corpus-analytic-philosophy-maps-0dbf5734db) and
+capitalized names joined by `or` inside a noun phrase (askell-2018 A622).
+
+Remaining known gaps:
+- These are surface recognizers, not a parser. Unlisted embedding verbs or
+  adverbs, an attitude verb after a prepositional subject (`the owner of the
+  robot believes alpha`), and unlisted intensional relations (`is looking for`)
+  are not caught.
+- Commas other than the relative comma are ignored, so `eats, shoots, and leaves`
+  and `eats shoots and leaves` still match (H131, H132). The vocative comma (H134)
+  is also ignored. Restrictive to non-restrictive restatement (H130) is still
+  accepted through the FOL conversion path.
+- The morphology exception list is finite.
+- A postposed `if` sentence with question-verb vocabulary or an incomplete-
+  looking ending may be refused. Write `If ..., then ...` instead.
+
+Control-list discrepancy: H171–H173 already rejected in the untouched checkout.
+H171 (`Even if A, then B`) now accepts its valid forward conditional step.
+H172 (`Only if A, then B`) and H173 (`Unless A, then B`) remain rejected: neither
+licenses the supplied forward modus ponens. Their inclusion in the requested
+VALID-control range conflicts with their actual repro contents.

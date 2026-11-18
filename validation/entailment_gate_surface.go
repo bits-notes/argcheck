@@ -58,6 +58,12 @@ func simpleGateClause(value string) bool {
 // and no nested connective are accepted, so no alternative scope is invented.
 func normalizeGateConditional(value string) string {
 	lower := strings.ToLower(value)
+	// Leading concessive "Even if A, then B" includes the ordinary A -> B
+	// commitment. This does not change the postposed "B even if A" register.
+	if strings.HasPrefix(lower, "even if ") && strings.Contains(lower, ", then ") {
+		value = value[len("even "):]
+		lower = strings.ToLower(value)
+	}
 	for _, prefix := range []string{"if ", "when ", "whenever "} {
 		if strings.HasPrefix(lower, prefix) && strings.Count(value, ",") == 1 {
 			parts := strings.SplitN(value[len(prefix):], ",", 2)
@@ -133,7 +139,7 @@ func postposedConditional(value string) (string, bool) {
 	if postposedIfBlockedBefore[strings.Trim(words[len(words)-1], ",")] {
 		return "", false
 	}
-	if postposedConsequentUnsafe.MatchString(left) || postposedAntecedentUnsafe.MatchString(right) {
+	if questionStem.MatchString(left) || incompleteIfConsequent.MatchString(left) || postposedConsequentUnsafe.MatchString(left) || postposedAntecedentUnsafe.MatchString(right) {
 		return "", false
 	}
 	return "If " + right + ", then " + left, true

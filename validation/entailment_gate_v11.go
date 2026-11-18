@@ -127,7 +127,7 @@ var contextQuantifierWords = map[string]bool{
 // Intensional, modal, existence and complement-clause vocabulary. Inside such
 // contexts neither substitution of co-referring names nor existential
 // generalization on a name is truth-preserving, so the forms stay opaque.
-var opaqueContextWords = regexp.MustCompile(`(?i)\b(?:believes?|believed|thinks?|thought|knows?|knew|known|wants?|wanted|hopes?|hoped|fears?|feared|seeks?|sought|wish|wishes|wished|doubts?|doubted|imagines?|imagined|supposes?|supposed|says?|said|claims?|claimed|asserts?|asserted|denies|deny|denied|expects?|expected|intends?|intended|realizes?|realized|recognizes?|recognized|notices?|noticed|learns?|learned|wonders?|wondered|prefers?|preferred|necessarily|possibly|necessary|possible|might|may|could|would|should|must|can|exists?|existed|existence|real|fictional|imaginary|called|named|that|whether)\b`)
+var opaqueContextWords = regexp.MustCompile(`(?i)\b(?:suspect(?:s|ed|ing)?|dream(?:s|ed|ing)?|pretend(?:s|ed|ing)?|allegedly|supposedly|reportedly|believes?|believed|thinks?|thought|knows?|knew|known|wants?|wanted|hopes?|hoped|fears?|feared|seeks?|sought|wish|wishes|wished|doubts?|doubted|imagines?|imagined|supposes?|supposed|says?|said|claims?|claimed|asserts?|asserted|denies|deny|denied|expects?|expected|intends?|intended|realizes?|realized|recognizes?|recognized|notices?|noticed|learns?|learned|wonders?|wondered|prefers?|preferred|necessarily|possibly|necessary|possible|might|may|could|would|should|must|can|exists?|existed|existence|real|fictional|imaginary|called|named|that|whether)\b`)
 
 var truthFunctionalWrapper = regexp.MustCompile(`(?i)\bit is (?:not )?the case that\b`)
 
@@ -159,7 +159,7 @@ func transparentContext(statement string) (ok bool, hasQuantifier bool) {
 	}
 	// The truth-functional wrappers are the only complement "that" the
 	// register treats as transparent.
-	if opaqueContextWords.MatchString(truthFunctionalWrapper.ReplaceAllString(statement, " ")) {
+	if identityOpaqueExtra.MatchString(statement) || opaqueContextWords.MatchString(truthFunctionalWrapper.ReplaceAllString(statement, " ")) {
 		return false, false
 	}
 	for _, word := range strings.Fields(strings.ToLower(statement)) {

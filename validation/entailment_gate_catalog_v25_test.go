@@ -238,6 +238,17 @@ func TestCatalogV25LegacyCoverage(t *testing.T) {
 	forms := map[string]bool{}
 	reasons := map[string]int{}
 	for i, row := range rows {
+		// Leading-operator coordination now requires explicit scope. These
+		// historical conversions must reject, rather than expose a conjunct.
+		if operatorCoordinationAmbiguous(row.Sentence) {
+			r := validateStatementGrouping(row.Sentence, 1)
+			if r.Passed || !strings.HasSuffix(r.Message, operatorGroupingMessage) {
+				t.Fatalf("operator scope: %s", r.Message)
+			}
+			exceptions++
+			reasons["leading operator requires grouping"]++
+			continue
+		}
 		// This historical opaque conversion is precisely the mixed-connective
 		// transparency bug: the numbered parser must now reject it.
 		if row.Sentence == "If C and C or D, then E" {
