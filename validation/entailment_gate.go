@@ -8,7 +8,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v35.0"
+const EntailmentGateCatalogVersion = "v36.0"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -198,6 +198,24 @@ func gateNumberedArgument(arg NumberedArgument, observe bool) EntailmentGateRepo
 			continue
 		}
 		stepReport := gateConclusionStep(step, stepsByNumber)
+		if stepReport.Passed {
+			if why := sentenceFrameFailure(step, stepsByNumber, stepReport.Form); why != "" {
+				stepReport.Passed = false
+				stepReport.NearestForm, stepReport.Mismatch = stepReport.Form, why
+				stepReport.Form = ""
+			}
+		} else {
+			for _, id := range step.Citations {
+				why := punctuationDifference(stepsByNumber[id].Statement, step.Statement)
+				if why == "" {
+					why = punctuationSuffixDifference(stepsByNumber[id].Statement, step.Statement)
+				}
+				if why != "" {
+					stepReport.Mismatch = why
+					break
+				}
+			}
+		}
 		report.Steps = append(report.Steps, stepReport)
 		if !stepReport.Passed {
 			report.Passed = false

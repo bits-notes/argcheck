@@ -6,8 +6,8 @@ import (
 )
 
 func TestNormalizeClauseAndWrapperEquality(t *testing.T) {
-	if got := normalizeClause("  ,  Alpha   BETA, .  "); got != "alpha beta, " {
-		t.Fatalf("normalizeClause = %q, want %q", got, "alpha beta, ")
+	if got := normalizeClause("  ,  Alpha   BETA, .  "); got != ", alpha beta, " {
+		t.Fatalf("normalizeClause = %q, want %q", got, ", alpha beta, ")
 	}
 	if !equalClauses("It is the case that, it is the case that Alpha.", "alpha") {
 		t.Fatal("repeated wrapper stripping did not preserve clause equality")

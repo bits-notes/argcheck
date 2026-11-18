@@ -163,18 +163,29 @@ func operatorCoordinationAmbiguous(s string) bool {
 
 var relativeComma = regexp.MustCompile(`, (which|who|whom|whose) `)
 
-// comparisonCommas keeps the one comma that changes meaning in matching: a
-// comma before which/who/whom/whose marks a non-restrictive relative ("The
-// robots, which are red, are warm" also says every robot is red). Every other
-// comma stays insignificant, as before. Known gap: a comma that separates
-// verbs ("eats, shoots, and leaves") is still ignored.
+// Commas belong to atoms unless a structural parser consumes them.
+var structuralModalComma = regexp.MustCompile(`^(necessarily|possibly),\s*`)
+
+var structuralCoordinationComma = regexp.MustCompile(`,\s+(and|or)\b`)
+
 func comparisonCommas(s string) string {
 	if !strings.Contains(s, ",") {
 		return s
 	}
-	marked := relativeComma.ReplaceAllString(s, " \x00$1 ")
-	marked = strings.ReplaceAll(marked, ",", "")
-	return strings.ReplaceAll(marked, "\x00", ", ")
+	s = structuralModalComma.ReplaceAllString(s, "$1 ")
+	// Only a visible clause boundary owns its comma. In particular, an
+	// and/or inside atom{name} literal payloads is never syntax, and a
+	// noun/verb phrase list is not evidence of two asserted clauses.
+	matches := structuralCoordinationComma.FindAllStringIndex(groupingSyntax(s), -1)
+	for i := len(matches) - 1; i >= 0; i-- {
+		m := matches[i]
+		left, right := strings.TrimSpace(s[:m[0]]), strings.TrimSpace(s[m[1]:])
+		rightClause := clauseOperandStart(right) || (len(strings.Fields(right)) > 1 && framePlainClause(right))
+		if framePlainClause(left) && rightClause {
+			s = s[:m[0]] + s[m[0]+1:]
+		}
+	}
+	return s
 }
 
 var nonrestrictiveRelative = regexp.MustCompile(`^(the [^,]+), (which|who|whom|whose) ([^,]+), ((?:is|are|was|were) [^,]+)$`)

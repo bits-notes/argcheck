@@ -74,6 +74,15 @@ func TestAcceptedFixtureStepParity(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if filepath.Base(path) == "earman-norton-1987_A5.txt" {
+				// The fixture's premise has "theories, every", while its
+				// schematic antecedent has "X every": that comma is lexical.
+				report, _ := CheckEntailmentGate(string(data))
+				if report.Passed || len(report.Steps) != 3 || !report.Steps[0].Passed || report.Steps[1].Passed || !report.Steps[2].Passed {
+					t.Fatalf("expected only step 9 to lose its comma-mismatched certificate: %+v", report)
+				}
+				return
+			}
 			pinned := map[int]string{}
 			for _, n := range pins[filepath.Base(path)] {
 				pinned[n] = "schematic conjunctive modus ponens"

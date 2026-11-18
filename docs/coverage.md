@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v35.0)
+# Entailment Gate — Coverage and Known Limits (catalog v36.0)
 
 **Type:** reference
-**Status:** current as of catalog v35.0
+**Status:** current as of catalog v36.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v35.0**). Tests cover capture,
+form; the current catalog is **v36.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -896,8 +896,8 @@ arguments).
 - Intensional adverbs, attitude complements, and naming predicates block
   identity substitution, including the readable FOL conversion route.
 - A comma before `which`, `who`, `whom` or `whose` (a non-restrictive relative)
-  survives clause and term comparison. Every other comma is insignificant, as
-  before. Non-restrictive relative weakening is handled directionally.
+  survives clause and term comparison. Other commas now survive too (see the
+  v36.0 audit below). Non-restrictive relative weakening is handled directionally.
 - Postposed `if` refuses embedded-question verb families, intervening objects
   and adverbs, and incomplete preposition/progressive/perfect endings.
 
@@ -922,14 +922,10 @@ and S knows that B` (corpus-analytic-philosophy-maps-0dbf5734db) and
 capitalized names joined by `or` inside a noun phrase (askell-2018 A622).
 
 Remaining known gaps:
-- These are surface recognizers, not a parser. Unlisted embedding verbs or
-  adverbs, an attitude verb after a prepositional subject (`the owner of the
-  robot believes alpha`), and unlisted intensional relations
-  are not caught.
-- Commas other than the relative comma are ignored, so `eats, shoots, and leaves`
-  and `eats shoots and leaves` still match (H131, H132). The vocative comma (H134)
-  is also ignored. Restrictive to non-restrictive restatement (H130) is still
-  accepted through the FOL conversion path.
+- These are surface recognizers, not a parser. The new coordination guard
+  catches unlisted embedding verbs and prepositional subjects in clause
+  extraction/building. Unlisted intensional relations and term-binding
+  contexts remain open; see the v36.0 audit.
 - The morphology exception list is finite.
 - A postposed `if` sentence with question-verb vocabulary or an incomplete-
   looking ending may be refused. Write `If ..., then ...` instead.
@@ -1007,3 +1003,154 @@ One is the rules.md example `every x is such that (x admires alice)`, which
 substitutes into an object (the example now uses a subject); the other is
 askell-2018 A609 (substitution inside `is a qualitative duplicate of ...`).
 0 invalid-to-valid changes.
+
+## v36.0: sentence-internal frames (variant A)
+
+Steps that look inside a sentence (splitting or building and/or, identity
+substitution, universal, existential and schematic instantiation) now need a
+visible frame:
+
+1. Openers. A sentence that opens with a sentence adverb (any `-ly` word, or
+   perhaps/maybe/sometimes/often/once/always/never/yesterday/today) or a fronted
+   framing phrase (a preposition, then a comma within the first few words: `In
+   the story,`, `Under the law of likelihood,`) is not certified for these
+   steps. The message suggests moving it out or rewording so the sentence
+   starts with its subject.
+2. Marked clause coordination. An unmarked `A and B` / `A or B` is split or
+   built only when the left clause is a recognized complete clause (copula,
+   listed intransitive, or listed extensional transitive with a nominal object).
+   Otherwise write `Both ... and ...`, `Either ... or ...`, parentheses, or
+   separate premises. This applies to elimination and introduction alike.
+3. Commas count. Clause and term comparison keeps commas, except structural
+   ones (`If A, then B`, `Therefore,`, the and/or grouping comma). H130-H134
+   are closed.
+4. Modified quantifiers (from the held-out list): a slot binding or
+   universal-instantiation subject that opens with modifiers plus a quantifier
+   word (`practically no`, `virtually no`, `next to no`, `precisely one`,
+   `roughly one`) is refused.
+
+Corpus impact (2,476 arguments, against v35.0): 597 valid arguments become NOT
+CERTIFIED, chosen as variant A by the owner after a sample. 0 invalid-to-valid,
+0 steps fail-to-pass. By rule: openers (mostly fronted frames) about 370;
+marked coordination about 175; comma-exact 3; the rest are schematic bindings
+that no longer match once commas count.
+
+## v36.0 blocklist audit
+
+This audit distinguishes a positive grammar recognizer (**allow**) from a
+negative lexical filter (**block**). “VALID path” includes parsers and
+normalizers whose output can feed a successful certificate; a refusal-only
+helper is not automatically harmless when *absence* of its words permits a
+parse. Runtime sets of seen formulas, bound variables, names and caches are
+not lexical word lists. File names below are relative to `validation/`.
+
+**Audit status: not closed.** The new frame guards close the supplied opener
+and complement-coordination examples, and comma-exact comparison closes
+H130–H134. The rows marked **open** are genuine remaining obligations; this
+change does not claim that an incomplete lexical blocklist proves a safe
+frame. They need a separate positive grammar or an explicit owner decision
+about the narrower accepted language before the audit requirement is met.
+
+| File and list / recognizer | Kind | VALID path? | Disposition / reason |
+| --- | --- | --- | --- |
+| `sentence_frames.go`: `frameOpeners` | allow | yes | Determiners, pronouns and logical entry points end the opener check early. |
+| `sentence_frames.go`: `-ly` opener rule | closed-class rule | yes | Every `-ly` word at the start is refused (morphological, so unlisted adverbs are covered); `frameLyNouns` lists the few `-ly` nouns that stay subjects. |
+| `sentence_frames.go`: `frameSentenceAdverbs` | block | yes | **Open**: non-`-ly` sentence adverbs are a small closed-ish set (perhaps, maybe, sometimes, often, once, always, never, yesterday, today); an unlisted one could still open a sentence-internal step. |
+| `sentence_frames.go`: `framePrepositions` + comma | block | yes | Fronted frames are recognized by a leading preposition and an early comma. **Open**: a frame with no comma ("In the story the server crashed and ...") is not detected. |
+| `sentence_frames.go`: name evidence (capitalized mid-sentence elsewhere) | allow (exception) | yes | Lets a sentence-initial name through the opener check; it cannot turn an adverb into a name unless the same word is capitalized mid-sentence. |
+| `sentence_frames.go`: `frameTransitives`, `frameIntransitives`, `framePredicates`, `frameNominalHeads` | allow | yes | Rule 2: an unmarked `A and B` split needs a recognized complete left clause; unknown verbs require explicit grouping (`Both`, `Either`, parentheses, separate premises). |
+| `sentence_frames.go`: coordination prefixes | allow | yes | Explicit both/either grouping and conditional scaffolds are handled by their own parsers. |
+| `sentence_frames.go`: `modifiedQuantifierPhrase` | closed-class rule | yes | A slot binding or UI subject that opens with modifiers (any `-ly` adverb, `next to`, `close to`, `well`, `just`, ...) followed by a closed class of quantifier words (`no`, `one`, `few`, `all`, numerals, ...) is refused: `practically no`, `virtually no`, `next to no`, `precisely one`, `roughly one`. The quantifier words are a closed class; the modifier side is open by morphology. |
+| `entailment_gate_accuracy.go`: `bindingAttitude` | block | yes | **Open** for term binding; coordination no longer relies on completeness of this list. |
+| same: `sentenceOperator` | block | yes | Additional negative filter; new opener recognizer rejects unlisted productive `-ly` adverbs. Non-`-ly` nominal/adverb ambiguity remains a residual. |
+| same: `impersonalEmbedding` | block | yes | **Open**: impersonal embedding is not exhausted by is/was/seems/seemed. |
+| same: `nominalAttitudeHead` | allow (exception) | yes | **Open**: this exempts nominal uses from the embedding filter; it is not a complete nominal grammar. |
+| same: `nominalClause` | allow (boundary) | yes | Closed relative/complement markers; full nominal parse still depends on other guards. |
+| same: `attitudeScanStop` | allow (exception) | yes | **Open** for term binding: stopping at a preposition can miss a later main verb. New coordination guard scans the complete left operand. |
+| same: `attitudeNounContext` | allow (exception) | yes | **Open**: preceding determiners/adjectives are cues, not proof that the following word is nominal. |
+| same: `attitudeBaseSubject` | allow (verb cue) | yes | Positive cue for a base-form attitude verb; absence alone is not a safety proof. **Open** in binding. |
+| same: `attitudeUsedAsVerb` next-token switch | allow (exception) | yes | **Open**: exempts listed nominal/prepositional continuations from the negative filter. |
+| same: `nonSingularStem` | block | yes | **Open**: an unlisted singular or plural-only `-s` word can still be stemmed incorrectly. |
+| same: `identityOpaqueExtra` | block | yes | v35 subject-position guard independently protects legacy identity substitution; **open** in other FOL/term-extraction uses. |
+| same: `questionStem`, `incompleteIfConsequent` | block | yes | **Open**: postposed-if acceptance still depends on incomplete question/complement vocabulary. |
+| same: `operatorCoordinationAmbiguous` prefix exemptions | allow (exception) | yes | Structural operators own their connectives; this early syntax guard still has legacy opaque-context exemptions. |
+| same: `relativeComma` | allow | no | Legacy unused relative-marker recognizer; it no longer controls comparison. |
+| same: `nonrestrictiveRelative` | allow | yes | Positive directional relative weakening pattern; general matching retains lexical commas. |
+| same: `structuralModalComma`, `structuralCoordinationComma` | allow | yes | Modal prefix commas and visible complete-clause coordination boundaries only; explicit literal payloads are masked. |
+| `term_slot_positions.go`: `clauseSubjectLead` | allow | yes | Explicit clause/subject boundary markers. |
+| same: `passiveOrRaising` | block | yes | **Open**: productive participial endings plus irregular words are not a complete raising/passive classifier. |
+| same: `explicitIdentityPattern` | allow | yes | Only explicit identity phrases or equality trigger identity-chain treatment. |
+| `entailment_gate_surface.go`: contraction alternatives | allow | yes | Fixed lexical expansions, not an open-ended synonym rule. |
+| same: `gateSimpleClause` | allow | yes | Positive finite grammar for the old inline conditional rewrite. |
+| same: `gateUnsafeSurface` | block | yes | Cannot independently admit a clause: `simpleGateClause` also requires `gateSimpleClause`. Additional exclusions only narrow that allowlist. |
+| same: `normalizeGateConditional` if/when/whenever prefixes | allow | yes | Fixed structural operators. |
+| same: `postposedIfBlockedBefore` | block | yes | **Open** for the whole-statement `Y if X` rewrite. |
+| same: `postposedConsequentUnsafe`, `postposedAntecedentUnsafe` | block | yes | **Open**: the broad postposed rewrite lacks an independent complete positive clause grammar. |
+| same: `gateElidedCopula`, `gateBarePredicate` | allow | yes | Positive copular and predicate shapes; lexical homonymy is outside these surface recognizers. |
+| `andor_grouping.go`: connective list in `groupingBoundaries` | allow | yes | Exactly and/or/unless. |
+| same: `groupingOpaque` exemptions | block | yes | **Open** for other parsers; explicit final coordination guard protects the new conjunction/disjunction cases. |
+| same: `groupingProblem` operator prefixes and conditional separators | allow | yes | Structural grammar, not lexical scope inference. |
+| same: `clauseStartWords`, `determinerWords`, `auxiliaryWords` | allow | yes | Positive operand cues; suffix-based verb cues remain heuristic. |
+| same: `groupingParenthesisPlacement` before/after operator lists | allow | yes | Only whole-operand boundary positions are recognized as grouping. |
+| same: `groupingLabel` | allow | yes | Exact definition/condition/proposition label annotation syntax. |
+| `entailment_gate_schemas.go`: `conditionalSplitPattern`, `separatedQuantifierPattern` | allow | yes | Explicit then boundary and every/no thing spelling. Structural comma consumption is localized here. |
+| same: `hasOuterGateOperator` prefixes | allow (operator recognition) | yes | **Open** as the complement of this set is also used as plain-clause evidence. |
+| same: universal/negative/particular/existential quantifier prefixes and copula separators | allow | yes | Enumerated quantifier grammar; other strings are not silently assigned that quantifier. |
+| same: negative-instance and ground-instance excluded prefixes | block | yes | **Open**: absence of these determiners is not proof of a referring individual. |
+| same: necessity and wrapper prefixes | allow | yes | Fixed logical scaffolds. |
+| same: `termCandidates` article/copula prefixes | allow | yes | Fixed term normalization; residual morphology is listed separately. |
+| same: `schematicBindingLeadingOperators` | block | yes | **Open**: new sentence opener guard is not a complete binding-slot grammar. |
+| same: `schematicBindingComplementTail` | block | yes | **Open**: unknown embedding verbs can still occur inside a captured term. |
+| same: `schematicBindingClauseVerbs` | allow (exception) | yes | A finite-verb cue allows a complete relative inside a term; does not by itself establish nominality. |
+| same: `thirdPersonSingularPredicate` quantified-object switch | block | yes | **Open**: restricted object quantification is not a complete closed class; agreement itself is a separate productive spelling rule. |
+| same: have/do/go and inflection endings | allow / productive rule | yes | Fixed irregular agreement and regular spelling; semantic predicate text is otherwise unchanged. |
+| same: schema form-name lists | allow | yes | Internal rule identifiers, not natural-language vocabulary. |
+| `accuracy_round2.go`: `nameBeforeLetter` operator switch | allow (exception) | yes | Keeps logical operators from being treated as a multiword name prefix. |
+| same: `round2Singular` exception switch and suffix rules | block / productive rule | yes | **Open**, together with `nonSingularStem`; exceptions are not exhaustive. |
+| same: `instanceQuantifierHeads`, `instanceQuantifierPhrases` | block | yes | **Open**: negative instance-subject filter, not a positive noun-phrase parser. |
+| same: `accuracyRound2Failure` quantifier prefix list | block | no | Diagnostic only, after all candidate schemas fail. Cannot make a step VALID. |
+| same: `subjectHasConnective` separators | block | yes | Closed connective syntax, but the subject recognizer also uses open-ended lexical cues. |
+| `entailment_gate_v11.go`: `nonReferringTermWords` | block | yes | **Open**: unlisted quantifier/anaphoric phrases may be treated as terms. |
+| same: `contextQuantifierWords` | block | yes | **Open**: omitted quantificational contexts may bind a description. |
+| same: `opaqueContextWords` | block | yes | **Open**: unlisted intensional relations are not proven extensional. |
+| same: `truthFunctionalWrapper`, schematic-existential pattern | allow | yes | Explicit logical scaffolds only. |
+| same: `referringTerm` definite-head switch | block | yes | Closed definite heads, but the surrounding context-quantifier detection remains open. |
+| `entailment_gate_v14.go`: `fitchForms`, `fitchNamePattern` | allow | yes | Rule identifiers and identifier syntax. |
+| `entailment_gate_v15.go`: possibility prefixes | allow | yes | Fixed logical operator. |
+| `entailment_gate_v16.go`: `leadingModal` | allow | yes | Fixed modal auxiliaries; does not remove arbitrary adverbs. |
+| `entailment_gate_v17.go`: `relationWords` excluded operators | block | yes | **Open** with opaque-context detection: arbitrary remaining words are not a proof of extensionality. |
+| same: `relationTermCandidate`, `relationHasQuantifier` switches | allow | yes | every/each/some/no bind slots; others do not bind through this grammar. |
+| same: `relationVerb` excluded first words | block | yes | **Open**: absence of a preposition/determiner is not proof of an extensional verb. |
+| same: `relationNestedNoun` prepositions/quantifiers | allow | yes | Recognizes explicitly enumerated nested scope positions. |
+| `entailment_gate_v19.go`: `nonMaterialAuxiliary`, `mightPerfectAuxiliary`, `counterfactualMood` | allow | yes | Explicit modal/mood syntax. |
+| same: `counterfactualUnsafe` | block | yes | **Open**: it is not a positive grammar of complete counterfactual operands. |
+| same: copular tense replacement alternatives | allow | yes | Local, explicitly enumerated counterfactual auxiliary conversions. |
+| `entailment_gate_v20.go`: `arbitraryPropertyPattern`, possessive prefixes | allow | yes | Explicit property-binder and possession syntax. |
+| `entailment_gate_v22.go`: n-place preposition and ditransitive switches | allow | yes | Only enumerated slot boundaries and double-object alternations. Other lexical safety inherits `relationWords`. |
+| `entailment_gate_v23.go`: relative markers, quantifier and relation-verb switches | allow | yes | Explicit relative grammar; inherits the lexical relation limitation. |
+| `entailment_gate_v24.go`: `explicitBinder`, variable/name/word patterns | allow | yes | Explicit FOL syntax; atom names are uninterpreted. Readable fallback inherits older lexical limits. |
+| `entailment_gate_v25.go`: readable quantifier families, `identityQuantifierWords` | allow / block | yes | Quantifier families are positive; identity-term exclusion is **open** without independent positive referring-term grammar. |
+| `entailment_gate_v25_literals.go`: `folLiteralStart`, `folNameEscape`, JSON literal syntax | allow | yes | Explicit uninterpreted atom/name syntax, with literal payload preserved. |
+| `entailment_gate_v26.go`: counting prefixes/numerals, signed/wrote predicates | allow | yes | Finite counting grammar; class stemming still shares the morphology limitation. |
+| `entailment_gate_v27.go`: relative/article/grouping marker lists | allow / block | yes | Positive description grammar plus negative ambiguity exclusions; **open** where readable relation parsers supply lexical meaning. |
+| `entailment_gate_v28.go`: modifier list, relational verb list, quantifier and identity separator lists | allow | yes | Explicit rewrite candidates; identity substitutions also pass the subject-position check. |
+| `entailment_gate_v29.go`: `unlessAnaphor` | block | yes | **Open**: anaphora is broader than these pronouns, so absence is not proof of independence. |
+| `entailment_gate_repeated_slots.go`: `repeatedSlotUniversal`, `repeatedSlotExistential` | allow / block | yes | Explicit universal recognition; repeated-slot existential exclusion remains **open** for unlisted quantificational expressions. |
+| same: `repeatedSlotDisjunctSingular`, `repeatedSlotRelativeThenVerb` | allow / block | yes | Positive short-term shape and relative boundary exclusions; not a full nominal grammar. |
+| `numbered_argument.go`: conclusion markers and their noun-continuation exceptions | allow / block | yes | Fixed markers; continuations disambiguate ordinary “so ...” statements. They affect parsing, not an entailment by themselves. |
+| same: premise/conclusion/reference/fence patterns | allow | yes | Numbered-argument syntax and explicit numeric references. |
+| `numbered_argument_scope.go`: arbitrary-name pattern | allow | yes | Explicit binder syntax. |
+| `entailment_gate_expand.go`: bridge pattern | allow | yes | Explicit cited-step expansion grammar. |
+| `step_reference_hint.go`: parenthesized reference pattern | allow | no | Diagnostic hint only. |
+
+### Residual frame limits
+
+The new guard is a surface recognizer, not a part-of-speech parser. Bare-noun
+and gerund recognition uses predicate cues; noun/verb homonyms and complex
+nominal subjects remain uncertain. The final guard currently classifies rule
+families by certificate name; a new rule that inspects sentences must be added
+to that classification. Explicit grouping of a whole operand permits that
+operand to remain opaque. A complement's own parentheses do not make its
+content asserted. Unknown intransitive verbs can be conservatively refused;
+use explicit grouping for those cases. No corpus impact percentage was
+measured in this run.

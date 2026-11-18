@@ -57,7 +57,7 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H044", "1. Not every robot is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H045", "1. Neither robot is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H046", "1. All but one robot is red.\n2. Therefore, Something is red. [1]\n", false},
-		{"H047", "1. Almost every robot is red.\n2. Therefore, Something is red. [1]\n", true},
+		{"H047", "1. Almost every robot is red.\n2. Therefore, Something is red. [1]\n", true}, // control: "Almost every" is a quantifier opener, not a sentence adverb
 		{"H048", "1. Hardly any robot is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H049", "1. Less than half the robots is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H050", "1. More than two robots is red.\n2. Therefore, Something is red. [1]\n", true},
@@ -140,11 +140,11 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H127", "1. It is not the case that Alpha is red and Beta is blue.\n2. Therefore, Beta is blue. [1]\n", false},
 		{"H128", "1. It is not the case that Alpha is red or Beta is blue.\n2. It is not the case that It is not the case that Alpha is red.\n3. Therefore, Beta is blue. [1,2]\n", false},
 		{"H129", "1. The robots, which are red, are warm.\n2. Therefore, The robots which are red are warm. [1]\n", true},
-		{"H130", "1. The robots which are red are warm.\n2. Therefore, The robots, which are red, are warm. [1]\n", true}, // known gap: the FOL path ignores the relative comma (docs/coverage.md)
-		{"H131", "1. Alpha eats, shoots, and leaves.\n2. Therefore, Alpha eats shoots and leaves. [1]\n", true},           // known gap: verb-list commas are ignored
-		{"H132", "1. Alpha eats shoots and leaves.\n2. Therefore, Alpha eats, shoots, and leaves. [1]\n", true},           // known gap: verb-list commas are ignored
-		{"H133", "1. The robot, Alpha, is red.\n2. Therefore, The robot Alpha is red. [1]\n", true},
-		{"H134", "1. Let us eat, robots.\n2. Therefore, Let us eat robots. [1]\n", true}, // known gap: vocative comma is ignored
+		{"H130", "1. The robots which are red are warm.\n2. Therefore, The robots, which are red, are warm. [1]\n", false}, // comma-exact matching
+		{"H131", "1. Alpha eats, shoots, and leaves.\n2. Therefore, Alpha eats shoots and leaves. [1]\n", false},           // comma-exact matching
+		{"H132", "1. Alpha eats shoots and leaves.\n2. Therefore, Alpha eats, shoots, and leaves. [1]\n", false},           // comma-exact matching
+		{"H133", "1. The robot, Alpha, is red.\n2. Therefore, The robot Alpha is red. [1]\n", false},                       // appositive commas are meaningful
+		{"H134", "1. Let us eat, robots.\n2. Therefore, Let us eat robots. [1]\n", false},                                  // comma-exact matching
 		{"H135", "1. All axes are valuable.\n2. Alpha is a axe.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H136", "1. All axes are valuable.\n2. Alpha is a axis.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H137", "1. All clothes are valuable.\n2. Alpha is a cloth.\n3. Therefore, Alpha is valuable. [1,2]\n", false},

@@ -124,6 +124,9 @@ func round2Singular(word string) string {
 // never names merely because their first word starts a sentence.
 func instanceSubjectAllowed(s string) bool {
 	lower := strings.ToLower(strings.TrimSpace(s))
+	if modifiedQuantifierPhrase(lower) {
+		return false
+	}
 	// Single-letter constants include Fitch arbitrary names such as a.
 	if len(s) == 1 && s[0] >= 'a' && s[0] <= 'z' {
 		return true

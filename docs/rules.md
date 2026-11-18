@@ -3031,7 +3031,7 @@ clause identity.
 3. Therefore, The observer imagines Alpha is warm. [1,2]
 ```
 
-```argcheck-accept self-entailment
+```argcheck-accept notation equivalence
 1. Alpha eats, shoots, and leaves.
 2. Therefore, Alpha eats, shoots and leaves. [1]
 ```
@@ -3087,4 +3087,56 @@ The existing `Either A or B and C` reading remains `A or (B and C)`.
 ```argcheck-reject unless conversion
 1. The alarm sounds and the lamp flashes unless the battery is dead.
 2. Therefore, if it is not the case that the battery is dead, then the alarm sounds and the lamp flashes. [1]
+```
+
+## Sentence-internal frames
+
+A certificate that extracts or builds a conjunction/disjunction, substitutes
+identicals, or instantiates a quantifier or schema refuses a sentence that opens
+with something that may cover the whole sentence: a sentence adverb (any word
+ending in `-ly`, such as `Arguably`, `Purportedly`, `Hypothetically`, and
+`perhaps`, `maybe`, `sometimes`, `often`, `once`, `always`, `never`,
+`yesterday`, `today`), or a fronted framing phrase that starts with a
+preposition and ends at a comma within its first few words (`In the story,`,
+`Under the law of likelihood,`, `According to Bob,`). A capitalized word that
+also appears capitalized mid-sentence elsewhere in the argument is a name, not
+an adverb. Bare-noun, gerund and adjective subjects (`Beliefs ...`,
+`Human value ...`) are subjects. The message suggests moving the adverb or
+frame out, or rewording so the sentence starts with its subject (`Rationalist
+notions that are deeply held ...` instead of `Deeply held rationalist notions
+...`).
+Whole-sentence reuse does not inspect the reused sentence.
+
+```argcheck-reject conjunction elimination
+1. Arguably the server crashed and the network failed.
+2. Therefore, the network failed. [1]
+```
+
+Unmarked clause coordination requires a recognized complete left clause.
+Copular predications and listed intransitive predicates support ordinary
+`A and B`; other verbs require explicit whole-clause grouping. Parentheses
+inside the complement of a verb do not assert that complement. Write
+`Both ... and ...`, `Either ... or ...`, parenthesize whole operands, or split
+assertions into numbered premises. A coordinated noun or verb phrase does not
+by itself license clause extraction.
+
+```argcheck-accept conjunction elimination
+1. The server crashed and the network failed.
+2. Therefore, the network failed. [1]
+```
+
+```argcheck-reject conjunction elimination
+1. Bob reckons the server crashed and the network failed.
+2. Therefore, the network failed. [1]
+```
+
+Commas in clause and term comparisons are significant. A structural parser may
+consume the comma in `If A, then B`, a conclusion marker such as `Therefore,`,
+or an explicitly recognized coordination boundary. Other commas, including
+relative, appositive and vocative commas, remain part of the compared text.
+Whitespace and a final period do not distinguish clauses.
+
+```argcheck-reject self-entailment
+1. Alpha eats shoots and leaves.
+2. Therefore, Alpha eats, shoots, and leaves. [1]
 ```

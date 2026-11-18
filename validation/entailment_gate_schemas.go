@@ -13,7 +13,7 @@ const relativeArity = -3
 const variableArity = -1
 const variableArityAtLeastTwo = -2
 
-var conditionalSplitPattern = regexp.MustCompile(`(?i),?\bthen\b,? `)
+var conditionalSplitPattern = regexp.MustCompile(`(?i),?\s*\bthen\b,? `)
 var separatedQuantifierPattern = regexp.MustCompile(`\b(every|no) thing\b`)
 
 const (
@@ -160,7 +160,7 @@ func normalizeClause(value string) string {
 	}
 	value = expandGateContractions(value)
 	value = strings.Join(strings.Fields(value), " ")
-	value = strings.Trim(value, ", ")
+	value = strings.TrimSpace(value)
 	if strings.HasSuffix(value, ".") {
 		value = strings.TrimSuffix(value, ".")
 	}
@@ -209,7 +209,7 @@ func conditionalCandidatesWithNormalizer(statement string, normalize func(string
 	indexes := conditionalSplitPattern.FindAllStringIndex(remainder, -1)
 	result := make([]clausePair, 0, len(indexes))
 	for _, index := range indexes {
-		left := normalize(remainder[:index[0]])
+		left := normalize(strings.TrimSuffix(strings.TrimSpace(remainder[:index[0]]), ","))
 		right := normalize(remainder[index[1]:])
 		if left != "" && right != "" {
 			result = append(result, clausePair{left: left, right: right})
@@ -247,7 +247,7 @@ func biconditionalCandidates(statement string) []clausePair {
 func normalizeClausePreservingCase(value string) string {
 	value = expandGateContractions(value)
 	value = strings.Join(strings.Fields(value), " ")
-	value = strings.Trim(value, ", ")
+	value = strings.TrimSpace(value)
 	if strings.HasSuffix(value, ".") {
 		value = strings.TrimSuffix(value, ".")
 	}
@@ -827,7 +827,11 @@ func appendSplitCandidates(result []clausePair, statement, separator string, str
 			return result
 		}
 		index += start
-		left := normalizeClause(statement[:index])
+		leftText := statement[:index]
+		if separator == " and " || separator == " or " {
+			leftText = strings.TrimSuffix(strings.TrimSpace(leftText), ",")
+		}
+		left := normalizeClause(leftText)
 		right := normalizeClause(statement[index+len(separator):])
 		if stripRightThat {
 			right = strings.TrimPrefix(right, "that ")
@@ -873,6 +877,10 @@ func evaluateIdentityComparisons(equal func(string, string) bool, identities ...
 	for _, identity := range identities {
 		if equal(identity.left, identity.right) {
 			outcome.score++
+			continue
+		}
+		if why := punctuationDifference(identity.left, identity.right); why != "" {
+			outcome.mismatch = why
 			continue
 		}
 		if outcome.mismatch == "" {
@@ -2009,8 +2017,9 @@ func matchNaryConjunctionIntroduction(premises []NumberedArgumentStep, conclusio
 	permuteClauses(parts, 0, func(order []string) bool {
 		last := len(order) - 1
 		listed := strings.Join(order[:last], ", ") + " and " + order[last]
+		oxford := strings.Join(order[:last], ", ") + ", and " + order[last]
 		chained := strings.Join(order, " and ")
-		matched = target == comparisonClause(listed) || target == comparisonClause(chained)
+		matched = target == comparisonClause(listed) || target == comparisonClause(oxford) || target == comparisonClause(chained)
 		return matched
 	})
 	if matched {
@@ -2092,6 +2101,9 @@ func onlyGerund(lower string) bool {
 
 func schematicBindingAllowed(binding string) bool {
 	lower := strings.ToLower(strings.TrimSpace(binding))
+	if modifiedQuantifierPhrase(lower) {
+		return false
+	}
 	if embeddedBinding(lower) {
 		return false
 	}
