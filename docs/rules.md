@@ -1,6 +1,6 @@
 # Inference Rule Catalog (`v31.1`)
 
-`argcheck` checks each conclusion step against the 121 inference forms in gate catalog `v31.1` (`argcheck --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions (including `it's (not) the case that` for `it is (not) the case that`), and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`english-arg-validator` checks each conclusion step against the 121 inference forms in gate catalog `v31.1` (`english-arg-validator --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions (including `it's (not) the case that` for `it is (not) the case that`), and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 

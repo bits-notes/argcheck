@@ -1,4 +1,4 @@
-module github.com/bits-notes/argcheck
+module github.com/bits-notes/english-arg-validator
 
 go 1.25.0
 

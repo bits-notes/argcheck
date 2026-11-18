@@ -1,6 +1,6 @@
-# argcheck
+# english-arg-validator
 
-`argcheck` is a deterministic checker in Go for transparently valid numbered
+`english-arg-validator` (formerly `argcheck`) is a deterministic checker in Go for transparently valid numbered
 arguments. It runs offline with no LLM and no network access by default: every
 conclusion step must instantiate a named inference form from the catalog
 (currently **v34.0**, 121 forms) using only its cited earlier steps, with clauses
@@ -11,7 +11,7 @@ logic with identity, within a controlled English (sentences with one reading); a
 bounded finite-model oracle tests that the checker never accepts an invalid
 argument; this is not proved.
 
-Passing `argcheck` shows that an argument's steps follow under the catalog. It
+Passing `english-arg-validator` shows that an argument's steps follow under the catalog. It
 does not establish that the premises are true, that an encoding faithfully
 captures a source text, or that an unstated assumption is warranted. If two
 wordings are meant to be equivalent, state that link as an explicit premise.
@@ -23,26 +23,26 @@ Requires Go 1.25.0 or later.
 Install the latest published version with `go install`:
 
 ```sh
-go install github.com/bits-notes/argcheck/cmd/argcheck@latest
+go install github.com/bits-notes/english-arg-validator/cmd/english-arg-validator@latest
 ```
 
 Or install from a local checkout (stamps the binary with the current git commit
 into `$HOME/.local/bin`, overridable via `BIN_DIR`):
 
 ```sh
-./install-argcheck.sh
+./install.sh
 ```
 
 ## Usage
 
 ```sh
-argcheck argument.txt        # check a file
-argcheck < argument.txt      # read from stdin
-cat argument.txt | argcheck -
-argcheck --quiet argument.txt
-argcheck --json argument.txt
-argcheck --forms             # list all 121 inference forms in catalog v34.0
-argcheck --version           # print catalog version and build stamp
+english-arg-validator argument.txt        # check a file
+english-arg-validator < argument.txt      # read from stdin
+cat argument.txt | english-arg-validator -
+english-arg-validator --quiet argument.txt
+english-arg-validator --json argument.txt
+english-arg-validator --forms             # list all 121 inference forms in catalog v34.0
+english-arg-validator --version           # print catalog version and build stamp
 ```
 
 Put flags before the file argument.
@@ -52,7 +52,7 @@ Put flags before the file argument.
 | Code | Meaning |
 | ---: | --- |
 | `0` | `VALID` — syntax and every conclusion step pass |
-| `1` | `NOT CERTIFIED` — syntax fails or at least one conclusion step matches no accepted rule. This does not mean the argument is invalid, only that argcheck could not certify it. |
+| `1` | `NOT CERTIFIED` — syntax fails or at least one conclusion step matches no accepted rule. This does not mean the argument is invalid, only that english-arg-validator could not certify it. |
 | `2` | Input, flag, or operational error (for example, empty input or missing remote configuration) |
 | `3` | `DIVERGENT` — local and remote verdicts disagree (`--both`) |
 
@@ -68,10 +68,10 @@ Input (`valid.txt`):
 3. Therefore, the street is wet. [1,2]
 ```
 
-Output (`argcheck valid.txt`, exit `0`):
+Output (`english-arg-validator valid.txt`, exit `0`):
 
 ```text
-VALID  (gate catalog v34.0; local argcheck@ef44658)
+VALID  (gate catalog v34.0; local english-arg-validator@ef44658)
 syntax: ok
 step 3 [1,2]: ok: modus ponens
 ```
@@ -89,16 +89,16 @@ not certified (`uncertified.txt`):
 3. Therefore, the road is wet. [1,2]
 ```
 
-Output (`argcheck uncertified.txt`, exit `1`):
+Output (`english-arg-validator uncertified.txt`, exit `1`):
 
 ```text
-NOT CERTIFIED  (gate catalog v34.0; local argcheck@ef44658)
+NOT CERTIFIED  (gate catalog v34.0; local english-arg-validator@ef44658)
 syntax: ok
 step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
 ```
 
 When a conclusion fails only because it cites an extra step that does no work,
-`argcheck` prints an advisory `hint:` line naming the form that passes on the
+`english-arg-validator` prints an advisory `hint:` line naming the form that passes on the
 used subset and the inert citation(s) to drop.
 
 ## The numbered format
@@ -175,12 +175,12 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
   },
   "entailment_catalog": "v34.0",
   "backend": "local",
-  "version": "argcheck@ef44658"
+  "version": "english-arg-validator@ef44658"
 }
 ```
 
 `verdict` is `"VALID"` or `"NOT CERTIFIED"`; the boolean `valid` is kept for
-existing clients. A failing check means argcheck found no accepted rule for some
+existing clients. A failing check means english-arg-validator found no accepted rule for some
 step, not that the argument is invalid.
 
 `--forms` prints the catalog header (`entailment gate catalog v34.0 (...)`)
@@ -194,7 +194,7 @@ quantifiers (`1`–`5`), and Russellian definite descriptions.
   [`docs/rules.md`](docs/rules.md)
 - Detailed grammar rules, authoring guidance, and known limits:
   [`docs/coverage.md`](docs/coverage.md)
-- Agent workflow skill: [`skills/argcheck/SKILL.md`](skills/argcheck/SKILL.md)
+- Agent workflow skill: [`skills/english-arg-validator/SKILL.md`](skills/english-arg-validator/SKILL.md)
 - Formalizing from a source text (sentence ledger, supplied premises, fidelity
   pass): [`skills/formalize-from-source/SKILL.md`](skills/formalize-from-source/SKILL.md)
 
@@ -219,15 +219,15 @@ Run tests locally with `go test -timeout 30m ./...`. The full suite takes about 
 
 `--prod` sends the argument over HTTP JSON-RPC (`tools/call`) to a remote MCP
 validation endpoint; `--both` runs local and remote checks and exits `3` if they
-disagree. Both `ARGCHECK_REMOTE_URL` and `ARGCHECK_REMOTE_TOOL` must be set, either
-in the environment or in `$XDG_CONFIG_HOME/argcheck/config` (default
-`~/.config/argcheck/config`), one `KEY=VALUE` per line; the environment wins.
-There are no built-in defaults; if either is unset, `argcheck` exits `2`.
+disagree. Both `EAV_REMOTE_URL` and `EAV_REMOTE_TOOL` must be set, either
+in the environment or in `$XDG_CONFIG_HOME/english-arg-validator/config` (default
+`~/.config/english-arg-validator/config`), one `KEY=VALUE` per line; the environment wins.
+There are no built-in defaults; if either is unset, `english-arg-validator` exits `2`.
 
 ```text
-# ~/.config/argcheck/config
-ARGCHECK_REMOTE_URL=https://example.com/mcp
-ARGCHECK_REMOTE_TOOL=formalizer.validate
+# ~/.config/english-arg-validator/config
+EAV_REMOTE_URL=https://example.com/mcp
+EAV_REMOTE_TOOL=formalizer.validate
 ```
 
 ## License

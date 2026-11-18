@@ -861,7 +861,7 @@ still less of Y or Z or U` beside an `and` chain) and `wilkinson-2022 A112`
 
 A failing check now prints `NOT CERTIFIED` instead of `INVALID` (text output and
 `--quiet`), and `--json` gains a `verdict` field (`"VALID"` or `"NOT CERTIFIED"`)
-beside the existing boolean `valid`. A failure means that argcheck found no
+beside the existing boolean `valid`. A failure means that english-arg-validator found no
 accepted rule for some step. It does not show that the argument is invalid. Exit
 codes, step-level `FAIL` lines and messages are unchanged. No verdict changes.
 

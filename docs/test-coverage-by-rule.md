@@ -4,7 +4,7 @@ Positive is the number of gated steps the validation tests accepted with that fo
 
 Catalog version: `v34.0`.
 
-The table lists every form `argcheck --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.
+The table lists every form `english-arg-validator --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.
 
 ## Regenerate
 
@@ -143,7 +143,7 @@ go run ./tools/formcoverage tmp/form-coverage.json > docs/test-coverage-by-rule.
 
 ## Forms counted outside `--forms`
 
-A name in this list was reported for a gated step and is not printed by `argcheck --forms`. Reported names can differ from catalog names by a suffix such as ` (necessitation)`.
+A name in this list was reported for a gated step and is not printed by `english-arg-validator --forms`. Reported names can differ from catalog names by a suffix such as ` (necessitation)`.
 
 - `Fitch discharge`: positive 0, negative 13810
 - `antecedent strengthening`: positive 0, negative 2

@@ -1,11 +1,11 @@
 ---
-name: argcheck
-description: Check a numbered argument for syntactically transparent validity with the deterministic `argcheck` CLI (offline Go checker, no LLM). Use whenever drafting, checking, or repairing a premises-to-conclusion argument: write in the gate's numbered format, run `argcheck`, read any step mismatch, and repair until it passes while keeping fidelity to the source text.
+name: english-arg-validator
+description: Check a numbered argument for syntactically transparent validity with the deterministic `english-arg-validator` CLI (offline Go checker, no LLM). Use whenever drafting, checking, or repairing a premises-to-conclusion argument: write in the gate's numbered format, run `english-arg-validator`, read any step mismatch, and repair until it passes while keeping fidelity to the source text.
 ---
 
-# argcheck — deterministic validity check for numbered arguments
+# english-arg-validator — deterministic validity check for numbered arguments
 
-`argcheck` runs two deterministic checks in Go (`numbered_argument_syntax`, then
+`english-arg-validator` runs two deterministic checks in Go (`numbered_argument_syntax`, then
 the catalog `v34.0` entailment gate) with no LLM and no network access.
 
 **Validity is syntactic: the gate is the standard. Never overrule a gate failure
@@ -14,31 +14,31 @@ valid, rephrase it into a catalog form or make the missing link a visible
 premise. If no phrasing works, report that the inference is outside the catalog
 rather than calling the step valid.
 
-**Fidelity to the source is your job, not the gate's.** `argcheck` checks only
+**Fidelity to the source is your job, not the gate's.** `english-arg-validator` checks only
 whether each conclusion step follows syntactically from its cited steps; it
 never checks whether premises are true or faithful to a text.
 
 ## Run it
 
 ```bash
-argcheck <<'EOF'
+english-arg-validator <<'EOF'
 1. If it rains, then the street is wet.
 2. It rains.
 3. Therefore, the street is wet. [1,2]
 EOF
 ```
 
-- `argcheck file.txt` or stdin (`argcheck < file.txt`, `cat file.txt | argcheck -`).
+- `english-arg-validator file.txt` or stdin (`english-arg-validator < file.txt`, `cat file.txt | english-arg-validator -`).
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `NOT CERTIFIED`.
 - `--forms` lists all 121 accepted inference forms in catalog `v34.0`.
-- `--version` prints the catalog version and build stamp (`gate catalog v34.0; local argcheck@<commit>`).
+- `--version` prints the catalog version and build stamp (`gate catalog v34.0; local english-arg-validator@<commit>`).
 - Exit codes: `0` valid, `1` not certified, `2` input or operational error.
 - `NOT CERTIFIED` means some step matched no accepted rule. It does not mean the
   argument is invalid; repair the step or add the missing premise.
-- If `argcheck` is not installed yet, install with
-  `go install github.com/bits-notes/argcheck/cmd/argcheck@latest` or run
-  `./install-argcheck.sh` from a checkout of the repository.
+- If `english-arg-validator` is not installed yet, install with
+  `go install github.com/bits-notes/english-arg-validator/cmd/english-arg-validator@latest` or run
+  `./install.sh` from a checkout of the repository.
 
 Output reports each conclusion step as `ok: <form>` or
 `FAIL: nearest form <form>: <exact mismatch>`. When a conclusion fails only
@@ -83,7 +83,7 @@ that passes on the used subset and the inert citation(s) to remove.
 
 ## The repair loop
 
-1. **Draft** the argument in the strict numbered format and run `argcheck`.
+1. **Draft** the argument in the strict numbered format and run `english-arg-validator`.
 2. **Read each `FAIL`:** the mismatch quotes the exact clauses or bindings that
    failed to match. Fix the wording (align clauses verbatim, use canonical
    negation, or split a multi-hop jump into one inference per step) or fix the
@@ -216,7 +216,7 @@ logic with identity, within a controlled English (sentences with one reading); a
 bounded finite-model oracle tests that the checker never accepts an invalid
 argument; this is not proved.
 
-What `argcheck` does not do:
+What `english-arg-validator` does not do:
 
 - **Premise truth:** it never judges whether premises are true.
 - **Source fidelity:** it never checks whether an argument matches a source text.
@@ -224,7 +224,7 @@ What `argcheck` does not do:
   synonym tolerance, general arithmetic (`n > 5`), modal systems beyond T,
   proportional quantifiers (`most`), or non-deductive inference.
 
-See `docs/rules.md` in the `argcheck` repository for all 121 forms with accepted
+See `docs/rules.md` in the `english-arg-validator` repository for all 121 forms with accepted
 and rejected examples, and `docs/coverage.md` for full grammar boundaries.
 
 ## Make and/or scope explicit

@@ -1,4 +1,4 @@
-// Command argcheck reports whether a numbered argument has syntactically
+// Command english-arg-validator (formerly argcheck) reports whether a numbered argument has syntactically
 // transparent validity under the deterministic entailment gate.
 //
 // The local backend checks numbered_argument_syntax, then the entailment gate.
@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bits-notes/argcheck/validation"
+	"github.com/bits-notes/english-arg-validator/validation"
 )
 
 const (
@@ -38,7 +38,7 @@ type check struct {
 }
 
 // verdict mirrors the remote validate endpoint response shape plus provenance.
-// Verdict words. A failing argument is NOT CERTIFIED, not INVALID: argcheck
+// Verdict words. A failing argument is NOT CERTIFIED, not INVALID: english-arg-validator
 // found no accepted rule for some step, which does not show the argument is
 // invalid.
 const (
@@ -72,16 +72,16 @@ func main() {
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	flags := flag.NewFlagSet("argcheck", flag.ContinueOnError)
+	flags := flag.NewFlagSet("english-arg-validator", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	jsonOut := flags.Bool("json", false, "print machine-readable JSON")
-	prod := flags.Bool("prod", false, "check against the remote MCP endpoint configured via ARGCHECK_REMOTE_URL and ARGCHECK_REMOTE_TOOL")
+	prod := flags.Bool("prod", false, "check against the remote MCP endpoint configured via EAV_REMOTE_URL and EAV_REMOTE_TOOL")
 	both := flags.Bool("both", false, "check locally and against the remote endpoint; exit 3 if they disagree")
 	version := flags.Bool("version", false, "print the catalog and build version and exit")
 	forms := flags.Bool("forms", false, "list the accepted inference forms and exit")
 	quiet := flags.Bool("quiet", false, "print only the verdict (VALID or NOT CERTIFIED; DIVERGENT with --both on disagreement)")
 	flags.Usage = func() {
-		fmt.Fprintln(stderr, `usage: argcheck [--json|--quiet] [--prod|--both] [file|-]
+		fmt.Fprintln(stderr, `usage: english-arg-validator [--json|--quiet] [--prod|--both] [file|-]
 
 Reads a numbered argument (file, or stdin) in the gate's format:
   1. Premise statement.
@@ -119,26 +119,26 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 
 	var remoteURL, remoteTool string
 	if *prod || *both {
-		remoteURL = remoteSetting("ARGCHECK_REMOTE_URL")
+		remoteURL = remoteSetting(settingRemoteURL)
 		if remoteURL == "" {
-			fmt.Fprintln(stderr, "argcheck: --prod and --both require ARGCHECK_REMOTE_URL (environment or "+configPathHint()+")")
+			fmt.Fprintln(stderr, "english-arg-validator: --prod and --both require EAV_REMOTE_URL (environment or "+configPathHint()+")")
 			return exitError
 		}
-		remoteTool = remoteSetting("ARGCHECK_REMOTE_TOOL")
+		remoteTool = remoteSetting(settingRemoteTool)
 		if remoteTool == "" {
-			fmt.Fprintln(stderr, "argcheck: --prod and --both require ARGCHECK_REMOTE_TOOL (environment or "+configPathHint()+")")
+			fmt.Fprintln(stderr, "english-arg-validator: --prod and --both require EAV_REMOTE_TOOL (environment or "+configPathHint()+")")
 			return exitError
 		}
 	}
 
 	input, err := readInput(flags.Arg(0), stdin)
 	if err != nil {
-		fmt.Fprintln(stderr, "argcheck:", err)
+		fmt.Fprintln(stderr, "english-arg-validator:", err)
 		return exitError
 	}
 	argument := strings.TrimSpace(input)
 	if argument == "" {
-		fmt.Fprintln(stderr, "argcheck: argument is empty")
+		fmt.Fprintln(stderr, "english-arg-validator: argument is empty")
 		return exitError
 	}
 
@@ -149,7 +149,7 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 	if *prod || *both {
 		remote, err := checkProd(remoteURL, remoteTool, argument)
 		if err != nil {
-			fmt.Fprintln(stderr, "argcheck: remote check failed:", err)
+			fmt.Fprintln(stderr, "english-arg-validator: remote check failed:", err)
 			return exitError
 		}
 		verdicts = append(verdicts, remote)
@@ -167,7 +167,7 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 			payload = map[string]any{"local": verdicts[0], "prod": verdicts[1], "divergent": divergent}
 		}
 		if err := encoder.Encode(payload); err != nil {
-			fmt.Fprintln(stderr, "argcheck:", err)
+			fmt.Fprintln(stderr, "english-arg-validator:", err)
 			return exitError
 		}
 	} else if *quiet {
@@ -252,16 +252,16 @@ func inertCitations(argument string) []validation.InertCitationReport {
 	return validation.NumberedArgumentInertCitations(expanded)
 }
 
-// commit is set by install-argcheck.sh via -ldflags "-X main.commit=...".
+// commit is set by install.sh via -ldflags "-X main.commit=...".
 var commit string
 
 func localVersion() string {
 	if commit != "" {
-		return "argcheck@" + commit
+		return "english-arg-validator@" + commit
 	}
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		return "argcheck@unknown"
+		return "english-arg-validator@unknown"
 	}
 	revision, modified := "", false
 	for _, setting := range info.Settings {
@@ -274,9 +274,9 @@ func localVersion() string {
 	}
 	if revision == "" {
 		if info.Main.Version != "" && info.Main.Version != "(devel)" {
-			return "argcheck@" + info.Main.Version
+			return "english-arg-validator@" + info.Main.Version
 		}
-		return "argcheck@unknown (build with go build, not go run)"
+		return "english-arg-validator@unknown (build with go build, not go run)"
 	}
 	if len(revision) > 7 {
 		revision = revision[:7]
@@ -284,7 +284,7 @@ func localVersion() string {
 	if modified {
 		revision += "-dirty"
 	}
-	return "argcheck@" + revision
+	return "english-arg-validator@" + revision
 }
 
 func checkProd(remoteURL, remoteTool, argument string) (verdict, error) {

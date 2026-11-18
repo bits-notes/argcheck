@@ -82,7 +82,7 @@ func parseRulesDocBlocks(t *testing.T, text string) []rulesDocBlock {
 	return blocks
 }
 
-// checkRulesDocArgument runs the exact local check sequence used by cmd/argcheck.
+// checkRulesDocArgument runs the exact local check sequence used by cmd/english-arg-validator.
 func checkRulesDocArgument(argument string) (bool, EntailmentGateReport, string) {
 	argument = strings.TrimSpace(argument)
 	syntax := Validate(context.Background(), BuiltinSpec(BuiltinNumberedArgumentSyntax), argument)

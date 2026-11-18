@@ -1,11 +1,11 @@
 ---
 name: formalize-from-source
-description: Turn a source passage into a faithful numbered argument. Build a sentence ledger that gives every source sentence a disposition, anchor each premise to its sentences, mark supplied premises, then check validity with argcheck and fidelity against the ledger. Use when reconstructing an author's argument from a text, not when writing your own.
+description: Turn a source passage into a faithful numbered argument. Build a sentence ledger that gives every source sentence a disposition, anchor each premise to its sentences, mark supplied premises, then check validity with english-arg-validator and fidelity against the ledger. Use when reconstructing an author's argument from a text, not when writing your own.
 ---
 
 # Formalize an argument from a source text
 
-`argcheck` decides validity. It never checks that an argument matches its
+`english-arg-validator` decides validity. It never checks that an argument matches its
 source. This skill is the fidelity half: what the author said, what you added,
 and what you left out, each visible and checkable.
 
@@ -81,7 +81,7 @@ Good (the supplied rule states why the facts matter, as the passage implies):
 4. Therefore, the council should require an independent spill audit. [1,2,3]
 ```
 
-Both pass `argcheck`; only the second is faithful. The `(supplied…)` tags are
+Both pass `english-arg-validator`; only the second is faithful. The `(supplied…)` tags are
 notes for the reader, so remove them before running the checker.
 
 If the passage only reports or lists claims and never draws a conclusion from
@@ -90,8 +90,8 @@ and say so.
 
 ## 5. Check validity
 
-Run `argcheck` on the numbered argument and repair until it prints `VALID`. See
-the `argcheck` skill for the format and for repairs. Repairs must still obey
+Run `english-arg-validator` on the numbered argument and repair until it prints `VALID`. See
+the `english-arg-validator` skill for the format and for repairs. Repairs must still obey
 section 3: passing the gate by weakening or overstating the source is a failure,
 not a fix.
 
@@ -106,4 +106,4 @@ Before reporting the argument, check both directions:
 - Hedges are outside the argument and labelled.
 
 Report the ledger, the argument with its locator notes, the supplied premises
-with their reasons, and the `argcheck` verdict line.
+with their reasons, and the `english-arg-validator` verdict line.

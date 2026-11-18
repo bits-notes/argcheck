@@ -1,5 +1,5 @@
 // Command formcoverage prints docs/test-coverage-by-rule.md from a coverage
-// JSON file. argcheck --forms prints validation.EntailmentGateForms; this
+// JSON file. english-arg-validator --forms prints validation.EntailmentGateForms; this
 // uses that same list, in that order.
 package main
 
@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bits-notes/argcheck/validation"
+	"github.com/bits-notes/english-arg-validator/validation"
 )
 
 type coverageCount struct {
@@ -50,7 +50,7 @@ func main() {
 	fmt.Fprintf(&b, "# Test coverage by inference form\n\n")
 	fmt.Fprintf(&b, "Positive is the number of gated steps the validation tests accepted with that form. Negative is the number of gated steps they rejected with that form as `nearest_form`.\n\n")
 	fmt.Fprintf(&b, "Catalog version: `%s`.\n\n", validation.EntailmentGateCatalogVersion)
-	fmt.Fprintf(&b, "The table lists every form `argcheck --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.\n\n")
+	fmt.Fprintf(&b, "The table lists every form `english-arg-validator --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.\n\n")
 	fmt.Fprintf(&b, "## Regenerate\n\n```\n%s```\n\n", regenerateCommands)
 	fmt.Fprintf(&b, "| Form | Positive | Negative |\n")
 	fmt.Fprintf(&b, "| --- | ---: | ---: |\n")
@@ -70,7 +70,7 @@ func main() {
 	fmt.Fprintf(&b, "\n## Summary\n\n")
 	fmt.Fprintf(&b, "%d forms have 0 positive. %d forms have 0 negative.\n\n", noPositive, noNegative)
 	fmt.Fprintf(&b, "## Forms counted outside `--forms`\n\n")
-	fmt.Fprintf(&b, "A name in this list was reported for a gated step and is not printed by `argcheck --forms`. Reported names can differ from catalog names by a suffix such as ` (necessitation)`.\n\n")
+	fmt.Fprintf(&b, "A name in this list was reported for a gated step and is not printed by `english-arg-validator --forms`. Reported names can differ from catalog names by a suffix such as ` (necessitation)`.\n\n")
 
 	var extra []string
 	for name := range counts {

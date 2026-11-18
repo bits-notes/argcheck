@@ -176,14 +176,14 @@ func TestArgcheckVersion(t *testing.T) {
 	t.Cleanup(func() { commit = old })
 	commit = "v28-test-commit"
 	code, out := runArgcheck(t, "", "--version")
-	if code != exitValid || !strings.Contains(out, "catalog v34.0") || !strings.Contains(out, "argcheck@v28-test-commit") {
+	if code != exitValid || !strings.Contains(out, "catalog v34.0") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
 		t.Fatalf("%d: %s", code, out)
 	}
 	if code, _ := runArgcheck(t, "", "--version-typo"); code != exitError {
 		t.Fatalf("unknown flag returned %d", code)
 	}
 	commit = ""
-	if got := localVersion(); !strings.HasPrefix(got, "argcheck@") {
+	if got := localVersion(); !strings.HasPrefix(got, "english-arg-validator@") {
 		t.Fatal(got)
 	}
 }
@@ -210,20 +210,22 @@ func TestArgcheckQuiet(t *testing.T) {
 
 func TestArgcheckRemoteRequiresEnv(t *testing.T) {
 	const valid = "1. If it rains, then the street is wet.\n2. It rains.\n3. Therefore, the street is wet. [1,2]"
-	// Isolate from any user config file (~/.config/argcheck/config).
+	// Isolate from any user config file (~/.config/english-arg-validator/config, ~/.config/argcheck/config).
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("EAV_REMOTE_URL", "")
+	t.Setenv("EAV_REMOTE_TOOL", "")
 	t.Setenv("ARGCHECK_REMOTE_URL", "")
 	t.Setenv("ARGCHECK_REMOTE_TOOL", "")
 	for _, flagName := range []string{"--prod", "--both"} {
 		code, out := runArgcheck(t, valid, flagName)
-		if code != exitError || !strings.Contains(out, "ARGCHECK_REMOTE_URL") {
+		if code != exitError || !strings.Contains(out, "EAV_REMOTE_URL") {
 			t.Fatalf("%s without URL: exit %d, output:\n%s", flagName, code, out)
 		}
 	}
 	t.Setenv("ARGCHECK_REMOTE_URL", "http://127.0.0.1:1/mcp")
 	for _, flagName := range []string{"--prod", "--both"} {
 		code, out := runArgcheck(t, valid, flagName)
-		if code != exitError || !strings.Contains(out, "ARGCHECK_REMOTE_TOOL") {
+		if code != exitError || !strings.Contains(out, "EAV_REMOTE_TOOL") {
 			t.Fatalf("%s without tool: exit %d, output:\n%s", flagName, code, out)
 		}
 	}
