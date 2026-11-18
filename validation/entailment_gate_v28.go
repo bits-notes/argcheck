@@ -78,7 +78,7 @@ func searchSchematicConjuncts(ps []NumberedArgumentStep, ci int, ant, cons strin
 			if used[p.Number] {
 				continue
 			}
-			for _, next := range unifySchematicTemplate(conjuncts[at], p.Statement, state) {
+			for _, next := range unifySchematicTemplate(conjuncts[at], p.Statement, relaxedInitial(state, p)) {
 				found = true
 				used[p.Number] = true
 				if visit(at+1, next) {
@@ -241,6 +241,26 @@ func extendedSchematicTemplate(value string) (string, schematicVariableCounts) {
 // v28 preserves every successful historical certificate before trying the new
 // whole-term identity register. Ranged and explicit proofs keep their own rules.
 func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	report := gateConclusionStepStrict(c, steps)
+	if report.Passed {
+		return report
+	}
+	// task_9b65b028: if the step passes only when an indefinite may bind a
+	// schematic variable in an object slot, say so instead of reporting
+	// whichever other form came nearest.
+	relaxed := make(map[int]NumberedArgumentStep, len(steps))
+	for id, step := range steps {
+		step.relaxIndefinite = true
+		relaxed[id] = step
+	}
+	if retry := gateConclusionStepStrict(c, relaxed); retry.Passed {
+		report.NearestForm = retry.Form
+		report.Mismatch = indefiniteSlotStepMessage(c, steps)
+	}
+	return report
+}
+
+func gateConclusionStepStrict(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	old := gateConclusionStepV27(c, steps)
 	if old.Passed {
 		return old

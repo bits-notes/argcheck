@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v38.0)
+# Entailment Gate — Coverage and Known Limits (catalog v39.0)
 
 **Type:** reference
-**Status:** current as of catalog v38.0
+**Status:** current as of catalog v39.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v38.0**). Tests cover capture,
+form; the current catalog is **v39.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -990,13 +990,8 @@ certifies identity substitution: the surface rule, the whole-term identity
 register and the FOL rule. This closes the `is looking for` / `thinking about` /
 `admires` class without listing verbs.
 
-Not changed: schematic instantiation into a non-subject slot. Limiting
-indefinite bindings (`a unicorn`) to subject or predicate position closes
-`If Lois is looking for X, then X exists; Lois is looking for a unicorn;
-therefore a unicorn exists`, but on the corpus it refused 134 of 2,476 valid
-arguments, so it is a known gap pending a narrower rule. Existential
-generalization and universal instantiation from an object position were
-already not certified.
+Schematic instantiation into a non-subject slot was left open in v36.0 and is
+closed in v39.0; see below.
 
 Corpus impact (2,476 arguments, against v34.0): 2 valid arguments now fail.
 One is the rules.md example `every x is such that (x admires alice)`, which
@@ -1201,3 +1196,51 @@ operand to remain opaque. A complement's own parentheses do not make its
 content asserted. Unknown intransitive verbs can be conservatively refused;
 use explicit grouping for those cases. No corpus impact percentage was
 measured in this run.
+
+## v39.0: indefinites bind schematic variables only as subject or predicate
+
+The gap left open in v36.0 is closed. An indefinite or quantifier phrase
+(`a`, `an`, `some`, `any`, `someone`, `something`, `somebody`, `anyone`,
+`anything`, `anybody`, `several`, `many`, `one` ...) can bind a schematic
+variable only at the start of a clause (its subject) or after a copula (`is a
+hero`). In any other position, the object of a verb or a preposition, inside an
+infinitive or that-clause, or a complement, the phrase need not pick anything
+out, so the schema is not instantiated with it:
+
+```text
+1. If Lois is looking for X, then X exists.
+2. Lois is looking for a unicorn.
+3. Therefore, a unicorn exists. [1,2]
+```
+
+is NOT CERTIFIED, and the message names the binding and the slot:
+`premise 2 binds a schematic variable to "a unicorn" in an object position
+("lois is looking for X"); an indefinite there need not pick anything out, so
+the schema cannot be instantiated with it. State the existence claim as its own
+premise, e.g. "There is a unicorn that Lois is looking for."`
+
+The message is used whenever a step would pass but for this rule, even if
+another form came nearer. Names and definite descriptions (`Superman`, `the
+mayor`) still bind in any slot.
+
+The rule is positional, not lexical, so it also refuses the extensional
+`If Lois admires X, then X is admirable; Lois admires a hero; therefore a hero
+is admirable`, which is valid on every reading. A narrower rule that lists
+intensional verbs (`seeks`, `wants`, `needs`, `imagines`, `is looking for`) was
+not adopted: the class is open, and a list cannot guarantee that every case
+invalid on some reading is still refused.
+
+Repair: state the existence claim as its own premise, as the message suggests,
+or write the phrase into the supplied rule instead of a variable
+(`If Lois is looking for a unicorn, then a unicorn exists.`), which makes the
+conditional an explicit premise rather than a schema instance.
+
+Corpus impact (2,476 arguments, against v38.0): 57 valid arguments now fail;
+0 invalid-to-valid changes. Mutants (8,109): 2 valid-to-invalid; 0 new
+acceptances. Every one of the 57 gets the slot message above. The 57 by slot:
+object of a preposition 36, object of a transitive verb 9, comparison or
+predicative complement 5, inside an infinitive or that-clause 4, object of an
+intensional verb 2, embedded subject after an adjunct 1 (counted as
+non-initial by this surface rule). In the measured run, 56 of the 57 passed
+again after a supplied-step rewrite; the other then hit the separate
+nested-quantifier limit of the relational grammar.

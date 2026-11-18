@@ -244,7 +244,7 @@ func v19OpaqueInstantiation(p []NumberedArgumentStep, c NumberedArgumentStep) bo
 		}
 		ant, _ := schematicTemplate(pair.left)
 		result, _ := schematicTemplate(pair.right)
-		for _, sub := range unifySchematicTemplate(ant, p[1].Statement, nil) {
+		for _, sub := range unifySchematicTemplate(ant, p[1].Statement, relaxedInitial(nil, p...)) {
 			a, okA := instantiateSchematicTemplate(ant, sub)
 			b, okB := instantiateSchematicTemplate(result, sub)
 			if !okA || !okB || !equalClauses(b, c.Statement) {

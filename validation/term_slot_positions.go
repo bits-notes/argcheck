@@ -121,3 +121,145 @@ var explicitIdentityPattern = regexp.MustCompile(`(?i)\b(?:is|are|was|were) (?:n
 func explicitIdentity(statement string) bool {
 	return explicitIdentityPattern.MatchString(statement)
 }
+
+var indefiniteHeads = map[string]bool{
+	"a": true, "an": true, "some": true, "any": true, "someone": true, "something": true,
+	"somebody": true, "anyone": true, "anything": true, "anybody": true, "several": true,
+	"many": true, "one": true,
+}
+
+// indefiniteBindingPositionSafe limits schematic bindings that are indefinite
+// or quantifier phrases ("a unicorn", "someone") to safe positions in the
+// instance clause: its subject, or a predicate after a copula ("is a hero").
+// In an object slot ("Lois is looking for a unicorn") the phrase need not pick
+// out anything, so binding it would let "a unicorn exists" through. Names,
+// definite descriptions and other bindings are unaffected.
+func indefiniteBindingPositionSafe(concrete []rune, start int, segment string) bool {
+	words := strings.Fields(strings.ToLower(segment))
+	if len(words) == 0 || !indefiniteHeads[words[0]] {
+		return true
+	}
+	prefix := strings.TrimSpace(strings.ToLower(string(concrete[:start])))
+	if prefix == "" {
+		return true
+	}
+	for _, lead := range append([]string{"is", "are", "was", "were", "be", "been", "is not", "are not", "was not", "were not"}, clauseSubjectLead...) {
+		if prefix == lead || strings.HasSuffix(prefix, " "+lead) || strings.HasSuffix(prefix, ","+lead) {
+			return true
+		}
+	}
+	return strings.HasSuffix(prefix, ",")
+}
+
+// indefiniteSlotOverride is a reserved substitution key. When set, schematic
+// unification skips the indefinite-position check; only the diagnostic pass
+// below uses it, to explain a refusal. It is never a schematic marker.
+const indefiniteSlotOverride rune = '\uFFFE'
+
+// indefiniteSlotDiagnosis explains a failed schematic match that fails only
+// because an indefinite would bind in an unsafe slot. It returns "" when the
+// match fails for another reason too.
+func indefiniteSlotDiagnosis(template string, premise NumberedArgumentStep, initial schematicSubstitution) string {
+	relaxed := cloneSchematicSubstitution(initial)
+	relaxed[indefiniteSlotOverride] = "1"
+	concrete := []rune(comparisonClause(premise.Statement))
+	for _, substitution := range unifySchematicTemplate(template, premise.Statement, relaxed) {
+		for variable, value := range substitution {
+			if variable == indefiniteSlotOverride {
+				continue
+			}
+			if _, preset := initial[variable]; preset {
+				continue
+			}
+			start := strings.Index(string(concrete), value)
+			if start < 0 {
+				continue
+			}
+			runeStart := len([]rune(string(concrete)[:start]))
+			if indefiniteBindingPositionSafe(concrete, runeStart, value) {
+				continue
+			}
+			return fmt.Sprintf(
+				"premise %d binds a schematic variable to %q in an object position (%q); an indefinite there need not pick anything out, so the schema cannot be instantiated with it. State the existence claim as its own premise, e.g. %q",
+				premise.Number,
+				value,
+				schematicDisplay(template),
+				indefiniteRestatement(premise.Statement, value),
+			)
+		}
+	}
+	return ""
+}
+
+// indefiniteRestatement suggests "There is a unicorn that Lois is looking for."
+// for the premise "Lois is looking for a unicorn." and the phrase "a unicorn".
+func indefiniteRestatement(statement, phrase string) string {
+	body := strings.TrimRight(strings.TrimSpace(statement), ".")
+	lower := strings.ToLower(body)
+	index := strings.Index(lower, strings.ToLower(phrase))
+	if index < 0 {
+		return "There is " + phrase + " such that " + body + "."
+	}
+	rest := strings.Join(strings.Fields(body[:index]+" "+body[index+len(phrase):]), " ")
+	return "There is " + phrase + " that " + rest + "."
+}
+
+// relaxedInitial returns the initial substitution for a schematic match,
+// carrying indefiniteSlotOverride when any premise is a diagnostic copy.
+func relaxedInitial(initial schematicSubstitution, premises ...NumberedArgumentStep) schematicSubstitution {
+	for _, premise := range premises {
+		if premise.relaxIndefinite {
+			next := cloneSchematicSubstitution(initial)
+			next[indefiniteSlotOverride] = "1"
+			return next
+		}
+	}
+	return initial
+}
+
+// indefiniteSlotStepMessage names the refused binding for a step that passes
+// only when an indefinite may bind in an object slot.
+func indefiniteSlotStepMessage(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
+	for _, id := range c.Citations {
+		conditional, ok := steps[id]
+		if !ok {
+			continue
+		}
+		for _, pair := range conditionalCandidatesPreservingCase(conditional.Statement) {
+			for _, conjunct := range conjunctiveAntecedentCandidatesOrSelf(pair.left) {
+				template, variables := schematicTemplate(conjunct)
+				if len(variables) == 0 {
+					continue
+				}
+				for _, other := range c.Citations {
+					premise, ok := steps[other]
+					if !ok || other == id {
+						continue
+					}
+					if reason := indefiniteSlotDiagnosis(template, premise, nil); reason != "" {
+						return reason
+					}
+				}
+			}
+		}
+	}
+	return "an indefinite (a/an/some/someone ...) would bind a schematic variable in an object position, where it need not pick anything out; state the existence claim as its own premise (\"There is a N that ...\")"
+}
+
+// conjunctiveAntecedentCandidatesOrSelf lists an antecedent and every conjunct
+// of its two- to four-way conjunctive splits, for diagnosis only.
+func conjunctiveAntecedentCandidatesOrSelf(antecedent string) []string {
+	seen := map[string]bool{antecedent: true}
+	out := []string{antecedent}
+	for parts := 2; parts <= 4; parts++ {
+		for _, split := range conjunctiveAntecedentCandidates(antecedent, parts) {
+			for _, conjunct := range split {
+				if !seen[conjunct] {
+					seen[conjunct] = true
+					out = append(out, conjunct)
+				}
+			}
+		}
+	}
+	return out
+}

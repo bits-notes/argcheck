@@ -265,7 +265,7 @@ func matchSchematicExistentialIntroduction(premises []NumberedArgumentStep, conc
 
 	marker := string(schematicVariableMarkers[variable])
 	outcome.mismatch = fmt.Sprintf("conclusion %d matrix is not premise %d with every occurrence of one singular term replaced by %c", conclusion.Number, premises[0].Number, variable)
-	for _, substitution := range unifySchematicTemplate(template, premiseText, nil) {
+	for _, substitution := range unifySchematicTemplate(template, premiseText, relaxedInitial(nil, premises...)) {
 		term := substitution[variable]
 		transparent, hasQuantifier := substitutionContext(premiseText, term)
 		if !transparent || !substitutionTerm(term, hasQuantifier) {

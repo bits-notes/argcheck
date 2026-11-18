@@ -756,6 +756,9 @@ func unifySchematicRunes(
 		if !schematicBindingAllowed(string(segment)) {
 			continue
 		}
+		if substitution[indefiniteSlotOverride] == "" && !indefiniteBindingPositionSafe(concrete, concreteIndex, string(segment)) {
+			continue
+		}
 		next := cloneSchematicSubstitution(substitution)
 		next[variable] = string(segment)
 		result = append(result, unifySchematicRunes(template, concrete, templateIndex+1, end, next)...)
@@ -1664,7 +1667,7 @@ func matchSchematicInstantiationAlphabet(premises []NumberedArgumentStep, conclu
 			continue
 		}
 
-		substitutions := unifySchematicTemplate(antecedentTemplate, premises[1].Statement, nil)
+		substitutions := unifySchematicTemplate(antecedentTemplate, premises[1].Statement, relaxedInitial(nil, premises...))
 		if len(substitutions) == 0 {
 			candidate.score = 1
 			candidate.mismatch = fmt.Sprintf(

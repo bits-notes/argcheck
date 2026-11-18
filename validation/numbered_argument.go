@@ -43,6 +43,9 @@ type NumberedArgumentStep struct {
 	Line      string   `json:"line"`
 	Depth     int      `json:"depth,omitempty"`
 	Ranges    [][2]int `json:"ranges,omitempty"`
+	// relaxIndefinite is set only on copies used to diagnose a refusal: it
+	// lets schematic unification bind an indefinite in an object slot.
+	relaxIndefinite bool
 }
 
 type numberedArgumentOptions struct {
