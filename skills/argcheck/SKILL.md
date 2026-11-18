@@ -6,7 +6,7 @@ description: Check a numbered argument for syntactically transparent validity wi
 # argcheck — deterministic validity check for numbered arguments
 
 `argcheck` runs two deterministic checks in Go (`numbered_argument_syntax`, then
-the catalog `v32.0` entailment gate) with no LLM and no network access.
+the catalog `v32.1` entailment gate) with no LLM and no network access.
 
 **Validity is syntactic: the gate is the standard. Never overrule a gate failure
 with your own judgment that a step "obviously follows."** If you think a step is
@@ -30,10 +30,12 @@ EOF
 
 - `argcheck file.txt` or stdin (`argcheck < file.txt`, `cat file.txt | argcheck -`).
 - `--json` prints structured syntax, step reports, and provenance.
-- `--quiet` prints only `VALID` or `INVALID`.
-- `--forms` lists all 121 accepted inference forms in catalog `v32.0`.
-- `--version` prints the catalog version and build stamp (`gate catalog v32.0; local argcheck@<commit>`).
-- Exit codes: `0` valid, `1` invalid, `2` input or operational error.
+- `--quiet` prints only `VALID` or `NOT CERTIFIED`.
+- `--forms` lists all 121 accepted inference forms in catalog `v32.1`.
+- `--version` prints the catalog version and build stamp (`gate catalog v32.1; local argcheck@<commit>`).
+- Exit codes: `0` valid, `1` not certified, `2` input or operational error.
+- `NOT CERTIFIED` means some step matched no accepted rule. It does not mean the
+  argument is invalid; repair the step or add the missing premise.
 - If `argcheck` is not installed yet, install with
   `go install github.com/bits-notes/argcheck/cmd/argcheck@latest` or run
   `./install-argcheck.sh` from a checkout of the repository.

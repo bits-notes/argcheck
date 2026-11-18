@@ -38,8 +38,24 @@ type check struct {
 }
 
 // verdict mirrors the remote validate endpoint response shape plus provenance.
+// Verdict words. A failing argument is NOT CERTIFIED, not INVALID: argcheck
+// found no accepted rule for some step, which does not show the argument is
+// invalid.
+const (
+	verdictValid        = "VALID"
+	verdictNotCertified = "NOT CERTIFIED"
+)
+
+func verdictWord(valid bool) string {
+	if valid {
+		return verdictValid
+	}
+	return verdictNotCertified
+}
+
 type verdict struct {
 	Valid      bool                         `json:"valid"`
+	Verdict    string                       `json:"verdict"`
 	Argument   *validation.NumberedArgument `json:"argument,omitempty"`
 	Syntax     check                        `json:"syntax"`
 	Entailment *check                       `json:"entailment,omitempty"`
@@ -63,7 +79,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	both := flags.Bool("both", false, "check locally and against the remote endpoint; exit 3 if they disagree")
 	version := flags.Bool("version", false, "print the catalog and build version and exit")
 	forms := flags.Bool("forms", false, "list the accepted inference forms and exit")
-	quiet := flags.Bool("quiet", false, "print only the verdict word (VALID or INVALID; DIVERGENT with --both on disagreement)")
+	quiet := flags.Bool("quiet", false, "print only the verdict (VALID or NOT CERTIFIED; DIVERGENT with --both on disagreement)")
 	flags.Usage = func() {
 		fmt.Fprintln(stderr, `usage: argcheck [--json|--quiet] [--prod|--both] [file|-]
 
@@ -139,6 +155,9 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 		verdicts = append(verdicts, remote)
 	}
 
+	for i := range verdicts {
+		verdicts[i].Verdict = verdictWord(verdicts[i].Valid)
+	}
 	divergent := len(verdicts) == 2 && !sameVerdict(verdicts[0], verdicts[1])
 	if *jsonOut {
 		encoder := json.NewEncoder(stdout)
@@ -156,9 +175,9 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 		case divergent:
 			fmt.Fprintln(stdout, "DIVERGENT")
 		case verdicts[len(verdicts)-1].Valid:
-			fmt.Fprintln(stdout, "VALID")
+			fmt.Fprintln(stdout, verdictValid)
 		default:
-			fmt.Fprintln(stdout, "INVALID")
+			fmt.Fprintln(stdout, verdictNotCertified)
 		}
 	} else {
 		// The verdict line always comes first, so `head -1` is the verdict.
@@ -381,10 +400,7 @@ func stepsOf(c *check) []stepReport {
 }
 
 func printVerdict(w io.Writer, v verdict) {
-	status := "INVALID"
-	if v.Valid {
-		status = "VALID"
-	}
+	status := verdictWord(v.Valid)
 	fmt.Fprintf(w, "%s  (gate catalog %s; %s %s)\n", status, v.Catalog, v.Backend, v.Version)
 	if !v.Syntax.Passed {
 		fmt.Fprintf(w, "syntax: FAIL: %s\n", v.Syntax.Message)

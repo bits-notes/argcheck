@@ -121,7 +121,7 @@ func TestDocsRulesExamples(t *testing.T) {
 		case "accept":
 			acceptedCount[block.form]++
 			if !valid {
-				t.Errorf("docs/rules.md:%d: accept block for %q was INVALID: %s\n%s", block.startLine, block.form, msg, block.body)
+				t.Errorf("docs/rules.md:%d: accept block for %q was NOT CERTIFIED: %s\n%s", block.startLine, block.form, msg, block.body)
 				continue
 			}
 			used := false

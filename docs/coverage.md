@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v32.0)
+# Entailment Gate — Coverage and Known Limits (catalog v32.1)
 
 **Type:** reference
-**Status:** current as of catalog v32.0
+**Status:** current as of catalog v32.1
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v32.0**). Tests cover capture,
+form; the current catalog is **v32.1**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -479,7 +479,7 @@ ambiguous scope, and general arithmetic require explicit formalization.
 
 Uniqueness requires membership in the counted class. Inferring `No person other
 than Scott wrote Waverley` from `Exactly one person wrote Waverley` and `Scott
-wrote Waverley` alone is INVALID because it lacks
+wrote Waverley` alone is invalid because it lacks
 `Scott is a person`: a nonperson Scott and a distinct person may both write
 Waverley. The two-object countermodel forces rejection. Adding that membership
 as a separate cited premise (or in the cited ground conjunction) yields the
@@ -855,3 +855,11 @@ newly fail syntax, both because a single-letter term inside a noun phrase reads
 as a clause start: `corpus-ai-safety-carlsmith-a6d0e28c4a` (`a version of X or
 still less of Y or Z or U` beside an `and` chain) and `wilkinson-2022 A112`
 (`Z − 2e or Z − 3e`; already invalid before).
+
+## v32.1: NOT CERTIFIED verdict
+
+A failing check now prints `NOT CERTIFIED` instead of `INVALID` (text output and
+`--quiet`), and `--json` gains a `verdict` field (`"VALID"` or `"NOT CERTIFIED"`)
+beside the existing boolean `valid`. A failure means that argcheck found no
+accepted rule for some step. It does not show that the argument is invalid. Exit
+codes, step-level `FAIL` lines and messages are unchanged. No verdict changes.

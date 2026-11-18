@@ -3,7 +3,7 @@
 `argcheck` is a deterministic checker in Go for transparently valid numbered
 arguments. It runs offline with no LLM and no network access by default: every
 conclusion step must instantiate a named inference form from the catalog
-(currently **v32.0**, 121 forms) using only its cited earlier steps, with clauses
+(currently **v32.1**, 121 forms) using only its cited earlier steps, with clauses
 matched word for word after light surface normalization.
 
 Coverage: complete for propositional logic and for function-free first-order
@@ -41,7 +41,7 @@ argcheck < argument.txt      # read from stdin
 cat argument.txt | argcheck -
 argcheck --quiet argument.txt
 argcheck --json argument.txt
-argcheck --forms             # list all 121 inference forms in catalog v32.0
+argcheck --forms             # list all 121 inference forms in catalog v32.1
 argcheck --version           # print catalog version and build stamp
 ```
 
@@ -52,7 +52,7 @@ Put flags before the file argument.
 | Code | Meaning |
 | ---: | --- |
 | `0` | `VALID` — syntax and every conclusion step pass |
-| `1` | `INVALID` — syntax fails or at least one conclusion step fails |
+| `1` | `NOT CERTIFIED` — syntax fails or at least one conclusion step matches no accepted rule. This does not mean the argument is invalid, only that argcheck could not certify it. |
 | `2` | Input, flag, or operational error (for example, empty input or missing remote configuration) |
 | `3` | `DIVERGENT` — local and remote verdicts disagree (`--both`) |
 
@@ -71,7 +71,7 @@ Input (`valid.txt`):
 Output (`argcheck valid.txt`, exit `0`):
 
 ```text
-VALID  (gate catalog v32.0; local argcheck@ef44658)
+VALID  (gate catalog v32.1; local argcheck@ef44658)
 syntax: ok
 step 3 [1,2]: ok: modus ponens
 ```
@@ -80,7 +80,7 @@ step 3 [1,2]: ok: modus ponens
 
 Clauses must match verbatim (after case, whitespace, contraction, and optional
 `then` normalization). Replacing `the street is wet` with `the road is wet` is
-rejected (`invalid.txt`):
+not certified (`uncertified.txt`):
 
 ```text
 1. If it rains, then the street is wet.
@@ -88,10 +88,10 @@ rejected (`invalid.txt`):
 3. Therefore, the road is wet. [1,2]
 ```
 
-Output (`argcheck invalid.txt`, exit `1`):
+Output (`argcheck uncertified.txt`, exit `1`):
 
 ```text
-INVALID  (gate catalog v32.0; local argcheck@ef44658)
+NOT CERTIFIED  (gate catalog v32.1; local argcheck@ef44658)
 syntax: ok
 step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
 ```
@@ -153,6 +153,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
 ```json
 {
   "valid": true,
+  "verdict": "VALID",
   "syntax": {
     "passed": true,
     "message": "output matches numbered_argument_syntax",
@@ -162,7 +163,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
     "passed": true,
     "message": "output passes entailment_gate",
     "details": {
-      "catalog": "v32.0",
+      "catalog": "v32.1",
       "expansions": [],
       "gated_steps": 1,
       "passed_steps": 1,
@@ -171,13 +172,17 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
       ]
     }
   },
-  "entailment_catalog": "v32.0",
+  "entailment_catalog": "v32.1",
   "backend": "local",
   "version": "argcheck@ef44658"
 }
 ```
 
-`--forms` prints the catalog header (`entailment gate catalog v32.0 (...)`)
+`verdict` is `"VALID"` or `"NOT CERTIFIED"`; the boolean `valid` is kept for
+existing clients. A failing check means argcheck found no accepted rule for some
+step, not that the argument is invalid.
+
+`--forms` prints the catalog header (`entailment gate catalog v32.1 (...)`)
 followed by all 121 accepted form names, covering propositional schemas,
 syllogisms, schematic rules (`U`, `V`, `W`, `X`, `Y`, `Z` up to 10 conjuncts),
 identity, system-T modals, counterfactuals, properties, n-place relations,

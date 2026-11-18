@@ -64,7 +64,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v32.0", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v32.1", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -176,7 +176,7 @@ func TestArgcheckVersion(t *testing.T) {
 	t.Cleanup(func() { commit = old })
 	commit = "v28-test-commit"
 	code, out := runArgcheck(t, "", "--version")
-	if code != exitValid || !strings.Contains(out, "catalog v32.0") || !strings.Contains(out, "argcheck@v28-test-commit") {
+	if code != exitValid || !strings.Contains(out, "catalog v32.1") || !strings.Contains(out, "argcheck@v28-test-commit") {
 		t.Fatalf("%d: %s", code, out)
 	}
 	if code, _ := runArgcheck(t, "", "--version-typo"); code != exitError {
@@ -203,7 +203,7 @@ func TestArgcheckQuiet(t *testing.T) {
 		t.Fatalf("valid: code=%d out=%q", code, out)
 	}
 	code, out = runArgcheck(t, "1. If it rains, then it snows.\n2. It snows.\n3. Therefore, it rains. [1,2]", "--quiet")
-	if code != 1 || out != "INVALID\n" {
+	if code != 1 || out != "NOT CERTIFIED\n" {
 		t.Fatalf("invalid: code=%d out=%q", code, out)
 	}
 }
