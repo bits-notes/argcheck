@@ -16,6 +16,50 @@ does not establish that the premises are true, that an encoding faithfully
 captures a source text, or that an unstated assumption is warranted. If two
 wordings are meant to be equivalent, state that link as an explicit premise.
 
+## Example
+
+An eleven-step argument about an outage. Each "Therefore" line cites the earlier steps it uses.
+
+```text
+1. Either the server crashed or the network failed.
+2. If the network failed, then the checkout request timed out.
+3. It is not the case that the checkout request timed out.
+4. Therefore, it is not the case that the network failed. [2,3]
+5. Therefore, the server crashed. [1,4]
+6. If the server crashed, then every on-call engineer was paged.
+7. Therefore, every on-call engineer was paged. [5,6]
+8. Alice is an on-call engineer.
+9. Therefore, Alice was paged. [7,8]
+10. If Alice was paged and the server crashed, then Alice owns the incident report.
+11. Therefore, Alice owns the incident report. [5,9,10]
+```
+
+`english-arg-validator incident.txt` certifies every derived step and names the rule it matched:
+
+```text
+VALID  (gate catalog v35.0; local english-arg-validator@c218b3e)
+syntax: ok
+step 4 [2,3]: ok: modus tollens
+step 5 [1,4]: ok: disjunctive syllogism
+step 7 [5,6]: ok: modus ponens
+step 9 [7,8]: ok: non-copular universal instantiation
+step 11 [5,9,10]: ok: conjunctive modus ponens
+```
+
+One natural slip: write premise 3 as "The checkout request did not time out." English readers see the same claim, but the checker matches clauses word for word, so step 4 is no longer certified:
+
+```text
+NOT CERTIFIED  (gate catalog v35.0; local english-arg-validator@c218b3e)
+syntax: ok
+step 4 [2,3]: FAIL: nearest form modus ponens: premise 2 antecedent "the network failed" does not match premise 3 "the checkout request did not time out" verbatim
+step 5 [1,4]: ok: disjunctive syllogism
+step 7 [5,6]: ok: modus ponens
+step 9 [7,8]: ok: non-copular universal instantiation
+step 11 [5,9,10]: ok: conjunctive modus ponens
+```
+
+The fix is to word premise 3 the way premise 2 words its clause: "It is not the case that the checkout request timed out." A step that is not certified is not shown to be invalid. It means no catalog rule matched the wording as written.
+
 ## Install
 
 Requires Go 1.25.0 or later.
