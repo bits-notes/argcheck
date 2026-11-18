@@ -98,7 +98,9 @@ that passes on the used subset and the inert citation(s) to remove.
 every substantive qualifier and scope restriction the author wrote. Change only
 surface syntax needed by the gate (word order, canonical connectives, pronoun
 expansion). Leave hedges outside the argument and label them. Passing the gate
-by watering down or overstating the source is a failure, not a fix.
+by watering down or overstating the source is a failure, not a fix. For the
+full procedure (sentence ledger, anchored and supplied premises, bridge
+premises, fidelity pass), see `skills/formalize-from-source/SKILL.md`.
 
 ## Passing is not the same as reconstructed
 

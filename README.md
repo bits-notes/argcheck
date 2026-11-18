@@ -195,6 +195,8 @@ quantifiers (`1`–`5`), and Russellian definite descriptions.
 - Detailed grammar rules, authoring guidance, and known limits:
   [`docs/coverage.md`](docs/coverage.md)
 - Agent workflow skill: [`skills/argcheck/SKILL.md`](skills/argcheck/SKILL.md)
+- Formalizing from a source text (sentence ledger, supplied premises, fidelity
+  pass): [`skills/formalize-from-source/SKILL.md`](skills/formalize-from-source/SKILL.md)
 
 ## Go library and development
 
