@@ -1,24 +1,24 @@
-The AI-2040 forecasters and FutureSearch estimate the chance of survival on Plan C mostly in the 25% to 50% range
-The absence of free will means the frustration of a person's higher-order desires concerning which first-order desire is effective
-In Frankfurt's identification scenario the absence of an alternative does not make the person a passive bystander to the constitution of the will
-According to Frankfurt’s account freedom of the will consists in the conformity of one's will to one's second-order volitions, not in exemption from causal determination
-Under the proposal to define truth, speakers can effectively determine the interpretation of arbitrary meaningful expressions
-A decisive identification with a first-order desire means there is no room for questions concerning the pertinence of desires or volitions of higher orders
-Inverse probability without knowledge of the parameter takes its prior from the principle of indifference
-The question of freedom of the will concerns not the relation between what a person does and what the person wants to do, but the person's desires themselves
-A candidate theory must derive correct results for every sentence on the basis of structure
-Blinding can prevent an unacceptable direct use of values in seeing a desired result and can obscure the consequence of an individual classification
-selecting the preferred error balance in animal toxicology requires comparing the importance of industrial cost and public-health protection
-When the ontology of two theories differs, each theory can have true determinate consequences absent from the other
-The will is the desire that effectively moves the agent to action
-The will is a notion
-The physician is a physician engaged in psychotherapy with narcotics addicts
+The harbor surveyors and the tide office estimate the chance of flooding on the east quay mostly in the 10% to 20% range
+The absence of a ferry means the stranding of a traveler's evening plans concerning which island village is reachable
+In the lighthouse keeper's scenario the absence of a relief boat does not make the keeper a passive witness to the storm
+According to the harbor master’s account safety of the quay consists in the conformity of the moorings to the posted rules, not in exemption from the weather
+Under the proposal to number the berths, pilots can quickly determine the position of arbitrary visiting vessels
+A firm booking with a ferry operator means there is no room for questions concerning the timing of departures or returns of later sailings
+Tide prediction without a gauge reading takes its baseline from the published almanac
+The question of berth allocation concerns not the relation between what a captain requests and what the office assigns, but the requests themselves
+A candidate timetable must give correct times for every crossing on the basis of the tide table
+Fog can prevent an unsafe direct approach to the harbor mouth and can obscure the position of an individual buoy
+choosing the preferred mooring in rough weather requires comparing the importance of shelter and quick departure
+When the charts of two harbors differ, each chart can show depths absent from the other
+The ferry is the vessel that regularly carries the islanders to the mainland
+The quay is a structure
+The pilot is a pilot engaged in guiding cargo ships through the narrows
 If it rains, then the street is wet
-Freedom of the will is a form of agential freedom
+Berth allocation is a form of harbor planning
 The evidential meaning of outcome x in the mixture is identical to the evidential meaning of outcome y in the mixture.      ◀ S
-For the scientific choice under consideration valuation estimates the seriousness or desirability of the consequences if the choice is wrong
-An intention at midnight to drink the toxin is a disposition to drink the toxin
-In Kavka's toxin case, the agent's later disposition about drinking the toxin is foreseeable at midnight
-A single frontier US company stopping unilaterally is a giant costly signal that the company is terrified of the risks
+For the crossing under consideration the forecast estimates the severity or calmness of the sea if the forecast is wrong
+A booking at noon to sail at dusk is a commitment to sail at dusk
+In the keeper's relief case, the keeper's later decision about leaving the lighthouse is foreseeable at noon
+A single harbor office closing unilaterally is a costly signal that the office is worried about the storm
 **Objectivity:** mostly a choice of vocabulary; the substance is captured by transparency and robustness
-The tube is a spacetime region
+The channel is a navigable region
