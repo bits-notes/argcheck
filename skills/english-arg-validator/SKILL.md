@@ -6,7 +6,7 @@ description: Check a numbered argument for syntactically transparent validity wi
 # english-arg-validator — deterministic validity check for numbered arguments
 
 `english-arg-validator` runs two deterministic checks in Go (`numbered_argument_syntax`, then
-the catalog `v36.0` entailment gate) with no LLM and no network access.
+the catalog `v37.0` entailment gate) with no LLM and no network access.
 
 **Validity is syntactic: the gate is the standard. Never overrule a gate failure
 with your own judgment that a step "obviously follows."** If you think a step is
@@ -31,8 +31,8 @@ EOF
 - `english-arg-validator file.txt` or stdin (`english-arg-validator < file.txt`, `cat file.txt | english-arg-validator -`).
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `NOT CERTIFIED`.
-- `--forms` lists all 121 accepted inference forms in catalog `v36.0`.
-- `--version` prints the catalog version and build stamp (`gate catalog v36.0; local english-arg-validator@<commit>`).
+- `--forms` lists all 121 accepted inference forms in catalog `v37.0`.
+- `--version` prints the catalog version and build stamp (`gate catalog v37.0; local english-arg-validator@<commit>`).
 - Exit codes: `0` valid, `1` not certified, `2` input or operational error.
 - `NOT CERTIFIED` means some step matched no accepted rule. It does not mean the
   argument is invalid; repair the step or add the missing premise.

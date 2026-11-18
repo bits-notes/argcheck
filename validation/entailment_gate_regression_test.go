@@ -83,6 +83,22 @@ func TestAcceptedFixtureStepParity(t *testing.T) {
 				}
 				return
 			}
+			if filepath.Base(path) == "earman-norton-1987_A11.txt" {
+				// v37.0: steps 6 and 9 rest on a premise that opens with the
+				// prepositional frame "Under Leibniz equivalence", which may
+				// cover the whole sentence, so they are not certified.
+				report, _ := CheckEntailmentGate(string(data))
+				for _, step := range report.Steps {
+					framed := step.Step == 6 || step.Step == 9
+					if framed && (step.Passed || !strings.Contains(step.Mismatch, "may cover the whole sentence")) {
+						t.Fatalf("step %d: want the opener refusal, got %+v", step.Step, step)
+					}
+					if !framed && !step.Passed {
+						t.Fatalf("step %d lost its certificate: %s", step.Step, step.Mismatch)
+					}
+				}
+				return
+			}
 			pinned := map[int]string{}
 			for _, n := range pins[filepath.Base(path)] {
 				pinned[n] = "schematic conjunctive modus ponens"

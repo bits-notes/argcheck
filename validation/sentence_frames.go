@@ -33,56 +33,88 @@ func sentenceFrameOpener(s string, steps map[int]NumberedArgumentStep) string {
 		return ""
 	}
 	first := strings.ToLower(words[0])
-	if frameOpeners[first] || len(words[0]) == 1 || strings.HasSuffix(first, "ing") || groupingLabel.MatchString(s) {
+	lower := strings.ToLower(s)
+	// Explicit structure and determiners/logical openers are frames.
+	if frameOpeners[first] || len(words[0]) == 1 || groupingLabel.MatchString(s) {
 		return ""
 	}
-	for _, prefix := range []string{"more than ", "less than ", "at least ", "at most ", "exactly "} {
-		if strings.HasPrefix(strings.ToLower(s), prefix) {
+	for _, prefix := range []string{"more than ", "less than ", "at least ", "at most ", "exactly ", "almost every ", "almost all ", "nearly every ", "nearly all "} {
+		if strings.HasPrefix(lower, prefix) {
 			return ""
 		}
 	}
 	if len(words) > 1 && strings.HasPrefix(s[len(words[0]):], ", ") && (strings.EqualFold(words[1], "who") || strings.EqualFold(words[1], "which")) {
 		return ""
 	}
-	// Names need evidence away from the beginning of a sentence.
-
-	for _, step := range steps {
-		ws := frameWord.FindAllString(step.Statement, -1)
-		for _, w := range ws[min(1, len(ws)):] {
-			if unicode.IsUpper(firstRune(w)) && strings.EqualFold(w, words[0]) {
-				return ""
-			}
+	// Closed classes that may cover the whole sentence, checked before any
+	// name or gerund evidence ("According" ends in -ing but is a preposition).
+	// Strict: a fronted frame is refused with or without a comma.
+	for _, phrase := range frameAdverbialPhrases {
+		if strings.HasPrefix(lower+" ", phrase+" ") || strings.HasPrefix(lower, phrase+",") {
+			return frameOpenerMessage(s[:len(phrase)])
 		}
 	}
-	// Closed-class refusal: sentence adverbs and fronted frames may cover the
-	// whole sentence. Bare-noun, gerund and adjective+noun subjects ("Beliefs
-	// ...", "Human value ...", "Infra-Bayesian learning ...") stay subjects; a
-	// strict subject allowlist rejected 44% of the 2,476-argument corpus.
-	if strings.HasSuffix(first, "ly") && !frameLyNouns[first] {
-		return frameOpenerMessage(words[0])
+	for _, phrase := range frameComplexPrepositions {
+		if strings.HasPrefix(lower+" ", phrase+" ") {
+			return frameOpenerMessage(frameSpan(s))
+		}
+	}
+	if framePrepositions[first] {
+		return frameOpenerMessage(frameSpan(s))
 	}
 	if frameSentenceAdverbs[first] {
 		return frameOpenerMessage(words[0])
 	}
-	if framePrepositions[first] {
-		// "In the story, ...", "According to Bob, ...": a fronted frame ends
-		// at a comma within the first few words.
-		limit := min(len(words), 8)
-		idx := frameWord.FindAllStringIndex(s, -1)
-		if limit > 0 && strings.Contains(s[:idx[limit-1][1]], ",") {
-			frame := strings.TrimSpace(s[:strings.Index(s, ",")+1])
-			return frameOpenerMessage(frame)
-		}
+	if strings.HasSuffix(first, "ly") && !frameLyNouns[first] {
+		return frameOpenerMessage(words[0])
 	}
+	// Bare-noun, gerund and adjective+noun subjects ("Beliefs ...", "Trying to
+	// remove all assumptions ...", "Human value ...") and names stay subjects.
 	return ""
+}
+
+// frameSpan is the fronted frame up to its comma, or its first four words.
+func frameSpan(s string) string {
+	if i := strings.Index(s, ","); i > 0 && i < 80 {
+		return strings.TrimSpace(s[:i+1])
+	}
+	words := strings.Fields(s)
+	return strings.Join(words[:min(len(words), 4)], " ")
+}
+
+// Prepositions are a closed class. Every single-word preposition, including
+// -ing forms (according, regarding, concerning, ...) and subordinators that
+// front a frame (after, before, since, until, as, because, although, though,
+// while, whereas), refuses a sentence-internal step when it opens the sentence.
+var framePrepositions = wordSet("aboard about above across after against along alongside amid amidst among amongst around as astride at atop barring because before behind below beneath beside besides between beyond but by circa concerning considering despite down during except excepting excluding following for from given in including inside into like minus near notwithstanding of off on onto opposite out outside over past pending per plus regarding round save since than through throughout till to toward towards under underneath unlike until unto up upon versus via with within without according although though while whereas whilst once whenever wherever lest")
+
+// Complex prepositions (multi-word), longest first where they share a prefix.
+var frameComplexPrepositions = []string{
+	"according to", "as per", "as for", "as to", "as regards", "as far as", "in line with", "in view of",
+	"in light of", "in accordance with", "in addition to", "in spite of", "in terms of", "in respect of",
+	"in relation to", "in response to", "in the case of", "in the context of", "in the light of",
+	"on behalf of", "on account of", "on the basis of", "with respect to", "with regard to",
+	"with reference to", "by means of", "by virtue of", "by way of", "due to", "owing to", "thanks to",
+	"apart from", "aside from", "instead of", "rather than", "prior to", "subsequent to", "contrary to",
+	"relative to", "according as", "next to", "close to", "far from", "out of", "because of", "ahead of",
+}
+
+// Multi-word adverbials that comment on the whole sentence.
+var frameAdverbialPhrases = []string{
+	"of course", "no doubt", "without doubt", "at best", "at worst", "at first", "at last", "at the moment",
+	"in theory", "in principle", "in practice", "in effect", "in fact", "in general", "in short", "in sum",
+	"in other words", "so to speak", "for example", "for instance", "on the whole", "on balance",
+	"on the other hand", "by and large", "all things considered", "as a rule", "as it were", "to be sure",
+	"to some extent", "more or less", "sort of", "kind of", "if anything",
 }
 
 func frameOpenerMessage(opener string) string {
 	return fmt.Sprintf("'%s' may cover the whole sentence; move it out, state the claim plainly, or reword the phrase so the sentence starts with its subject (e.g. 'Rationalist notions that are deeply held ...' instead of 'Deeply held rationalist notions ...').", opener)
 }
 
-var frameSentenceAdverbs = wordSet("perhaps maybe sometimes often once always never yesterday today tomorrow allegedly supposedly reportedly")
-var framePrepositions = wordSet("in according on under within during after before upon from for by at despite given")
+// Non-ly sentence adverbs (closed class as far as English allows).
+// "almost"/"nearly" before every/all are quantifier openers handled above.
+var frameSentenceAdverbs = wordSet("perhaps maybe still even just only also too indeed surely certainly again already yet sometimes often once always never seldom soon now today tomorrow yesterday tonight however nevertheless nonetheless moreover furthermore meanwhile otherwise instead anyway anyhow regardless overall altogether hence thus therefore so then thereby accordingly consequently admittedly allegedly supposedly reportedly apparently evidently ostensibly arguably presumably possibly probably else almost nearly quite rather somewhat")
 var frameLyNouns = wordSet("family italy reply assembly supply ally rally bully belly jelly lily july only early daily holy")
 
 const frameCoordinationMessage = "clause coordination after a verb is not certified; write 'Both ... and ...', use parentheses, or split into two premises."

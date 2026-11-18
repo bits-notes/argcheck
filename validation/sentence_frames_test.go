@@ -114,3 +114,63 @@ func TestModifiedQuantifierSlots(t *testing.T) {
 		}
 	}
 }
+
+func TestClosedClassOpeners(t *testing.T) {
+	refuse := []string{
+		"According to Bob,", "According to Bob", "According to the report,", "As per the log,", "In view of the outage,",
+		"With respect to the logs,", "On behalf of the team,", "In terms of uptime,", "Despite the alarm,", "Unlike yesterday,",
+		"Regarding the incident,", "Given the logs,", "Of course", "No doubt", "In theory,", "In principle,", "In practice,",
+		"So to speak,", "In effect,", "Still,", "Even so,", "Indeed,", "Perhaps", "Maybe", "Surely", "Certainly",
+	}
+	for _, opener := range refuse {
+		text := "1. " + opener + " the server crashed and the network failed.\n2. Therefore, the network failed. [1]"
+		if _, r := CheckEntailmentGate(text); r.Passed {
+			t.Errorf("opener %q certified a sentence-internal step", opener)
+		}
+	}
+	for _, text := range []string{
+		"1. The server crashed and the network failed.\n2. Therefore, the network failed. [1]",
+		"1. Almost every robot is red.\n2. Therefore, something is red. [1]",
+		"1. Nearly all robots are red.\n2. Therefore, something is red. [1]",
+	} {
+		if _, r := CheckEntailmentGate(text); !r.Passed {
+			t.Errorf("control refused: %s: %s", text, r.Message)
+		}
+	}
+}
+
+func TestStructuralTermRules(t *testing.T) {
+	refused := []string{
+		// An unlisted attitude verb inside a term (schema, UI, description EG).
+		"1. If X is red, then X is warm.\n2. The observer reckons Alpha is red.\n3. Therefore, The observer reckons Alpha is warm. [1,2]",
+		"1. If X is red, then X is warm.\n2. The observer fancies that Alpha is red.\n3. Therefore, The observer fancies that Alpha is warm. [1,2]",
+		"1. Every red thing is warm.\n2. The observer reckons Alpha is a red thing.\n3. Therefore, The observer reckons Alpha is warm. [1,2]",
+		"1. The observer reckons Alpha is red.\n2. Therefore, something is red. [1]",
+		// Raising verbs block identity substitution.
+		"1. Superman seems to be strong.\n2. Superman is identical to Clark.\n3. Therefore, Clark seems to be strong. [1,2]",
+		"1. Superman appears to fly.\n2. Superman is identical to Clark.\n3. Therefore, Clark appears to fly. [1,2]",
+		// Pluralia tantum are not plurals of a singular.
+		"1. All tongs are useful.\n2. Alpha is a tong.\n3. Therefore, Alpha is useful. [1,2]",
+		"1. All scissors are sharp.\n2. Alpha is a scissor.\n3. Therefore, Alpha is sharp. [1,2]",
+		// Postposed if with an unlisted question verb.
+		"1. The observer ponders if Alpha is red.\n2. Alpha is red.\n3. Therefore, The observer ponders. [1,2]",
+		"1. They ponder if Alpha is red.\n2. Alpha is red.\n3. Therefore, They ponder. [1,2]",
+	}
+	for _, text := range refused {
+		if _, r := CheckEntailmentGate(text); r.Passed {
+			t.Errorf("certified: %s", text)
+		}
+	}
+	for _, text := range []string{
+		"1. The man who sings is tall.\n2. Therefore, something is tall. [1]",
+		"1. If X is useful, then X is valuable.\n2. An embedded agent is useful.\n3. Therefore, an embedded agent is valuable. [1,2]",
+		"1. If X is useful, then X is valuable.\n2. The proportion of tested hypotheses that are true is useful.\n3. Therefore, the proportion of tested hypotheses that are true is valuable. [1,2]",
+		"1. All premises are valuable.\n2. Alpha is a premise.\n3. Therefore, Alpha is valuable. [1,2]",
+		"1. The ground is wet if it rains.\n2. It rains.\n3. Therefore, the ground is wet. [1,2]",
+		"1. Superman can fly.\n2. Superman is identical to Clark.\n3. Therefore, Clark can fly. [1,2]",
+	} {
+		if _, r := CheckEntailmentGate(text); !r.Passed {
+			t.Errorf("control refused: %s: %s", text, r.Message)
+		}
+	}
+}

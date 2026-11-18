@@ -16,7 +16,7 @@ import (
 
 var clauseSubjectLead = []string{"if", "then", "and", "or", "it is the case that", "it is not the case that", "both that", "and that", "either", "both"}
 
-var passiveOrRaising = regexp.MustCompile(`^\s*(?:is|are|was|were|be|been|being)\s+(?:not\s+)?(?:said|known|thought|believed|rumou?red|reported|alleged|supposed|expected|considered|claimed|assumed|presumed|seen|sought|felt|held|likely|certain|[a-z]+ed|[a-z]+en)\s+(?:by|to)\b`)
+var passiveOrRaising = regexp.MustCompile(`^\s*(?:(?:is|are|was|were|be|been|being)\s+(?:not\s+)?(?:said|known|thought|believed|rumou?red|reported|alleged|supposed|expected|considered|claimed|assumed|presumed|seen|sought|felt|held|likely|unlikely|certain|sure|bound|apt|liable|bought|taught|caught|brought|fought|made|built|sent|spent|lent|found|ground|wound|hung|led|read|paid|laid|kept|left|dealt|meant|met|sold|told|struck|stuck|shot|hit|put|set|cut|hurt|let|shut|won|spun|begun|sung|rung|drunk|swum|held|heard|loved|owned|[a-z]+ed|[a-z]+en)\s+(?:by|to)\b|(?:does\s+not\s+|did\s+not\s+)?(?:seems?|seemed|appears?|appeared|happens?|happened|tends?|tended|proves?|proved|turns?\s+out|turned\s+out)\s+to\b)`)
 
 // termSubjectPositions reports whether every word-bounded occurrence of term
 // in text is the subject of a plain clause, and how many occurrences there are.

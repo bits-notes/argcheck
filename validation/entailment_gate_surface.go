@@ -142,6 +142,19 @@ func postposedConditional(value string) (string, bool) {
 	if questionStem.MatchString(left) || incompleteIfConsequent.MatchString(left) || postposedConsequentUnsafe.MatchString(left) || postposedAntecedentUnsafe.MatchString(right) {
 		return "", false
 	}
+	// v37.0: a verb right before "if" may take the if-clause as its object
+	// ("The observer ponders if A"). Refuse unless it is a listed intransitive
+	// ("dies if") or a participle after a copula ("is cancelled if"); after a
+	// pronoun subject any word there is a verb ("they ponder if").
+	if len(words) >= 2 {
+		last := strings.Trim(words[len(words)-1], ",")
+		prev := strings.Trim(words[len(words)-2], ",")
+		copula := prev == "is" || prev == "are" || prev == "was" || prev == "were" || prev == "be" || prev == "been" || prev == "being"
+		pronounSubject := prev == "i" || prev == "you" || prev == "we" || prev == "they" || prev == "he" || prev == "she" || prev == "it"
+		if !frameIntransitives[last] && !copula && (finiteVerbCue(last) || pronounSubject) {
+			return "", false
+		}
+	}
 	return "If " + right + ", then " + left, true
 }
 

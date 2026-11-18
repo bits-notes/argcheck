@@ -64,6 +64,11 @@ func descriptionDefinition(g, p *folFormula) *folFormula {
 func descriptionOpaque(s string) bool {
 	// Relative markers are structural only in a leading description restrictor.
 	if cl, tail, ok := descriptionParts(s); ok {
+		// A restrictor that ends inside an embedded clause ("the observer
+		// reckons alpha" + "is red") is not a description, whatever the verb.
+		if clauseInsideTerm("the " + cl) {
+			return true
+		}
 		for _, marker := range []string{" that ", " who ", " which "} {
 			cl = strings.ReplaceAll(cl, marker, " ")
 		}

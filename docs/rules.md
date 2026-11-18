@@ -3096,9 +3096,9 @@ identicals, or instantiates a quantifier or schema refuses a sentence that opens
 with something that may cover the whole sentence: a sentence adverb (any word
 ending in `-ly`, such as `Arguably`, `Purportedly`, `Hypothetically`, and
 `perhaps`, `maybe`, `sometimes`, `often`, `once`, `always`, `never`,
-`yesterday`, `today`), or a fronted framing phrase that starts with a
-preposition and ends at a comma within its first few words (`In the story,`,
-`Under the law of likelihood,`, `According to Bob,`). A capitalized word that
+`yesterday`, `today`), or a fronted frame that starts with any preposition, single-word or complex
+(`In the story`, `Under the law of likelihood`, `According to Bob`, `As per the
+log`, `In view of ...`), with or without a comma. A capitalized word that
 also appears capitalized mid-sentence elsewhere in the argument is a name, not
 an adverb. Bare-noun, gerund and adjective subjects (`Beliefs ...`,
 `Human value ...`) are subjects. The message suggests moving the adverb or

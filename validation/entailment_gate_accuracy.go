@@ -3,6 +3,7 @@ package validation
 import (
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 // These lexical fallbacks apply only to term extraction, not atomic premises.
@@ -25,6 +26,9 @@ func embeddedClauseHead(s string) bool {
 }
 
 func embeddedTerm(s string, needComplementizer bool) bool {
+	if !needComplementizer && clauseInsideTerm(s) {
+		return true
+	}
 	s = strings.ToLower(strings.TrimSpace(s))
 	if sentenceOperator.MatchString(s) || impersonalEmbedding.MatchString(s) {
 		return true
@@ -117,7 +121,9 @@ func attitudeUsedAsVerb(words []string, i int, needComplementizer bool) bool {
 	return true
 }
 
-var nonSingularStem = regexp.MustCompile(`(?:^|\s)(?:clothes|species|means|goods|news|odds|thanks|series|savings|earnings|belongings|remains|surroundings|axes|arms|customs|glasses)$`)
+// English pluralia tantum and -s nouns whose stem is a different word: a closed
+// class, listed in full, so stripping -s never equates them with a singular.
+var nonSingularStem = regexp.MustCompile(`(?:^|\s)(?:clothes|species|means|goods|news|odds|thanks|series|savings|earnings|belongings|remains|surroundings|axes|arms|customs|glasses|tongs|scissors|pants|trousers|shorts|jeans|tights|pyjamas|pajamas|knickers|briefs|spectacles|binoculars|goggles|pliers|shears|tweezers|clippers|forceps|scales|bellows|gallows|headquarters|barracks|crossroads|whereabouts|outskirts|proceeds|riches|wages|dregs|leftovers|annals|archives|congratulations|credentials|damages|grounds|lodgings|manners|minutes|morals|quarters|regards|spirits|stairs|troops|valuables|arrears|clippings|ashes|innings|alms|amends|doldrums|entrails|jitters|measles|mumps|rabies|diabetes|physics|mathematics|economics|ethics|politics|linguistics|statistics|athletics|gymnastics|electronics|genetics|logistics|dynamics|mechanics|semantics|optics|acoustics|phonetics|aesthetics|metaphysics)$`)
 var identityOpaqueExtra = regexp.MustCompile(`(?i)\b(?:is looking for|looks for|is searching for|seeks|wants|needs|hopes for|fears|believes|imagines|worships|allegedly|supposedly|reportedly|dream(?:s|ed|ing)?|pretend(?:s|ed|ing)?|called|named|known as)\b`)
 var questionStem = regexp.MustCompile(`(?i)\b(?:wonder\w*|ask\w*|investigat\w*|check\w*|forg\w*|debat\w*|determin\w*|decid\w*|test\w*|verif\w*|doubt\w*|question\w*|consider\w*|discuss\w*|explor\w*|examin\w*|stud\w*|know\w*|tell\w*|judg\w*|assess\w*|evaluat\w*|figur\w*|see|sees|saw|seen|knew|told|unsure|sure|aware)\b`)
 var incompleteIfConsequent = regexp.MustCompile(`(?i)(?:\b(?:about|of|to|for|with|at|in|on|whether|aloud|out|up)|\b(?:(?:is|are|was|were) [a-z]+ing|(?:has|have|had) (?:[a-z]+ed|forgotten)))$`)
@@ -197,4 +203,77 @@ func nonrestrictiveWeakening(premise, conclusion string) bool {
 		return false
 	}
 	return equalClauses(nonrestrictiveRelative.ReplaceAllString(p, "$1 $2 $3 $4"), conclusion)
+}
+
+var termDeterminers = wordSet("the a an this that these those his her its their my your our every some each any no all many most few several both either neither such what which whose one two three own other another")
+var termPhraseLinks = wordSet("and or but nor than as to who which whom whose where when while")
+var termClauseStart = wordSet("that whether if the a an this these those his her its their my your our some every all no any he she they we i you it")
+var irregularFiniteVerbs = wordSet("thought said knew saw felt found held told heard meant took gave made kept left believed understood forgot remembered")
+
+// clauseInsideTerm reports a term that contains a finite verb followed by a
+// complement (a capitalized word, a pronoun, a determiner, or that/whether/
+// if): "the observer reckons alpha", "the observer fancies that alpha". Such a
+// term ends inside an embedded clause, whatever the verb, so this is a
+// structural rule rather than a list of attitude verbs. Text after a relative
+// marker (who/which/that) is part of a noun phrase and is not scanned.
+func clauseInsideTerm(term string) bool {
+	raw := strings.Fields(strings.TrimSpace(term))
+	for i := 1; i < len(raw)-1; i++ {
+		w := strings.ToLower(strings.Trim(raw[i], ",;:"))
+		if w == "who" || w == "which" || w == "whom" || w == "whose" || (w == "that" && i > 0 && !finiteVerbCue(strings.ToLower(raw[i-1]))) {
+			return false
+		}
+		// A base-form verb after a plural subject ("the observers reckon
+		// alpha") is also a finite verb.
+		pluralSubject := strings.HasSuffix(strings.ToLower(raw[i-1]), "s") && !strings.HasSuffix(strings.ToLower(raw[i-1]), "ss") && !termDeterminers[w] && !framePrepositions[w] && !termPhraseLinks[w]
+		if !(finiteVerbCue(w) || pluralSubject) || strings.Contains(w, "-") {
+			continue
+		}
+		// A verb follows the head of a noun phrase, never a determiner or a
+		// preposition: "an embedded agent", "the systems engineer" are noun
+		// phrases.
+		prev := strings.ToLower(strings.Trim(raw[i-1], ",;:"))
+		if termDeterminers[prev] || framePrepositions[prev] || strings.HasSuffix(prev, "'s") || strings.HasSuffix(prev, "’s") {
+			continue
+		}
+		// The hole is a term that ends just inside an embedded clause ("the
+		// observer reckons alpha" + "is red"). A long run after the verb is a
+		// whole clause bound to a propositional letter, which is fine.
+		if len(raw)-1-i > 3 {
+			continue
+		}
+		if strings.HasSuffix(raw[i], ",") {
+			continue
+		}
+		next := strings.Trim(raw[i+1], ",;:")
+		nl := strings.ToLower(next)
+		if nl == "that" && i+2 < len(raw) {
+			// "hypotheses that are true" is a subject relative (that + verb);
+			// "reckons that alpha is red" is a complement (that + subject).
+			after := strings.ToLower(strings.Trim(raw[i+2], ",;:"))
+			if auxiliaryWords[after] || finiteVerbCue(after) || after == "not" {
+				continue
+			}
+		}
+		if termClauseStart[nl] || (len(next) > 0 && unicode.IsUpper([]rune(next)[0])) {
+			return true
+		}
+		// Terms arrive lower-cased, so a following name looks like any word.
+		// Strict: any word other than a preposition, conjunction, relative
+		// marker or "to" opens a complement after a finite verb cue.
+		if !framePrepositions[nl] && !termPhraseLinks[nl] {
+			return true
+		}
+	}
+	return false
+}
+
+func finiteVerbCue(w string) bool {
+	if irregularFiniteVerbs[w] {
+		return true
+	}
+	if len(w) < 4 || strings.HasSuffix(w, "ss") || strings.HasSuffix(w, "'s") || strings.HasSuffix(w, "us") || strings.HasSuffix(w, "is") {
+		return false
+	}
+	return strings.HasSuffix(w, "s") || strings.HasSuffix(w, "ed")
 }

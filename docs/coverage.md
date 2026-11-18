@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v36.0)
+# Entailment Gate — Coverage and Known Limits (catalog v37.0)
 
 **Type:** reference
-**Status:** current as of catalog v36.0
+**Status:** current as of catalog v37.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v36.0**). Tests cover capture,
+form; the current catalog is **v37.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -1035,6 +1035,33 @@ CERTIFIED, chosen as variant A by the owner after a sample. 0 invalid-to-valid,
 marked coordination about 175; comma-exact 3; the rest are schematic bindings
 that no longer match once commas count.
 
+## v37.0: closed-class openers and structural term rules
+
+- Openers: every preposition (single-word, including -ing forms such as
+  `according`, and complex: `according to`, `as per`, `in view of`, `with
+  respect to`, ...), the listed non-`-ly` sentence adverbs and multi-word
+  adverbials (`of course`, `in theory`, `so to speak`, ...), and every `-ly`
+  word refuse a sentence-internal step, with or without a comma. `According to
+  Bob, A and B. Therefore, B.` is NOT CERTIFIED. (v36.0 let `According` through
+  as if it were a gerund subject.)
+- Terms: a term that contains a finite verb (or a base verb after a plural
+  subject) followed within three words by a complement is refused in schematic
+  slots, universal instantiation, existential generalization and definite
+  descriptions, whatever the verb (`the observer reckons Alpha` + `is red`).
+- Raising predicates (`seems to`, `appears to`, `happens to`, `tends to`, ...)
+  and irregular passive participles block identity substitution.
+- Pluralia tantum (`tongs`, `scissors`, `trousers`, ..., `-ics` fields) never
+  match a stripped singular.
+- A postposed `C if A` is not read as a conditional when the word before `if`
+  is a verb that may take the if-clause as its object (`ponders if`).
+
+Corpus impact (2,476 arguments, against v36.0): 391 valid arguments become NOT
+CERTIFIED, under the strict standard (ambiguity is refused even at a corpus
+cost). Most are prepositional openers without a comma (`In infinite worlds
+...`, `Under X ...`) and terms that end inside an embedded clause. One argument
+becomes VALID again: `Nearly all ...` is a quantifier opener, as `Almost every`
+already was, which restores its v35.0 verdict.
+
 ## v36.0 blocklist audit
 
 This audit distinguishes a positive grammar recognizer (**allow**) from a
@@ -1044,7 +1071,7 @@ helper is not automatically harmless when *absence* of its words permits a
 parse. Runtime sets of seen formulas, bound variables, names and caches are
 not lexical word lists. File names below are relative to `validation/`.
 
-**Audit status: not closed.** The new frame guards close the supplied opener
+**Audit status (v37.0):** the opener, term-binding, raising/passive, pluralia-tantum, postposed-if and identity rows are settled as closed-class or structural rules (below). The remaining **Open** rows (relational-verb, quantifier-term, counterfactual, unless-anaphora and grouping-exemption lists) are scheduled as a follow-up; each says why it is still a blocklist. The new frame guards close the supplied opener
 and complement-coordination examples, and comma-exact comparison closes
 H130–H134. The rows marked **open** are genuine remaining obligations; this
 change does not claim that an incomplete lexical blocklist proves a safe
@@ -1055,30 +1082,30 @@ about the narrower accepted language before the audit requirement is met.
 | --- | --- | --- | --- |
 | `sentence_frames.go`: `frameOpeners` | allow | yes | Determiners, pronouns and logical entry points end the opener check early. |
 | `sentence_frames.go`: `-ly` opener rule | closed-class rule | yes | Every `-ly` word at the start is refused (morphological, so unlisted adverbs are covered); `frameLyNouns` lists the few `-ly` nouns that stay subjects. |
-| `sentence_frames.go`: `frameSentenceAdverbs` | block | yes | **Open**: non-`-ly` sentence adverbs are a small closed-ish set (perhaps, maybe, sometimes, often, once, always, never, yesterday, today); an unlisted one could still open a sentence-internal step. |
-| `sentence_frames.go`: `framePrepositions` + comma | block | yes | Fronted frames are recognized by a leading preposition and an early comma. **Open**: a frame with no comma ("In the story the server crashed and ...") is not detected. |
+| `sentence_frames.go`: `frameSentenceAdverbs` + `frameAdverbialPhrases` | closed class | yes | v37.0: the non-`-ly` sentence adverbs and multi-word adverbials (of course, no doubt, in theory, in practice, so to speak, in effect, ...) are listed as a closed class; every `-ly` word is refused by morphology. Settled. |
+| `sentence_frames.go`: `framePrepositions` + `frameComplexPrepositions` | closed class | yes | v37.0: every single-word preposition (including -ing forms such as according/regarding and fronting subordinators) and the complex prepositions (according to, as per, in view of, with respect to, ...) refuse a sentence-internal step with or without a comma. Settled. |
 | `sentence_frames.go`: name evidence (capitalized mid-sentence elsewhere) | allow (exception) | yes | Lets a sentence-initial name through the opener check; it cannot turn an adverb into a name unless the same word is capitalized mid-sentence. |
 | `sentence_frames.go`: `frameTransitives`, `frameIntransitives`, `framePredicates`, `frameNominalHeads` | allow | yes | Rule 2: an unmarked `A and B` split needs a recognized complete left clause; unknown verbs require explicit grouping (`Both`, `Either`, parentheses, separate premises). |
 | `sentence_frames.go`: coordination prefixes | allow | yes | Explicit both/either grouping and conditional scaffolds are handled by their own parsers. |
 | `sentence_frames.go`: `modifiedQuantifierPhrase` | closed-class rule | yes | A slot binding or UI subject that opens with modifiers (any `-ly` adverb, `next to`, `close to`, `well`, `just`, ...) followed by a closed class of quantifier words (`no`, `one`, `few`, `all`, numerals, ...) is refused: `practically no`, `virtually no`, `next to no`, `precisely one`, `roughly one`. The quantifier words are a closed class; the modifier side is open by morphology. |
-| `entailment_gate_accuracy.go`: `bindingAttitude` | block | yes | **Open** for term binding; coordination no longer relies on completeness of this list. |
+| `entailment_gate_accuracy.go`: `bindingAttitude` | block | yes | Backstopped by the v37.0 structural rule `clauseInsideTerm`: a term containing any finite verb (or a base verb after a plural subject) followed within three words by a complement is refused, whatever the verb. The list remains as an extra refusal. Settled. |
 | same: `sentenceOperator` | block | yes | Additional negative filter; new opener recognizer rejects unlisted productive `-ly` adverbs. Non-`-ly` nominal/adverb ambiguity remains a residual. |
-| same: `impersonalEmbedding` | block | yes | **Open**: impersonal embedding is not exhausted by is/was/seems/seemed. |
-| same: `nominalAttitudeHead` | allow (exception) | yes | **Open**: this exempts nominal uses from the embedding filter; it is not a complete nominal grammar. |
+| same: `impersonalEmbedding` | block | yes | Backstopped by `clauseInsideTerm` ("it appears that alpha": finite verb + that). Settled. |
+| same: `nominalAttitudeHead` | allow (exception) | yes | An exception inside the list check only; `clauseInsideTerm` runs first and does not consult it. Settled. |
 | same: `nominalClause` | allow (boundary) | yes | Closed relative/complement markers; full nominal parse still depends on other guards. |
-| same: `attitudeScanStop` | allow (exception) | yes | **Open** for term binding: stopping at a preposition can miss a later main verb. New coordination guard scans the complete left operand. |
-| same: `attitudeNounContext` | allow (exception) | yes | **Open**: preceding determiners/adjectives are cues, not proof that the following word is nominal. |
-| same: `attitudeBaseSubject` | allow (verb cue) | yes | Positive cue for a base-form attitude verb; absence alone is not a safety proof. **Open** in binding. |
-| same: `attitudeUsedAsVerb` next-token switch | allow (exception) | yes | **Open**: exempts listed nominal/prepositional continuations from the negative filter. |
-| same: `nonSingularStem` | block | yes | **Open**: an unlisted singular or plural-only `-s` word can still be stemmed incorrectly. |
+| same: `attitudeScanStop` | allow (exception) | yes | Exception inside the list check only; `clauseInsideTerm` scans the whole term. Settled. |
+| same: `attitudeNounContext` | allow (exception) | yes | Exception inside the list check only; `clauseInsideTerm` uses its own determiner/preposition rule. Settled. |
+| same: `attitudeBaseSubject` | allow (verb cue) | yes | Superseded by `clauseInsideTerm`, which treats a base verb after a plural subject as finite. Settled. |
+| same: `attitudeUsedAsVerb` next-token switch | allow (exception) | yes | Exception inside the list check only; `clauseInsideTerm` decides independently. Settled. |
+| same: `nonSingularStem` | block | yes | v37.0: English pluralia tantum and lexically distinct -s nouns listed in full (tongs, scissors, trousers, ..., -ics fields) as a closed class. Settled. |
 | same: `identityOpaqueExtra` | block | yes | v35 subject-position guard independently protects legacy identity substitution; **open** in other FOL/term-extraction uses. |
-| same: `questionStem`, `incompleteIfConsequent` | block | yes | **Open**: postposed-if acceptance still depends on incomplete question/complement vocabulary. |
+| same: `questionStem`, `incompleteIfConsequent` | block | yes | Backstopped by a structural rule (v37.0): a postposed `C if A` is not read as a conditional when the word before `if` is a finite verb not on the intransitive list (and not a participle after a copula), or any word after a pronoun subject. Settled. |
 | same: `operatorCoordinationAmbiguous` prefix exemptions | allow (exception) | yes | Structural operators own their connectives; this early syntax guard still has legacy opaque-context exemptions. |
 | same: `relativeComma` | allow | no | Legacy unused relative-marker recognizer; it no longer controls comparison. |
 | same: `nonrestrictiveRelative` | allow | yes | Positive directional relative weakening pattern; general matching retains lexical commas. |
 | same: `structuralModalComma`, `structuralCoordinationComma` | allow | yes | Modal prefix commas and visible complete-clause coordination boundaries only; explicit literal payloads are masked. |
 | `term_slot_positions.go`: `clauseSubjectLead` | allow | yes | Explicit clause/subject boundary markers. |
-| same: `passiveOrRaising` | block | yes | **Open**: productive participial endings plus irregular words are not a complete raising/passive classifier. |
+| same: `passiveOrRaising` | block | yes | v37.0: raising predicates (seem, appear, happen, tend, prove, turn out ... to) are a closed class; passives are caught by -ed/-en morphology plus a closed list of irregular participles. Settled. |
 | same: `explicitIdentityPattern` | allow | yes | Only explicit identity phrases or equality trigger identity-chain treatment. |
 | `entailment_gate_surface.go`: contraction alternatives | allow | yes | Fixed lexical expansions, not an open-ended synonym rule. |
 | same: `gateSimpleClause` | allow | yes | Positive finite grammar for the old inline conditional rewrite. |
@@ -1106,7 +1133,7 @@ about the narrower accepted language before the audit requirement is met.
 | same: have/do/go and inflection endings | allow / productive rule | yes | Fixed irregular agreement and regular spelling; semantic predicate text is otherwise unchanged. |
 | same: schema form-name lists | allow | yes | Internal rule identifiers, not natural-language vocabulary. |
 | `accuracy_round2.go`: `nameBeforeLetter` operator switch | allow (exception) | yes | Keeps logical operators from being treated as a multiword name prefix. |
-| same: `round2Singular` exception switch and suffix rules | block / productive rule | yes | **Open**, together with `nonSingularStem`; exceptions are not exhaustive. |
+| same: `round2Singular` exception switch and suffix rules | block / productive rule | yes | v37.0: English pluralia tantum and lexically distinct -s nouns listed in full (tongs, scissors, trousers, ..., -ics fields) as a closed class. Settled. |
 | same: `instanceQuantifierHeads`, `instanceQuantifierPhrases` | block | yes | **Open**: negative instance-subject filter, not a positive noun-phrase parser. |
 | same: `accuracyRound2Failure` quantifier prefix list | block | no | Diagnostic only, after all candidate schemas fail. Cannot make a step VALID. |
 | same: `subjectHasConnective` separators | block | yes | Closed connective syntax, but the subject recognizer also uses open-ended lexical cues. |
