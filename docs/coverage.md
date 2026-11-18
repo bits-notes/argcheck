@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v39.0)
+# Entailment Gate — Coverage and Known Limits (catalog v40.0)
 
 **Type:** reference
-**Status:** current as of catalog v39.0
+**Status:** current as of catalog v40.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v39.0**). Tests cover capture,
+form; the current catalog is **v40.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -1034,7 +1034,7 @@ that no longer match once commas count.
 
 - Relational instantiation and existential generalization into an object
   position are certified only for a closed allowlist of extensional verbs
-  (admires, sends, gives, causes, outweighs, contains, ...) and copular frames
+  (greets, sends, gives, causes, outweighs, contains, ...; not `admires`, v38.1) and copular frames
   (`is preferable to`, `is taller than`, ...), and their passives. Any other
   verb's object may be intensional (`Lois awaits every guest`, `seeks`,
   `craves`), so it is refused. The message suggests stating the instance as a
@@ -1196,6 +1196,15 @@ operand to remain opaque. A complement's own parentheses do not make its
 content asserted. Unknown intransitive verbs can be conservatively refused;
 use explicit grouping for those cases. No corpus impact percentage was
 measured in this run.
+
+## v40.0: admires is not extensional
+
+- `admires` comes off the extensional allowlist for relational instantiation
+  and generalization into an object position: admiration may be intensional
+  (Lois admires Superman, not Clark). `Lois admires every hero. Bruce is a
+  hero. Therefore, Lois admires Bruce.` is NOT CERTIFIED. `greets` is added,
+  and the relational docs examples use it.
+- Corpus impact against v38.0: 1 valid argument becomes NOT CERTIFIED.
 
 ## v39.0: indefinites bind schematic variables only as subject or predicate
 

@@ -124,13 +124,13 @@ func relOracleSentence(a, b relOracleTerm, scaffold int, outerNot, innerNot bool
 		} else {
 			right = ref
 		}
-		body := left + " admires " + right
+		body := left + " greets " + right
 		if innerNot {
 			body = "it is not the case that " + body
 		}
 		surface.text = bound.text() + " is such that " + body
 	} else {
-		surface.text = left + " admires " + right
+		surface.text = left + " greets " + right
 	}
 	if outerNot {
 		surface.text = "it is not the case that " + surface.text

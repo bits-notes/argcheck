@@ -15,16 +15,16 @@ func relationArgument(p []string, c string) string {
 	return strings.Join(append(lines, fmt.Sprintf("%d. Therefore, %s. [%s]", len(p)+1, c, strings.Join(refs, ","))), "\n")
 }
 
-const relationFitchUG = `1. Every student admires every teacher.
+const relationFitchUG = `1. Every student greets every teacher.
 | 2. Let b be an arbitrary student.
-| 3. Therefore, b admires every teacher. [1,2]
-4. Therefore, Every student admires every teacher. [2-3]`
-const relationFitchEE = `1. Some student admires Bob.
-| 2. Suppose c is a student and c admires Bob.
+| 3. Therefore, b greets every teacher. [1,2]
+4. Therefore, Every student greets every teacher. [2-3]`
+const relationFitchEE = `1. Some student greets Bob.
+| 2. Suppose c is a student and c greets Bob.
 | 3. Therefore, c is a student. [2]
-| 4. Therefore, c admires Bob. [2]
-| 5. Therefore, Some student admires Bob. [4,3]
-6. Therefore, Some student admires Bob. [1,2-5]`
+| 4. Therefore, c greets Bob. [2]
+| 5. Therefore, Some student greets Bob. [4,3]
+6. Therefore, Some student greets Bob. [1,2-5]`
 
 func TestEntailmentGateCatalogV17(t *testing.T) {
 	for _, tc := range []struct {
@@ -32,35 +32,35 @@ func TestEntailmentGateCatalogV17(t *testing.T) {
 		p    []string
 		c    string
 	}{
-		{"subject UI", []string{"Every student admires every teacher", "Alice is a student"}, "Alice admires every teacher"},
-		{"object UI", []string{"Alice admires every teacher", "Bob is a teacher"}, "Alice admires Bob"},
-		{"each UI", []string{"Alice admires each teacher", "Bob is a teacher"}, "Alice admires Bob"},
-		{"both scope readings UI verbatim", []string{"Every student admires some teacher", "Alice is a student"}, "Alice admires some teacher"},
-		{"object EG", []string{"Alice admires Bob", "Bob is a teacher"}, "Alice admires some teacher"},
-		{"subject EG", []string{"Alice admires Bob", "Alice is a student"}, "Some student admires Bob"},
-		{"object negative", []string{"Alice admires no tyrant", "Bob is a tyrant"}, "It is not the case that Alice admires Bob"},
-		{"subject negative", []string{"No student admires Bob", "Alice is a student"}, "It is not the case that Alice admires Bob"},
-		{"not some", []string{"It is not the case that some student admires Bob"}, "No student admires Bob"},
-		{"no to not some", []string{"No student admires Bob"}, "It is not the case that some student admires Bob"},
-		{"not every", []string{"It is not the case that every student admires Bob"}, "Some student is such that it is not the case that that student admires Bob"},
-		{"not every object", []string{"It is not the case that Alice admires every teacher"}, "Some teacher is such that it is not the case that Alice admires that teacher"},
-		{"negative witness reverse", []string{"Some teacher is such that it is not the case that Alice admires that teacher"}, "It is not the case that Alice admires every teacher"},
-		{"scaffold intro", []string{"Every student admires Bob"}, "Every student is such that that student admires Bob"},
-		{"scaffold elimination", []string{"Every student is such that that student admires Bob"}, "Every student admires Bob"},
-		{"wide witness weakening", []string{"Some teacher is such that every student admires that teacher"}, "Every student is such that that student admires some teacher"},
-		{"wide witness to ambiguous", []string{"Some teacher is such that every student admires that teacher"}, "Every student admires some teacher"},
-		{"wide witness introduction", []string{"Every student admires Bob", "Bob is a teacher"}, "Some teacher is such that every student admires that teacher"},
-		{"nested all commute", []string{"Every student admires every teacher"}, "Every teacher is such that every student admires that teacher"},
+		{"subject UI", []string{"Every student greets every teacher", "Alice is a student"}, "Alice greets every teacher"},
+		{"object UI", []string{"Alice greets every teacher", "Bob is a teacher"}, "Alice greets Bob"},
+		{"each UI", []string{"Alice greets each teacher", "Bob is a teacher"}, "Alice greets Bob"},
+		{"both scope readings UI verbatim", []string{"Every student greets some teacher", "Alice is a student"}, "Alice greets some teacher"},
+		{"object EG", []string{"Alice greets Bob", "Bob is a teacher"}, "Alice greets some teacher"},
+		{"subject EG", []string{"Alice greets Bob", "Alice is a student"}, "Some student greets Bob"},
+		{"object negative", []string{"Alice greets no tyrant", "Bob is a tyrant"}, "It is not the case that Alice greets Bob"},
+		{"subject negative", []string{"No student greets Bob", "Alice is a student"}, "It is not the case that Alice greets Bob"},
+		{"not some", []string{"It is not the case that some student greets Bob"}, "No student greets Bob"},
+		{"no to not some", []string{"No student greets Bob"}, "It is not the case that some student greets Bob"},
+		{"not every", []string{"It is not the case that every student greets Bob"}, "Some student is such that it is not the case that that student greets Bob"},
+		{"not every object", []string{"It is not the case that Alice greets every teacher"}, "Some teacher is such that it is not the case that Alice greets that teacher"},
+		{"negative witness reverse", []string{"Some teacher is such that it is not the case that Alice greets that teacher"}, "It is not the case that Alice greets every teacher"},
+		{"scaffold intro", []string{"Every student greets Bob"}, "Every student is such that that student greets Bob"},
+		{"scaffold elimination", []string{"Every student is such that that student greets Bob"}, "Every student greets Bob"},
+		{"wide witness weakening", []string{"Some teacher is such that every student greets that teacher"}, "Every student is such that that student greets some teacher"},
+		{"wide witness to ambiguous", []string{"Some teacher is such that every student greets that teacher"}, "Every student greets some teacher"},
+		{"wide witness introduction", []string{"Every student greets Bob", "Bob is a teacher"}, "Some teacher is such that every student greets that teacher"},
+		{"nested all commute", []string{"Every student greets every teacher"}, "Every teacher is such that every student greets that teacher"},
 		{"exact copular relation", []string{"Alice is preferable to every teacher", "Bob is a teacher"}, "Alice is preferable to Bob"},
 		{"caused", []string{"Alice caused Bob", "Bob is a teacher"}, "Alice caused some teacher"},
 		{"outweighs", []string{"Alice outweighs every teacher", "Bob is a teacher"}, "Alice outweighs Bob"},
-		{"passive stays passive", []string{"Alice is admired by every teacher", "Bob is a teacher"}, "Alice is admired by Bob"},
-		{"multiword class", []string{"Every graduate student admires Bob", "Alice is a graduate student"}, "Alice admires Bob"},
-		{"multiword mixed scope class", []string{"Every graduate student admires some senior teacher", "Alice is a graduate student"}, "Alice admires some senior teacher"},
+		{"passive stays passive", []string{"Alice is greeted by every teacher", "Bob is a teacher"}, "Alice is greeted by Bob"},
+		{"multiword class", []string{"Every graduate student greets Bob", "Alice is a graduate student"}, "Alice greets Bob"},
+		{"multiword mixed scope class", []string{"Every graduate student greets some senior teacher", "Alice is a graduate student"}, "Alice greets some senior teacher"},
 		{"prepositional relation", []string{"Every student works with some teacher", "Alice is a student"}, "Alice works with some teacher"},
-		{"negative shared inhabited class", []string{"No student admires every student", "Alice is a student"}, "It is not the case that Alice admires every student"},
-		{"scope uses its enclosing inhabitant", []string{"Every student admires no student"}, "No student is such that every student admires that student"},
-		{"multiword name", []string{"Mary Jane admires every teacher", "Bob is a teacher"}, "Mary Jane admires Bob"},
+		{"negative shared inhabited class", []string{"No student greets every student", "Alice is a student"}, "It is not the case that Alice greets every student"},
+		{"scope uses its enclosing inhabitant", []string{"Every student greets no student"}, "No student is such that every student greets that student"},
+		{"multiword name", []string{"Mary Jane greets every teacher", "Bob is a teacher"}, "Mary Jane greets Bob"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			arg := relationArgument(tc.p, tc.c)
@@ -82,32 +82,32 @@ func TestEntailmentGateV17NearMisses(t *testing.T) {
 		p    []string
 		c    string
 	}{
-		{"UI wrong class", []string{"Alice admires every teacher", "Bob is a student"}, "Alice admires Bob"},
-		{"UI wrong position", []string{"Alice admires every teacher", "Bob is a teacher"}, "Bob admires Alice"},
-		{"UI wrong verb", []string{"Alice admires every teacher", "Bob is a teacher"}, "Alice respects Bob"},
-		{"EG wrong class", []string{"Alice admires Bob", "Bob is a student"}, "Alice admires some teacher"},
-		{"EG wrong name", []string{"Alice admires Bob", "Alice is a teacher"}, "Alice admires some teacher"},
-		{"EG wrong position", []string{"Alice admires Bob", "Bob is a teacher"}, "Some teacher admires Alice"},
-		{"EG wrong verb", []string{"Alice admires Bob", "Bob is a teacher"}, "Alice respects some teacher"},
-		{"negative wrong class", []string{"Alice admires no teacher", "Bob is a student"}, "It is not the case that Alice admires Bob"},
-		{"negative wrong position", []string{"Alice admires no teacher", "Bob is a teacher"}, "It is not the case that Bob admires Alice"},
-		{"negative wrong verb", []string{"Alice admires no teacher", "Bob is a teacher"}, "It is not the case that Alice respects Bob"},
-		{"negation wrong position", []string{"It is not the case that some student admires Bob"}, "No student is admired by Bob"},
-		{"negation wrong class", []string{"It is not the case that some student admires Bob"}, "No teacher admires Bob"},
-		{"scope flip", []string{"Every student is such that that student admires some teacher"}, "Some teacher is such that every student admires that teacher"},
-		{"ambiguity verbatim", []string{"Every student admires some teacher"}, "Some teacher is such that every student admires that teacher"},
-		{"ambiguous conclusion", []string{"Every student is such that that student admires some teacher"}, "Every student admires some teacher"},
-		{"passive conversion", []string{"Alice admires every teacher", "Bob is a teacher"}, "Bob is admired by Alice"},
-		{"symmetry", []string{"Alice admires Bob"}, "Bob admires Alice"},
-		{"any", []string{"Alice admires any teacher", "Bob is a teacher"}, "Alice admires Bob"},
-		{"plural", []string{"All students admire every teacher", "Alice is a student"}, "Alice admires every teacher"},
-		{"nested object noun", []string{"Alice admires every student of some school", "Bob is a student of some school"}, "Alice admires Bob"},
-		{"scaffold wrong class", []string{"Every student admires Bob"}, "Every teacher is such that that teacher admires Bob"},
-		{"scaffold wrong position", []string{"Every student admires Bob"}, "Every student is such that Bob admires that student"},
-		{"scaffold wrong verb", []string{"Every student admires Bob"}, "Every student is such that that student respects Bob"},
-		{"noun nesting", []string{"Every student of some school admires Bob", "Alice is a student of some school"}, "Alice admires Bob"},
+		{"UI wrong class", []string{"Alice greets every teacher", "Bob is a student"}, "Alice greets Bob"},
+		{"UI wrong position", []string{"Alice greets every teacher", "Bob is a teacher"}, "Bob greets Alice"},
+		{"UI wrong verb", []string{"Alice greets every teacher", "Bob is a teacher"}, "Alice respects Bob"},
+		{"EG wrong class", []string{"Alice greets Bob", "Bob is a student"}, "Alice greets some teacher"},
+		{"EG wrong name", []string{"Alice greets Bob", "Alice is a teacher"}, "Alice greets some teacher"},
+		{"EG wrong position", []string{"Alice greets Bob", "Bob is a teacher"}, "Some teacher greets Alice"},
+		{"EG wrong verb", []string{"Alice greets Bob", "Bob is a teacher"}, "Alice respects some teacher"},
+		{"negative wrong class", []string{"Alice greets no teacher", "Bob is a student"}, "It is not the case that Alice greets Bob"},
+		{"negative wrong position", []string{"Alice greets no teacher", "Bob is a teacher"}, "It is not the case that Bob greets Alice"},
+		{"negative wrong verb", []string{"Alice greets no teacher", "Bob is a teacher"}, "It is not the case that Alice respects Bob"},
+		{"negation wrong position", []string{"It is not the case that some student greets Bob"}, "No student is greeted by Bob"},
+		{"negation wrong class", []string{"It is not the case that some student greets Bob"}, "No teacher greets Bob"},
+		{"scope flip", []string{"Every student is such that that student greets some teacher"}, "Some teacher is such that every student greets that teacher"},
+		{"ambiguity verbatim", []string{"Every student greets some teacher"}, "Some teacher is such that every student greets that teacher"},
+		{"ambiguous conclusion", []string{"Every student is such that that student greets some teacher"}, "Every student greets some teacher"},
+		{"passive conversion", []string{"Alice greets every teacher", "Bob is a teacher"}, "Bob is greeted by Alice"},
+		{"symmetry", []string{"Alice greets Bob"}, "Bob greets Alice"},
+		{"any", []string{"Alice greets any teacher", "Bob is a teacher"}, "Alice greets Bob"},
+		{"plural", []string{"All students greet every teacher", "Alice is a student"}, "Alice greets every teacher"},
+		{"nested object noun", []string{"Alice greets every student of some school", "Bob is a student of some school"}, "Alice greets Bob"},
+		{"scaffold wrong class", []string{"Every student greets Bob"}, "Every teacher is such that that teacher greets Bob"},
+		{"scaffold wrong position", []string{"Every student greets Bob"}, "Every student is such that Bob greets that student"},
+		{"scaffold wrong verb", []string{"Every student greets Bob"}, "Every student is such that that student respects Bob"},
+		{"noun nesting", []string{"Every student of some school greets Bob", "Alice is a student of some school"}, "Alice greets Bob"},
 		{"third quantified slot", []string{"Every student gives every teacher some book", "Alice is a student"}, "Alice gives every teacher some book"},
-		{"extra citation", []string{"Alice admires Bob", "Bob is a teacher", "Alice is a student"}, "Alice admires some teacher"},
+		{"extra citation", []string{"Alice greets Bob", "Bob is a teacher", "Alice is a student"}, "Alice greets some teacher"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			arg := relationArgument(tc.p, tc.c)
@@ -117,11 +117,11 @@ func TestEntailmentGateV17NearMisses(t *testing.T) {
 		})
 	}
 	for _, arg := range []string{
-		strings.Replace(relationFitchUG, "1. Every student admires every teacher.", "1. b admires every teacher.", 1),
-		strings.Replace(relationFitchUG, "b admires every teacher", "B admires every teacher", 1),
+		strings.Replace(relationFitchUG, "1. Every student greets every teacher.", "1. b greets every teacher.", 1),
+		strings.Replace(relationFitchUG, "b greets every teacher", "B greets every teacher", 1),
 		strings.Replace(relationFitchUG, "4. Therefore, Every student", "4. Therefore, Every teacher", 1),
-		strings.Replace(relationFitchUG, "4. Therefore, Every student admires every teacher.", "4. Therefore, Some teacher is such that every student admires that teacher.", 1),
-		strings.Replace(relationFitchEE, "6. Therefore, Some student admires Bob.", "6. Therefore, c admires Bob.", 1),
+		strings.Replace(relationFitchUG, "4. Therefore, Every student greets every teacher.", "4. Therefore, Some teacher is such that every student greets that teacher.", 1),
+		strings.Replace(relationFitchEE, "6. Therefore, Some student greets Bob.", "6. Therefore, c greets Bob.", 1),
 		strings.ReplaceAll(relationFitchEE, "c ", "Bob "),
 	} {
 		if _, r := CheckEntailmentGate(arg); r.Passed {
@@ -209,8 +209,8 @@ func TestEntailmentGateV17OpaqueClauseCertificates(t *testing.T) {
 
 func TestEntailmentGateV17DistinctClausesStayDistinct(t *testing.T) {
 	argument := relationArgument([]string{
-		"If every student admires some teacher, then the school thrives",
-		"Every student admires some teacher of mathematics",
+		"If every student greets some teacher, then the school thrives",
+		"Every student greets some teacher of mathematics",
 	}, "The school thrives")
 	if _, result := CheckEntailmentGate(argument); result.Passed {
 		t.Fatal("a longer distinct clause must not be replaced as an occurrence of its prefix")
@@ -218,10 +218,10 @@ func TestEntailmentGateV17DistinctClausesStayDistinct(t *testing.T) {
 }
 
 func TestEntailmentGateV17UGScopeWeakening(t *testing.T) {
-	const argument = `1. Every student is such that that student admires no student.
+	const argument = `1. Every student is such that that student greets no student.
 | 2. Let b be an arbitrary student.
-| 3. Therefore, b admires no student. [1,2]
-4. Therefore, Every student admires no student. [2-3]`
+| 3. Therefore, b greets no student. [1,2]
+4. Therefore, Every student greets no student. [2-3]`
 	if report, result := CheckEntailmentGate(argument); !result.Passed || report.Steps[len(report.Steps)-1].Form != "relational universal generalization" {
 		t.Fatalf("%+v %s", report, result.Message)
 	}

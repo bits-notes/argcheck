@@ -213,3 +213,19 @@ func TestAuditPart2Rules(t *testing.T) {
 		}
 	}
 }
+
+// v38.1: "admires" is not extensional in object position (Lois admires
+// Superman, not Clark), so object instantiation through it is refused.
+func TestAdmiresNotExtensional(t *testing.T) {
+	for _, text := range []string{
+		"1. Lois admires every hero.\n2. Bruce is a hero.\n3. Therefore, Lois admires Bruce. [1,2]\n",
+		"1. Lois admires Bruce.\n2. Bruce is a hero.\n3. Therefore, Lois admires some hero. [1,2]\n",
+	} {
+		if report, _ := CheckEntailmentGate(text); report.Passed {
+			t.Errorf("want NOT CERTIFIED: %q", text)
+		}
+	}
+	if report, _ := CheckEntailmentGate("1. Lois greets every hero.\n2. Bruce is a hero.\n3. Therefore, Lois greets Bruce. [1,2]\n"); !report.Passed {
+		t.Errorf("greets control: want VALID")
+	}
+}

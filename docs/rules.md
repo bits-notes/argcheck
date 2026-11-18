@@ -1346,7 +1346,7 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 4. Therefore, Alice sends Parcel to Bob. [1,2,3]
 ```
 
-- **What it does not cover:** Instantiating an existential (`some`) slot with a chosen constant, swapping argument roles or prepositions (`to` vs `from`), active-to-passive conversion, `"any"` or bare plural `"all Xs"` in relational object slots, or sentences with more than 4 quantifiers (use explicit-variable `FOL universal instantiation`). Note: single-membership subject instantiation on non-copular verbs may be reported as `non-copular universal instantiation`.
+- **What it does not cover:** Instantiating an existential (`some`) slot with a chosen constant, swapping argument roles or prepositions (`to` vs `from`), active-to-passive conversion, `"any"` or bare plural `"all Xs"` in relational object slots, sentences with more than 4 quantifiers (use explicit-variable `FOL universal instantiation`), or an object of a verb that is not on the closed extensional allowlist (v38.0; `seeks`, `awaits`, `admires` may be intensional, so state the instance as a premise). Note: single-membership subject instantiation on non-copular verbs may be reported as `non-copular universal instantiation`.
 
 ---
 
@@ -1356,17 +1356,17 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept relational existential generalization
-1. Alice admires Bob.
+1. Alice greets Bob.
 2. Bob is a teacher.
-3. Therefore, Alice admires some teacher. [1,2]
+3. Therefore, Alice greets some teacher. [1,2]
 ```
 
 - **Rejected near-miss:**
 
 ```argcheck-reject relational existential generalization
-1. Alice admires Bob.
+1. Alice greets Bob.
 2. Bob is a student.
-3. Therefore, Alice admires some teacher. [1,2]
+3. Therefore, Alice greets some teacher. [1,2]
 ```
 
 - **What it does not cover:** Class mismatch (`student` vs `teacher`), swapping subject and object positions, verb changes, or extra unused membership premises.
@@ -1379,20 +1379,20 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept relational universal negative instantiation
-1. Alice admires no tyrant.
+1. Alice greets no tyrant.
 2. Bob is a tyrant.
-3. Therefore, it is not the case that Alice admires Bob. [1,2]
+3. Therefore, it is not the case that Alice greets Bob. [1,2]
 ```
 
 - **Rejected near-miss:**
 
 ```argcheck-reject relational universal negative instantiation
-1. Alice admires no tyrant.
+1. Alice greets no tyrant.
 2. Bob is a tyrant.
-3. Therefore, it is not the case that Bob admires Alice. [1,2]
+3. Therefore, it is not the case that Bob greets Alice. [1,2]
 ```
 
-- **What it does not cover:** Reversing argument positions (`Bob admires Alice`), omitting the outer negation in the conclusion, or nested noun-phrase quantifiers (`every student of some school`).
+- **What it does not cover:** Reversing argument positions (`Bob greets Alice`), omitting the outer negation in the conclusion, or nested noun-phrase quantifiers (`every student of some school`).
 
 ---
 

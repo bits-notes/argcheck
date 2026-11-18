@@ -88,7 +88,7 @@ func relativeExercises() []nplaceExercise {
 	return out
 }
 func TestCatalogV23Exercises(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v39.0" {
+	if EntailmentGateCatalogVersion != "v40.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range relativeExercises() {

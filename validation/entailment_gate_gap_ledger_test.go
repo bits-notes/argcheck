@@ -15,7 +15,7 @@ import "testing"
 //
 // Exception: relation transitivity without a premise is NOT logically valid
 // for an arbitrary relation. Its rejection is arguably correct (and for
-// "admires", correct): a transitivity premise is required. It is retained as
+// "greets", correct): a transitivity premise is required. It is retained as
 // the requested boundary case, not counted as a valid missing inference.
 //
 // v14 adds scoped derivations, including a premise-free classical theorem.
@@ -32,19 +32,19 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 2. At most one lab that signed the pledge is American.
 3. Therefore, some lab that signed the pledge is not American. [1,2]`, "counting subset"},
 		// v17 relational additions; these rows were absent in the v15 base ledger.
-		{"relational UI", `1. Alice admires every teacher.
+		{"relational UI", `1. Alice greets every teacher.
 2. Bob is a teacher.
-3. Therefore, Alice admires Bob. [1,2]`, "non-copular universal instantiation"},
-		{"relational EG", `1. Alice admires Bob.
+3. Therefore, Alice greets Bob. [1,2]`, "non-copular universal instantiation"},
+		{"relational EG", `1. Alice greets Bob.
 2. Bob is a teacher.
-3. Therefore, Alice admires some teacher. [1,2]`, "relational existential generalization"},
-		{"mixed quantifiers", `1. Every student admires some teacher.
+3. Therefore, Alice greets some teacher. [1,2]`, "relational existential generalization"},
+		{"mixed quantifiers", `1. Every student greets some teacher.
 2. Alice is a student.
-3. Therefore, Alice admires some teacher. [1,2]`, "non-copular universal instantiation"},
-		{"scope flip intentional rejection", `1. Every student admires some teacher.
-2. Therefore, Some teacher is such that every student admires that teacher. [1]`, ""},
-		{"passive conversion intentional rejection", `1. Alice admires Bob.
-2. Therefore, Bob is admired by Alice. [1]`, ""},
+3. Therefore, Alice greets some teacher. [1,2]`, "non-copular universal instantiation"},
+		{"scope flip intentional rejection", `1. Every student greets some teacher.
+2. Therefore, Some teacher is such that every student greets that teacher. [1]`, ""},
+		{"passive conversion intentional rejection", `1. Alice greets Bob.
+2. Therefore, Bob is greeted by Alice. [1]`, ""},
 		{"three-place scope strengthening rejected", `1. Every student gives every teacher some book.
 2. Alice is a student.
 3. Therefore, Alice gives every teacher some book. [1,2]`, ""},
@@ -54,12 +54,12 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 		// v23 decomposes relative restrictors and predicate nominals.
 		{"relative restrictor instantiation", v23A2, "relative clause inference"},
 		// v24 fixes scope and repeated variables in the explicit escape hatch.
-		{"explicit repeated-variable instantiation", `1. every x is such that x admires x.
-2. Therefore, alice admires alice. [1]`, "FOL universal instantiation"},
+		{"explicit repeated-variable instantiation", `1. every x is such that x greets x.
+2. Therefore, alice greets alice. [1]`, "FOL universal instantiation"},
 		// Remaining relation boundary: an arbitrary relation need not be transitive.
-		{"relation transitivity without premise", `1. Ada admires Ben.
-2. Ben admires Cy.
-3. Therefore, Ada admires Cy. [1,2]`, ""},
+		{"relation transitivity without premise", `1. Ada greets Ben.
+2. Ben greets Cy.
+3. Therefore, Ada greets Cy. [1,2]`, ""},
 		// Intentionally rejected: contradictory or irrelevant premises must not certify arbitrary conclusions.
 		{"explosion", `1. it rains.
 2. it is not the case that it rains.
