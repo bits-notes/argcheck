@@ -6,7 +6,7 @@ description: Check a numbered argument for syntactically transparent validity wi
 # argcheck — deterministic validity check for numbered arguments
 
 `argcheck` runs two deterministic checks in Go (`numbered_argument_syntax`, then
-the catalog `v32.2` entailment gate) with no LLM and no network access.
+the catalog `v32.3` entailment gate) with no LLM and no network access.
 
 **Validity is syntactic: the gate is the standard. Never overrule a gate failure
 with your own judgment that a step "obviously follows."** If you think a step is
@@ -31,8 +31,8 @@ EOF
 - `argcheck file.txt` or stdin (`argcheck < file.txt`, `cat file.txt | argcheck -`).
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `NOT CERTIFIED`.
-- `--forms` lists all 121 accepted inference forms in catalog `v32.2`.
-- `--version` prints the catalog version and build stamp (`gate catalog v32.2; local argcheck@<commit>`).
+- `--forms` lists all 121 accepted inference forms in catalog `v32.3`.
+- `--version` prints the catalog version and build stamp (`gate catalog v32.3; local argcheck@<commit>`).
 - Exit codes: `0` valid, `1` not certified, `2` input or operational error.
 - `NOT CERTIFIED` means some step matched no accepted rule. It does not mean the
   argument is invalid; repair the step or add the missing premise.
@@ -112,7 +112,8 @@ advertised coverage is unfit for reporting uncertainty.`), then instantiate it.
 ## Writing so the gate can see the inference
 
 Clauses match **verbatim** after light normalization (case, whitespace,
-contractions, optional `then`). Synonym and paraphrase tolerance are permanently
+contractions, optional `then`; `it's (not) the case that` = `it is (not) the case that`,
+with straight or curly apostrophes, while `it's raining` stays an ordinary clause). Synonym and paraphrase tolerance are permanently
 out of scope: if two wordings mean the same thing, state that equivalence as a
 visible identity or conditional premise.
 

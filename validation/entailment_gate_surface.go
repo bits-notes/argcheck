@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+// "it's (not) the case that" is the same wrapper as "it is (not) the case
+// that". Other uses of "it's" ("it's raining") are left alone.
+var gateCaseContraction = regexp.MustCompile(`(?i)\bit's (not )?the case\b`)
+
 var gateContraction = regexp.MustCompile(`(?i)\b(?:doesn't|don't|didn't|isn't|aren't|wasn't|weren't|hasn't|haven't|hadn't|won't|wouldn't|can't|couldn't|shouldn't|mustn't|needn't|cannot)\b`)
 
 // These are spelling expansions of the same auxiliary and negation, not
@@ -15,6 +19,13 @@ func expandGateContractions(value string) string {
 		return value
 	}
 	value = strings.ReplaceAll(value, "’", "'")
+	value = gateCaseContraction.ReplaceAllStringFunc(value, func(phrase string) string {
+		expanded := "it is " + strings.ToLower(phrase[len("it's "):])
+		if phrase[0] == 'I' {
+			expanded = "I" + expanded[1:]
+		}
+		return expanded
+	})
 	return gateContraction.ReplaceAllStringFunc(value, func(word string) string {
 		lower := strings.ToLower(word)
 		expanded := ""
