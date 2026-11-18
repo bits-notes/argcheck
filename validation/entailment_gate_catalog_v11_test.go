@@ -136,6 +136,6 @@ func TestCatalogV11QuantifiedSubjectsAreNotInstances(t *testing.T) {
 		{"only subject", "1. Only cats are hunters.\n2. All hunters are alert.\n3. Therefore, only cats are alert. [1,2]", ""},
 		{"no subject negative instantiation", "1. No cat is a hunter.\n2. No lazy thing is a hunter.\n3. Therefore, no cat is not a lazy thing. [1,2]", ""},
 		{"individual unchanged", "1. Every hunter is alert.\n2. Tom is a hunter.\n3. Therefore, Tom is alert. [1,2]", "universal instantiation"},
-		{"most subject unchanged", "1. Every hunter is alert.\n2. Most cats are hunters.\n3. Therefore, most cats are alert. [1,2]", "universal instantiation"},
+		{"most subject lifted schematically", "1. Every hunter is alert.\n2. Most cats are hunters.\n3. Therefore, most cats are alert. [1,2]", "schematic instantiation"},
 	})
 }

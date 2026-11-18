@@ -8,7 +8,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v33.0"
+const EntailmentGateCatalogVersion = "v34.0"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -90,7 +90,9 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 	if !parseResult.Passed {
 		return EntailmentGateReport{Passed: false}, parseResult
 	}
+	argument = protectArgumentNameLetters(argument)
 	report, result := gateParsedArgument(argument, false)
+	result = cleanNameLetterMessage(&report, result)
 	if result.Passed {
 		return report, result
 	}
@@ -99,6 +101,7 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 	// verdict; the first reading's report stands unless the second passes.
 	if rewritten, ok := rewritePostposedSteps(argument); ok {
 		if altReport, altResult := gateParsedArgument(rewritten, true); altResult.Passed {
+			altResult = cleanNameLetterMessage(&altReport, altResult)
 			return altReport, altResult
 		}
 	}
@@ -393,6 +396,11 @@ func gateConclusionStepUnscoped(conclusion NumberedArgumentStep, steps map[int]N
 				}
 			}
 		}
+	}
+
+	if form, note := accuracyRound2Failure(premises, conclusion); note != "" {
+		report.NearestForm, report.Mismatch = form, note
+		return report
 	}
 
 	if refusedNote != "" {

@@ -32,7 +32,7 @@ func groupingBoundaries(s string) ([]connectiveBoundary, []int) {
 		if depth != 0 {
 			continue
 		}
-		for _, op := range []string{"and", "or"} {
+		for _, op := range []string{"and", "or", "unless"} {
 			sep := " " + op + " "
 			if strings.HasPrefix(syntax[i:], sep) {
 				bs = append(bs, connectiveBoundary{i, i + len(sep), op})
@@ -47,7 +47,7 @@ func groupingBoundaries(s string) ([]connectiveBoundary, []int) {
 func groupingPlan(s string) (op, left, right string, managed bool, reason string) {
 	s = strings.TrimSpace(s)
 	lower := strings.ToLower(s)
-	if !(strings.Contains(lower, " and ") && strings.Contains(lower, " or ")) && !strings.ContainsAny(s, "()") {
+	if !mixedGroupingWords(lower) && !strings.ContainsAny(s, "()") {
 		return "", "", "", false, ""
 	}
 	if strings.ContainsAny(s, "()") && groupingParenthesisPlacement(s) != "" {
@@ -71,12 +71,13 @@ func groupingPlan(s string) (op, left, right string, managed bool, reason string
 	}
 	body := s[len(prefix):]
 	bs, commas := groupingBoundaries(body)
-	and, or := false, false
+	and, or, unless := false, false, false
 	for _, b := range bs {
 		and = and || b.op == "and"
 		or = or || b.op == "or"
+		unless = unless || b.op == "unless"
 	}
-	mixed := and && or
+	mixed := (and && or) || (unless && (and || or))
 	managed = mixed || strings.ContainsAny(groupingSyntax(body), "()")
 	if !managed {
 		return "", "", "", false, ""
@@ -122,6 +123,9 @@ func groupingPlan(s string) (op, left, right string, managed bool, reason string
 			return "", "", "", true, "ambiguous comma grouping: the comma must immediately precede the main connective"
 		}
 	} else if mixed {
+		if unless {
+			return "", "", "", true, "mixes top-level unless with and/or without explicit grouping"
+		}
 		return "", "", "", true, "mixes top-level and/or without explicit grouping"
 	} else if len(bs) > 0 {
 		selected = 0
@@ -138,7 +142,7 @@ func groupingPlan(s string) (op, left, right string, managed bool, reason string
 // lexical recognizers do. Explicit binders and logical wrappers are visited first.
 func groupingOpaque(s string) bool {
 	lower := strings.ToLower(s)
-	return (strings.Contains(lower, " either ") && !strings.HasPrefix(lower, "either ")) || opaqueContextWords.MatchString(s) || strings.Contains(lower, " unless ") || strings.HasPrefix(lower, "unless ") || strings.Contains(lower, " who ") || strings.Contains(lower, " which ") || strings.ContainsAny(s, "\"`“”")
+	return (strings.Contains(lower, " either ") && !strings.HasPrefix(lower, "either ")) || opaqueContextWords.MatchString(s) || strings.HasPrefix(lower, "unless ") || strings.Contains(lower, " who ") || strings.Contains(lower, " which ") || strings.ContainsAny(s, "\"`“”")
 }
 
 func groupingProblem(s string) string {
@@ -183,12 +187,13 @@ func groupingProblem(s string) string {
 		// its legacy reading for such sentences (gateGroupingPlan).
 		bs, _ := groupingBoundaries(s)
 		kept, _ := clauseLevelBoundaries(s, bs, nil)
-		and, or := false, false
+		and, or, unless := false, false, false
 		for _, b := range kept {
 			and = and || b.op == "and"
 			or = or || b.op == "or"
+			unless = unless || b.op == "unless"
 		}
-		if !(and && or) {
+		if !(and && or) && !(unless && (and || or)) {
 			return ""
 		}
 	}
@@ -243,7 +248,7 @@ func validateStatementGrouping(s string, line int) Result {
 		return Result{Passed: false, Message: fmt.Sprintf("line %d sentence %q: %s", line, s+".", operatorGroupingMessage), Details: map[string]any{"line": line, "sentence": s}}
 	}
 	lower := strings.ToLower(s)
-	if !strings.ContainsAny(s, "()") && !(strings.Contains(lower, " and ") && strings.Contains(lower, " or ")) {
+	if !strings.ContainsAny(s, "()") && !mixedGroupingWords(lower) {
 		return Result{Passed: true}
 	}
 	depth := 0
@@ -504,4 +509,9 @@ func stripGroupedClause(s string) string {
 		return s
 	}
 	return folStrip(s)
+}
+
+func mixedGroupingWords(s string) bool {
+	a, o, u := strings.Contains(s, " and "), strings.Contains(s, " or "), strings.Contains(s, " unless ")
+	return a && o || u && (a || o)
 }

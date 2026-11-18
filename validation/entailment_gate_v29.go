@@ -33,7 +33,15 @@ var unlessAnaphor = regexp.MustCompile(`\b(?:he|she|it|they|him|her|them|his|her
 // unlessCandidates splits "P unless Q" and "Unless Q, P" at each "unless".
 func unlessCandidates(statement string) []clausePair {
 	normalized := normalizeClause(statement)
-	result := appendSplitCandidates(nil, normalized, " unless ", false)
+	var result []clausePair
+	if op, a, b, managed, why := gateGroupingPlan(normalized); managed {
+		if why != "" || op != "unless" {
+			return nil
+		}
+		result = []clausePair{{left: normalizeClause(a), right: normalizeClause(b)}}
+	} else {
+		result = appendSplitCandidates(nil, normalized, " unless ", false)
+	}
 	if rest, ok := strings.CutPrefix(normalized, "unless "); ok {
 		if q, p, found := strings.Cut(rest, ", "); found {
 			result = append(result, clausePair{left: strings.TrimSpace(p), right: strings.TrimSpace(q)})

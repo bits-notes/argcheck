@@ -118,7 +118,7 @@ func attitudeUsedAsVerb(words []string, i int, needComplementizer bool) bool {
 }
 
 var nonSingularStem = regexp.MustCompile(`(?:^|\s)(?:clothes|species|means|goods|news|odds|thanks|series|savings|earnings|belongings|remains|surroundings|axes|arms|customs|glasses)$`)
-var identityOpaqueExtra = regexp.MustCompile(`(?i)\b(?:allegedly|supposedly|reportedly|dream(?:s|ed|ing)?|pretend(?:s|ed|ing)?|called|named|known as)\b`)
+var identityOpaqueExtra = regexp.MustCompile(`(?i)\b(?:is looking for|looks for|is searching for|seeks|wants|needs|hopes for|fears|believes|imagines|worships|allegedly|supposedly|reportedly|dream(?:s|ed|ing)?|pretend(?:s|ed|ing)?|called|named|known as)\b`)
 var questionStem = regexp.MustCompile(`(?i)\b(?:wonder\w*|ask\w*|investigat\w*|check\w*|forg\w*|debat\w*|determin\w*|decid\w*|test\w*|verif\w*|doubt\w*|question\w*|consider\w*|discuss\w*|explor\w*|examin\w*|stud\w*|know\w*|tell\w*|judg\w*|assess\w*|evaluat\w*|figur\w*|see|sees|saw|seen|knew|told|unsure|sure|aware)\b`)
 var incompleteIfConsequent = regexp.MustCompile(`(?i)(?:\b(?:about|of|to|for|with|at|in|on|whether|aloud|out|up)|\b(?:(?:is|are|was|were) [a-z]+ing|(?:has|have|had) (?:[a-z]+ed|forgotten)))$`)
 

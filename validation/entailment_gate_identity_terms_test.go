@@ -39,9 +39,9 @@ func TestEntailmentGateIdentityTermsMustRefer(t *testing.T) {
 
 // Known reading limit, not fixed: an intensional transitive verb is read as an
 // ordinary relation, so identity substitution goes through it.
-func TestEntailmentGateIntensionalVerbGap(t *testing.T) {
+func TestEntailmentGateIntensionalVerbBlocked(t *testing.T) {
 	argument := "1. Lois is looking for Superman.\n2. Superman is identical to Clark.\n3. Therefore, Lois is looking for Clark. [1,2]"
-	if report, _ := CheckEntailmentGate(argument); !report.Passed {
-		t.Fatal("intensional-verb gap is now rejected; move it into a rejection test")
+	if report, _ := CheckEntailmentGate(argument); report.Passed {
+		t.Fatal("identity substitution through an intensional verb must be rejected")
 	}
 }

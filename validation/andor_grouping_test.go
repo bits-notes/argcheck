@@ -90,7 +90,7 @@ func TestAndOrGroupingOpaqueScopes(t *testing.T) {
 	for _, sentence := range []string{
 		"Ann believes that (Bob dances or (Cal reads and Dan sleeps))",
 		"Ann might sing and dance or read",
-		"Ann sings unless Bob dances or Cal reads and Dan sleeps",
+		"Ann sings unless (Bob dances or (Cal reads and Dan sleeps))",
 		"Unless Ann sings or Bob dances, Cal reads and Dan sleeps",
 		"Everyone who sings or dances and reads is happy",
 		"Ann and Bob are friends or colleagues",

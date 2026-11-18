@@ -451,6 +451,7 @@ func universalCandidates(statement string) []clausePair {
 // negation: "every S is not P" and bare generics ("Ss are not Ps") read as
 // universal negatives, never as "not every S is P".
 func universalNegativeCandidates(statement string) []clausePair {
+	original := statement
 	statement = normalizeClause(statement)
 	result := make([]clausePair, 0)
 	for _, prefix := range []string{"no ", "nothing ", "no one "} {
@@ -475,7 +476,7 @@ func universalNegativeCandidates(statement string) []clausePair {
 			break
 		}
 	}
-	if bare {
+	if bare && bareNegativeSubjectAllowed(original) {
 		result = appendSplitCandidates(result, statement, " are not ", false)
 		result = appendSplitCandidates(result, statement, " is not ", false)
 		result = appendSplitCandidates(result, statement, " am not ", false)
@@ -543,11 +544,13 @@ func termCandidates(value string) []string {
 	if nonSingularStem.MatchString(value) {
 		return result
 	}
-	if strings.HasSuffix(value, "s") && len(value) > 1 {
-		result = append(result, strings.TrimSuffix(value, "s"))
-	}
-	if strings.HasSuffix(value, "es") && len(value) > 2 {
-		result = append(result, strings.TrimSuffix(value, "es"))
+	words := strings.Fields(value)
+	if len(words) > 0 {
+		last := words[len(words)-1]
+		if singular := round2Singular(last); singular != last {
+			words[len(words)-1] = singular
+			result = append(result, strings.Join(words, " "))
+		}
 	}
 	return result
 }
@@ -688,7 +691,7 @@ func replaceSchematicAlphabet(value string, extended bool) (string, schematicVar
 		marker, isVariable := schematicVariableMarkers[current]
 		if isVariable && (extended || current >= 'X') &&
 			(index == 0 || !unicode.IsLetter(runes[index-1])) &&
-			(index == len(runes)-1 || !unicode.IsLetter(runes[index+1])) {
+			(index == len(runes)-1 || !unicode.IsLetter(runes[index+1])) && !schemaLetterInName(runes, index) {
 			result.WriteRune(marker)
 			counts[current]++
 			continue
@@ -1456,11 +1459,11 @@ func matchNonCopularUniversalInstantiation(premises []NumberedArgumentStep, conc
 func matchUniversalInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, universal := range universalCandidates(premises[0].Statement) {
-		for _, instance := range instanceCandidates(premises[1].Statement) {
+		for _, instance := range uiInstanceCandidates(premises[1].Statement) {
 			if quantifiedInstanceSubject(instance.left) || !schematicBindingAllowed(instance.left) {
 				continue
 			}
-			for _, result := range instanceCandidates(conclusion.Statement) {
+			for _, result := range uiInstanceCandidates(conclusion.Statement) {
 				candidate := schemaMatchOutcome{}
 				appendOutcome(&candidate, evaluateTermIdentities(
 					clauseIdentity{fmt.Sprintf("premise %d class", premises[0].Number), universal.left, fmt.Sprintf("premise %d predicate", premises[1].Number), instance.right},
@@ -1613,6 +1616,9 @@ func stripOptionalIndefiniteArticle(value string) string {
 // therefore B(sigma), where vars are standalone uppercase X, Y, or Z and one
 // consistent non-empty substitution verifies every occurrence.
 func matchSchematicInstantiation(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
+	if out := matchMonotoneUniversal(premises, conclusion); out.matched {
+		return out
+	}
 	old := matchSchematicInstantiationAlphabet(premises, conclusion, schematicTemplate)
 	if old.matched {
 		return old
@@ -2068,6 +2074,7 @@ func EntailmentGateForms() []string {
 // modal adjective ("Plato denies that Socrates"). In those positions the rule's
 // predicate lands under the operator, so term substitution is not valid.
 var schematicBindingLeadingOperators = []string{
+	"almost no ", "very few ", "just one ",
 	"not every ", "not all ", "not each ", "not any ", "not one ", "not a ", "not an ",
 	"not many ", "not the case ", "no ", "nobody", "none ", "nothing", "no one", "never ",
 	"exactly ", "only ", "all but ", "almost every ", "almost all ", "nearly ",

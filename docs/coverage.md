@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v33.0)
+# Entailment Gate — Coverage and Known Limits (catalog v34.0)
 
 **Type:** reference
-**Status:** current as of catalog v33.0
+**Status:** current as of catalog v34.0
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -337,7 +337,7 @@ of that-clause or opaque labels do not establish their intended English semantic
 
 The escape syntax selects the explicit parser; existing prose recognizers and
 inference forms are unchanged (introduced in v25 without adding an inference
-form; the current catalog is **v33.0**). Tests cover capture,
+form; the current catalog is **v34.0**). Tests cover capture,
 arity/order distinctions, malformed/free variables, literal structural text,
 reserved names, and JSON-escaped eigenname freshness.
 
@@ -687,9 +687,10 @@ gerund terms behave as before. Re-gating the 1,482-argument corpus, the 23
 reverse spot-check derivations and 193 identity-bearing mutants changed no
 verdict. Tests: `validation/entailment_gate_identity_terms_test.go`.
 
-Known reading limit: an intensional transitive verb is read as an ordinary
-relation ("Lois is looking for Superman", "Superman is identical to Clark", so
-"Lois is looking for Clark"). `TestEntailmentGateIntensionalVerbGap` records it.
+The intensional-transitive identity gap is closed for `is looking for`,
+`looks for`, `seeks`, `wants`, `needs`, `is searching for`, `hopes for`,
+`fears`, `believes`, `imagines`, and `worships`.
+`TestEntailmentGateIntensionalVerbBlocked` records the rejection.
 
 ## v29: "unless"
 
@@ -923,7 +924,7 @@ capitalized names joined by `or` inside a noun phrase (askell-2018 A622).
 Remaining known gaps:
 - These are surface recognizers, not a parser. Unlisted embedding verbs or
   adverbs, an attitude verb after a prepositional subject (`the owner of the
-  robot believes alpha`), and unlisted intensional relations (`is looking for`)
+  robot believes alpha`), and unlisted intensional relations
   are not caught.
 - Commas other than the relative comma are ignored, so `eats, shoots, and leaves`
   and `eats shoots and leaves` still match (H131, H132). The vocative comma (H134)
@@ -938,3 +939,40 @@ H171 (`Even if A, then B`) now accepts its valid forward conditional step.
 H172 (`Only if A, then B`) and H173 (`Unless A, then B`) remain rejected: neither
 licenses the supplied forward modus ponens. Their inclusion in the requested
 VALID-control range conflicts with their actual repro contents.
+
+
+## v34.0: accuracy round 2 (16 held-out cases)
+
+Accuracy round 2 closes the 16 supplied false positives with explicit unless
+scope, literal schema letters in proper names, a positive UI subject register,
+quantified-binding guards, whole-statement UI, conservative noun morphology,
+and opaque intensional identity contexts. `TestAccuracyRound2Cases` checks all
+16 verdicts and their reasons; `TestAccuracyRound2ValidControls` checks nearby
+valid forms, including long schematic bindings and upward-monotone `most`.
+Scope of each guard, as measured on the 2,476-argument corpus:
+- A schema letter is literal only for X, Y or Z, and only when every standalone
+  occurrence of that letter in the whole statement follows the same
+  capitalized word (`Plan X ... Plan X`). `If X are demands and Answering X`,
+  `under SPC X knows`, `by Additivity X` and `a Future V` keep their variables.
+- The universal-instantiation subject is refused only when its first word is
+  a quantifier or determiner other than the/a/an (`almost no`, `just one`,
+  `one of`, `someone`, `most`). Names, possessives, gerund phrases (`trying to
+  remove all assumptions`) and bare noun phrases stay terms. The instance must
+  be the premise's top-level copula: the subject carries no `if and only if`,
+  `if`, `then`, `unless` or clause-level `and`/`or`.
+- In schematic slots, only the non-upward `almost no`, `very few` and `just
+  one` are added to the leading-operator guard. Upward existentials (`someone`,
+  `something`, `one of the`) stay bindable, since `Someone is red` and `If X
+  is red, then X is warm` do give `Someone is warm`.
+
+Corpus impact (2,476 arguments, against v33.0): 6 valid arguments now fail.
+Five newly fail syntax under the `unless` grouping rule, all real mixtures of
+`unless` with `and`/`or`: corpus-ai-safety-historical 66aa497c54, 817bd8ec7c
+and d8cb1a03fe, fvb B13, and askell-diag-b A2. One is the `Lois is looking for
+Superman` case in the earlier blind-check set, which is now correctly rejected.
+There are no other verdict changes and no invalid-to-valid changes.
+
+The existing valid `most` and `more than` class-inclusion inferences now report
+schematic instantiation rather than treating a quantified subject as an
+individual UI witness. Fitch arbitrary names and modified bare plural class
+generics retain their accepted readings.

@@ -776,7 +776,7 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 3. Therefore, Phosphorus is visible at dusk. [1,2]
 ```
 
-- **What it does not cover:** Bare `"is"` (`Hesperus is Phosphorus`; for Russellian `"The F is a"` substitution, see `description substitution`), partial replacement of only some occurrences (supported in explicit-variable `FOL identity substitution`), attitude/modal/deontic opaque contexts, or substituting predicates/indefinites (`Ada is identical to a doctor`). Since v28.2 this also holds when the quantifier phrase is capitalized or opens the sentence (`Nobody is identical to Felix`, `A cat is identical to Felix`), in the readable and the explicit-variable forms. Intensional transitive verbs (`is looking for`) are read as ordinary relations, so substitution goes through them.
+- **What it does not cover:** Bare `"is"` (`Hesperus is Phosphorus`; for Russellian `"The F is a"` substitution, see `description substitution`), partial replacement of only some occurrences (supported in explicit-variable `FOL identity substitution`), attitude/modal/deontic opaque contexts, or substituting predicates/indefinites (`Ada is identical to a doctor`). Since v28.2 this also holds when the quantifier phrase is capitalized or opens the sentence (`Nobody is identical to Felix`, `A cat is identical to Felix`), in the readable and the explicit-variable forms. Identity substitution is also blocked under `is looking for`, `looks for`, `seeks`, `wants`, `needs`, `is searching for`, `hopes for`, `fears`, `believes`, `imagines`, and `worships`. Extensional predicates such as `painted`, `met`, `kicked`, and `is near` remain substitutable.
 
 ---
 
@@ -2919,7 +2919,7 @@ Leading attitudes, impersonal `It is <adjective> that` reports, and sentence
 adverbs now require explicit grouping when followed by whole-clause
 coordination. For example, `Perhaps A and B` must be written `(Perhaps A) and B`
 or `Perhaps (A and B)`, or with explicit `both...and` / `either...or`.
-The check still exempts `unless`, relative clauses, quoted text, `whether or not`,
+The check still exempts relative clauses, quoted text, `whether or not`,
 and bare noun-phrase coordination, such as `Everyone who sings or dances
 and reads is happy` or `Ann and Bob are friends or colleagues`. **Known
 limitation:** these exemptions cover the containing clause, so an ungrouped
@@ -3004,3 +3004,45 @@ Leading concessive `Even if A, then B` supplies the ordinary conditional
 commitment `If A, then B`, so modus ponens is accepted. This does not extend the
 postposed `B even if A` register. `Only if A, then B` and `Unless A, then B`
 still do not license the forward step from A to B.
+
+### Accuracy boundaries for term instantiation and unless grouping
+
+A schema letter immediately following a capitalized name component (for example,
+`Plan X`) is literal. A conditional without real schema variables remains an
+ordinary conditional. `If X is a man, then X is mortal` and `the theory of X`
+retain their schematic readings.
+
+Universal instantiation requires a whole top-level copula instance, with a proper
+name, definite description (`the N ...`), or plain indefinite (`a/an N ...`)
+subject (including single-letter arbitrary names in Fitch proofs). It cannot rewrite a copula embedded in a conditional, biconditional,
+conjunction, or negation. Quantified phrases such as `almost no person`,
+`just one senator`, `one of the planets`, and `someone in Athens` are not
+individual terms or bare universal classes. Schematic slots also reject
+`almost no`, `very few`, `just one`, `only one`, `one of`, `someone`, `something`,
+`somebody`, and quantifying `few`. Upward-monotone `most` remains available in
+schematic instantiation, but not as a UI subject. The existing upward-monotone
+`most` and `more than` inferences from an every/all class inclusion are also
+certified under the schematic form, preserving the entire quantified subject.
+Long nominal and gerund bindings
+remain supported. Plural matching preserves singular `princess`, `corps`,
+`class`, `bus`, `glass`, `chaos`, `lens`, `series`, and `species`.
+
+Mixing top-level `unless` with clause-level `and` or `or` requires parentheses,
+a comma before the main connective, or `both`/`either` grouping. The syntax
+reason is exactly `mixes top-level unless with and/or without explicit grouping`.
+The existing `Either A or B and C` reading remains `A or (B and C)`.
+
+```argcheck-accept unless conversion
+1. (The alarm sounds and the lamp flashes) unless the battery is dead.
+2. Therefore, if it is not the case that the battery is dead, then the alarm sounds and the lamp flashes. [1]
+```
+
+```argcheck-accept unless conversion
+1. The alarm sounds and the lamp flashes, unless the battery is dead.
+2. Therefore, if it is not the case that the battery is dead, then the alarm sounds and the lamp flashes. [1]
+```
+
+```argcheck-reject unless conversion
+1. The alarm sounds and the lamp flashes unless the battery is dead.
+2. Therefore, if it is not the case that the battery is dead, then the alarm sounds and the lamp flashes. [1]
+```
