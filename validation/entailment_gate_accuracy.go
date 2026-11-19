@@ -190,9 +190,13 @@ var structuralModalComma = regexp.MustCompile(`^(necessarily|possibly),\s*`)
 
 var structuralCoordinationComma = regexp.MustCompile(`,\s+(and|or)\b`)
 
-func (policy strictRules) comparisonCommas(s string) string {
+func (policy strictRules) comparisonCommas(s string) (out string) {
 	if !policy.comma_exact {
 		return strings.ReplaceAll(s, ",", "")
+	}
+	if policy.fired != nil {
+		original := s
+		defer func() { _ = out != strings.ReplaceAll(original, ",", "") && policy.hit("comma.exact") }()
 	}
 	if !strings.Contains(s, ",") {
 		return s
@@ -235,10 +239,11 @@ var irregularFiniteVerbs = wordSet("thought said knew saw felt found held told h
 // term ends inside an embedded clause, whatever the verb, so this is a
 // structural rule rather than a list of attitude verbs. Text after a relative
 // marker (who/which/that) is part of a noun phrase and is not scanned.
-func (policy strictRules) clauseInsideTerm(term string) bool {
+func (policy strictRules) clauseInsideTerm(term string) (inside bool) {
 	if !policy.term_clause_inside {
 		return false
 	}
+	defer func() { _ = inside && policy.hit("term.clause_inside") }()
 	raw := strings.Fields(strings.TrimSpace(term))
 	for i := 1; i < len(raw)-1; i++ {
 		w := strings.ToLower(strings.Trim(raw[i], ",;:"))

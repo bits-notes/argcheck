@@ -147,10 +147,10 @@ func (policy strictRules) postposedConditional(value string) (string, bool) {
 		return "", false
 	}
 	words := strings.Fields(strings.ToLower(left))
-	if policy.conditional_postposed_if && postposedIfBlockedBefore[strings.Trim(words[len(words)-1], ",")] {
+	if policy.conditional_postposed_if && postposedIfBlockedBefore[strings.Trim(words[len(words)-1], ",")] && policy.hit("conditional.postposed_if") {
 		return "", false
 	}
-	if policy.conditional_postposed_if && (questionStem.MatchString(left) || incompleteIfConsequent.MatchString(left) || postposedConsequentUnsafe.MatchString(left) || postposedAntecedentUnsafe.MatchString(right)) {
+	if policy.conditional_postposed_if && (questionStem.MatchString(left) || incompleteIfConsequent.MatchString(left) || postposedConsequentUnsafe.MatchString(left) || postposedAntecedentUnsafe.MatchString(right)) && policy.hit("conditional.postposed_if") {
 		return "", false
 	}
 	// v37.0: a verb right before "if" may take the if-clause as its object
@@ -162,7 +162,7 @@ func (policy strictRules) postposedConditional(value string) (string, bool) {
 		prev := strings.Trim(words[len(words)-2], ",")
 		copula := prev == "is" || prev == "are" || prev == "was" || prev == "were" || prev == "be" || prev == "been" || prev == "being"
 		pronounSubject := prev == "i" || prev == "you" || prev == "we" || prev == "they" || prev == "he" || prev == "she" || prev == "it"
-		if !frameIntransitives[last] && !copula && (finiteVerbCue(last) || pronounSubject) {
+		if !frameIntransitives[last] && !copula && (finiteVerbCue(last) || pronounSubject) && policy.hit("conditional.postposed_if") {
 			return "", false
 		}
 	}

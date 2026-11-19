@@ -71,6 +71,10 @@ var entailmentSchemas = allStrictRules().schemas()
 // switches. Concurrent evaluations never change another evaluation's rules.
 var strictCatalogs sync.Map // map[strictRules][]entailmentSchema
 func (policy strictRules) schemas() []entailmentSchema {
+	if policy.fired != nil {
+		// A recording pass binds its own recorder; never cache it.
+		return policy.buildSchemas()
+	}
 	if cached, ok := strictCatalogs.Load(policy); ok {
 		return cached.([]entailmentSchema)
 	}
@@ -586,7 +590,7 @@ func (policy strictRules) termCandidates(value string) []string {
 		}
 	}
 	result := []string{value}
-	if policy.noun_pluralia_tantum && nonSingularStem.MatchString(value) {
+	if policy.noun_pluralia_tantum && nonSingularStem.MatchString(value) && policy.hit("noun.pluralia_tantum") {
 		return result
 	}
 	words := strings.Fields(value)
@@ -2195,6 +2199,10 @@ func (policy strictRules) schematicBindingAllowedAs(binding string, clauseSlot b
 		}
 	} else if policy.embeddedBinding(lower) {
 		return false
+	}
+	if policy.fired != nil && policy.slot_modified_quantifier && allStrictRules().modifiedQuantifierPhrase(lower) {
+		// The loop below skips this phrase only when the rule is off.
+		policy.hit("slot.modified_quantifier")
 	}
 	for _, prefix := range schematicBindingLeadingOperators {
 		// Earlier lexical guards overlap the modified-quantifier rule.

@@ -883,10 +883,11 @@ var extensionalCopulas = map[string]bool{
 	"is married to": true, "is next to": true, "is above": true, "is below": true,
 }
 
-func (policy strictRules) extensionalRelation(verb string) bool {
+func (policy strictRules) extensionalRelation(verb string) (extensional bool) {
 	if !policy.relation_object_extensional {
 		return true
 	}
+	defer func() { _ = !extensional && policy.hit("relation.object_extensional") }()
 	head, _, _ := strings.Cut(verb, "\x00")
 	head = strings.TrimSpace(head)
 	if extensionalCopulas[head] {

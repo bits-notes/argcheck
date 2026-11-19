@@ -1,6 +1,10 @@
 package validation
 
-import "strings"
+import (
+	"runtime"
+	"strings"
+	"sync"
+)
 
 // StrictNote explains a conservative catalog refusal. A note is attached only
 // when disabling this rule alone certifies the failed step. It is not a verdict.
@@ -15,12 +19,44 @@ type StrictNote struct {
 
 // strictStepPasses repeats the gate and its final sentence guard for one step.
 // Other conclusions are available as cited statements, never re-evaluated here.
+// It calls the strict check directly: gateConclusionStep adds only diagnostic
+// retries, which change a failing step's message but never its verdict or form.
 func (policy strictRules) strictStepPasses(step NumberedArgumentStep, steps map[int]NumberedArgumentStep) bool {
-	retry := policy.gateConclusionStep(step, steps)
+	retry := policy.gateConclusionStepStrict(step, steps)
 	return retry.Passed && policy.sentenceFrameFailure(step, steps, retry.Form) == ""
 }
 
+// strictStepPassesEitherReading also tries the gate's second, postposed-
+// conditional reading, retrying only this step. In particular this exposes
+// postposed-if refusals.
+func (policy strictRules) strictStepPassesEitherReading(step NumberedArgumentStep, steps map[int]NumberedArgumentStep) bool {
+	return policy.strictStepPasses(step, steps) || policy.rewrittenStepPasses(step, steps)
+}
+
+// rewrittenStepPasses is the second, postposed-conditional reading alone.
+func (policy strictRules) rewrittenStepPasses(step NumberedArgumentStep, steps map[int]NumberedArgumentStep) bool {
+	rewritten := make(map[int]NumberedArgumentStep, len(steps))
+	changed := false
+	for id, original := range steps {
+		if s, ok := policy.postposedConditional(strings.TrimSuffix(strings.TrimSpace(original.Statement), ".")); ok {
+			original.Statement = s
+			changed = true
+		}
+		rewritten[id] = original
+	}
+	return changed && policy.strictStepPasses(rewritten[step.Number], rewritten)
+}
+
+// strictNoteWorkers bounds the goroutines one notes pass uses for re-checks.
+const strictNoteWorkers = 4
+
 func attachStrictNotes(argument NumberedArgument, report *EntailmentGateReport) {
+	defer func() {
+		// The recorded rules are for this pass only; reports never carry them.
+		for i := range report.Steps {
+			report.Steps[i].fired = nil
+		}
+	}()
 	if report.Passed {
 		return
 	}
@@ -32,6 +68,16 @@ func attachStrictNotes(argument NumberedArgument, report *EntailmentGateReport) 
 	for _, step := range expanded.Steps {
 		steps[step.Number] = step
 	}
+	// One re-check per failing step and candidate rule. Each re-check has its
+	// own policy copy, so they run concurrently; notes are attached afterwards
+	// in catalog order, as the serial pass did.
+	type recheck struct {
+		report int
+		step   NumberedArgumentStep
+		note   int
+		passes bool
+	}
+	var jobs []recheck
 	for i := range report.Steps {
 		failed := &report.Steps[i]
 		if failed.Passed {
@@ -41,35 +87,55 @@ func attachStrictNotes(argument NumberedArgument, report *EntailmentGateReport) 
 		if !ok || failed.NearestForm == "scope" || failed.NearestForm == "explicit-variable FOL" {
 			continue
 		}
-		for _, note := range strictNotes {
-			policy := allStrictRules().without(note.ID)
-			passes := policy.strictStepPasses(step, steps)
-			if !passes {
-				// Preserve the gate's second, postposed-conditional reading, but retry
-				// only this step. In particular this exposes postposed-if refusals.
-				rewritten := make(map[int]NumberedArgumentStep, len(steps))
-				changed := false
-				for id, original := range steps {
-					if s, ok := policy.postposedConditional(strings.TrimSuffix(strings.TrimSpace(original.Statement), ".")); ok {
-						original.Statement = s
-						changed = true
-					}
-					rewritten[id] = original
-				}
-				if changed {
-					passes = policy.strictStepPasses(rewritten[step.Number], rewritten)
-				}
+		// One recorded check with every rule on. A rule that refused nothing
+		// in it leaves the check unchanged when switched off, so only the
+		// rules that fired need a retry. If the check passes, every rule is
+		// retried as before. The gate has already recorded the first reading
+		// of this step (it failed); only the second reading is checked here.
+		recorder, fired := allStrictRules().recording()
+		var plainPasses bool
+		if failed.fired != nil {
+			for id := range failed.fired.ids {
+				fired.ids[id] = true
 			}
-			if passes {
-				// Return owned slices: library clients cannot mutate the catalog.
-				note.AlsoRefuses = append([]string(nil), note.AlsoRefuses...)
-				note.Fix = append([]string(nil), note.Fix...)
-				failed.Notes = append(failed.Notes, note)
-				if len(failed.Notes) == 3 {
-					break
-				}
+			plainPasses = recorder.rewrittenStepPasses(step, steps)
+		} else {
+			plainPasses = recorder.strictStepPassesEitherReading(step, steps)
+		}
+		for n, note := range strictNotes {
+			if plainPasses || fired.ids[note.ID] {
+				jobs = append(jobs, recheck{report: i, step: step, note: n})
 			}
 		}
+	}
+	workers := min(strictNoteWorkers, runtime.GOMAXPROCS(0), len(jobs))
+	next := make(chan int)
+	var wg sync.WaitGroup
+	for w := 0; w < workers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range next {
+				job := &jobs[j]
+				job.passes = allStrictRules().without(strictNotes[job.note].ID).strictStepPassesEitherReading(job.step, steps)
+			}
+		}()
+	}
+	for j := range jobs {
+		next <- j
+	}
+	close(next)
+	wg.Wait()
+	for _, job := range jobs {
+		failed := &report.Steps[job.report]
+		if !job.passes || len(failed.Notes) == 3 {
+			continue
+		}
+		note := strictNotes[job.note]
+		// Return owned slices: library clients cannot mutate the catalog.
+		note.AlsoRefuses = append([]string(nil), note.AlsoRefuses...)
+		note.Fix = append([]string(nil), note.Fix...)
+		failed.Notes = append(failed.Notes, note)
 	}
 }
 

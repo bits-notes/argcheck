@@ -21,6 +21,29 @@ type strictRules struct {
 	// notes asks for strictness notes on failing steps (opt-in; diagnostic
 	// retries never set it).
 	notes bool
+	// fired, when non-nil, records each strict rule whose refusal changed a
+	// result during this evaluation. Only the notes pass sets it, on its own
+	// copy, so no other evaluation sees it.
+	fired *firedRules
+}
+
+// firedRules is owned by one notes pass on one goroutine.
+type firedRules struct{ ids map[string]bool }
+
+// hit records that rule id refused something and returns true, so it can end
+// the condition that makes the refusal.
+func (rules strictRules) hit(id string) bool {
+	if rules.fired != nil {
+		rules.fired.ids[id] = true
+	}
+	return true
+}
+
+// recording returns a copy of rules that records the strict rules that fire.
+func (rules strictRules) recording() (strictRules, *firedRules) {
+	fired := &firedRules{ids: map[string]bool{}}
+	rules.fired = fired
+	return rules, fired
 }
 
 func allStrictRules() strictRules {

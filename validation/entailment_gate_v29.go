@@ -44,7 +44,7 @@ func (policy strictRules) unlessCandidates(statement string) []clausePair {
 	}
 	kept := result[:0]
 	for _, pair := range result {
-		if pair.left != "" && pair.right != "" && (!policy.unless_anaphor || !unlessAnaphor.MatchString(pair.right)) {
+		if pair.left != "" && pair.right != "" && !(policy.unless_anaphor && unlessAnaphor.MatchString(pair.right) && policy.hit("unless.anaphor")) {
 			kept = append(kept, pair)
 		}
 	}

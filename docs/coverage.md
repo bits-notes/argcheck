@@ -1365,3 +1365,26 @@ With strictness notes on, the two refusals carry the notes
 `slot.indefinite_written` and `slot.indefinite_value`. The `slot.quantity`
 note's example now uses a numeral (`Two robots are registered`), because its
 old example (`A group of robots`) is also refused by `slot.indefinite_value`.
+
+## v43.1: faster strictness notes
+
+No verdict changes. Strictness notes (`StrictNotes`, the CLI's default
+report) used to re-check every failing step once for each of the 15 strict
+rules. The gate now records which strict rules refused something while it
+checked each step, and the notes pass re-checks only those rules. A rule that
+refused nothing cannot change the step when it is switched off. The re-checks
+run concurrently (at most four at a time) and the notes are attached in
+catalog order, as before. Re-checks skip the gate's diagnostic retries, which
+change a failing step's message but never its verdict.
+
+Switching several fired rules off at once is not a safe shortcut: the gate's
+search can take a different path and fail where switching one rule off
+passes. Three corpus arguments showed this, so every fired rule is re-checked
+on its own.
+
+The notes are the same as before. `TestStrictNotesFiredRulesMatchExhaustive`
+compares them with the old exhaustive pass on every note example, and
+`TestStrictNotesFiredRulesCorpusParity` does the same on a corpus listed in
+`ARGCHECK_NOTES_PARITY_LIST`. On a 14-line argument with three failing steps,
+checking with notes went from 51s to about 2.5s, against 1.3s for the plain
+check.

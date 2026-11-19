@@ -68,10 +68,11 @@ func termSubjectPositions(text, term string) (safe bool, count int) {
 
 // identitySubstitutionUnsafe returns a reason when a step that substitutes
 // identicals does so outside the safe positions, and "" when it is safe.
-func (policy strictRules) identitySubstitutionUnsafe(premises []string, conclusion string) string {
+func (policy strictRules) identitySubstitutionUnsafe(premises []string, conclusion string) (reason string) {
 	if !policy.identity_safe_position {
 		return ""
 	}
+	defer func() { _ = reason != "" && policy.hit("identity.safe_position") }()
 	for i, identityPremise := range premises {
 		if !explicitIdentity(identityPremise) {
 			continue
@@ -149,15 +150,15 @@ func (policy strictRules) indefiniteBindingPositionSafe(concrete []rune, start i
 		// refused in every position. The instance need not be an article
 		// plus a noun ("a lot of people", "a couple of neighbours"), and
 		// telling the two apart takes a lexicon the gate does not have.
-		return !policy.slot_indefinite_written || writtenIndefiniteBefore(prefix) == ""
+		return !(policy.slot_indefinite_written && writtenIndefiniteBefore(prefix) != "" && policy.hit("slot.indefinite_written"))
 	}
 	// v43.0 (slot.indefinite_value): a value that is to stand for one thing
 	// must name one thing. After a copula the value is a predicate, and any
 	// predicate phrase may be substituted.
-	if policy.slot_indefinite_value && !afterCopula(prefix) && !indefiniteValueShapeOK(words) {
+	if policy.slot_indefinite_value && !afterCopula(prefix) && !indefiniteValueShapeOK(words) && policy.hit("slot.indefinite_value") {
 		return false
 	}
-	return !policy.slot_indefinite_object || indefiniteSlotSafe(prefix)
+	return !(policy.slot_indefinite_object && !indefiniteSlotSafe(prefix) && policy.hit("slot.indefinite_object"))
 }
 
 // indefiniteSlotSafe is the v39.0 position test for an indefinite value:

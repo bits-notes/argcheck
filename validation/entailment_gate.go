@@ -8,7 +8,7 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v43.0"
+const EntailmentGateCatalogVersion = "v43.1"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
@@ -42,6 +42,10 @@ type EntailmentGateStepReport struct {
 	NearestForm   string       `json:"nearest_form,omitempty"`
 	Mismatch      string       `json:"mismatch,omitempty"`
 	AmbiguityNote string       `json:"ambiguity_note,omitempty"`
+	// fired lists the strict rules that refused something while the gate
+	// checked this step with notes on; nil otherwise. The notes pass retries
+	// only these rules.
+	fired *firedRules
 }
 
 // InertCitationReport identifies a conclusion whose full citation set fails
@@ -93,6 +97,10 @@ func (policy strictRules) CheckEntailmentGate(output string, options ...Entailme
 		policy.notes = options[0].StrictNotes
 	}
 	report, result := policy.checkEntailmentGate(output, parseOptions)
+	// Passing readings return before the notes pass; drop their records too.
+	for i := range report.Steps {
+		report.Steps[i].fired = nil
+	}
 	return observeGateReport(report), result
 }
 
@@ -223,9 +231,14 @@ func (policy strictRules) gateNumberedArgument(arg NumberedArgument, observe boo
 		if step.Kind != numberedArgumentStepConclusion {
 			continue
 		}
-		stepReport := policy.gateConclusionStep(step, stepsByNumber)
+		stepPolicy, fired := policy, (*firedRules)(nil)
+		if policy.notes {
+			stepPolicy, fired = policy.recording()
+		}
+		stepReport := stepPolicy.gateConclusionStep(step, stepsByNumber)
+		stepReport.fired = fired
 		if stepReport.Passed {
-			if why := policy.sentenceFrameFailure(step, stepsByNumber, stepReport.Form); why != "" {
+			if why := stepPolicy.sentenceFrameFailure(step, stepsByNumber, stepReport.Form); why != "" {
 				stepReport.Passed = false
 				stepReport.NearestForm, stepReport.Mismatch = stepReport.Form, why
 				stepReport.Form = ""

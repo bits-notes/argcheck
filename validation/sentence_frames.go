@@ -54,22 +54,22 @@ func (policy strictRules) sentenceFrameOpener(s string, steps map[int]NumberedAr
 	// name or gerund evidence ("According" ends in -ing but is a preposition).
 	// Strict: a fronted frame is refused with or without a comma.
 	for _, phrase := range frameAdverbialPhrases {
-		if policy.opener_frame && (strings.HasPrefix(lower+" ", phrase+" ") || strings.HasPrefix(lower, phrase+",")) {
+		if policy.opener_frame && (strings.HasPrefix(lower+" ", phrase+" ") || strings.HasPrefix(lower, phrase+",")) && policy.hit("opener.frame") {
 			return frameOpenerMessage(s[:len(phrase)])
 		}
 	}
 	for _, phrase := range frameComplexPrepositions {
-		if policy.opener_frame && strings.HasPrefix(lower+" ", phrase+" ") {
+		if policy.opener_frame && strings.HasPrefix(lower+" ", phrase+" ") && policy.hit("opener.frame") {
 			return frameOpenerMessage(frameSpan(s))
 		}
 	}
-	if policy.opener_frame && framePrepositions[first] && !frameGerundSubject(strings.Fields(s)) {
+	if policy.opener_frame && framePrepositions[first] && !frameGerundSubject(strings.Fields(s)) && policy.hit("opener.frame") {
 		return frameOpenerMessage(frameSpan(s))
 	}
-	if policy.opener_adverb && frameSentenceAdverbs[first] {
+	if policy.opener_adverb && frameSentenceAdverbs[first] && policy.hit("opener.adverb") {
 		return frameOpenerMessage(words[0])
 	}
-	if policy.opener_adverb && strings.HasSuffix(first, "ly") && !frameLyNouns[first] && !frameLyAdjectiveSubject(strings.Fields(s)) {
+	if policy.opener_adverb && strings.HasSuffix(first, "ly") && !frameLyNouns[first] && !frameLyAdjectiveSubject(strings.Fields(s)) && policy.hit("opener.adverb") {
 		return frameOpenerMessage(words[0])
 	}
 	// Bare-noun, gerund and adjective+noun subjects ("Beliefs ...", "Trying to
@@ -203,10 +203,11 @@ func framePlainClause(s string) bool {
 	return false
 }
 
-func (policy strictRules) sentenceCoordinationUnsafe(s string) bool {
+func (policy strictRules) sentenceCoordinationUnsafe(s string) (unsafe bool) {
 	if !policy.coordination_clause {
 		return false
 	}
+	defer func() { _ = unsafe && policy.hit("coordination.clause") }()
 	s = strings.TrimSpace(s)
 	lower := strings.ToLower(s)
 	for _, prefix := range []string{"both ", "either ", "if ", "when ", "whenever ", "unless ", "it is the case both that "} {
@@ -348,10 +349,11 @@ func modifiedQuantifierPhrase(lower string) bool {
 	return allStrictRules().modifiedQuantifierPhrase(lower)
 }
 
-func (policy strictRules) modifiedQuantifierPhrase(lower string) bool {
+func (policy strictRules) modifiedQuantifierPhrase(lower string) (modified bool) {
 	if !policy.slot_modified_quantifier {
 		return false
 	}
+	defer func() { _ = modified && policy.hit("slot.modified_quantifier") }()
 	words := strings.Fields(strings.ToLower(lower))
 	i := 0
 	for i < len(words) {
@@ -376,10 +378,11 @@ var quantityNouns = wordSet("minority majority fraction proportion percentage sh
 // ("a minority of robots", "half of the robots", "a handful of robots").
 // Such a phrase is not an individual. The numerals and quantity nouns are a
 // closed class.
-func (policy strictRules) quantityPhrase(lower string) bool {
+func (policy strictRules) quantityPhrase(lower string) (quantity bool) {
 	if !policy.slot_quantity {
 		return false
 	}
+	defer func() { _ = quantity && policy.hit("slot.quantity") }()
 	words := strings.Fields(strings.ToLower(lower))
 	if len(words) == 0 {
 		return false
