@@ -138,7 +138,7 @@ visible identity or conditional premise.
   (`Either we should use X or we should use Y.`), refute one side, and apply
   disjunctive syllogism.
 
-### Strict conventions (catalog v35 and later)
+### Strict conventions (catalog v35–v44)
 
 The gate refuses phrasings that are ambiguous in English, even when the
 inference is fine. Each refusal names its fix; apply exactly that fix.
@@ -157,13 +157,51 @@ inference is fine. Each refusal names its fix; apply exactly that fix.
 - **Identity.** `Superman is identical to Clark.` substitutes only where the
   name is the subject of a clause. State any other substituted sentence as its
   own premise.
-- **Schematic slots and instances.** Fill `X` (or name the instance of
-  `Every S is P`) with a name or a definite description. Not a quantity or
-  hedged phrase (`more than two robots`, `a minority of voters`,
-  `nearly all firms`, `zero cases`), and not a phrase containing a clause
-  (`the observer who reckons Alpha is red`). An indefinite (`a hero`,
-  `some firm`) binds `X` only as a clause subject or after `is`
-  (`Bruce is a hero`), never as an object.
+- **Schematic slots hold one singular thing (v44).** A variable in a term
+  position (subject, object, object of a preposition, either side of an
+  identity) takes only: a proper name (`Alpha`, `AIXI`); `the` + at most one
+  modifier + a singular noun (`the pump`, `the main valve`); a name's
+  possessive (`Bob's dog`); or `the N of D` (`the death of the child`). Not
+  `a hero`, `some firm`, `someone`, bare nouns (`water`, `humanity`), plurals,
+  quantities or numerals (`many firms`, `two robots`), coordinations
+  (`Alice and Bob`), partitives, nested `of`, or longer descriptions.
+- **Names need evidence away from sentence start.** A capital that appears
+  only at the start of a sentence (or after `Therefore,`) does not show that a
+  word is a name, so `Alpha is valuable.` alone cannot fill `X`. Make sure the
+  name also appears mid-sentence somewhere in the argument
+  (`The firm owns Alpha.`), or use `the N`. Internal capitals (`AIXI`,
+  `McCarthy`) count as evidence anywhere.
+- **Predicates are free.** After `is`/`are`/`was`/`were` a variable is a
+  predicate and takes any phrase: `If Rex is X, then Fido is X.` with
+  `X` = `a lot of fun`. A variable used as a term anywhere in the rule is held
+  to the term rule everywhere.
+- **Repair order for a refused value:** (1) write the phrase itself into the
+  rule with no variable (`If humanity is valuable, then humanity should be
+  protected.`); (2) name the thing or use a short `the N`; (3) for a claim
+  about a kind, use `Every N is P.` with a named or `the N` instance.
+- **Never write `a X` / `some X` in a rule.** Let the variable stand for the
+  whole predicate (`If Rex is X, then Fido is X.`) or write the phrase in.
+- **Classes match instances by spelling.** `Every human is mortal.` +
+  `Socrates is a human.` passes; `All humans are mortal.` with
+  `Socrates is a human.` does not (plural never matches singular).
+- **Clause starts.** In a step that splits, swaps or distributes `and`/`or`
+  (conjunction or disjunction elimination, commutation, De Morgan), each
+  operand must begin with a determiner (`the`, `a`, `every`, `some`, `no`), a
+  pronoun, a numeral, a name, a possessive, `there` + be, or
+  `it is not the case that`. After a capitalised name the next word must be a
+  common verb (`is`, `greets`, `believes`, `claims`, `requires`, …); for an
+  unusual verb, declare an `atom{...}` literal. Bare nouns, adjectives,
+  `-ing` words and adverbs are refused: write `The relation of numerical
+  identity is transitive.`, `The act of signing up for cryonics is costly.`
+  Simplest habit: start every clause this way. A sentence-initial `-ing`
+  word is always refused.
+- **Existential-elimination witnesses** (and constants in explicit FOL) should
+  be capitalised fresh names (`Suppose Cyd is a student and Cyd greets Bob.`),
+  not single letters or lowercase words.
+- **Negating a description:** converting between `The F is not G` and
+  `It is not the case that the F is G` works only for names.
+- **Existential generalisation** works only from a non-passive subject, with
+  a name as the witness; otherwise state the existential claim as a premise.
 - **Objects of verbs.** `Lois admires every hero.` does not give
   `Lois admires Bruce.` for most verbs, since the object of `admires`, `seeks`,
   `wants` may not pick anything out. State the instance as a premise.
