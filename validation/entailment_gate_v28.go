@@ -256,6 +256,10 @@ func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[i
 	if report.Passed {
 		return report
 	}
+	if message := policy.pluralCopulaSlotMessage(c, steps); message != "" {
+		report.Mismatch = message
+		return report
+	}
 	// task_9b65b028: if the step passes only when an indefinite may bind a
 	// schematic variable in an object slot, say so instead of reporting
 	// whichever other form came nearest.

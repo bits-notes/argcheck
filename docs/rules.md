@@ -3155,7 +3155,7 @@ data. `TestStrictNotesExamples` checks every example and its concrete fix.
 | `conditional.postposed_if` | Postposed 'if' after a verb or adjective | v37.0 | A verb or adjective before 'if' can introduce a whether-question rather than a condition; postposed conditionals are recognized only in conservative surface forms. | 1. The machine vibrates if the motor runs.<br>2. The motor runs.<br>3. Therefore, the machine vibrates. [1,2] | Write "If the motor runs, then the machine vibrates." |
 | `relation.object_extensional` | Instantiation into an object position | v38.0 | The object of an unlisted verb may be intensional: awaiting every guest does not license the same substitutions as greeting every guest. Object instantiation is restricted to a closed verb list. | 1. The robot admires every hero.<br>2. Alpha is a hero.<br>3. Therefore, the robot admires Alpha. [1,2] | State the instance as a premise: "The robot admires Alpha." This supplies the missing claim; it does not prove it from the original premises. |
 | `unless.anaphor` | Pronoun across 'unless' | v38.0 | A pronoun after 'unless' may point back into the main clause, so 'A unless it is dead' cannot be split into independent clauses. | 1. The alarm sounds unless this battery is dead.<br>2. It is not the case that this battery is dead.<br>3. Therefore, the alarm sounds. [1,2] | Replace "this battery" with "the battery" in both premises. |
-| `slot.description_shape` | Short definite descriptions | v44.0 | A long description may swallow a finite clause or a second name. | 1. If X is red, then X is warm.<br>2. The big red dog is red.<br>3. Therefore, the big red dog is warm. [1,2] | Name it, or use 'the dog'. |
+| `slot.description_shape` | Controlled definite descriptions | v45.0 | Description modifiers must be recognized adjectives or closed-list modifiers; names and finite clauses are refused. | 1. If X is red, then X is warm.<br>2. The Bob dog is red.<br>3. Therefore, the Bob dog is warm. [1,2] | Name it, or use 'the dog'. |
 | `slot.one_type` | One type per rule variable | v44.0 | A clause-slot occurrence must not smuggle a clause into another occurrence used as a term. | 1. If when X is red bob smiles, then X is warm.<br>2. When the dog is red bob smiles.<br>3. Therefore, the dog is warm. [1,2] | Name the thing in every occurrence, or write the phrase into the rule. |
 | `eg.subject_only` | Subject witnesses only | v44.0 | An object or passive subject may occur in an intensional position without asserting its existence. | 1. Lois greets Zeus.<br>2. Therefore, there is an X such that Lois greets X. [1] | State the existential claim as its own premise. |
 | `eg.name_witness` | Named existential witnesses | v44.0 | A definite may covary with another quantifier; descriptions do not fix one witness. | 1. The dog is red.<br>2. Therefore, something is red. [1] | State the existential claim as its own premise, or use an evidenced proper name in an unquantified subject clause. |
@@ -3165,7 +3165,7 @@ data. `TestStrictNotesExamples` checks every example and its concrete fix.
 | `slot.letter_in_name` | Letters adjacent to names | v44.0 | A schematic letter may be a literal component of Model U or Malcolm X. | 1. If Model U is red, then Model U is warm.<br>2. Model U is red.<br>3. Therefore, Model U is warm. [1,2] | Use a variable away from names, or write the name out. |
 | `term.inflection_verbatim` | Verbatim noun inflection | v44.0 | A plural surface may not denote instances of the stem guessed by deleting its suffix. | 1. All dogs are wet.<br>2. The dog is a dog.<br>3. Therefore, the dog is wet. [1,2] | Write the rule with singular 'every N' (Every dog is wet). |
 | `scope.mixed_andor` | Mixed connective scope | v44.0 | A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it. | 1. Ann is a singer who dances and Bob is happy or Cal reads.<br>2. Therefore, Ann is a singer who dances. [1] | Use 'both … and' or 'either … or' to show the grouping. |
-| `scope.clause_start` | Controlled clause starts | v44.0 | An operator such as perhaps inside a negated conjunction may scope over both clauses; distributing the negation changes that scope. | 1. It is not the case that perhaps the lamp is lit and the door is open.<br>2. Therefore, either it is not the case that perhaps the lamp is lit or it is not the case that the door is open. [1] | Move the operator into each clause, or state the claim as an explicit premise. |
+| `scope.clause_start` | Controlled clause starts | v44.0 | Each inspected clause must start with a determiner, proper name, pronoun or numeral. An unrecognized start may be an operator with wider scope. | 1. It is not the case that perhaps the lamp is lit and the door is open.<br>2. Therefore, either it is not the case that perhaps the lamp is lit or it is not the case that the door is open. [1] | Move the operator into each clause, or state the claim as an explicit premise. |
 | `opener.ing_frame` | Initial -ing frame | v44.0 | Following the script may qualify the entire conjunction rather than name its subject. Even genuine gerund subjects are refused when inspected. | 1. It is not the case that it is not the case that swimming is healthy.<br>2. Therefore, swimming is healthy. [1] | Move the frame into each clause, or state the framed claim as its own premise. |
 | `scope.elided_copula` | Closed copula elision | v44.0 | In Either the men are quiet or fish, fish may be a verb rather than a predicate with an omitted copula. Unknown predicates are not expanded. | 1. Either the men are quiet or fish.<br>2. Therefore, either the men are quiet or the men are fish. [1] | Repeat the subject and verb: 'or the men are fish'. |
 | `scope.description_negation` | Description negation scope | v44.0 | Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion. | 1. It is not the case that the present king of France is bald.<br>2. Therefore, the present king of France is not bald. [1] | Add 'There is exactly one present king of France' and name it, or keep the wide negation. |
@@ -3185,7 +3185,7 @@ an allowed term; put the entire description in X or write it literally.
 
 ### v44.0 strict term and binding rules
 
-- `slot.description_shape`: A long description may swallow a finite clause or a second name. Name it, or use 'the dog'.
+- `slot.description_shape`: Description modifiers must be recognized adjectives or closed-list modifiers; names and finite clauses are refused. Name it, or use 'the dog'.
 - `slot.one_type`: A clause-slot occurrence must not smuggle a clause into another occurrence used as a term. Name the thing in every occurrence, or write the phrase into the rule.
 - `eg.subject_only`: An object or passive subject may occur in an intensional position without asserting its existence. State the existential claim as its own premise.
 - `eg.name_witness`: A definite may covary with another quantifier; descriptions do not fix one witness. State the existential claim as its own premise, or use an evidenced proper name in an unquantified subject clause.
@@ -3195,11 +3195,11 @@ an allowed term; put the entire description in X or write it literally.
 - `slot.letter_in_name`: A schematic letter may be a literal component of Model U or Malcolm X. Use a variable away from names, or write the name out.
 - `term.inflection_verbatim`: A plural surface may not denote instances of the stem guessed by deleting its suffix. Write the rule with singular 'every N' (Every dog is wet).
 
-Descriptions admit at most one modifier plus a head. Mixed subordinate-clause/term schemas are conservatively refused outright. EG uses a closed active-verb/copular grammar and refuses compound matrices and other quantified material. Noun inflection is verbatim in ordinary matching and counting classes; rewrite plural rules with singular “every N”. Ordinary initial-capital name evidence must appear away from sentence start and Therefore/So/Thus/Hence; internal capitals also count at sentence start. These intentional costs and the three inflection acceptance sites are detailed in the v44.0 coverage entry.
+Since v45.0 descriptions admit any number of recognized modifiers plus a head (see below). Mixed subordinate-clause/term schemas are conservatively refused outright. EG uses a closed active-verb/copular grammar and refuses compound matrices and other quantified material. Noun inflection is verbatim in ordinary matching and counting classes; rewrite plural rules with singular “every N”. Ordinary initial-capital name evidence must appear away from sentence start and Therefore/So/Thus/Hence; internal capitals also count at sentence start. These intentional costs and the three inflection acceptance sites are detailed in the v44.0 coverage entry.
 ## v44.0: strict scope and connective rules
 
 - **`scope.mixed_andor` — Mixed connective scope.** A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it. Use 'both … and' or 'either … or' to show the grouping.
-- **`scope.clause_start` — Controlled clause starts.** An operator such as perhaps inside a negated conjunction may scope over both clauses; distributing the negation changes that scope. Move the operator into each clause, or state the claim as an explicit premise.
+- **`scope.clause_start` — Controlled clause starts.** Each inspected clause must start with a determiner, proper name, pronoun or numeral. An unrecognized start may be an operator with wider scope. Move the operator into each clause, or state the claim as an explicit premise.
 - **`opener.ing_frame` — Initial -ing frame.** Following the script may qualify the entire conjunction rather than name its subject. Even genuine gerund subjects are refused when inspected. Closed-class clause starters such as `something`, `anything`, `everything`, and `nothing` are not frames. Move the frame into each clause, or state the framed claim as its own premise.
 - **`scope.elided_copula` — Closed copula elision.** In Either the men are quiet or fish, fish may be a verb rather than a predicate with an omitted copula. Unknown predicates are not expanded. Repeat the subject and verb: 'or the men are fish'.
 - **`scope.description_negation` — Description negation scope.** Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion. Add 'There is exactly one present king of France' and name it, or keep the wide negation.
@@ -3236,3 +3236,95 @@ a conditional used as a complete operand retain their own boundaries. Wide
 negation around an identity is checked around its two terms, rather than
 being mistaken for part of the left term. A conservative witness refusal
 does not claim that an alternative scope reading has a countermodel.
+
+## v45.0: bounded predicate and description loosenings
+
+A singular term may have a coordinated adjective predicate after `is`, `are`,
+`was`, or `were`. Every member must be one adjective, optionally preceded by
+one listed adverb. Only a uniform `and` or `or` is accepted; mixed coordination,
+quantified/plural subjects, and clause continuations receive no new exemption.
+The adjective allowlist is `reliable possible feasible risky safe unsafe aligned
+causal informational dangerous useful happy red blue green warm cold wise rich
+poor friendly mortal alive dead hungry tired valuable eligible registered ready
+late early wet dry small large tall short round square honest kind brave light
+portable`. The adverbs are `financially very quite extremely deeply highly`.
+Unknown adjectives and suffix homographs remain refused: suffixes alone cannot
+exclude nouns such as “criminal” or “general”.
+
+```argcheck-accept schematic instantiation
+1. If X is informational or causal, then X is a link.
+2. The channel is informational or causal.
+3. Therefore, the channel is a link. [1,2]
+```
+
+```argcheck-accept schematic instantiation
+1. If X is possible and financially feasible, then X will be built.
+2. The machine is possible and financially feasible.
+3. Therefore, the machine will be built. [1,2]
+```
+
+Definite descriptions admit any number of recognized modifiers and one singular
+head. Modifiers are the adjective list above plus `first second third fourth
+fifth sixth seventh eighth ninth tenth ordinary ultraintelligent aps big red
+small old young present former parking`. `APS` is an explicit attributive
+acronym exception. Other names, determiners, quantifiers, cardinal numerals,
+connectives, relatives, prepositions and finite verbs are excluded. Ordinals
+are permitted only as modifiers, not as quantity heads. Unknown modifiers are
+refused. Capitalized possessive owners supply evidence for that owner only;
+they do not establish a bare name elsewhere.
+
+A single `of` complement may be an existing allowed singular name/definite or
+a bare singular phrase with the same modifier restrictions. The closed
+collective heads `group` and `set` also permit bare plural complements.
+Nested `of` remains refused.
+
+```argcheck-accept schematic instantiation
+1. If X is solved, then X is boring.
+2. The game of ordinary chess is solved.
+3. Therefore, the game of ordinary chess is boring. [1,2]
+```
+
+```argcheck-accept schematic instantiation
+1. If X is a risk, then X deserves attention.
+2. The first ultraintelligent machine is a risk.
+3. Therefore, the first ultraintelligent machine deserves attention. [1,2]
+```
+
+```argcheck-accept schematic instantiation
+1. If X is solved, then X is boring.
+2. Carlsmith's APS concept is solved.
+3. Therefore, Carlsmith's APS concept is boring. [1,2]
+```
+
+```argcheck-accept schematic instantiation
+1. If X is solved, then X is boring.
+2. The group of robots is solved.
+3. Therefore, the group of robots is boring. [1,2]
+```
+
+The closed quantity/partitive exclusion is `majority minority rest remainder
+bulk most half third quarter fraction part portion share percentage percent
+proportion number amount quantity lot lots bunch plenty couple handful dozen
+score plurality pair few several many all some none any each both either neither
+whole balance residue`. These words remain refused as heads, including in
+possessives; existing exclusions in other positions are retained.
+
+```argcheck-refused slot.value_singular | Name the thing | schematic instantiation
+1. If X is solved, then X is boring.
+2. The majority of voters is solved.
+3. Therefore, the majority of voters is boring. [1,2]
+```
+
+Predicate-only variables after `being`, `need/needs/have/has/had to be`, and
+modal `be` use the same copula classifier for binding and whole-rule slot types.
+A variable also used as a term still needs a singular term value.
+
+```argcheck-accept schematic instantiation
+1. If the machine needs to be X, then the channel is X.
+2. The machine needs to be ultraparallel.
+3. Therefore, the channel is ultraparallel. [1,2]
+```
+
+Bare plurals and mass values remain refused. An `is`/`are` mismatch in the
+plural friction probe now reports `slot.value_singular` without certifying it.
+Clause-start failures quote both the offending clause and its first token.

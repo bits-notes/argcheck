@@ -176,7 +176,7 @@ func indefiniteSlotSafe(prefix string) bool {
 	return strings.HasSuffix(prefix, ",")
 }
 
-var copulaLeads = []string{"is", "are", "was", "were", "be", "been", "is not", "are not", "was not", "were not"}
+var copulaLeads = []string{"is", "are", "was", "were", "be", "been", "being", "is not", "are not", "was not", "were not"}
 
 // afterCopula reports whether prefix ends in a copula, so the value that
 // follows is a predicate ("is a Bayesian agent with the universal prior").
@@ -316,7 +316,7 @@ func (policy strictRules) indefiniteSlotDiagnosis(template string, premise Numbe
 			ti = len([]rune(template[:ti]))
 			if !policy.singularBindingSafe(templateRunes, ti, concrete, runeStart, value) {
 				shown := originalCaseSpan(value, premise.Statement)
-				return fmt.Sprintf("premise %d binds a schematic variable to %q; a quantity, plural, group or indefinite phrase need not be one thing, so a rule about each thing does not apply to it. Name the thing (with capitalization evidenced away from sentence start or Therefore/So/Thus/Hence), use a singular definite description (the dog), or state existence as its own premise and then name it. Write the phrase itself into the rule instead of a variable (%q)", premise.Number, shown, literalRuleSuggestion(template, variable, shown))
+				return fmt.Sprintf("slot.value_singular: premise %d binds a schematic variable to %q; a quantity, plural, group or indefinite phrase need not be one thing, so a rule about each thing does not apply to it. Name the thing (with capitalization evidenced away from sentence start or Therefore/So/Thus/Hence), use a singular definite description (the dog), or state existence as its own premise and then name it. Write the phrase itself into the rule instead of a variable (%q)", premise.Number, shown, literalRuleSuggestion(template, variable, shown))
 			}
 			if policy.indefiniteBindingPositionSafe(concrete, runeStart, value) {
 				continue
@@ -490,4 +490,33 @@ func conjunctiveAntecedentCandidatesOrSelf(antecedent string) []string {
 		}
 	}
 	return out
+}
+
+// Diagnostic only: an is/are mismatch must not hide a refused plural subject.
+// Require both the antecedent tail and the instantiated consequent verbatim;
+// this never relaxes unification or changes a verdict.
+func (policy strictRules) pluralCopulaSlotMessage(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) string {
+	for _, id := range c.Citations {
+		for _, pair := range conditionalCandidatesPreservingCase(steps[id].Statement) {
+			variable, tail, ok := strings.Cut(pair.left, " is ")
+			if !ok || len(variable) != 1 || !strings.Contains("UVWXYZ", variable) {
+				continue
+			}
+			for _, other := range c.Citations {
+				if other == id {
+					continue
+				}
+				value, predicate, ok := strings.Cut(scopeText(steps[other].Statement), " are ")
+				if !ok || !strings.EqualFold(predicate, tail) || policy.singularValue(value) {
+					continue
+				}
+				want := strings.ReplaceAll(pair.right, variable, value)
+				if !strings.EqualFold(scopeText(want), scopeText(c.Statement)) {
+					continue
+				}
+				return fmt.Sprintf("slot.value_singular: premise %d would bind %s to %q; a plural or bare value is refused for a term slot. Name the thing or write the phrase itself into the rule", other, variable, value)
+			}
+		}
+	}
+	return ""
 }

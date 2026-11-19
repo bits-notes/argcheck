@@ -39,7 +39,7 @@ func TestFinalSingularSuggestionKeepsCase(t *testing.T) {
 }
 
 func TestFinalDescriptionAttribution(t *testing.T) {
-	text := "1. If W arrived, then W was seen.\n2. The big red dog arrived.\n3. Therefore, the big red dog was seen. [1,2]"
+	text := "1. If W arrived, then W was seen.\n2. The Bob dog arrived.\n3. Therefore, the Bob dog was seen. [1,2]"
 	report, result := CheckEntailmentGate(text)
 	if report.Passed || result.Passed {
 		t.Fatal("unexpected certification")

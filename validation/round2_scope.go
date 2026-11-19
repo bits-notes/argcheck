@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 )
@@ -126,7 +127,7 @@ func unsafeDescriptionNegation(s string) bool {
 
 func (policy strictRules) scopeExpressionFailure(s string) string {
 	s = strings.TrimSpace(stripGroupedClause(s))
-	if scopeLiteralAtom(s) {
+	if scopeLiteralAtom(s) || policy.coordinatedPredicate(s) {
 		return ""
 	}
 	if expanded := expandGateElidedDisjunction(s); expanded != s {
@@ -293,7 +294,7 @@ func (policy strictRules) scopeOperandFailure(s string) string {
 	if i > 0 && i < len(words) && (framePredicates[strings.ToLower(words[i])] || frameIntransitives[strings.ToLower(words[i])] || frameTransitives[strings.ToLower(words[i])] || scopeNameVerbs[strings.ToLower(words[i])]) {
 		return ""
 	}
-	return clauseStartHint
+	return fmt.Sprintf("scope.clause_start: clause %q starts with token %q; %s", s, words[0], clauseStartHint)
 }
 
 // A closed atom literal declares an opaque proposition, not English whose

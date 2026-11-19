@@ -35,13 +35,7 @@ func ruleTermSlots(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) [
 			if (before == "then" || strings.HasSuffix(before, " then")) && (after == "" || after == ".") {
 				continue
 			}
-			predicate := false
-			for _, copula := range []string{" is", " are", " was", " were", " is not", " are not", " was not", " were not"} {
-				if strings.HasSuffix(before, copula) {
-					predicate = true
-				}
-			}
-			if predicate {
+			if afterCopula(before) {
 				continue
 			}
 			if !clauseSlotBefore(rs, i) {

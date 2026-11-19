@@ -89,7 +89,7 @@ func TestCatalogV20(t *testing.T) {
 		"TestCatalogV20/nested_UG":   {"identity.extensional_context", "state the substituted claim as a premise"},
 	}
 
-	if EntailmentGateCatalogVersion != "v44.0" {
+	if EntailmentGateCatalogVersion != "v45.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range append(append([]v20GateCase{}, v20AcceptedCases...), v20KeptGaps...) {

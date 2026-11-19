@@ -25,6 +25,11 @@ func schematicNameEvidence(steps map[int]NumberedArgumentStep) *map[string]bool 
 			// A capital after the first letter (AIXI, McCarthy, GPT-4) is name
 			// evidence even at sentence start: an ordinary word written there
 			// ("Lots", "Most") has only its first letter capitalised.
+			base := strings.TrimSuffix(strings.TrimSuffix(w, "'s"), "’s")
+			possessiveName := base != w && unicode.IsUpper(firstRune(base)) && !scopeContractions[strings.ToLower(base)]
+			if possessiveName {
+				names["possessive:"+strings.ToLower(base)] = true
+			}
 			if internalCapital(w) {
 				names[strings.ToLower(w)] = true
 				names[strings.TrimSuffix(strings.TrimSuffix(strings.ToLower(w), "'s"), "’s")] = true
@@ -53,7 +58,7 @@ var singularClosedWords = wordSet("half enough plenty little fewer less more muc
 // not one thing, so a description containing one is refused (pb/chief
 // 2026-11-18: partitives are quantifiers). A closed class; "the parking lot" is
 // refused too.
-var singularPartitiveWords = wordSet("majority minority rest bulk remainder lot lots whole most few many plurality balance residue all both each")
+var singularPartitiveWords = wordSet("majority minority rest remainder bulk most half third quarter fraction part portion share percentage percent proportion number amount quantity lot lots bunch plenty couple handful dozen score plurality pair few several many all some none any each both either neither whole balance residue")
 
 func singularClosedWord(w string) bool {
 	if singularPartitiveWords[w] || termDeterminers[w] || nonReferringTermWords[w] || indefiniteHeads[w] || quantityNumerals[w] || singularClosedWords[w] {
@@ -100,25 +105,29 @@ func (policy strictRules) singularValue(value string) bool {
 	if policy.singularName(words) {
 		return true
 	}
-	// "the N of D" (v44.0): a singular definite head with one "of" complement
-	// that is itself a name or singular definite ("the death of the child",
-	// "the author of Waverley"). The complement is checked by the same
-	// allowlist and may not nest another "of", so "the majority of voters",
-	// "the rest of them" and "the friend of a friend" stay refused.
+	// One of-complement only. Bare plural complements are limited to the
+	// closed collective heads group/set; the description still denotes one thing.
 	if words[0] == "the" {
-		for k := 2; k < len(words)-1 && k <= 3; k++ {
+		for k := 2; k < len(words)-1; k++ {
 			if words[k] != "of" {
 				continue
 			}
-			left, right := strings.Join(words[:k], " "), words[k+1:]
+			right := words[k+1:]
 			for _, w := range right {
 				if w == "of" {
 					return false
 				}
 			}
-			return policy.singularValue(left) && policy.singularValue(strings.Join(right, " "))
+			if !policy.singularValue(strings.Join(words[:k], " ")) {
+				return false
+			}
+			if policy.singularValue(strings.Join(right, " ")) {
+				return true
+			}
+			return policy.descriptionWords(right, words[k-1] == "group" || words[k-1] == "set")
 		}
 	}
+
 	start := 1
 	if words[0] != "the" {
 		start = 0
@@ -126,7 +135,7 @@ func (policy strictRules) singularValue(value string) bool {
 			if strings.HasSuffix(w, "'s") || strings.HasSuffix(w, "’s") {
 				owner := append([]string(nil), words[:i+1]...)
 				owner[i] = strings.TrimSuffix(strings.TrimSuffix(w, "'s"), "’s")
-				if !policy.singularName(owner) {
+				if !policy.singularName(owner) && !(len(owner) == 1 && !singularClosedWord(owner[0]) && policy.hasSlotName("possessive:"+owner[0])) {
 					return false
 				}
 				start = i + 1
@@ -140,18 +149,7 @@ func (policy strictRules) singularValue(value string) bool {
 	if start >= len(words) {
 		return false
 	}
-	if policy.slot_description_shape && len(words)-start > 2 {
-		return false
-	}
-	for _, w := range words[start:] {
-		if policy.slot_description_shape && policy.hasSlotName(w) {
-			return false
-		}
-		if singularClosedWord(w) || indefiniteValueStoppers[w] || framePrepositions[w] || strings.ContainsAny(w, "'’") {
-			return false
-		}
-	}
-	return !singularPluralHead(words[len(words)-1])
+	return policy.descriptionWords(words[start:], false)
 }
 
 // The template, not the length of a proposed match, decides whole-clause
@@ -225,4 +223,32 @@ func singularPredicateValue(words []string) bool {
 		return singularPredicateHeads[words[0]]
 	}
 	return len(words) == 2 && singularPredicateModifiers[words[0]] && singularPredicateHeads[words[1]]
+}
+
+// Unknown modifiers are refused. APS is a closed attributive acronym, not
+// permission to insert arbitrary proper names into descriptions.
+var descriptionModifiers = wordSet("first second third fourth fifth sixth seventh eighth ninth tenth ordinary ultraintelligent aps big red small old young present former parking")
+
+func (policy strictRules) descriptionWords(words []string, plural bool) bool {
+	if len(words) == 0 {
+		return false
+	}
+	for i, w := range words {
+		ordinal := descriptionModifiers[w] && (w == "first" || w == "second" || w == "third" || w == "fourth" || w == "fifth" || w == "sixth" || w == "seventh" || w == "eighth" || w == "ninth" || w == "tenth") && i < len(words)-1
+		if (!ordinal && singularClosedWord(w)) || indefiniteValueStoppers[w] || framePrepositions[w] || strings.ContainsAny(w, "'’.,;:") {
+			return false
+		}
+		if policy.slot_description_shape {
+			if policy.hasSlotName(w) && !(w == "aps" && i < len(words)-1) {
+				return false
+			}
+			if i < len(words)-1 && !descriptionModifiers[w] && !coordinatedAdjective(w) {
+				return false
+			}
+			if i == len(words)-1 && (framePredicates[w] || frameTransitives[w] || frameIntransitives[w] || scopeNameVerbs[w]) {
+				return false
+			}
+		}
+	}
+	return plural || !singularPluralHead(words[len(words)-1])
 }
