@@ -194,6 +194,9 @@ func TestAuditPart2Rules(t *testing.T) {
 		"outer necessarily":  "1. Necessarily the server crashed and the network failed.\n2. Therefore, the network failed. [1]\n",
 		"outer possibly":     "1. Possibly the server crashed and the network failed.\n2. Therefore, the network failed. [1]\n",
 		"grouping in belief": "1. Ann believes that Bob dances or Cal reads and Dan sleeps.\n2. Therefore, Dan sleeps. [1]\n",
+		// v43.0: an article-led value with a complement need not be one
+		// thing (slot.indefinite_value); certified before v43.0.
+		"majority schematic": "1. If X is red, then X is warm.\n2. A majority of robots is red.\n3. Therefore, a majority of robots is warm. [1,2]\n",
 	}
 	for name, text := range refused {
 		if report, _ := CheckEntailmentGate(text); report.Passed {
@@ -201,11 +204,10 @@ func TestAuditPart2Rules(t *testing.T) {
 		}
 	}
 	valid := map[string]string{
-		"majority schematic": "1. If X is red, then X is warm.\n2. A majority of robots is red.\n3. Therefore, a majority of robots is warm. [1,2]\n",
-		"value term":         "1. If X is a small number, then X is finite.\n2. Zero probability is a small number.\n3. Therefore, Zero probability is finite. [1,2]\n",
-		"the proportion":     "1. If X is a prior, then X is subjective.\n2. The proportion of true hypotheses is a prior.\n3. Therefore, The proportion of true hypotheses is subjective. [1,2]\n",
-		"unless plain":       "1. The alarm sounds unless the battery is dead.\n2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]\n",
-		"subject UI":         "1. Every courier sends Parcel to Bob.\n2. Alice is a courier.\n3. Therefore, Alice sends Parcel to Bob. [1,2]\n",
+		"value term":     "1. If X is a small number, then X is finite.\n2. Zero probability is a small number.\n3. Therefore, Zero probability is finite. [1,2]\n",
+		"the proportion": "1. If X is a prior, then X is subjective.\n2. The proportion of true hypotheses is a prior.\n3. Therefore, The proportion of true hypotheses is subjective. [1,2]\n",
+		"unless plain":   "1. The alarm sounds unless the battery is dead.\n2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]\n",
+		"subject UI":     "1. Every courier sends Parcel to Bob.\n2. Alice is a courier.\n3. Therefore, Alice sends Parcel to Bob. [1,2]\n",
 	}
 	for name, text := range valid {
 		if report, _ := CheckEntailmentGate(text); !report.Passed {

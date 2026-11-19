@@ -9,6 +9,8 @@ type strictRules struct {
 	comma_exact                 bool
 	identity_safe_position      bool
 	slot_indefinite_object      bool
+	slot_indefinite_written     bool
+	slot_indefinite_value       bool
 	slot_modified_quantifier    bool
 	slot_quantity               bool
 	term_clause_inside          bool
@@ -29,6 +31,8 @@ func allStrictRules() strictRules {
 		comma_exact:                 true,
 		identity_safe_position:      true,
 		slot_indefinite_object:      true,
+		slot_indefinite_written:     true,
+		slot_indefinite_value:       true,
 		slot_modified_quantifier:    true,
 		slot_quantity:               true,
 		term_clause_inside:          true,
@@ -53,6 +57,10 @@ func (rules strictRules) without(id string) strictRules {
 		rules.identity_safe_position = false
 	case "slot.indefinite_object":
 		rules.slot_indefinite_object = false
+	case "slot.indefinite_written":
+		rules.slot_indefinite_written = false
+	case "slot.indefinite_value":
+		rules.slot_indefinite_value = false
 	case "slot.modified_quantifier":
 		rules.slot_modified_quantifier = false
 	case "slot.quantity":

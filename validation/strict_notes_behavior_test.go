@@ -36,6 +36,9 @@ func TestStrictNotesConcurrentAndOwned(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for _, note := range strictNotes {
+				if len(note.AlsoRefuses) == 0 {
+					continue
+				}
 				report, _ := CheckEntailmentGate(note.AlsoRefuses[0], notesOn)
 				if report.Passed {
 					t.Errorf("diagnostic leaked into verdict for %s", note.ID)
@@ -59,7 +62,7 @@ func TestStrictNotesConcurrentAndOwned(t *testing.T) {
 	}
 	wg.Wait()
 	for _, note := range strictNotes {
-		if note.Fix[0] == "client edit" || note.AlsoRefuses[0] == "client edit" {
+		if note.Fix[0] == "client edit" || (len(note.AlsoRefuses) > 0 && note.AlsoRefuses[0] == "client edit") {
 			t.Error("client mutated catalog")
 		}
 	}

@@ -1300,3 +1300,68 @@ stay refused.
 - **Noun/verb homonyms in terms** (`physics exploits not known to humans`)
   stay refused, since `exploits` can be read as the verb, but the message now
   names the refused binding and suggests writing the phrase into the rule.
+
+## v43.0: indefinites must name one thing
+
+Two gaps let a quantity phrase stand in for one thing. Both certified on
+v42.0 and are now refused.
+
+**An indefinite written before a variable.** When the rule writes `a`, `an`,
+`some` (or another indefinite head) just before its variable, the instance
+need not be an article plus a noun:
+
+```text
+1. If Bob greets a X, then Bob greets someone who is a X.
+2. Bob greets a lot of people.
+3. Therefore, Bob greets someone who is a lot of people. [1,2]
+```
+
+Telling `a lot of people` from `a dog` takes a lexicon the gate does not
+have, so such a variable is refused in every position: object, subject
+(`If a X arrived, ...`) and predicate (`If Rex is a X, ...`). Repair: drop the
+article and let the variable stand for the whole phrase (`If Rex is X, then
+Fido is X` with X = `a dog`), or write the phrase itself into the rule.
+
+**An indefinite value.** A variable may take an indefinite value only as a
+lone `someone`, `something`, `anyone` ..., or as `a`, `an`, `some` or `one`
+followed by modifiers and one head noun with nothing after it. A
+preposition (`a friend of Bob`, `a lot of people`), a relative word (`a man
+who ...`), a conjunction, or a second indefinite after the head refuses the
+value, as do the closed-class determiners `a few`, `a little`, `a great
+many` and `a good many`. Values led by other quantifiers (`many robots`,
+`several robots`, `most robots`, `any object ...`) keep their v42.0
+treatment. After a copula the value is a predicate, so any predicate phrase may
+be substituted there (`AIXI is a Bayesian agent with the universal prior`;
+`Rex is a lot of fun`); existential `there is` is not a copula. `A majority of
+robots is red`, certified before, is now refused (a preposition after the
+head):
+
+```text
+1. If X arrived, then X is someone who arrived.
+2. A lot of people arrived.
+3. Therefore, a lot of people is someone who arrived. [1,2]
+```
+
+is NOT CERTIFIED. Repair: write the phrase into the rule (`If a lot of people
+arrived, then ...`), or name the individuals. In an object slot the v39.0
+message (state the existence claim as its own premise) still applies first.
+`a little` is refused even where it is an adjective (`a little dog`), since
+the gate cannot tell the two apart.
+
+**Known limit.** A bare quantity-noun idiom has the shape of an article and one
+noun, so it is still accepted:
+
+```text
+1. If X arrived, then X is someone who arrived.
+2. A lot arrived.
+3. Therefore, a lot is someone who arrived. [1,2]
+```
+
+certifies. The same holds for `a bit`, `a ton`, `a bunch` and similar idioms.
+Refusing them needs a list of quantity nouns, which is an open class; writers
+should not use such an idiom as a variable's value.
+
+With strictness notes on, the two refusals carry the notes
+`slot.indefinite_written` and `slot.indefinite_value`. The `slot.quantity`
+note's example now uses a numeral (`Two robots are registered`), because its
+old example (`A group of robots`) is also refused by `slot.indefinite_value`.

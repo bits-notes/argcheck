@@ -123,6 +123,24 @@ var strictNotes = []StrictNote{
 		Fix:         []string{"Use a name in the slot: \"The robot admires Alpha.\" Conclude \"Alpha is admirable.\" This changes the premise to identify a particular hero."},
 	},
 	{
+		ID:          "slot.indefinite_written",
+		Name:        "Indefinite written before a variable",
+		Since:       "v43.0",
+		Why:         "When the rule writes 'a X', the instance need not be an article plus a noun: 'Bob greets a lot of people' would make X 'lot of people'. The catalog has no lexicon to tell that from 'a dog', so such a variable is refused in every position.",
+		AlsoRefuses: []string{"1. If Rex is a X, then Fido is a X.\n2. Rex is a dog.\n3. Therefore, Fido is a dog. [1,2]"},
+		Fix:         []string{"Drop the article and let the variable stand for the whole phrase: \"If Rex is X, then Fido is X\" with X = \"a dog\". This works only when the phrase is an article, modifiers and one noun; otherwise write the phrase itself into the rule."},
+	},
+	{
+		ID:    "slot.indefinite_value",
+		Name:  "Indefinite value that need not name one thing",
+		Since: "v43.0",
+		Why:   "An indefinite value is accepted only as a lone 'someone' or as a/an, some or one plus modifiers and one noun with nothing after it. A quantity or complement phrase ('a lot of people', 'a friend of Bob', 'a few runners') need not be one thing. Known limit: a bare idiom such as 'a lot' still passes.",
+		AlsoRefuses: []string{
+			"1. If X arrived, then X is someone who arrived.\n2. A friend of Bob arrived.\n3. Therefore, a friend of Bob is someone who arrived. [1,2]",
+		},
+		Fix: []string{"Write the phrase itself into the rule: \"If a lot of people arrived, then a lot of people is someone who arrived.\" The rule then claims exactly what it says; no variable is filled with the phrase."},
+	},
+	{
 		ID:          "slot.modified_quantifier",
 		Name:        "Modified quantifier in a term slot",
 		Since:       "v36.0",
@@ -134,8 +152,8 @@ var strictNotes = []StrictNote{
 		ID:          "slot.quantity",
 		Name:        "Quantity expression in a term slot",
 		Since:       "v38.0",
-		Why:         "A quantity phrase ('two robots', 'a minority of voters', 'zero cases') may mean exactly that many, so it is not an individual for X or for instantiation.",
-		AlsoRefuses: []string{"1. If X is registered, then X is eligible.\n2. A group of robots is registered.\n3. Therefore, a group of robots is eligible. [1,2]"},
+		Why:         "A quantity phrase ('two robots', 'a minority of voters', 'zero cases') may mean exactly that many, so it is not an individual for X or for instantiation. Since v43.0 the rule refuses only readings that are ambiguous ('exactly two'); collective quantity phrases such as 'a group of robots' are refused by slot.indefinite_value instead, so no step valid on every reading is refused by this rule alone.",
+		AlsoRefuses: []string{},
 		Fix:         []string{"Name the group: \"The team is registered.\" Conclude \"The team is eligible.\""},
 	},
 	{

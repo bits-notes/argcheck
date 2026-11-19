@@ -179,7 +179,7 @@ func TestCatalogV26Bound(t *testing.T) {
 			t.Fatal(r.Message)
 		}
 	}
-	if EntailmentGateCatalogVersion != "v42.1" {
+	if EntailmentGateCatalogVersion != "v43.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 }

@@ -138,23 +138,133 @@ var indefiniteHeads = map[string]bool{
 // out anything, so binding it would let "a unicorn exists" through. Names,
 // definite descriptions and other bindings are unaffected.
 func (policy strictRules) indefiniteBindingPositionSafe(concrete []rune, start int, segment string) bool {
-	if !policy.slot_indefinite_object {
-		return true
-	}
 	words := strings.Fields(strings.ToLower(segment))
-	if len(words) == 0 || !indefiniteHeads[words[0]] {
+	if len(words) == 0 {
 		return true
 	}
 	prefix := strings.TrimSpace(strings.ToLower(string(concrete[:start])))
+	if !indefiniteHeads[words[0]] {
+		// v43.0 (slot.indefinite_written): a variable written just after an
+		// indefinite in the rule ("greets a X", "a X arrived", "is a X") is
+		// refused in every position. The instance need not be an article
+		// plus a noun ("a lot of people", "a couple of neighbours"), and
+		// telling the two apart takes a lexicon the gate does not have.
+		return !policy.slot_indefinite_written || writtenIndefiniteBefore(prefix) == ""
+	}
+	// v43.0 (slot.indefinite_value): a value that is to stand for one thing
+	// must name one thing. After a copula the value is a predicate, and any
+	// predicate phrase may be substituted.
+	if policy.slot_indefinite_value && !afterCopula(prefix) && !indefiniteValueShapeOK(words) {
+		return false
+	}
+	return !policy.slot_indefinite_object || indefiniteSlotSafe(prefix)
+}
+
+// indefiniteSlotSafe is the v39.0 position test for an indefinite value:
+// subject, predicate after a copula, or clause start. prefix is the
+// lower-cased text before the value.
+func indefiniteSlotSafe(prefix string) bool {
 	if prefix == "" {
 		return true
 	}
-	for _, lead := range append([]string{"is", "are", "was", "were", "be", "been", "is not", "are not", "was not", "were not"}, clauseSubjectLead...) {
+	for _, lead := range append(append([]string{}, copulaLeads...), clauseSubjectLead...) {
 		if prefix == lead || strings.HasSuffix(prefix, " "+lead) || strings.HasSuffix(prefix, ","+lead) {
 			return true
 		}
 	}
 	return strings.HasSuffix(prefix, ",")
+}
+
+var copulaLeads = []string{"is", "are", "was", "were", "be", "been", "is not", "are not", "was not", "were not"}
+
+// afterCopula reports whether prefix ends in a copula, so the value that
+// follows is a predicate ("is a Bayesian agent with the universal prior").
+func afterCopula(prefix string) bool {
+	words := strings.Fields(prefix)
+	// Existential "there is X" introduces a thing; it is not a predicate.
+	if len(words) >= 2 && words[len(words)-2] == "there" {
+		return false
+	}
+	for _, lead := range copulaLeads {
+		if prefix == lead || strings.HasSuffix(prefix, " "+lead) || strings.HasSuffix(prefix, ","+lead) {
+			return true
+		}
+	}
+	return false
+}
+
+// indefiniteValueHeads may open an indefinite value that is then read as one
+// thing: an article or "some"/"one" before a modified head noun.
+var indefiniteValueHeads = wordSet("a an some one")
+
+// indefinitePronounValues stand alone as an indefinite value.
+var indefinitePronounValues = wordSet("someone something somebody anyone anything anybody")
+
+// indefiniteValueStoppers end a noun head: anything after one of them
+// ("a lot of people", "a man who is tall", "a dog and a cat") makes the
+// phrase more than determiner + modifiers + head.
+var indefiniteValueStoppers = wordSet("who whom whose which that where when whether than and or nor but if because as")
+
+// indefiniteValueShapeOK (v43.0) accepts an indefinite value for a schematic
+// variable only as a lone indefinite pronoun ("someone") or as a/an/some/one,
+// optional modifiers, and one head word with nothing after it ("a red ball").
+// A complement or quantity phrase ("a lot of people", "a friend of Bob",
+// "a few runners") need not be one thing, so it is refused in every slot.
+// Values led by other quantifiers keep their v42.0 treatment.
+func indefiniteValueShapeOK(words []string) bool {
+	if len(words) == 0 {
+		return true
+	}
+	if indefinitePronounValues[words[0]] {
+		return len(words) == 1
+	}
+	if !indefiniteValueHeads[words[0]] {
+		// Other indefinite heads ("many robots", "several robots", "any
+		// object ...") keep their v42.0 treatment.
+		return true
+	}
+	if len(words) < 2 {
+		return false
+	}
+	// Closed-class determiners that begin with an article ("a few", "a
+	// little", "a great many", "a good many") quantify; they do not name one
+	// thing. "a little" is refused even where it could be an adjective ("a
+	// little dog"): the gate cannot tell the two apart.
+	if words[1] == "few" || words[1] == "little" || (len(words) > 2 && (words[1] == "great" || words[1] == "good") && words[2] == "many") {
+		return false
+	}
+	for _, word := range words[1:] {
+		word = strings.Trim(word, ".,;:\"'()")
+		if word == "" || indefiniteValueStoppers[word] || framePrepositions[word] || indefiniteHeads[word] {
+			return false
+		}
+	}
+	return true
+}
+
+// literalRuleSuggestion writes value in place of variable in the displayed
+// template ("X arrived" -> "a lot of people arrived").
+func literalRuleSuggestion(template string, variable rune, value string) string {
+	display := schematicDisplay(template)
+	name, ok := schematicVariableForMarker(variable)
+	if !ok {
+		name = variable
+	}
+	return strings.ReplaceAll(display, string(name), value)
+}
+
+// writtenIndefiniteBefore returns the indefinite word (a, an, some ...) that
+// ends prefix, or "" when prefix does not end in one.
+func writtenIndefiniteBefore(prefix string) string {
+	prefixWords := strings.Fields(prefix)
+	if len(prefixWords) == 0 {
+		return ""
+	}
+	last := strings.Trim(prefixWords[len(prefixWords)-1], "\"'(")
+	if indefiniteHeads[last] {
+		return last
+	}
+	return ""
 }
 
 // indefiniteSlotOverride is a reserved substitution key. When set, schematic
@@ -184,6 +294,27 @@ func (policy strictRules) indefiniteSlotDiagnosis(template string, premise Numbe
 			runeStart := len([]rune(string(concrete)[:start]))
 			if policy.indefiniteBindingPositionSafe(concrete, runeStart, value) {
 				continue
+			}
+			if valueWords := strings.Fields(strings.ToLower(value)); len(valueWords) > 0 && indefiniteHeads[valueWords[0]] && !indefiniteValueShapeOK(valueWords) && indefiniteSlotSafe(strings.TrimSpace(strings.ToLower(string(concrete[:runeStart])))) {
+				return fmt.Sprintf(
+					"premise %d binds a schematic variable to %q (%q); an indefinite value is accepted only as a/an, some or one plus modifiers and one head noun with nothing after it (or a lone \"someone\"), because a quantity or complement phrase (\"a lot of people\", \"a friend of Bob\", \"a few runners\") need not be one thing. Write the phrase itself into the rule instead of a variable (%q), or name the individuals",
+					premise.Number,
+					value,
+					schematicDisplay(template),
+					literalRuleSuggestion(template, variable, value),
+				)
+			}
+			if article := writtenIndefiniteBefore(strings.ToLower(string(concrete[:runeStart]))); article != "" {
+				return fmt.Sprintf(
+					"premise %d binds a schematic variable to %q just after %q, which the rule writes before the variable (%q); the phrase need not be %q plus a noun (\"a lot of people\"), so the schema cannot be instantiated with it. Drop %q from the rule and let the variable stand for the whole phrase (%q) when that phrase is an article, modifiers and one noun; otherwise write the phrase itself into the rule",
+					premise.Number,
+					value,
+					article,
+					schematicDisplay(template),
+					article,
+					article,
+					article+" "+value,
+				)
 			}
 			return fmt.Sprintf(
 				"premise %d binds a schematic variable to %q in an object position (%q); an indefinite there need not pick anything out, so the schema cannot be instantiated with it. State the existence claim as its own premise, e.g. %q",
@@ -301,7 +432,7 @@ func (policy strictRules) indefiniteSlotStepMessage(c NumberedArgumentStep, step
 			}
 		}
 	}
-	return "an indefinite (a/an/some/someone ...) would bind a schematic variable in an object position, where it need not pick anything out; state the existence claim as its own premise (\"There is a N that ...\")"
+	return "an indefinite (a/an/some/someone ...) would bind a schematic variable where it need not pick out one thing: in an object position, right after an indefinite the rule writes (\"a X\"), or as a phrase with something after its noun (\"a lot of people\", \"a friend of Bob\"); state the existence claim as its own premise (\"There is a N that ...\"), drop the article from the rule, or write the phrase itself into the rule"
 }
 
 // conjunctiveAntecedentCandidatesOrSelf lists an antecedent and every conjunct

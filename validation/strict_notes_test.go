@@ -13,6 +13,8 @@ func TestStrictNotesExamples(t *testing.T) {
 		"comma.exact":                 "1. Every device is small, light and portable.\n2. Alpha is a device.\n3. Therefore, Alpha is small, light and portable. [1,2]",
 		"identity.safe_position":      "1. The robot kicks Beta.\n2. Therefore, the robot kicks Beta. [1]",
 		"slot.indefinite_object":      "1. If the robot admires X, then X is admirable.\n2. The robot admires Alpha.\n3. Therefore, Alpha is admirable. [1,2]",
+		"slot.indefinite_written":     "1. If Rex is X, then Fido is X.\n2. Rex is a dog.\n3. Therefore, Fido is a dog. [1,2]",
+		"slot.indefinite_value":       "1. If a lot of people arrived, then a lot of people is someone who arrived.\n2. A lot of people arrived.\n3. Therefore, a lot of people is someone who arrived. [1,2]",
 		"slot.modified_quantifier":    "1. If X is red, then X is warm.\n2. Alpha is red.\n3. Therefore, Alpha is warm. [1,2]",
 		"slot.quantity":               "1. If X is registered, then X is eligible.\n2. The team is registered.\n3. Therefore, the team is eligible. [1,2]",
 		"term.clause_inside":          "1. If X are useful, then X are valuable.\n2. The exploits are useful.\n3. Therefore, the exploits are valuable. [1,2]",
@@ -70,6 +72,9 @@ var notesOn = EntailmentGateOptions{StrictNotes: true}
 // and output are those of v42.0.
 func TestStrictNotesOffByDefault(t *testing.T) {
 	for _, note := range strictNotes {
+		if len(note.AlsoRefuses) == 0 {
+			continue
+		}
 		report, _ := CheckEntailmentGate(note.AlsoRefuses[0])
 		for _, step := range report.Steps {
 			if len(step.Notes) > 0 {

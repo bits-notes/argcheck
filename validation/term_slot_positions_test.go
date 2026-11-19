@@ -110,3 +110,105 @@ func TestIndefiniteSchematicBindingStrictSlots(t *testing.T) {
 		t.Fatalf("restatement = %q", got)
 	}
 }
+
+// v43.0: a variable written just after an indefinite in the rule ("a X") is
+// refused in every position: the instance need not be an article plus a noun.
+func TestWrittenIndefiniteBeforeVariable(t *testing.T) {
+	refused := []string{
+		"1. If Bob greets a X, then Bob greets X.\n2. Bob greets a lot of people.\n3. Therefore, Bob greets lot of people. [1,2]",
+		"1. If Bob greets a X, then Bob greets someone who is a X.\n2. Bob greets a lot of people.\n3. Therefore, Bob greets someone who is a lot of people. [1,2]",
+		"1. If Lois is looking for a X, then a X exists.\n2. Lois is looking for a unicorn.\n3. Therefore, a unicorn exists. [1,2]",
+		"1. If Lois is looking for an X, then an X exists.\n2. Lois is looking for an elf.\n3. Therefore, an elf exists. [1,2]",
+		"1. If Mary imagines some X, then some X exists.\n2. Mary imagines some dragon.\n3. Therefore, some dragon exists. [1,2]",
+		// Subject and predicate positions have the same defect.
+		"1. If a X arrived, then someone who is a X arrived.\n2. A lot of people arrived.\n3. Therefore, someone who is a lot of people arrived. [1,2]",
+		"1. If Rex is a X, then Fido is a X.\n2. Rex is a lot of fun.\n3. Therefore, Fido is a lot of fun. [1,2]",
+		"1. If Rex is a X, then Fido is a X.\n2. Rex is a dog.\n3. Therefore, Fido is a dog. [1,2]",
+	}
+	for _, text := range refused {
+		report, result := CheckEntailmentGate(text)
+		if result.Passed {
+			t.Fatalf("certified a variable written after an indefinite:\n%s", text)
+		}
+		message := ""
+		for _, step := range report.Steps {
+			if !step.Passed {
+				message = step.Mismatch
+			}
+		}
+		if !strings.Contains(message, "which the rule writes before the variable") || !strings.Contains(message, "from the rule and let the variable stand for the whole phrase") {
+			t.Fatalf("message should name the written indefinite and the repair, got %q for\n%s", message, text)
+		}
+	}
+	// Refused already before v43.0 by another check; must stay refused.
+	if _, result := CheckEntailmentGate("1. If Bob greets a X, then Bob greets someone who is a X.\n2. Bob greets a couple of neighbours.\n3. Therefore, Bob greets someone who is a couple of neighbours. [1,2]"); result.Passed {
+		t.Fatal("certified \"a couple of neighbours\" after a written indefinite")
+	}
+	certified := []string{
+		// The repair: the variable stands for the whole phrase.
+		"1. If Rex is X, then Fido is X.\n2. Rex is a dog.\n3. Therefore, Fido is a dog. [1,2]",
+		"1. If X is hungry, then X barks.\n2. A puppy is hungry.\n3. Therefore, a puppy barks. [1,2]",
+		// A definite article before the variable is unaffected.
+		"1. If Rex is the X, then Fido is the X.\n2. Rex is the dog.\n3. Therefore, Fido is the dog. [1,2]",
+	}
+	for _, text := range certified {
+		if _, result := CheckEntailmentGate(text); !result.Passed {
+			t.Fatalf("should stay certified (%s):\n%s", result.Message, text)
+		}
+	}
+}
+
+// v43.0: an indefinite value for a schematic variable must be a lone
+// indefinite pronoun or a/an/some/one, modifiers and one head noun.
+func TestIndefiniteValueShape(t *testing.T) {
+	refused := []string{
+		// Following the object-slot hint ("There is ... that Bob greets") does
+		// not reopen it.
+		"1. There is a lot of people that Bob greets.\n2. If there is X that Bob greets, then Bob greets someone who is X.\n3. Therefore, Bob greets someone who is a lot of people. [1,2]",
+		"1. If X is in the room, then someone who is X is in the room.\n2. A lot of people is in the room.\n3. Therefore, someone who is a lot of people is in the room. [1,2]",
+		"1. If X arrived, then X is someone who arrived.\n2. A lot of people arrived.\n3. Therefore, a lot of people is someone who arrived. [1,2]",
+		"1. If X arrived, then X is someone who arrived.\n2. A friend of Bob arrived.\n3. Therefore, a friend of Bob is someone who arrived. [1,2]",
+		// Closed-class determiners beginning with an article.
+		"1. If X arrived, then X is someone who arrived.\n2. A few arrived.\n3. Therefore, a few is someone who arrived. [1,2]",
+		"1. If X arrived, then X is someone who arrived.\n2. A few runners arrived.\n3. Therefore, a few runners is someone who arrived. [1,2]",
+		"1. If X is in the tank, then X is cold.\n2. A little water is in the tank.\n3. Therefore, a little water is cold. [1,2]",
+		"1. If X arrived, then X is someone who arrived.\n2. A great many runners arrived.\n3. Therefore, a great many runners is someone who arrived. [1,2]",
+		// The existence restatement does not reopen it.
+		"1. There is a lot of people that arrived.\n2. If there is X that arrived, then X is someone who arrived.\n3. Therefore, a lot of people is someone who arrived. [1,2]",
+	}
+	for _, text := range refused {
+		report, result := CheckEntailmentGate(text)
+		if result.Passed {
+			t.Fatalf("certified a quantity or complement value:\n%s", text)
+		}
+		message := ""
+		for _, step := range report.Steps {
+			if !step.Passed {
+				message = step.Mismatch
+			}
+		}
+		if !strings.Contains(message, "need not be one thing") || !strings.Contains(message, "Write the phrase itself into the rule") {
+			t.Fatalf("message should explain the value shape and the repair, got %q for\n%s", message, text)
+		}
+	}
+	certified := []string{
+		"1. If X arrived, then X is someone who arrived.\n2. A dog arrived.\n3. Therefore, a dog is someone who arrived. [1,2]",
+		"1. If X arrived, then X is someone who arrived.\n2. A big red dog arrived.\n3. Therefore, a big red dog is someone who arrived. [1,2]",
+		"1. If X arrived late, then X missed the briefing.\n2. Someone arrived late.\n3. Therefore, someone missed the briefing. [1,2]",
+		// After a copula the value is a predicate; any predicate phrase may
+		// be substituted.
+		"1. If Rex is X, then Fido is X.\n2. Rex is a lot of fun.\n3. Therefore, Fido is a lot of fun. [1,2]",
+		"1. If X is the best agent and X is Y, then the ideal agent is Y.\n2. AIXI is the best agent.\n3. AIXI is a Bayesian agent with the universal prior.\n4. Therefore, the ideal agent is a Bayesian agent with the universal prior. [1,2,3]",
+		// Known limit (documented): a bare quantity-noun idiom has the shape
+		// of an article and one noun, and the gate has no lexicon to tell
+		// "a lot" from "a dog". If this starts failing, update docs/coverage.md.
+		"1. If X arrived, then X is someone who arrived.\n2. A lot arrived.\n3. Therefore, a lot is someone who arrived. [1,2]",
+		// The suggested repair: the phrase written into the rule.
+		"1. If a lot of people arrived, then a lot of people is someone who arrived.\n2. A lot of people arrived.\n3. Therefore, a lot of people is someone who arrived. [1,2]",
+	}
+	for _, text := range certified {
+		if _, result := CheckEntailmentGate(text); !result.Passed {
+			t.Fatalf("should stay certified (%s):\n%s", result.Message, text)
+		}
+	}
+}
