@@ -254,6 +254,20 @@ func literalRuleSuggestion(template string, variable rune, value string) string 
 	return strings.ReplaceAll(display, string(name), value)
 }
 
+// originalCaseSpan returns value as it is spelled in source, for messages: the
+// matcher works on a lowercased comparison clause. It falls back to value when
+// source does not contain it case-insensitively at the same byte length.
+func originalCaseSpan(value, source string) string {
+	lower := strings.ToLower(source)
+	if len(lower) != len(source) {
+		return value
+	}
+	if i := strings.Index(lower, value); i >= 0 {
+		return source[i : i+len(value)]
+	}
+	return value
+}
+
 // writtenIndefiniteBefore returns the indefinite word (a, an, some ...) that
 // ends prefix, or "" when prefix does not end in one.
 func writtenIndefiniteBefore(prefix string) string {
@@ -301,7 +315,8 @@ func (policy strictRules) indefiniteSlotDiagnosis(template string, premise Numbe
 			}
 			ti = len([]rune(template[:ti]))
 			if !policy.singularBindingSafe(templateRunes, ti, concrete, runeStart, value) {
-				return fmt.Sprintf("premise %d binds a schematic variable to %q; a quantity, plural, group or indefinite phrase need not be one thing, so a rule about each thing does not apply to it. Name the thing (with capitalization evidenced away from sentence start or Therefore/So/Thus/Hence), use a singular definite description (the dog), or state existence as its own premise and then name it. Write the phrase itself into the rule instead of a variable (%q)", premise.Number, value, literalRuleSuggestion(template, variable, value))
+				shown := originalCaseSpan(value, premise.Statement)
+				return fmt.Sprintf("premise %d binds a schematic variable to %q; a quantity, plural, group or indefinite phrase need not be one thing, so a rule about each thing does not apply to it. Name the thing (with capitalization evidenced away from sentence start or Therefore/So/Thus/Hence), use a singular definite description (the dog), or state existence as its own premise and then name it. Write the phrase itself into the rule instead of a variable (%q)", premise.Number, shown, literalRuleSuggestion(template, variable, shown))
 			}
 			if policy.indefiniteBindingPositionSafe(concrete, runeStart, value) {
 				continue

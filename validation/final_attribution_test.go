@@ -13,7 +13,7 @@ func TestFinalSingularAttribution(t *testing.T) {
 			if report.Passed || result.Passed {
 				t.Fatal("unexpected certification")
 			}
-			for _, hint := range []string{"training signals", "need not be one thing", "Write the phrase itself into the rule"} {
+			for _, hint := range []string{"Training signals", "need not be one thing", "Write the phrase itself into the rule"} {
 				if !strings.Contains(result.Message, hint) {
 					t.Errorf("missing %q: %s", hint, result.Message)
 				}
@@ -22,6 +22,19 @@ func TestFinalSingularAttribution(t *testing.T) {
 				t.Error(result.Message)
 			}
 		})
+	}
+}
+
+// The literal-rule suggestion keeps the value as the writer spelled it: a name
+// seen only at sentence start must not come back lowercased.
+func TestFinalSingularSuggestionKeepsCase(t *testing.T) {
+	text := "1. If X is useful, then X is valuable.\n2. Alpha is useful.\n3. Therefore, Alpha is valuable. [1,2]"
+	_, result := CheckEntailmentGate(text)
+	if result.Passed {
+		t.Fatal("unexpected certification")
+	}
+	if !strings.Contains(result.Message, `("Alpha is useful")`) || strings.Contains(result.Message, `"alpha`) {
+		t.Fatal(result.Message)
 	}
 }
 
