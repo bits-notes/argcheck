@@ -7,6 +7,34 @@ import (
 )
 
 func TestEntailmentGateCatalogV15(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_forward/commas0": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_forward/commas1": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_forward/commas2": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_forward/commas3": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_reverse/commas0": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_reverse/commas1": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_reverse/commas2": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_reverse/commas3": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_inner_scaffold/commas0": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_inner_scaffold/commas1": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_inner_scaffold/commas2": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV15/conjunction_inner_scaffold/commas3": {"scope.clause_start", "move the operator into each clause"},
+	}
+
 	for _, tc := range []struct{ name, premise, conclusion, form string }{
 		{"reflexivity", "Socrates is a man", "Socrates is identical to Socrates", "identity reflexivity"},
 		{"case insensitive occurrence", "SOCRATES is a man", "Socrates is identical to Socrates", "identity reflexivity"},
@@ -36,6 +64,9 @@ func TestEntailmentGateCatalogV15(t *testing.T) {
 					c = strip.Replace(c)
 				}
 				argument := fmt.Sprintf("1. %s.\n2. Therefore, %s. [1]", p, c)
+				if listedStrictRefusal(t, argument, refused) {
+					return
+				}
 				report, result := CheckEntailmentGate(argument)
 				if !report.Passed || !result.Passed || len(report.Steps) != 1 || report.Steps[0].Form != tc.form {
 					t.Fatalf("want %q: %s %+v", tc.form, result.Message, report)

@@ -88,30 +88,51 @@ func TestAccuracyRound2Cases(t *testing.T) {
 
 func TestAccuracyRound2ValidControls(t *testing.T) {
 	cases := map[string]string{
-		"most every rule": "1. Every hunter is alert.\n2. Most cats are hunters.\n3. Therefore, most cats are alert. [1,2]",
-
 		"modified bare generic": "1. Red things are not blue things.\n2. The balls are red things.\n3. Therefore, it is not the case that the balls are blue things. [1,2]",
 
-		"literal name conditional": "1. If Plan X fails, then Plan X is abandoned.\n2. Plan X fails.\n3. Therefore, Plan X is abandoned. [1,2]",
-		"name plus variable":       "1. If X supports Plan Y, then X recommends Plan Y.\n2. Alice supports Plan Y.\n3. Therefore, Alice recommends Plan Y. [1,2]",
-		"indefinite UI":            "1. Every poet is mortal.\n2. A senator is a poet.\n3. Therefore, a senator is mortal. [1,2]",
-		"definite UI":              "1. Every poet is mortal.\n2. The senator is a poet.\n3. Therefore, the senator is mortal. [1,2]",
+		"indefinite UI": "1. Every poet is mortal.\n2. A senator is a poet.\n3. Therefore, a senator is mortal. [1,2]",
+		"definite UI":   "1. Every poet is mortal.\n2. The senator is a poet.\n3. Therefore, the senator is mortal. [1,2]",
 
-		"unless":       "1. The alarm sounds unless the battery is dead.\n2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]",
-		"schema":       "1. If X is a man, then X is mortal.\n2. Socrates is a man.\n3. Therefore, Socrates is mortal. [1,2]",
-		"theory":       "1. If the theory of X is true, then X is useful.\n2. The theory of gravity is true.\n3. Therefore, gravity is useful. [1,2]",
-		"ui":           "1. Every billionaire is mortal.\n2. Alice is a billionaire.\n3. Therefore, Alice is mortal. [1,2]",
-		"princes":      "1. All princes are male.\n2. Charles is a prince.\n3. Therefore, Charles is male. [1,2]",
-		"long binding": "1. If X are useful, then X are valuable.\n2. Hand-coded objectives alongside algorithmic training signals are useful.\n3. Therefore, hand-coded objectives alongside algorithmic training signals are valuable. [1,2]",
-		"gerund":       "1. If X is useful, then X is valuable.\n2. Asking questions is useful.\n3. Therefore, asking questions is valuable. [1,2]",
-		"description":  "1. If X is useful, then X is valuable.\n2. The putative counterexample to Clark's analysis is useful.\n3. Therefore, the putative counterexample to Clark's analysis is valuable. [1,2]",
-		"most schema":  "1. If X are wise, then X are happy.\n2. Most philosophers are wise.\n3. Therefore, most philosophers are happy. [1,2]",
+		"unless": "1. The alarm sounds unless the battery is dead.\n2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]",
+		"ui":     "1. Every billionaire is mortal.\n2. Alice is a billionaire.\n3. Therefore, Alice is mortal. [1,2]",
 	}
 	for name, arg := range cases {
 		t.Run(name, func(t *testing.T) {
 			ok, _, msg := checkRulesDocArgument(arg)
 			if !ok {
 				t.Fatal(msg)
+			}
+		})
+	}
+
+	// Refused by v44.0 strictness; retain the formerly valid controls.
+	refused := []struct{ name, argument, hint string }{
+		// term.inflection_verbatim: intentionally refused under v44.0 strictness.
+		{"most every rule", "1. Every hunter is alert.\n2. Most cats are hunters.\n3. Therefore, most cats are alert. [1,2]", "write the rule with singular 'every N'"},
+		// slot.letter_in_name: intentionally refused under v44.0 strictness.
+		{"literal name conditional", "1. If Plan X fails, then Plan X is abandoned.\n2. Plan X fails.\n3. Therefore, Plan X is abandoned. [1,2]", "use a variable away from names, or write the name out"},
+		// slot.letter_in_name: intentionally refused under v44.0 strictness.
+		{"name plus variable", "1. If X supports Plan Y, then X recommends Plan Y.\n2. Alice supports Plan Y.\n3. Therefore, Alice recommends Plan Y. [1,2]", "use a variable away from names, or write the name out"},
+		// slot.value_singular: intentionally refused under v44.0 strictness.
+		{"schema", "1. If X is a man, then X is mortal.\n2. Socrates is a man.\n3. Therefore, Socrates is mortal. [1,2]", "Name the thing"},
+		// slot.value_singular: intentionally refused under v44.0 strictness.
+		{"theory", "1. If the theory of X is true, then X is useful.\n2. The theory of gravity is true.\n3. Therefore, gravity is useful. [1,2]", "Name the thing"},
+		// term.inflection_verbatim: intentionally refused under v44.0 strictness.
+		{"princes", "1. All princes are male.\n2. Charles is a prince.\n3. Therefore, Charles is male. [1,2]", "write the rule with singular 'every N'"},
+		// slot.value_singular: intentionally refused under v44.0 strictness.
+		{"long binding", "1. If X are useful, then X are valuable.\n2. Hand-coded objectives alongside algorithmic training signals are useful.\n3. Therefore, hand-coded objectives alongside algorithmic training signals are valuable. [1,2]", "Name the thing"},
+		// slot.value_singular: intentionally refused under v44.0 strictness.
+		{"gerund", "1. If X is useful, then X is valuable.\n2. Asking questions is useful.\n3. Therefore, asking questions is valuable. [1,2]", "Name the thing"},
+		// slot.value_singular: intentionally refused under v44.0 strictness.
+		{"description", "1. If X is useful, then X is valuable.\n2. The putative counterexample to Clark's analysis is useful.\n3. Therefore, the putative counterexample to Clark's analysis is valuable. [1,2]", "Name the thing"},
+		// slot.value_singular: intentionally refused under v44.0 strictness.
+		{"most schema", "1. If X are wise, then X are happy.\n2. Most philosophers are wise.\n3. Therefore, most philosophers are happy. [1,2]", "Name the thing"},
+	}
+	for _, tc := range refused {
+		t.Run(tc.name, func(t *testing.T) {
+			ok, _, msg := checkRulesDocArgument(tc.argument)
+			if ok || !strings.Contains(msg, tc.hint) {
+				t.Fatalf("want NOT CERTIFIED with fix hint %q; certified=%v: %s", tc.hint, ok, msg)
 			}
 		})
 	}

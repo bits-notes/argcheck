@@ -6,17 +6,22 @@ import (
 )
 
 func TestSentenceFrames(t *testing.T) {
+	// scope.clause_start: an unknown frame verb is refused even in an
+	// explicitly parenthesised operand; retain the exact historical case.
+	strictRefused := map[string]strictRefusal{
+		"TestSentenceFrames/outer-parentheses": {"scope.clause_start", "move the operator into each clause"},
+	}
 	cases := []struct {
 		name, text, message string
 		valid               bool
 	}{
 		{"plain", "1. The server crashed and the network failed.\n2. Therefore, the network failed. [1]", "", true},
 		{"both", "1. Both the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "", true},
-		{"reckons", "1. Bob reckons the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "write 'Both", false},
-		{"fancies", "1. Bob fancies the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "write 'Both", false},
-		{"insinuated", "1. Bob insinuated the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "write 'Both", false},
-		{"owner", "1. The owner of the robot believes alpha and beta.\n2. Therefore, The owner of the robot believes alpha. [1]", "write 'Both", false},
-		{"introduction", "1. Bob reckons the server crashed.\n2. The network failed.\n3. Therefore, Bob reckons the server crashed and the network failed. [1,2]", "write 'Both", false},
+		{"reckons", "1. Bob reckons the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "move the operator into each clause", false},
+		{"fancies", "1. Bob fancies the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "move the operator into each clause", false},
+		{"insinuated", "1. Bob insinuated the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "move the operator into each clause", false},
+		{"owner", "1. The owner of the robot believes alpha and beta.\n2. Therefore, The owner of the robot believes alpha. [1]", "move the operator into each clause", false},
+		{"introduction", "1. Bob reckons the server crashed.\n2. The network failed.\n3. Therefore, Bob reckons the server crashed and the network failed. [1,2]", "move the operator into each clause", false},
 		{"embedded-parentheses", "1. Bob reckons (the server crashed and the network failed).\n2. Therefore, the network failed. [1]", "", false},
 		{"outer-parentheses", "1. (Bob reckons the server crashed) and (the network failed).\n2. Therefore, the network failed. [1]", "", true},
 		{"restate-parentheses", "1. Bob reckons (the server crashed and the network failed).\n2. Therefore, Bob reckons (the server crashed and the network failed). [1]", "", true},
@@ -24,7 +29,6 @@ func TestSentenceFrames(t *testing.T) {
 		{"unsafe-schematic", "1. If X is good, then X is valuable.\n2. Purportedly the server is good.\n3. Therefore, Purportedly the server is valuable. [1,2]", "may cover the whole sentence", false},
 		{"opaque-reiteration", "1. Hypothetically the server crashed.\n2. Therefore, Hypothetically the server crashed. [1]", "", true},
 		{"universal", "1. Every man is mortal.\n2. Socrates is a man.\n3. Therefore, Socrates is mortal. [1,2]", "", true},
-		{"gerund", "1. If X is good, then X is valuable.\n2. Trying to remove all assumptions is good.\n3. Therefore, Trying to remove all assumptions is valuable. [1,2]", "", true},
 		{"bare-noun", "1. Consciousness is real and the server crashed.\n2. Therefore, the server crashed. [1]", "", true},
 		{"name", "1. Plan B is good and the server crashed.\n2. Therefore, the server crashed. [1]", "", true},
 		{"panda", "1. Every panda eats shoots and leaves.\n2. Bao is a panda.\n3. Therefore, Bao eats, shoots, and leaves. [1,2]", "differs only in punctuation", false},
@@ -34,10 +38,20 @@ func TestSentenceFrames(t *testing.T) {
 		cases = append(cases, struct {
 			name, text, message string
 			valid               bool
-		}{opener, "1. " + opener + " the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "may cover the whole sentence", false})
+		}{opener, "1. " + opener + " the server crashed and the network failed.\n2. Therefore, the network failed. [1]", "move the operator into each clause", false})
+	}
+	// slot.value_singular: gerund phrases are not admitted singular term values.
+	refused := []struct{ name, text, hint string }{
+		{"gerund", "1. If X is good, then X is valuable.\n2. Trying to remove all assumptions is good.\n3. Therefore, Trying to remove all assumptions is valuable. [1,2]", "Name the thing"},
+	}
+	for _, tc := range refused {
+		t.Run(tc.name, func(t *testing.T) { assertStrictRefusal(t, tc.text, "slot.value_singular", tc.hint) })
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tc.text, strictRefused) {
+				return
+			}
 			report, result := CheckEntailmentGate(tc.text)
 			if report.Passed != tc.valid {
 				t.Errorf("passed=%v want %v: %+v / %+v", report.Passed, tc.valid, report, result)
@@ -63,7 +77,7 @@ func TestSentenceFramesDisjunction(t *testing.T) {
 			if r.Passed {
 				t.Fatal("unsafe complement coordination certified")
 			}
-			if len(r.Steps) == 0 || !strings.Contains(r.Steps[0].Mismatch, "write 'Both") {
+			if len(r.Steps) == 0 || !strings.Contains(r.Steps[0].Mismatch, "move the operator into each clause") {
 				t.Fatalf("missing grouping hint: %+v", r)
 			}
 		})
@@ -128,10 +142,16 @@ func TestClosedClassOpeners(t *testing.T) {
 			t.Errorf("opener %q certified a sentence-internal step", opener)
 		}
 	}
-	for _, text := range []string{
-		"1. The server crashed and the network failed.\n2. Therefore, the network failed. [1]",
+	// eg.name_witness: quantified descriptions are not fixed named witnesses.
+	strictRefused := []string{
 		"1. Almost every robot is red.\n2. Therefore, something is red. [1]",
 		"1. Nearly all robots are red.\n2. Therefore, something is red. [1]",
+	}
+	for _, text := range strictRefused {
+		assertStrictRefusal(t, text, "eg.name_witness", "state the existential claim as its own premise")
+	}
+	for _, text := range []string{
+		"1. The server crashed and the network failed.\n2. Therefore, the network failed. [1]",
 	} {
 		if _, r := CheckEntailmentGate(text); !r.Passed {
 			t.Errorf("control refused: %s: %s", text, r.Message)
@@ -161,13 +181,23 @@ func TestStructuralTermRules(t *testing.T) {
 			t.Errorf("certified: %s", text)
 		}
 	}
+	strictRefused := []struct{ text, rule, hint string }{
+		// eg.name_witness: outside the strict term/witness/class grammar.
+		{"1. The man who sings is tall.\n2. Therefore, something is tall. [1]", "eg.name_witness", "state the existential claim as its own premise"},
+		// slot.value_singular: outside the strict term/witness/class grammar.
+		{"1. If X is useful, then X is valuable.\n2. An embedded agent is useful.\n3. Therefore, an embedded agent is valuable. [1,2]", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: outside the strict term/witness/class grammar.
+		{"1. If X is useful, then X is valuable.\n2. The proportion of tested hypotheses that are true is useful.\n3. Therefore, the proportion of tested hypotheses that are true is valuable. [1,2]", "slot.value_singular", "Name the thing"},
+		// term.inflection_verbatim: outside the strict term/witness/class grammar.
+		{"1. All premises are valuable.\n2. Alpha is a premise.\n3. Therefore, Alpha is valuable. [1,2]", "term.inflection_verbatim", "singular 'every N'"},
+		// identity.extensional_context: outside the strict term/witness/class grammar.
+		{"1. Superman can fly.\n2. Superman is identical to Clark.\n3. Therefore, Clark can fly. [1,2]", "identity.extensional_context", "state the substituted claim as a premise"},
+	}
+	for _, tc := range strictRefused {
+		assertStrictRefusal(t, tc.text, tc.rule, tc.hint)
+	}
 	for _, text := range []string{
-		"1. The man who sings is tall.\n2. Therefore, something is tall. [1]",
-		"1. If X is useful, then X is valuable.\n2. An embedded agent is useful.\n3. Therefore, an embedded agent is valuable. [1,2]",
-		"1. If X is useful, then X is valuable.\n2. The proportion of tested hypotheses that are true is useful.\n3. Therefore, the proportion of tested hypotheses that are true is valuable. [1,2]",
-		"1. All premises are valuable.\n2. Alpha is a premise.\n3. Therefore, Alpha is valuable. [1,2]",
 		"1. The ground is wet if it rains.\n2. It rains.\n3. Therefore, the ground is wet. [1,2]",
-		"1. Superman can fly.\n2. Superman is identical to Clark.\n3. Therefore, Clark can fly. [1,2]",
 	} {
 		if _, r := CheckEntailmentGate(text); !r.Passed {
 			t.Errorf("control refused: %s: %s", text, r.Message)
@@ -203,11 +233,17 @@ func TestAuditPart2Rules(t *testing.T) {
 			t.Errorf("%s: want NOT CERTIFIED", name)
 		}
 	}
-	valid := map[string]string{
+	// slot.value_singular: bare and partitive values do not name a singular term.
+	strictRefused := map[string]string{
 		"value term":     "1. If X is a small number, then X is finite.\n2. Zero probability is a small number.\n3. Therefore, Zero probability is finite. [1,2]\n",
 		"the proportion": "1. If X is a prior, then X is subjective.\n2. The proportion of true hypotheses is a prior.\n3. Therefore, The proportion of true hypotheses is subjective. [1,2]\n",
-		"unless plain":   "1. The alarm sounds unless the battery is dead.\n2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]\n",
-		"subject UI":     "1. Every courier sends Parcel to Bob.\n2. Alice is a courier.\n3. Therefore, Alice sends Parcel to Bob. [1,2]\n",
+	}
+	for name, text := range strictRefused {
+		t.Run(name, func(t *testing.T) { assertStrictRefusal(t, text, "slot.value_singular", "Name the thing") })
+	}
+	valid := map[string]string{
+		"unless plain": "1. The alarm sounds unless the battery is dead.\n2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]\n",
+		"subject UI":   "1. Every courier sends Parcel to Bob.\n2. Alice is a courier.\n3. Therefore, Alice sends Parcel to Bob. [1,2]\n",
 	}
 	for name, text := range valid {
 		if report, _ := CheckEntailmentGate(text); !report.Passed {
@@ -258,15 +294,24 @@ func TestBothConjunction(t *testing.T) {
 // task_eb737ad9: four false positives found by the AI-safety map inventory.
 // Each relaxation is limited to readings that are not ambiguous.
 func TestInventoryFalsePositivesV42(t *testing.T) {
+	strictRefused := []struct{ text, rule, hint string }{
+		// slot.value_singular: outside the strict term/witness/class grammar.
+		{"1. If X is natural for large networks, then X is common.\n2. Subassembly organization is natural for large networks.\n3. Therefore, subassembly organization is common. [1,2]", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: outside the strict term/witness/class grammar.
+		{"1. If X depends on factual tests, then X needs data.\n2. Friendly action depends on factual tests.\n3. Therefore, Friendly action needs data. [1,2]", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: outside the strict term/witness/class grammar.
+		{"1. Rex runs fast even when machines are noisy.\n2. If X runs fast even when U, then X wins even when U.\n3. Therefore, Rex wins even when machines are noisy. [1,2]", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: outside the strict term/witness/class grammar.
+		{"1. If considering X invites caution, then X is risky.\n2. Considering brain emulation invites caution.\n3. Therefore, brain emulation is risky. [1,2]", "slot.value_singular", "Name the thing"},
+	}
+	for _, tc := range strictRefused {
+		assertStrictRefusal(t, tc.text, tc.rule, tc.hint)
+	}
 	certified := []string{
 		// -ly nouns and -ly adjectives opening a noun-phrase subject.
-		"1. If X is natural for large networks, then X is common.\n2. Subassembly organization is natural for large networks.\n3. Therefore, subassembly organization is common. [1,2]",
-		"1. If X depends on factual tests, then X needs data.\n2. Friendly action depends on factual tests.\n3. Therefore, Friendly action needs data. [1,2]",
 		// A whole clause as the value of a clause-slot variable.
-		"1. Rex runs fast even when machines are noisy.\n2. If X runs fast even when U, then X wins even when U.\n3. Therefore, Rex wins even when machines are noisy. [1,2]",
 		"1. The plan fails because costs are high.\n2. If the plan fails because U, then U.\n3. Therefore, costs are high. [1,2]",
 		// A gerund subject: no comma, no other subject, a finite verb follows.
-		"1. If considering X invites caution, then X is risky.\n2. Considering brain emulation invites caution.\n3. Therefore, brain emulation is risky. [1,2]",
 	}
 	for _, text := range certified {
 		if _, result := CheckEntailmentGate(text); !result.Passed {

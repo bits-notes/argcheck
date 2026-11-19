@@ -7,6 +7,14 @@ import (
 )
 
 func TestCatalogV9SurfaceForms(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.elided_copula: elision requires a predicate from the closed vocabulary.
+		"TestCatalogV9SurfaceForms/elision_identity": {"scope.elided_copula", "repeat the subject and verb"},
+		// scope.elided_copula: elision requires a predicate from the closed vocabulary.
+		"TestCatalogV9SurfaceForms/meeting_elision": {"scope.elided_copula", "repeat the subject and verb"},
+	}
+
 	tests := []struct {
 		name, argument string
 		want           bool
@@ -47,6 +55,9 @@ func TestCatalogV9SurfaceForms(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tt.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(tt.argument)
 			if report.Passed != tt.want || result.Passed != tt.want {
 				t.Fatalf("want %v: %+v; %+v", tt.want, report, result)

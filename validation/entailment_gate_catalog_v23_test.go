@@ -88,7 +88,7 @@ func relativeExercises() []nplaceExercise {
 	return out
 }
 func TestCatalogV23Exercises(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v43.1" {
+	if EntailmentGateCatalogVersion != "v44.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range relativeExercises() {
@@ -134,7 +134,9 @@ const v23FitchUG = `1. Every hero that Sam admires is active.
 6. Therefore, Every hero that Sam admires is active. [2-5]`
 
 func TestCatalogV23Fitch(t *testing.T) {
-	for _, argument := range []string{v23FitchEE, v23FitchUG} {
+	// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+	assertStrictRefusal(t, v23FitchEE, "scope.clause_start", "move the operator into each clause")
+	for _, argument := range []string{v23FitchUG} {
 		report, result := CheckEntailmentGate(argument)
 		if !result.Passed {
 			t.Fatalf("%+v\n%+v", result, report)

@@ -71,8 +71,9 @@ var entailmentSchemas = allStrictRules().schemas()
 // switches. Concurrent evaluations never change another evaluation's rules.
 var strictCatalogs sync.Map // map[strictRules][]entailmentSchema
 func (policy strictRules) schemas() []entailmentSchema {
-	if policy.fired != nil {
-		// A recording pass binds its own recorder; never cache it.
+	// A recording pass binds its own recorder, and argument-specific case
+	// evidence must never enter the global cache.
+	if policy.fired != nil || policy.slotNames != nil {
 		return policy.buildSchemas()
 	}
 	if cached, ok := strictCatalogs.Load(policy); ok {
@@ -561,10 +562,16 @@ func necessityCandidates(statement string) []string {
 func equalTerms(left, right string) bool { return allStrictRules().equalTerms(left, right) }
 
 func (policy strictRules) equalTerms(left, right string) bool {
+	if policy.term_numeral && (numeralTerm(left) || numeralTerm(right)) {
+		return false
+	}
 	leftCandidates := policy.termCandidates(left)
 	rightCandidates := policy.termCandidates(right)
 	for _, leftCandidate := range leftCandidates {
 		for _, rightCandidate := range rightCandidates {
+			if policy.term_numeral && (numeralTerm(leftCandidate) || numeralTerm(rightCandidate)) {
+				continue
+			}
 			if leftCandidate == rightCandidate {
 				return true
 			}
@@ -590,6 +597,15 @@ func (policy strictRules) termCandidates(value string) []string {
 		}
 	}
 	result := []string{value}
+	// Preserve older plural-only diagnostic attribution when that rule alone is off.
+	if policy.term_inflection_verbatim && (policy.noun_pluralia_tantum || !nonSingularStem.MatchString(value)) {
+		if policy.noun_pluralia_tantum && nonSingularStem.MatchString(value) {
+			// Switching noun.pluralia_tantum off alone reaches the stem
+			// matcher below, so its refusal must be recorded here too.
+			policy.hit("noun.pluralia_tantum")
+		}
+		return result
+	}
 	if policy.noun_pluralia_tantum && nonSingularStem.MatchString(value) && policy.hit("noun.pluralia_tantum") {
 		return result
 	}
@@ -797,6 +813,9 @@ func (policy strictRules) unifySchematicRunes(
 				return nil
 			}
 		}
+		if substitution[indefiniteSlotOverride] == "" && !strings.ContainsRune(substitution[singularLegacyOverride], variable) && !policy.singularBindingSafe(template, templateIndex, concrete, concreteIndex, bound) {
+			return nil
+		}
 		return policy.unifySchematicRunes(template, concrete, templateIndex+1, concreteIndex+len(boundRunes), substitution)
 	}
 
@@ -812,8 +831,14 @@ func (policy strictRules) unifySchematicRunes(
 		if substitution[indefiniteSlotOverride] == "" && !policy.indefiniteBindingPositionSafe(concrete, concreteIndex, string(segment)) {
 			continue
 		}
+		if substitution[indefiniteSlotOverride] == "" && !strings.ContainsRune(substitution[singularLegacyOverride], variable) && !policy.singularBindingSafe(template, templateIndex, concrete, concreteIndex, string(segment)) {
+			continue
+		}
 		next := cloneSchematicSubstitution(substitution)
 		next[variable] = string(segment)
+		if legacySingularRefusal(concrete, concreteIndex, string(segment)) {
+			next[singularLegacyOverride] += string(variable)
+		}
 		result = append(result, policy.unifySchematicRunes(template, concrete, templateIndex+1, end, next)...)
 	}
 	return result
@@ -846,8 +871,12 @@ func cloneSchematicSubstitution(source schematicSubstitution) schematicSubstitut
 }
 
 func instantiateSchematicTemplate(template string, substitution schematicSubstitution) (string, bool) {
+	return allStrictRules().instantiateSchematicTemplate(template, substitution)
+}
+
+func (policy strictRules) instantiateSchematicTemplate(template string, substitution schematicSubstitution) (string, bool) {
 	var result strings.Builder
-	for _, current := range template {
+	for index, current := range template {
 		variable, isMarker := schematicVariableForMarker(current)
 		if !isMarker {
 			result.WriteRune(current)
@@ -855,6 +884,9 @@ func instantiateSchematicTemplate(template string, substitution schematicSubstit
 		}
 		value, ok := substitution[variable]
 		if !ok || value == "" {
+			return "", false
+		}
+		if substitution[indefiniteSlotOverride] == "" && !strings.ContainsRune(substitution[singularLegacyOverride], variable) && !policy.singularBindingShapeSafe([]rune(template), len([]rune(template[:index])), []rune(result.String()+value), len([]rune(result.String())), value) {
 			return "", false
 		}
 		result.WriteString(value)
@@ -1737,8 +1769,8 @@ func (policy strictRules) matchSchematicInstantiationAlphabet(premises []Numbere
 		}
 
 		for _, substitution := range substitutions {
-			instantiatedAntecedent, antecedentOK := instantiateSchematicTemplate(antecedentTemplate, substitution)
-			instantiatedConsequent, consequentOK := instantiateSchematicTemplate(consequentTemplate, substitution)
+			instantiatedAntecedent, antecedentOK := policy.instantiateSchematicTemplate(antecedentTemplate, substitution)
+			instantiatedConsequent, consequentOK := policy.instantiateSchematicTemplate(consequentTemplate, substitution)
 			if !antecedentOK || !consequentOK {
 				continue
 			}
@@ -1772,6 +1804,9 @@ func (policy strictRules) matchSchematicInstantiationAlphabet(premises []Numbere
 func (policy strictRules) matchExistentialGeneralization(premises []NumberedArgumentStep, conclusion NumberedArgumentStep) schemaMatchOutcome {
 	best := schemaMatchOutcome{}
 	for _, instance := range policy.groundInstanceCandidates(premises[0].Statement) {
+		if !policy.egWitnessSafe(premises[0].Statement, instance.left) {
+			continue
+		}
 		for _, predicate := range unrestrictedExistentialPredicateCandidates(conclusion.Statement) {
 			candidate := policy.evaluateIdentities(clauseIdentity{
 				fmt.Sprintf("premise %d predicate", premises[0].Number), instance.right,
@@ -1791,6 +1826,9 @@ func (policy strictRules) matchExistentialIntroduction(premises []NumberedArgume
 	for _, existential := range existentialIntroductionConclusionCandidates(conclusion.Statement) {
 		for witnessIndex, witnessPremise := range premises {
 			for _, witness := range policy.groundInstanceCandidates(witnessPremise.Statement) {
+				if !policy.egWitnessSafe(witnessPremise.Statement, witness.left) {
+					continue
+				}
 				candidate := policy.evaluateTermIdentities(clauseIdentity{
 					fmt.Sprintf("premise %d witness class", witnessPremise.Number), witness.right,
 					fmt.Sprintf("conclusion %d existential class", conclusion.Number), existential.class,

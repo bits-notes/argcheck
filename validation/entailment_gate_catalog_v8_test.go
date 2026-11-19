@@ -7,6 +7,22 @@ import (
 )
 
 func TestCatalogV8Coverage(t *testing.T) {
+	// v44 by-design refusals: retained separately from the accepted controls.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected clause has no admitted opener.
+		"TestCatalogV8Coverage/moral_exact_live_repair": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected clause has no admitted opener.
+		"TestCatalogV8Coverage/three": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected clause has no admitted opener.
+		"TestCatalogV8Coverage/four": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected clause has no admitted opener.
+		"TestCatalogV8Coverage/embedded_and": {"scope.clause_start", "move the operator into each clause"},
+		// term.inflection_verbatim: class spellings differ.
+		"TestCatalogV8Coverage/existing_class_plural_normalization": {"term.inflection_verbatim", "singular 'every N'"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestCatalogV8Coverage/schematic_three": {"slot.value_singular", "Name the thing"},
+	}
+
 	tests := []struct {
 		name, argument string
 		want           bool
@@ -41,6 +57,9 @@ func TestCatalogV8Coverage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tt.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(tt.argument)
 			if report.Passed != tt.want || result.Passed != tt.want {
 				t.Fatalf("want passed=%v: report=%+v result=%+v", tt.want, report, result)
@@ -66,6 +85,11 @@ func TestPlainAndPartitionBound(t *testing.T) {
 }
 
 func TestPlainAndGateBound(t *testing.T) {
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestPlainAndGateBound/12": {"scope.clause_start", "move the operator into each clause"},
+	}
+
 	for _, count := range []int{12, 13} {
 		t.Run(fmt.Sprint(count), func(t *testing.T) {
 			var lines, clauses, citations []string
@@ -78,6 +102,9 @@ func TestPlainAndGateBound(t *testing.T) {
 			lines = append(lines, fmt.Sprintf("%d. If %s, then the result holds.", count+2, strings.Join(clauses, " and ")))
 			citations = append(citations, fmt.Sprint(count+2))
 			lines = append(lines, fmt.Sprintf("%d. Therefore, the result holds. [%s]", count+3, strings.Join(citations, ",")))
+			if listedStrictRefusal(t, strings.Join(lines, "\n"), refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(strings.Join(lines, "\n"))
 			if report.Passed != (count == 12) || result.Passed != (count == 12) {
 				t.Fatalf("unexpected cap result: %+v %+v", report, result)

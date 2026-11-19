@@ -30,10 +30,35 @@ func assertAcceptedStepParity(t *testing.T, argument NumberedArgument, forms []s
 }
 
 func TestAcceptedFixtureStepParity(t *testing.T) {
+	// v44 by-design refusals: retained separately from the accepted controls.
+	refused := map[string]strictRefusal{
+		// term.inflection_verbatim: class spellings differ.
+		"TestAcceptedFixtureStepParity/battery.json/L-TV-barbara": {"term.inflection_verbatim", "singular 'every N'"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestAcceptedFixtureStepParity/GB1.txt": {"slot.value_singular", "Name the thing"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestAcceptedFixtureStepParity/earman-norton-1987_A11.txt": {"slot.value_singular", "Name the thing"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestAcceptedFixtureStepParity/earman-norton-1987_A5.txt": {"slot.value_singular", "Name the thing"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestAcceptedFixtureStepParity/gettier-1963_A2.txt": {"slot.value_singular", "Name the thing"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestAcceptedFixtureStepParity/goldman-1967_A7.txt": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected clause has no admitted opener.
+		"TestAcceptedFixtureStepParity/hempel-oppenheim-1948_A23.txt": {"scope.clause_start", "move the operator into each clause"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestAcceptedFixtureStepParity/every_parcel_in_a_crate": {"slot.value_singular", "Name the thing"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestAcceptedFixtureStepParity/a_parcel_with_no_label": {"slot.value_singular", "Name the thing"},
+	}
+
 	// The 999 frozen accepted ASTs and their per-step forms use the same
 	// assertion in TestEntailmentGateV16AcceptedCompatibility.
 	check := func(t *testing.T, text string, pinned map[int]string) {
 		t.Helper()
+		if listedStrictRefusal(t, text, refused) {
+			return
+		}
 		argument, result := ParseNumberedArgument(text, numberedArgumentOptions{})
 		if !result.Passed {
 			t.Fatal(result.Message)
@@ -73,6 +98,9 @@ func TestAcceptedFixtureStepParity(t *testing.T) {
 			data, err := os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if listedStrictRefusal(t, string(data), refused) {
+				return
 			}
 			if filepath.Base(path) == "earman-norton-1987_A5.txt" {
 				// The fixture's premise has "theories, every", while its

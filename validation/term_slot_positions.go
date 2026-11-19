@@ -282,7 +282,7 @@ func (policy strictRules) indefiniteSlotDiagnosis(template string, premise Numbe
 	concrete := []rune(policy.comparisonClause(premise.Statement))
 	for _, substitution := range policy.unifySchematicTemplate(template, premise.Statement, relaxed) {
 		for variable, value := range substitution {
-			if variable == indefiniteSlotOverride {
+			if variable == indefiniteSlotOverride || variable == singularLegacyOverride {
 				continue
 			}
 			if _, preset := initial[variable]; preset {
@@ -293,6 +293,16 @@ func (policy strictRules) indefiniteSlotDiagnosis(template string, premise Numbe
 				continue
 			}
 			runeStart := len([]rune(string(concrete)[:start]))
+			marker := schematicVariableMarkers[variable]
+			templateRunes := []rune(template)
+			ti := strings.IndexRune(template, marker)
+			if ti < 0 {
+				continue
+			}
+			ti = len([]rune(template[:ti]))
+			if !policy.singularBindingSafe(templateRunes, ti, concrete, runeStart, value) {
+				return fmt.Sprintf("premise %d binds a schematic variable to %q; a quantity, plural, group or indefinite phrase need not be one thing, so a rule about each thing does not apply to it. Name the thing (with capitalization evidenced away from sentence start or Therefore/So/Thus/Hence), use a singular definite description (the dog), or state existence as its own premise and then name it. Write the phrase itself into the rule instead of a variable (%q)", premise.Number, value, literalRuleSuggestion(template, variable, value))
+			}
 			if policy.indefiniteBindingPositionSafe(concrete, runeStart, value) {
 				continue
 			}
@@ -307,7 +317,7 @@ func (policy strictRules) indefiniteSlotDiagnosis(template string, premise Numbe
 			}
 			if article := writtenIndefiniteBefore(strings.ToLower(string(concrete[:runeStart]))); article != "" {
 				return fmt.Sprintf(
-					"premise %d binds a schematic variable to %q just after %q, which the rule writes before the variable (%q); the phrase need not be %q plus a noun (\"a lot of people\"), so the schema cannot be instantiated with it. Drop %q from the rule and let the variable stand for the whole phrase (%q) when that phrase is an article, modifiers and one noun; otherwise write the phrase itself into the rule",
+					"premise %d binds a schematic variable to %q just after %q, which the rule writes before the variable (%q); the phrase need not be %q plus a noun (\"a lot of people\"), so the schema cannot be instantiated with it. Drop %q from the rule and let the variable stand for the whole phrase (%q) when that phrase is an evidenced name or singular definite description; otherwise write the phrase itself into the rule",
 					premise.Number,
 					value,
 					article,
@@ -415,13 +425,26 @@ func (policy strictRules) indefiniteSlotStepMessage(c NumberedArgumentStep, step
 		if !ok {
 			continue
 		}
-		for _, pair := range conditionalCandidatesPreservingCase(conditional.Statement) {
-			for _, conjunct := range conjunctiveAntecedentCandidatesOrSelf(pair.left) {
-				template, variables := policy.schematicTemplate(conjunct)
+		pairs := conditionalCandidatesPreservingCase(conditional.Statement)
+		// Counterfactual MP matches an auxiliary-stripped virtual conditional.
+		// Diagnose that same surface while preserving lowercase literal names.
+		marked, _ := replaceSchematicVariables(conditional.Statement)
+		for _, pair := range counterfactualPlainPairs(marked) {
+			for variable, marker := range schematicVariableMarkers {
+				pair.left = strings.ReplaceAll(pair.left, string(marker), string(variable))
+				pair.right = strings.ReplaceAll(pair.right, string(marker), string(variable))
+			}
+			pairs = append(pairs, pair)
+		}
+		for _, pair := range pairs {
+			for _, conjunct := range append(conjunctiveAntecedentCandidatesOrSelf(pair.left), pair.right) {
+				// Diagnosis must cover the same U/V/W/X/Y/Z alphabet as the
+				// successful relaxed matcher, not only its older X/Y/Z subset.
+				template, variables := policy.extendedSchematicTemplate(conjunct)
 				if len(variables) == 0 {
 					continue
 				}
-				for _, other := range c.Citations {
+				for _, other := range append(append([]int(nil), c.Citations...), c.Number) {
 					premise, ok := steps[other]
 					if !ok || other == id {
 						continue

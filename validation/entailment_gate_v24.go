@@ -539,7 +539,19 @@ func folInstance(q, instance *folFormula) string {
 	}
 	return ""
 }
-func folRule(ps []*folFormula, c *folFormula) string {
+func folRule(ps []*folFormula, c *folFormula) string { return allStrictRules().folRule(ps, c) }
+
+func (policy strictRules) folRule(ps []*folFormula, c *folFormula) string {
+	if policy.term_numeral {
+		if formulaNumeralTerm(c) {
+			return ""
+		}
+		for _, p := range ps {
+			if formulaNumeralTerm(p) {
+				return ""
+			}
+		}
+	}
 	if len(ps) == 1 {
 		p := ps[0]
 		if folSame(p, c) {
@@ -563,7 +575,7 @@ func folRule(ps []*folFormula, c *folFormula) string {
 		if p.op == "every" && folInstance(p, c) != "" {
 			return "universal instantiation"
 		}
-		if c.op == "some" && folInstance(c, p) != "" {
+		if c.op == "some" && folInstance(c, p) != "" && policy.egFormulaSafe(p, folInstance(c, p)) {
 			return "existential introduction"
 		}
 		if c.op == "equal" && c.terms[0] == c.terms[1] {
@@ -659,7 +671,7 @@ func (policy strictRules) gateFOL(c NumberedArgumentStep, steps map[int]Numbered
 		ps = append(ps, f)
 	}
 	if len(c.Ranges) == 0 {
-		if form := folRule(ps, target); form != "" {
+		if form := policy.folRule(ps, target); form != "" {
 			if form == "identity substitution" {
 				var cited []string
 				for _, id := range c.Citations {

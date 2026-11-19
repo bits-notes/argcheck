@@ -3,6 +3,12 @@ package validation
 import "testing"
 
 func TestCatalogV7MPDischargedBiconditionals(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV7MPDischargedBiconditionals/N1_steps_15_through_18_shape": {"scope.clause_start", "move the operator into each clause"},
+	}
+
 	positives := []struct {
 		name     string
 		argument string
@@ -34,6 +40,9 @@ func TestCatalogV7MPDischargedBiconditionals(t *testing.T) {
 
 	for _, test := range positives {
 		t.Run(test.name, func(t *testing.T) {
+			if listedStrictRefusal(t, test.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(test.argument)
 			if !result.Passed || !report.Passed {
 				t.Fatalf("gate failed: result=%#v report=%#v", result, report)

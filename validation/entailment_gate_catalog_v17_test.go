@@ -27,6 +27,16 @@ const relationFitchEE = `1. Some student greets Bob.
 6. Therefore, Some student greets Bob. [1,2-5]`
 
 func TestEntailmentGateCatalogV17(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// eg.subject_only: dedicated object witnesses remain conservatively refused.
+		"TestEntailmentGateCatalogV17/object_EG": {"eg.subject_only", "state the existential claim as its own premise"},
+		// eg.name_witness: the existential witness lacks the required name evidence.
+		"TestEntailmentGateCatalogV17/subject_EG": {"eg.name_witness", "state the existential claim as its own premise"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateCatalogV17/caused": {"eg.subject_only", "state the existential claim as its own premise"},
+	}
+
 	for _, tc := range []struct {
 		name string
 		p    []string
@@ -64,13 +74,18 @@ func TestEntailmentGateCatalogV17(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			arg := relationArgument(tc.p, tc.c)
+			if listedStrictRefusal(t, arg, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(arg)
 			if !result.Passed {
 				t.Fatalf("%s\n%s\n%+v", arg, result.Message, report)
 			}
 		})
 	}
-	for _, arg := range []string{relationFitchUG, relationFitchEE} {
+	// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+	assertStrictRefusal(t, relationFitchEE, "scope.clause_start", "move the operator into each clause")
+	for _, arg := range []string{relationFitchUG} {
 		if _, r := CheckEntailmentGate(arg); !r.Passed {
 			t.Fatalf("%s\n%s", arg, r.Message)
 		}

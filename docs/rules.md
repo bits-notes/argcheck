@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v42.1`)
+# Inference Rule Catalog (`v44.0`)
 
-`english-arg-validator` checks each conclusion step against the 121 inference forms in gate catalog `v42.1` (`english-arg-validator --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions (including `it's (not) the case that` for `it is (not) the case that`), and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`english-arg-validator` checks each conclusion step against the 121 inference forms in gate catalog `v44.0` (`english-arg-validator --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions (including `it's (not) the case that` for `it is (not) the case that`), and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -73,9 +73,9 @@ A consequent reference lets the bridge feed modus tollens:
 ## `schematic conjunctive modus ponens`
 
 - **Schema:** `If Φ(U..Z) and ... and Ψ(U..Z), then Ω(U..Z)`; `Φ(t_U..t_Z)`; ...; `Ψ(t_U..t_Z)` ⊢ `Ω(t_U..t_Z)` (up to 10 antecedent conjuncts under one consistent substitution for uppercase placeholders `U`, `V`, `W`, `X`, `Y`, `Z`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`slot.value_singular`):**
 
-```argcheck-accept schematic conjunctive modus ponens
+```argcheck-refused slot.value_singular | Name the thing | schematic conjunctive modus ponens
 1. If X is Y's mother and Z is X's brother, then Z is Y's uncle.
 2. Dana is Pat's mother.
 3. Lee is Dana's brother.
@@ -98,9 +98,9 @@ A consequent reference lets the bridge feed modus tollens:
 ## `conjunctive modus ponens`
 
 - **Schema:** `If P_1 and ... and P_n, then Q`; `P_1`; ...; `P_n` ⊢ `Q`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`):**
 
-```argcheck-accept conjunctive modus ponens
+```argcheck-refused scope.clause_start | move the operator into each clause | conjunctive modus ponens
 1. Rain falls.
 2. Wind blows.
 3. Snow melts.
@@ -285,9 +285,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `conjunction introduction`
 
 - **Schema:** `P`; `Q` ⊢ `P and Q` (or `It is the case both that P, and that Q`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`):**
 
-```argcheck-accept conjunction introduction
+```argcheck-refused scope.clause_start | move the operator into each clause | conjunction introduction
 1. Rain falls.
 2. Wind blows.
 3. Therefore, rain falls and wind blows. [1,2]
@@ -308,9 +308,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `n-ary conjunction introduction`
 
 - **Schema:** `P_1`; `P_2`; ...; `P_n` ⊢ `P_1, P_2, ..., and P_n` (or `P_1 and P_2 and ... and P_n`, for `3 <= n <= 6`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`):**
 
-```argcheck-accept n-ary conjunction introduction
+```argcheck-refused scope.clause_start | move the operator into each clause | n-ary conjunction introduction
 1. Rain falls.
 2. Wind blows.
 3. Snow melts.
@@ -333,9 +333,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `conjunction elimination`
 
 - **Schema:** `P and Q` ⊢ `P` (or `Q`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`):**
 
-```argcheck-accept conjunction elimination
+```argcheck-refused scope.clause_start | move the operator into each clause | conjunction elimination
 1. Rain falls and wind blows.
 2. Therefore, wind blows. [1]
 ```
@@ -354,9 +354,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `disjunction introduction`
 
 - **Schema:** `P` ⊢ `Either P or Q` (or `P or Q`, in either disjunct position).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`):**
 
-```argcheck-accept disjunction introduction
+```argcheck-refused scope.clause_start | move the operator into each clause | disjunction introduction
 1. Rain falls.
 2. Therefore, either rain falls or snow falls. [1]
 ```
@@ -375,9 +375,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `disjunctive syllogism`
 
 - **Schema:** `Either P or Q` (or `P or Q`); `It is not the case that P` ⊢ `Q` (and symmetrically when `Q` is negated).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`):**
 
-```argcheck-accept disjunctive syllogism
+```argcheck-refused scope.clause_start | move the operator into each clause | disjunctive syllogism
 1. Rain falls or snow falls.
 2. It is not the case that rain falls.
 3. Therefore, snow falls. [1,2]
@@ -440,9 +440,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `identity transitivity`
 
 - **Schema:** `a is identical to b`; `b is identical to c` ⊢ `a is identical to c` (also accepts `is identical with`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.constant_sides`):**
 
-```argcheck-accept identity transitivity
+```argcheck-refused identity.constant_sides | name the thing | identity transitivity
 1. Alpha is identical to beta.
 2. Beta is identical to gamma.
 3. Therefore, alpha is identical to gamma. [1,2]
@@ -463,9 +463,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `universal syllogism`
 
 - **Schema:** `Every A is B` (or `All As are Bs`); `Every B is C` ⊢ `Every A is C` (Barbara).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`term.inflection_verbatim`):**
 
-```argcheck-accept universal syllogism
+```argcheck-refused term.inflection_verbatim | singular 'every N' | universal syllogism
 1. All humans are mammals.
 2. Every mammal is mortal.
 3. Therefore, all humans are mortal. [1,2]
@@ -486,9 +486,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `universal negative syllogism`
 
 - **Schema:** `Every A is B`; `No B is C` (or `No C is B`) ⊢ `No A is C` (Celarent / Cesare).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`term.inflection_verbatim`):**
 
-```argcheck-accept universal negative syllogism
+```argcheck-refused term.inflection_verbatim | singular 'every N' | universal negative syllogism
 1. All whales are mammals.
 2. No mammal is a fish.
 3. Therefore, no whale is a fish. [1,2]
@@ -584,9 +584,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `universal instantiation`
 
 - **Schema:** `Every A is B` (or `All As are B`); `c is an A` ⊢ `c is B`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`term.inflection_verbatim`):**
 
-```argcheck-accept universal instantiation
+```argcheck-refused term.inflection_verbatim | singular 'every N' | universal instantiation
 1. All humans are mortal.
 2. Socrates is a human.
 3. Therefore, Socrates is mortal. [1,2]
@@ -607,9 +607,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `existential generalization`
 
 - **Schema:** `c is P` ⊢ `Something is P` / `There is something that is P` / `There exists something that is P`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`eg.name_witness`):**
 
-```argcheck-accept existential generalization
+```argcheck-refused eg.name_witness | state the existential claim as its own premise | existential generalization
 1. Sample R is defective.
 2. Therefore, there exists something that is defective. [1]
 ```
@@ -628,9 +628,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `existential introduction`
 
 - **Schema:** `c is an A`; `c is P_1`; ...; `c is P_k` ⊢ `Some A is P_1 and ... and P_k` (or `There exist As that are ...`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`eg.name_witness`):**
 
-```argcheck-accept existential introduction
+```argcheck-refused eg.name_witness | state the existential claim as its own premise | existential introduction
 1. Rex is a dog.
 2. Rex is friendly.
 3. Therefore, some dog is friendly. [1,2]
@@ -651,9 +651,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `existential counterexample`
 
 - **Schema:** `There exist As that are not B` (or `There exist As that are R and not B`) ⊢ `It is not the case that every A (that is R) is B`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`term.inflection_verbatim`):**
 
-```argcheck-accept existential counterexample
+```argcheck-refused term.inflection_verbatim | singular 'every N' | existential counterexample
 1. There exist cats that are not asleep.
 2. Therefore, it is not the case that every cat is asleep. [1]
 ```
@@ -739,9 +739,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `schematic existential introduction`
 
 - **Schema:** `Φ(a)` ⊢ `There is an X such that Φ(X)` (replacing every whole-term occurrence of ground individual `a` with uppercase placeholder `X`..`Z` or `U`..`W`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`eg.name_witness`):**
 
-```argcheck-accept schematic existential introduction
+```argcheck-refused eg.name_witness | state the existential claim as its own premise | schematic existential introduction
 1. Ada solved the puzzle.
 2. Therefore, there is an X such that X solved the puzzle. [1]
 ```
@@ -760,9 +760,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `identity substitution`
 
 - **Schema:** `a is identical to b` (or `a is identical with b`); `Φ(a)` ⊢ `Φ(b)` (or `Φ(b)` ⊢ `Φ(a)`), replacing every whole-term occurrence of the ground term.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.constant_sides`):**
 
-```argcheck-accept identity substitution
+```argcheck-refused identity.constant_sides | name the thing | identity substitution
 1. Hesperus is identical to Phosphorus.
 2. Hesperus is visible at dusk.
 3. Therefore, Phosphorus is visible at dusk. [1,2]
@@ -1353,9 +1353,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `relational existential generalization`
 
 - **Schema:** `R(..., a, ...)`; `a is a C` ⊢ `R(..., some C, ...)`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`eg.subject_only`):**
 
-```argcheck-accept relational existential generalization
+```argcheck-refused eg.subject_only | state the existential claim as its own premise | relational existential generalization
 1. Alice greets Bob.
 2. Bob is a teacher.
 3. Therefore, Alice greets some teacher. [1,2]
@@ -1709,9 +1709,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `existential elimination`
 
 - **Schema:** `Some A is B`; subproof `i..j` starting with `Suppose c is an A and c is B.` (for fresh `c`) and ending with `c`-free `Q.` ⊢ `Q. [k,i-j]`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`eg.name_witness`):**
 
-```argcheck-accept existential elimination
+```argcheck-refused eg.name_witness | state the existential claim as its own premise | existential elimination
 1. Some man is mortal.
 | 2. Suppose a is a man and a is mortal.
 | 3. Therefore, a is mortal. [2]
@@ -1760,9 +1760,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `relational existential elimination`
 
 - **Schema:** `R(..., some A, ...)`; subproof `i..j` starting with `Suppose c is an A and R(..., c, ...).` (for fresh `c`) and ending with `c`-free `Q.` ⊢ `Q. [k,i-j]`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`):**
 
-```argcheck-accept relational existential elimination
+```argcheck-refused scope.clause_start | move the operator into each clause | relational existential elimination
 1. Some student admires Bob.
 | 2. Suppose c is a student and c admires Bob.
 | 3. Therefore, c is a student. [2]
@@ -1917,9 +1917,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `property generalization`
 
 - **Schema:** Subproof `i..j` starting with `Let P be an arbitrary property that b has.` (for fresh `P`) and ending with `a has P.` ⊢ `a has every property that b has. [i-j]`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.constant_sides`):**
 
-```argcheck-accept property generalization
+```argcheck-refused identity.constant_sides | name the thing | property generalization
 1. Socrates is identical to Plato.
 | 2. Let P be an arbitrary property that Plato has.
 | 3. Therefore, Socrates has P. [1,2]
@@ -1991,7 +1991,7 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `distinguishing property nonidentity`
 
 - **Schema:** `a has some property that b lacks` ⊢ `It is not the case that a is identical to b`.
-- **Accepted:**
+- **Accepted example:**
 
 ```argcheck-accept distinguishing property nonidentity
 1. Socrates has some property that Plato lacks.
@@ -2079,9 +2079,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `FOL conjunction introduction`
 
 - **Schema:** `Φ`; `Ψ` ⊢ `(Φ) and (Ψ)` (when explicit-variable FOL is active).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`; lowercase constant or letter eigenvariable is not name evidence):**
 
-```argcheck-accept FOL conjunction introduction
+```argcheck-refused scope.clause_start | move the operator into each clause | FOL conjunction introduction
 1. every x is such that (x is red).
 2. alice is blue.
 3. Therefore, (every x is such that (x is red)) and (alice is blue). [1,2]
@@ -2102,9 +2102,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `FOL conjunction elimination`
 
 - **Schema:** `(Φ) and (Ψ)` ⊢ `Φ` (or `Ψ`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`; lowercase constant or letter eigenvariable is not name evidence):**
 
-```argcheck-accept FOL conjunction elimination
+```argcheck-refused scope.clause_start | move the operator into each clause | FOL conjunction elimination
 1. (every x is such that (x is red)) and (alice is blue).
 2. Therefore, every x is such that (x is red). [1]
 ```
@@ -2123,9 +2123,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `FOL disjunction introduction`
 
 - **Schema:** `Φ` ⊢ `either (Φ) or (Ψ)` (or `either (Ψ) or (Φ)`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`; lowercase constant or letter eigenvariable is not name evidence):**
 
-```argcheck-accept FOL disjunction introduction
+```argcheck-refused scope.clause_start | move the operator into each clause | FOL disjunction introduction
 1. every x is such that (x is red).
 2. Therefore, either (every x is such that (x is red)) or (alice is blue). [1]
 ```
@@ -2319,9 +2319,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `FOL existential introduction`
 
 - **Schema:** `Φ(c)` ⊢ `some v is such that (Φ(v))` (where replacing `v` by `c` in `Φ(v)` yields `Φ(c)`, allowing selective replacement of some or all occurrences of `c`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`explicit_variable_fol`; lowercase constant or letter eigenvariable is not name evidence):**
 
-```argcheck-accept FOL existential introduction
+```argcheck-refused explicit_variable_fol | bind variables inside is such that | FOL existential introduction
 1. alice admires alice.
 2. Therefore, some x is such that (x admires alice). [1]
 ```
@@ -2340,9 +2340,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `FOL identity reflexivity`
 
 - **Schema:** `Ψ(c)` ⊢ `c is identical to c` (when `c` occurs as a constant in the cited FOL premise).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.constant_sides`; lowercase constant or letter eigenvariable is not name evidence):**
 
-```argcheck-accept FOL identity reflexivity
+```argcheck-refused identity.constant_sides | name the thing | FOL identity reflexivity
 1. (every x is such that (x is red)) and (alice is red).
 2. Therefore, alice is identical to alice. [1]
 ```
@@ -2361,9 +2361,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 ## `FOL identity substitution`
 
 - **Schema:** `a is identical to b`; `Φ(a)` ⊢ `Φ(a/b)` (replacing one or more free occurrences of `a` with `b`, or `b` with `a`, including inside quantifier scopes), where every replaced occurrence is in a safe position (see "Identity substitution: safe positions" below).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.constant_sides`; lowercase constant or letter eigenvariable is not name evidence):**
 
-```argcheck-accept FOL identity substitution
+```argcheck-refused identity.constant_sides | name the thing | FOL identity substitution
 1. alice is identical to blair.
 2. every x is such that (alice admires x).
 3. Therefore, every x is such that (blair admires x). [1,2]
@@ -2403,7 +2403,7 @@ admired by`) and raising forms (`is believed to`, `is said to`), and anything
 inside a that-clause. The message names the reason. If such a step is sound,
 state it as a premise.
 
-```argcheck-accept identity substitution
+```argcheck-refused identity.constant_sides | name the thing | identity substitution
 1. Superman can fly.
 2. Superman is identical to Clark.
 3. Therefore, Clark can fly. [1,2]
@@ -2498,9 +2498,9 @@ state it as a premise.
 ## `FOL existential elimination`
 
 - **Schema:** `some v is such that (Φ(v))`; subproof `i..j` starting with `Suppose Φ(c).` (for fresh `c`) and ending with `c`-free `Ψ.` ⊢ `Ψ. [k,i-j]`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`scope.clause_start`; lowercase constant or letter eigenvariable is not name evidence):**
 
-```argcheck-accept FOL existential elimination
+```argcheck-refused scope.clause_start | move the operator into each clause | FOL existential elimination
 1. some x is such that ((x is red) and (some y is such that (y is blue))).
 | 2. Suppose (witness is red) and (some y is such that (y is blue)).
 | 3. Therefore, some y is such that (y is blue). [2]
@@ -2688,9 +2688,9 @@ state it as a premise.
 ## `counting subset`
 
 - **Schema:** `At least m F R`; `At most n F that R is P` ⊢ `Some F that R is not P` (pigeonhole / subset difference for `1 <= n < m <= 5`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`eg.name_witness`):**
 
-```argcheck-accept counting subset
+```argcheck-refused eg.name_witness | state the existential claim as its own premise | counting subset
 1. At least two labs signed the pledge.
 2. At most one lab that signed the pledge is red.
 3. Therefore, some lab that signed the pledge is not red. [1,2]
@@ -2732,9 +2732,9 @@ state it as a premise.
 ## `description substitution`
 
 - **Schema:** `The G is a`; `The G P` ⊢ `P(a)` (Russellian definite-description substitution for capitalized constant `a` and verbatim restrictor `G`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.extensional_context`):**
 
-```argcheck-accept description substitution
+```argcheck-refused identity.extensional_context | state the substituted claim as a premise | description substitution
 1. The author of Waverley is Scott.
 2. The author of Waverley wrote Ivanhoe.
 3. Therefore, Scott wrote Ivanhoe. [1,2]
@@ -2779,9 +2779,9 @@ state it as a premise.
 ## `description elimination`
 
 - **Schema:** `The G is a` ⊢ `a is a G`, or `The G P` ⊢ `Some G` / `Exactly one G`.
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.extensional_context`):**
 
-```argcheck-accept description elimination
+```argcheck-refused identity.extensional_context | state the substituted claim as a premise | description elimination
 1. The author of Waverley is Scott.
 2. Therefore, Scott is an author of Waverley. [1]
 ```
@@ -2801,9 +2801,9 @@ state it as a premise.
 ## `description uniqueness`
 
 - **Schema:** `The G is a`; `b is a G` ⊢ `b is a` (identifying any member of `G` with the referent of `The G`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.constant_sides`):**
 
-```argcheck-accept description uniqueness
+```argcheck-refused identity.constant_sides | name the thing | description uniqueness
 1. The author of Waverley is Scott.
 2. Blair is an author of Waverley.
 3. Therefore, Blair is Scott. [1,2]
@@ -2824,9 +2824,9 @@ state it as a premise.
 ## `description negation`
 
 - **Schema:** Scope-safe reasoning with negated definite descriptions, such as `The G is a`; `It is not the case that the G P` (or `The G is not P`) ⊢ `It is not the case that P(a)` (or `a is not P`).
-- **Accepted:**
+- **Valid form, refused by v44 strict grammar (`identity.extensional_context`):**
 
-```argcheck-accept description negation
+```argcheck-refused identity.extensional_context | state the substituted claim as a premise | description negation
 1. The author of Waverley is Scott.
 2. It is not the case that the author of Waverley is red.
 3. Therefore, it is not the case that Scott is red. [1,2]
@@ -2961,27 +2961,7 @@ Leading attitudes, impersonal `It is <adjective> that` reports, and sentence
 adverbs now require explicit grouping when followed by whole-clause
 coordination. For example, `Perhaps A and B` must be written `(Perhaps A) and B`
 or `Perhaps (A and B)`, or with explicit `both...and` / `either...or`.
-The check still exempts relative clauses, quoted text, `whether or not`,
-and bare noun-phrase coordination, such as `Everyone who sings or dances
-and reads is happy` or `Ann and Bob are friends or colleagues`. **Known
-limitation:** these exemptions cover the containing clause, so an ungrouped
-outer connective alongside such an embedded context can escape this syntax
-check. Syntax acceptance does not certify an inference inside an opaque clause.
-Use explicit clause grouping and separate proof steps when that distinction
-matters. Literal `atom{...}` and `name{...}` contents are not grouping syntax.
-
-Only connectives that join whole clauses count. A connective joins clauses
-when the text after it opens a clause: a capitalized word or single-letter
-term (a name, schematic letter or variable), a pronoun, a quantifier such as
-`every` or `nobody`, a logical operator, or a determiner followed by a verb
-before the next connective (`or the dog barks`). Lower-case content words
-continue a noun or verb phrase, so `U is a bad or catastrophic outcome`,
-`fumbling or bumbling` and `degrees of evidence or a special probability logic`
-do not count as a clause-level `or`. The entailment gate keeps its earlier
-reading for such sentences. **Known limitations:** this is a surface test, not
-a parser. Names written in lower case are not recognized as clause starts, and
-a single-letter term inside a noun phrase (`a version of Y or Z`) is treated as
-a clause start.
+Since v44.0, relative clauses, quotations, lowercase names and single-letter terms cannot exempt a containing mixed connective sentence from the final extraction guard. An unchanged whole atom can still be reused. Explicit parentheses or both/either scaffolds must establish the grouping before its parts can be inspected.
 
 Existing parenthetical identifiers such as `definition (a)`, `condition (b)`,
 and `proposition (e)` remain atomic labels, not logical grouping. Parenthetical annotations
@@ -3031,7 +3011,7 @@ clause identity.
 3. Therefore, The observer imagines Alpha is warm. [1,2]
 ```
 
-```argcheck-accept notation equivalence
+```argcheck-refused scope.clause_start | move the operator into each clause | notation equivalence
 1. Alpha eats, shoots, and leaves.
 2. Therefore, Alpha eats, shoots and leaves. [1]
 ```
@@ -3100,8 +3080,9 @@ ending in `-ly`, such as `Arguably`, `Purportedly`, `Hypothetically`, and
 (`In the story`, `Under the law of likelihood`, `According to Bob`, `As per the
 log`, `In view of ...`), with or without a comma. A capitalized word that
 also appears capitalized mid-sentence elsewhere in the argument is a name, not
-an adverb. Bare-noun, gerund and adjective subjects (`Beliefs ...`,
-`Human value ...`) are subjects. The message suggests moving the adverb or
+an adverb under the older recognizer. Since v44.0, initial -ing words are
+refused even with a gerund-subject reading, and inspected clauses must use
+controlled clause starts. The message suggests moving the adverb or
 frame out, or rewording so the sentence starts with its subject (`Rationalist
 notions that are deeply held ...` instead of `Deeply held rationalist notions
 ...`).
@@ -3159,18 +3140,99 @@ data. `TestStrictNotesExamples` checks every example and its concrete fix.
 | rule id | name | since | why | also refuses | fix |
 | --- | --- | --- | --- | --- | --- |
 | `opener.frame` | Fronted frame | v36.0 | A phrase before the subject may scope over the whole sentence: 'According to the report, A and B' attributes both claims, so A alone is not certified. | 1. If X is registered, then X is eligible.<br>2. In 2019 the firm is registered.<br>3. Therefore, in 2019 the firm is eligible. [1,2] | Move the time phrase after the predicate, including in the schema: "If X is registered in 2019, then X is eligible in 2019." |
-| `opener.adverb` | Fronted adverb | v37.0 | A sentence adverb may weaken or qualify the whole claim: 'Arguably A and B' may assert only that A and B is arguable. | 1. If X is safe, then X is useful.<br>2. Highly reliable machinery is safe.<br>3. Therefore, highly reliable machinery is useful. [1,2] | Start with the subject: "Machinery that is highly reliable is safe." Use the same wording in the conclusion. |
+| `opener.adverb` | Fronted adverb | v37.0 | A sentence adverb may weaken or qualify the whole claim: 'Arguably A and B' may assert only that A and B is arguable. | 1. If X is safe, then X is useful.<br>2. Highly reliable machinery is safe.<br>3. Therefore, highly reliable machinery is useful. [1,2] | Start with the subject: "The reliable machine is safe." Use the same wording in the conclusion. |
 | `coordination.clause` | Clause coordination after a verb | v36.0 | In 'The observer saw A and B left', 'and' may join two objects or two whole clauses, so splitting off 'B left' is not certified. | 1. The pump malfunctioned.<br>2. The valve stuck.<br>3. Therefore, the pump malfunctioned and the valve stuck. [1,2] | Write "Both the pump malfunctioned and the valve stuck." |
 | `comma.exact` | Commas must match | v36.0 | A comma can change grouping ('A, and B or C' differs from 'A and B or C'), so clauses must repeat their punctuation exactly. | 1. Every device is small, light and portable.<br>2. Alpha is a device.<br>3. Therefore, Alpha is small, light, and portable. [1,2] | Repeat the clause with exactly the same commas wherever it is reused. |
 | `identity.safe_position` | Identity substitution only in subjects | v35.0 | Substituting co-referring names inside an attitude or other opaque context can change truth. The catalog therefore permits identity substitution only in identity sentences and plain clause subjects. | 1. Alpha is identical to Beta.<br>2. The robot kicks Alpha.<br>3. Therefore, the robot kicks Beta. [1,2] | State the substituted sentence as a premise: "The robot kicks Beta." This supplies the missing claim; it does not prove it from the original premises. |
 | `slot.indefinite_object` | Indefinite in an object position | v39.0 | An indefinite object need not pick anything out: 'The robot is looking for a unicorn' does not establish that a unicorn exists. | 1. If the robot admires X, then X is admirable.<br>2. The robot admires a hero.<br>3. Therefore, a hero is admirable. [1,2] | Use a name in the slot: "The robot admires Alpha." Conclude "Alpha is admirable." This changes the premise to identify a particular hero. |
-| `slot.indefinite_written` | Indefinite written before a variable | v43.0 | When the rule writes 'a X', the instance need not be an article plus a noun: 'Bob greets a lot of people' would make X 'lot of people'. The catalog has no lexicon to tell that from 'a dog', so such a variable is refused in every position. | 1. If Rex is a X, then Fido is a X.<br>2. Rex is a dog.<br>3. Therefore, Fido is a dog. [1,2] | Drop the article and let the variable stand for the whole phrase: "If Rex is X, then Fido is X" with X = "a dog". This works only when the phrase is an article, modifiers and one noun; otherwise write the phrase itself into the rule. |
-| `slot.indefinite_value` | Indefinite value that need not name one thing | v43.0 | An indefinite value is accepted only as a lone 'someone' or as a/an, some or one plus modifiers and one noun with nothing after it. A quantity or complement phrase ('a lot of people', 'a friend of Bob', 'a few runners') need not be one thing. Known limit: a bare idiom such as 'a lot' still passes. | 1. If X arrived, then X is someone who arrived.<br>2. A friend of Bob arrived.<br>3. Therefore, a friend of Bob is someone who arrived. [1,2] | Write the phrase itself into the rule: "If a lot of people arrived, then a lot of people is someone who arrived." The rule then claims exactly what it says; no variable is filled with the phrase. |
-| `slot.modified_quantifier` | Modified quantifier in a term slot | v36.0 | A modified quantifier ('more than two robots', 'nearly all firms') is not an individual, so it cannot fill X or instantiate a universal. | 1. If X is red, then X is warm.<br>2. Nearly every robot is red.<br>3. Therefore, nearly every robot is warm. [1,2] | Use a name in the slot: "Alpha is red." Conclude "Alpha is warm." This certifies an individual instance rather than the quantified claim. |
+| `slot.indefinite_written` | Indefinite written before a variable | v43.0 | When the rule writes 'a X', the instance need not be an article plus a noun: 'Bob greets a lot of people' would make X 'lot of people'. The catalog has no lexicon to tell that from 'a dog', so such a variable is refused in every position. | 1. If Rex is a X, then Fido is a X.<br>2. Rex is a dog.<br>3. Therefore, Fido is a dog. [1,2] | Write the phrase itself into the rule ("If Rex is a dog, then Fido is a dog"), or use a name or singular definite description. |
+| `slot.indefinite_value` | Indefinite value that need not name one thing | v43.0 | The v43.0 shape check requires a lone indefinite pronoun or a/an, some or one plus modifiers and one noun with nothing after it. A quantity or complement phrase ('a lot of people', 'a friend of Bob', 'a few runners') need not be one thing. Since v44.0, slot.value_singular also refuses the remaining indefinite values. | 1. If X arrived, then X is someone who arrived.<br>2. A friend of Bob arrived.<br>3. Therefore, a friend of Bob is someone who arrived. [1,2] | Write the phrase itself into the rule: "If a lot of people arrived, then a lot of people is someone who arrived." The rule then claims exactly what it says; no variable is filled with the phrase. |
+| `slot.value_singular` | Schematic value must be a singular term | v44.0 | A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Only evidenced proper names and singular definite descriptions fill term slots. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values. | 1. If X arrived, then X was seen.<br>2. A dog arrived.<br>3. Therefore, a dog was seen. [1,2] | Name the thing (Rex arrived), with internal capitals or capitalization evidenced somewhere other than sentence start or after Therefore/So/Thus/Hence; or use a singular definite description (the dog). Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable. |
+| `slot.modified_quantifier` | Modified quantifier in a term slot | v36.0 | A modified quantifier ('more than two robots', 'nearly all firms') is not an individual, so it cannot fill X or instantiate a universal. | 1. If X is red, then X is warm.<br>2. Nearly every robot is red.<br>3. Therefore, nearly every robot is warm. [1,2] | Use a singular definite description: "The robot is red." Conclude "The robot is warm." This certifies an individual instance rather than the quantified claim. |
 | `slot.quantity` | Quantity expression in a term slot | v38.0 | A quantity phrase ('two robots', 'a minority of voters', 'zero cases') may mean exactly that many, so it is not an individual for X or for instantiation. Since v43.0 the rule refuses only readings that are ambiguous ('exactly two'); collective quantity phrases such as 'a group of robots' are refused by slot.indefinite_value instead, so no step valid on every reading is refused by this rule alone. |  | Name the group: "The team is registered." Conclude "The team is eligible." |
-| `term.clause_inside` | Clause inside a term | v37.0 | A term that contains a finite verb with a complement may hide an attitude or embedded claim: 'the observer reckons Alpha is red' does not give that Alpha is red. | 1. If X are useful, then X are valuable.<br>2. Software exploits not known to humans are useful.<br>3. Therefore, software exploits not known to humans are valuable. [1,2] | Name the thing: "The exploits are useful." Conclude "The exploits are valuable." |
+| `term.clause_inside` | Clause inside a term | v37.0 | A term that contains a finite verb with a complement may hide an attitude or embedded claim: 'the observer reckons Alpha is red' does not give that Alpha is red. | 1. If X are useful, then X are valuable.<br>2. Software exploits not known to humans are useful.<br>3. Therefore, software exploits not known to humans are valuable. [1,2] | Name the thing: "The exploit is useful." Conclude "The exploit is valuable." |
 | `noun.pluralia_tantum` | Plural-only noun | v37.0 | Some -s nouns are not plurals of the stripped word ('tongs' is not more than one 'tong'), so singular/plural matching is refused for them. | 1. All glasses are fragile.<br>2. The cup is a glass.<br>3. Therefore, the cup is fragile. [1,2] | Use the singular noun consistently: "Every glass is fragile." |
 | `conditional.postposed_if` | Postposed 'if' after a verb or adjective | v37.0 | A verb or adjective before 'if' can introduce a whether-question rather than a condition; postposed conditionals are recognized only in conservative surface forms. | 1. The machine vibrates if the motor runs.<br>2. The motor runs.<br>3. Therefore, the machine vibrates. [1,2] | Write "If the motor runs, then the machine vibrates." |
 | `relation.object_extensional` | Instantiation into an object position | v38.0 | The object of an unlisted verb may be intensional: awaiting every guest does not license the same substitutions as greeting every guest. Object instantiation is restricted to a closed verb list. | 1. The robot admires every hero.<br>2. Alpha is a hero.<br>3. Therefore, the robot admires Alpha. [1,2] | State the instance as a premise: "The robot admires Alpha." This supplies the missing claim; it does not prove it from the original premises. |
 | `unless.anaphor` | Pronoun across 'unless' | v38.0 | A pronoun after 'unless' may point back into the main clause, so 'A unless it is dead' cannot be split into independent clauses. | 1. The alarm sounds unless this battery is dead.<br>2. It is not the case that this battery is dead.<br>3. Therefore, the alarm sounds. [1,2] | Replace "this battery" with "the battery" in both premises. |
+| `slot.description_shape` | Short definite descriptions | v44.0 | A long description may swallow a finite clause or a second name. | 1. If X is red, then X is warm.<br>2. The big red dog is red.<br>3. Therefore, the big red dog is warm. [1,2] | Name it, or use 'the dog'. |
+| `slot.one_type` | One type per rule variable | v44.0 | A clause-slot occurrence must not smuggle a clause into another occurrence used as a term. | 1. If when X is red bob smiles, then X is warm.<br>2. When the dog is red bob smiles.<br>3. Therefore, the dog is warm. [1,2] | Name the thing in every occurrence, or write the phrase into the rule. |
+| `eg.subject_only` | Subject witnesses only | v44.0 | An object or passive subject may occur in an intensional position without asserting its existence. | 1. Lois greets Zeus.<br>2. Therefore, there is an X such that Lois greets X. [1] | State the existential claim as its own premise. |
+| `eg.name_witness` | Named existential witnesses | v44.0 | A definite may covary with another quantifier; descriptions do not fix one witness. | 1. The dog is red.<br>2. Therefore, something is red. [1] | State the existential claim as its own premise, or use an evidenced proper name in an unquantified subject clause. |
+| `term.numeral` | No numeral-led terms | v44.0 | A numeral phrase can state an exact quantity rather than identify one constant. | 1. All rodents are animals.<br>2. Six mice are rodents.<br>3. Therefore, six mice are animals. [1,2] | Name the thing, or use 'the mouse'. |
+| `identity.constant_sides` | Constant identity sides | v44.0 | Pronouns can shift referent and quantities need not identify one object. | 1. He is identical to Alpha.<br>2. He is identical to Beta.<br>3. Therefore, Alpha is identical to Beta. [1,2] | Name the thing, or use 'the dog' on each side. |
+| `identity.extensional_context` | Closed extensional identity contexts | v44.0 | An unlisted predicate may describe an intensional role under which co-referring names cannot be exchanged. | 1. The man is identical to Clark.<br>2. The man is famous as a hero.<br>3. Therefore, Clark is famous as a hero. [1,2] | State the substituted claim as a premise. |
+| `slot.letter_in_name` | Letters adjacent to names | v44.0 | A schematic letter may be a literal component of Model U or Malcolm X. | 1. If Model U is red, then Model U is warm.<br>2. Model U is red.<br>3. Therefore, Model U is warm. [1,2] | Use a variable away from names, or write the name out. |
+| `term.inflection_verbatim` | Verbatim noun inflection | v44.0 | A plural surface may not denote instances of the stem guessed by deleting its suffix. | 1. All dogs are wet.<br>2. The dog is a dog.<br>3. Therefore, the dog is wet. [1,2] | Write the rule with singular 'every N' (Every dog is wet). |
+| `scope.mixed_andor` | Mixed connective scope | v44.0 | A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it. | 1. Ann is a singer who dances and Bob is happy or Cal reads.<br>2. Therefore, Ann is a singer who dances. [1] | Use 'both … and' or 'either … or' to show the grouping. |
+| `scope.clause_start` | Controlled clause starts | v44.0 | An operator such as perhaps inside a negated conjunction may scope over both clauses; distributing the negation changes that scope. | 1. It is not the case that perhaps the lamp is lit and the door is open.<br>2. Therefore, either it is not the case that perhaps the lamp is lit or it is not the case that the door is open. [1] | Move the operator into each clause, or state the claim as an explicit premise. |
+| `opener.ing_frame` | Initial -ing frame | v44.0 | Following the script may qualify the entire conjunction rather than name its subject. Even genuine gerund subjects are refused when inspected. | 1. It is not the case that it is not the case that swimming is healthy.<br>2. Therefore, swimming is healthy. [1] | Move the frame into each clause, or state the framed claim as its own premise. |
+| `scope.elided_copula` | Closed copula elision | v44.0 | In Either the men are quiet or fish, fish may be a verb rather than a predicate with an omitted copula. Unknown predicates are not expanded. | 1. Either the men are quiet or fish.<br>2. Therefore, either the men are quiet or the men are fish. [1] | Repeat the subject and verb: 'or the men are fish'. |
+| `scope.description_negation` | Description negation scope | v44.0 | Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion. | 1. It is not the case that the present king of France is bald.<br>2. Therefore, the present king of France is not bald. [1] | Add 'There is exactly one present king of France' and name it, or keep the wide negation. |
+| `opener.ly_exception` | Adverb-capable noun exceptions | v44.0 | Daily, early and only can be adverbs with scope over an entire sentence, even when they also have nominal uses. | 1. It is not the case that it is not the case that daily the lamp is lit.<br>2. Therefore, daily the lamp is lit. [1] | Move the adverb into each clause, or state the framed claim as its own premise. |
 <!-- strictness-notes:end -->
+
+## v44.0: singular schematic term values
+
+`slot.value_singular` is enabled by default. Term slots admit only evidenced
+proper names (1–4 tokens) or singular definite descriptions without
+coordination or relative clauses; the bounded “the N of D” shape below is allowed. Indefinites are refused even
+when they have the v43.0 article-plus-noun shape. Pure whole-clause variables retain their matching behavior; predicate positions
+after a copula take any value. Variables also used as terms remain constrained. See the strict note above and the v44.0 coverage entry.
+
+Partial noun-head slots such as `the X` remain refused when X alone is not
+an allowed term; put the entire description in X or write it literally.
+
+### v44.0 strict term and binding rules
+
+- `slot.description_shape`: A long description may swallow a finite clause or a second name. Name it, or use 'the dog'.
+- `slot.one_type`: A clause-slot occurrence must not smuggle a clause into another occurrence used as a term. Name the thing in every occurrence, or write the phrase into the rule.
+- `eg.subject_only`: An object or passive subject may occur in an intensional position without asserting its existence. State the existential claim as its own premise.
+- `eg.name_witness`: A definite may covary with another quantifier; descriptions do not fix one witness. State the existential claim as its own premise, or use an evidenced proper name in an unquantified subject clause.
+- `term.numeral`: A numeral phrase can state an exact quantity rather than identify one constant. Name the thing, or use 'the mouse'.
+- `identity.constant_sides`: Pronouns can shift referent and quantities need not identify one object. Name the thing, or use 'the dog' on each side.
+- `identity.extensional_context`: An unlisted predicate may describe an intensional role under which co-referring names cannot be exchanged. State the substituted claim as a premise.
+- `slot.letter_in_name`: A schematic letter may be a literal component of Model U or Malcolm X. Use a variable away from names, or write the name out.
+- `term.inflection_verbatim`: A plural surface may not denote instances of the stem guessed by deleting its suffix. Write the rule with singular 'every N' (Every dog is wet).
+
+Descriptions admit at most one modifier plus a head. Mixed subordinate-clause/term schemas are conservatively refused outright. EG uses a closed active-verb/copular grammar and refuses compound matrices and other quantified material. Noun inflection is verbatim in ordinary matching and counting classes; rewrite plural rules with singular “every N”. Ordinary initial-capital name evidence must appear away from sentence start and Therefore/So/Thus/Hence; internal capitals also count at sentence start. These intentional costs and the three inflection acceptance sites are detailed in the v44.0 coverage entry.
+## v44.0: strict scope and connective rules
+
+- **`scope.mixed_andor` — Mixed connective scope.** A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it. Use 'both … and' or 'either … or' to show the grouping.
+- **`scope.clause_start` — Controlled clause starts.** An operator such as perhaps inside a negated conjunction may scope over both clauses; distributing the negation changes that scope. Move the operator into each clause, or state the claim as an explicit premise.
+- **`opener.ing_frame` — Initial -ing frame.** Following the script may qualify the entire conjunction rather than name its subject. Even genuine gerund subjects are refused when inspected. Closed-class clause starters such as `something`, `anything`, `everything`, and `nothing` are not frames. Move the frame into each clause, or state the framed claim as its own premise.
+- **`scope.elided_copula` — Closed copula elision.** In Either the men are quiet or fish, fish may be a verb rather than a predicate with an omitted copula. Unknown predicates are not expanded. Repeat the subject and verb: 'or the men are fish'.
+- **`scope.description_negation` — Description negation scope.** Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion. Add 'There is exactly one present king of France' and name it, or keep the wide negation.
+- **`opener.ly_exception` — Adverb-capable noun exceptions.** Daily, early and only can be adverbs with scope over an entire sentence, even when they also have nominal uses. Move the adverb into each clause, or state the framed claim as its own premise.
+
+These final-boundary checks precede normalized equality and apply independently of the certificate name. Whole literal reiteration remains opaque. The conservative scope scan may also refuse nominal coordination, quoted connectives, lowercase names, bare noun subjects, and genuine gerund subjects; use explicit grouping and full clauses. Copula elision requires one word from `singularPredicateHeads`.
+
+### v44.0 refinements after round 2
+
+Predicate positions after a copula accept any value, as in v43.0's
+`afterCopula`: “If Rex is X, then Fido is X” admits “euphoric” and “a hero”.
+A variable also used as a term still needs a singular value at that occurrence.
+Internal capitals (AIXI, McCarthy) provide name evidence even at sentence
+start; an ordinary initial capital alone does not.
+
+The antecedent and consequent of “If P, then Q” are checked separately for
+scope. A compound parenthesised operand is checked part by part, so grouping
+cannot hide an unsafe clause start. Expletive “there” followed by be or a
+modal, and a possessive subject, open a clause. A verb contraction is not a
+possessive: “John's dog” and “John's running” have different shapes.
+
+“The N of D” is a singular term when the head is singular and D is an
+evidenced name or an admitted singular definite description, for example
+“the death of the child”. Nested of-complements, indefinite complements,
+plural heads and quantity/partitive heads remain refused.
+
+Refusal diagnostics cover U/V/W as well as X/Y/Z. When a single v44 rule
+accounts for a failed binding, its explanation and rewrite take priority over
+the older indefinite-object fallback. This changes messages, not verdicts.
+
+Closed `atom{...}` literals remain opaque to the English scope scan. The
+canonical “both that …, and that …” scaffold, explicit comma grouping, and
+a conditional used as a complete operand retain their own boundaries. Wide
+negation around an identity is checked around its two terms, rather than
+being mistaken for part of the left term. A conservative witness refusal
+does not claim that an alternative scope reading has a countermodel.

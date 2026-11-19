@@ -3,21 +3,39 @@ package validation
 // strictRules belongs to one evaluation. Diagnostic retries copy it; no mutable
 // package state or locks are needed, including for concurrent library callers.
 type strictRules struct {
-	opener_frame                bool
-	opener_adverb               bool
-	coordination_clause         bool
-	comma_exact                 bool
-	identity_safe_position      bool
-	slot_indefinite_object      bool
-	slot_indefinite_written     bool
-	slot_indefinite_value       bool
-	slot_modified_quantifier    bool
-	slot_quantity               bool
-	term_clause_inside          bool
-	noun_pluralia_tantum        bool
-	conditional_postposed_if    bool
-	relation_object_extensional bool
-	unless_anaphor              bool
+	slot_description_shape       bool
+	slot_one_type                bool
+	eg_subject_only              bool
+	eg_name_witness              bool
+	term_numeral                 bool
+	identity_constant_sides      bool
+	identity_extensional_context bool
+	slot_letter_in_name          bool
+	term_inflection_verbatim     bool
+	termSlots                    [256]bool
+	slot_value_singular          bool
+	slotNames                    *map[string]bool
+	opener_frame                 bool
+	opener_adverb                bool
+	coordination_clause          bool
+	comma_exact                  bool
+	identity_safe_position       bool
+	slot_indefinite_object       bool
+	slot_indefinite_written      bool
+	slot_indefinite_value        bool
+	slot_modified_quantifier     bool
+	slot_quantity                bool
+	term_clause_inside           bool
+	noun_pluralia_tantum         bool
+	conditional_postposed_if     bool
+	relation_object_extensional  bool
+	unless_anaphor               bool
+	scope_mixed_andor            bool
+	scope_clause_start           bool
+	opener_ing_frame             bool
+	scope_elided_copula          bool
+	scope_description_negation   bool
+	opener_ly_exception          bool
 	// notes asks for strictness notes on failing steps (opt-in; diagnostic
 	// retries never set it).
 	notes bool
@@ -48,26 +66,74 @@ func (rules strictRules) recording() (strictRules, *firedRules) {
 
 func allStrictRules() strictRules {
 	return strictRules{
-		opener_frame:                true,
-		opener_adverb:               true,
-		coordination_clause:         true,
-		comma_exact:                 true,
-		identity_safe_position:      true,
-		slot_indefinite_object:      true,
-		slot_indefinite_written:     true,
-		slot_indefinite_value:       true,
-		slot_modified_quantifier:    true,
-		slot_quantity:               true,
-		term_clause_inside:          true,
-		noun_pluralia_tantum:        true,
-		conditional_postposed_if:    true,
-		relation_object_extensional: true,
-		unless_anaphor:              true,
+		slot_description_shape:       true,
+		slot_one_type:                true,
+		eg_subject_only:              true,
+		eg_name_witness:              true,
+		term_numeral:                 true,
+		identity_constant_sides:      true,
+		identity_extensional_context: true,
+		slot_letter_in_name:          true,
+		term_inflection_verbatim:     true,
+		slot_value_singular:          true,
+		opener_frame:                 true,
+		opener_adverb:                true,
+		coordination_clause:          true,
+		comma_exact:                  true,
+		identity_safe_position:       true,
+		slot_indefinite_object:       true,
+		slot_indefinite_written:      true,
+		slot_indefinite_value:        true,
+		slot_modified_quantifier:     true,
+		slot_quantity:                true,
+		term_clause_inside:           true,
+		noun_pluralia_tantum:         true,
+		conditional_postposed_if:     true,
+		relation_object_extensional:  true,
+		unless_anaphor:               true,
+		scope_mixed_andor:            true,
+		scope_clause_start:           true,
+		opener_ing_frame:             true,
+		scope_elided_copula:          true,
+		scope_description_negation:   true,
+		opener_ly_exception:          true,
 	}
 }
 
 func (rules strictRules) without(id string) strictRules {
 	switch id {
+	case "slot.description_shape":
+		rules.slot_description_shape = false
+	case "slot.one_type":
+		rules.slot_one_type = false
+	case "eg.subject_only":
+		rules.eg_subject_only = false
+	case "eg.name_witness":
+		rules.eg_name_witness = false
+	case "term.numeral":
+		rules.term_numeral = false
+	case "identity.constant_sides":
+		rules.identity_constant_sides = false
+	case "identity.extensional_context":
+		rules.identity_extensional_context = false
+	case "slot.letter_in_name":
+		rules.slot_letter_in_name = false
+	case "term.inflection_verbatim":
+		rules.term_inflection_verbatim = false
+	case "scope.mixed_andor":
+		rules.scope_mixed_andor = false
+	case "scope.clause_start":
+		rules.scope_clause_start = false
+	case "opener.ing_frame":
+		rules.opener_ing_frame = false
+	case "scope.elided_copula":
+		rules.scope_elided_copula = false
+	case "scope.description_negation":
+		rules.scope_description_negation = false
+	case "opener.ly_exception":
+		rules.opener_ly_exception = false
+	case "slot.value_singular":
+		rules.slot_value_singular = false
 	case "opener.frame":
 		rules.opener_frame = false
 	case "opener.adverb":

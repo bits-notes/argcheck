@@ -3,6 +3,18 @@ package validation
 import "testing"
 
 func TestCatalogV10NaryConjunctionIntroduction(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV10NaryConjunctionIntroduction/oxford_comma": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV10NaryConjunctionIntroduction/no_oxford_comma": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV10NaryConjunctionIntroduction/chained_and": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV10NaryConjunctionIntroduction/any_order": {"scope.clause_start", "move the operator into each clause"},
+	}
+
 	tests := []struct {
 		name, argument string
 		want           bool
@@ -19,6 +31,9 @@ func TestCatalogV10NaryConjunctionIntroduction(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tc.argument, refused) {
+				return
+			}
 			report, detail := CheckEntailmentGate(tc.argument)
 			if report.Passed != tc.want {
 				t.Fatalf("passed = %v, want %v: %s", report.Passed, tc.want, detail.Message)

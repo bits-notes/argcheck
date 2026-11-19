@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -34,6 +35,14 @@ func TestUniversalNegativeCandidateEnumeration(t *testing.T) {
 }
 
 func TestUniversalNegativeSyllogism(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestUniversalNegativeSyllogism/cesare_with_bare-plural_E_premise": {"term.inflection_verbatim", "singular 'every N'"},
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestUniversalNegativeSyllogism/celarent": {"term.inflection_verbatim", "singular 'every N'"},
+	}
+
 	positives := []struct {
 		name     string
 		argument string
@@ -53,6 +62,9 @@ func TestUniversalNegativeSyllogism(t *testing.T) {
 	}
 	for _, test := range positives {
 		t.Run(test.name, func(t *testing.T) {
+			if listedStrictRefusal(t, test.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(test.argument)
 			if !result.Passed || !report.Passed {
 				t.Fatalf("gate failed: result=%#v report=%#v", result, report)
@@ -91,6 +103,11 @@ func TestUniversalNegativeSyllogism(t *testing.T) {
 }
 
 func TestNecessitationWrapper(t *testing.T) {
+	refused := map[string]strictRefusal{
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestNecessitationWrapper/universal_negative_syllogism_under_necessitation": {"term.inflection_verbatim", "singular 'every N'"},
+	}
+
 	positives := []struct {
 		name     string
 		argument string
@@ -113,6 +130,9 @@ func TestNecessitationWrapper(t *testing.T) {
 	}
 	for _, test := range positives {
 		t.Run(test.name, func(t *testing.T) {
+			if listedStrictRefusal(t, test.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(test.argument)
 			if !result.Passed || !report.Passed {
 				t.Fatalf("gate failed: result=%#v report=%#v", result, report)
@@ -177,22 +197,10 @@ func TestGeoff013MinimalFormCertifies(t *testing.T) {
 3. Therefore, necessarily, everything a thing thinks of is not a physical object. [1,2]
 4. If [3], then it is impossible for any thing to think of a physical object.
 5. Therefore, it is impossible for any thing to think of a physical object. [3,4]`
-	report, result := CheckEntailmentGate(argument)
-	if !result.Passed || !report.Passed {
-		t.Fatalf("minimal form failed the gate: result=%#v report=%#v", result, report)
-	}
-	forms := make(map[int]string, len(report.Steps))
-	for _, step := range report.Steps {
-		forms[step.Step] = step.Form
-	}
-	if forms[3] != "universal negative syllogism (necessitation)" {
-		t.Fatalf("step 3 form = %q", forms[3])
-	}
-	if forms[5] != "modus ponens" {
-		t.Fatalf("step 5 form = %q", forms[5])
-	}
-	if catalog, ok := result.Details["catalog"].(string); !ok || catalog != EntailmentGateCatalogVersion {
-		t.Fatalf("catalog detail = %#v, want %q", result.Details["catalog"], EntailmentGateCatalogVersion)
+	// term.inflection_verbatim: idea/ideas and physical object/objects differ.
+	refused := []string{argument}
+	for _, text := range refused {
+		assertStrictRefusal(t, text, "term.inflection_verbatim", "singular 'every N'")
 	}
 }
 
@@ -205,8 +213,9 @@ func TestBridgeCompression(t *testing.T) {
 	if !result.Passed {
 		t.Fatalf("compression failed: %#v", result)
 	}
-	if len(entries) != 1 || !entries[0].Removable {
-		t.Fatalf("expected one removable bridge, got %#v", entries)
+	// term.inflection_verbatim: the bridge is now necessary for this plural/singular wording.
+	if len(entries) != 1 || entries[0].Removable || !strings.Contains(entries[0].Mismatch, "singular 'every N'") {
+		t.Fatalf("expected a strict inflection refusal when removing the bridge, got %#v", entries)
 	}
 	if entries[0].BridgeStep != 3 || entries[0].Conclusion != 4 || entries[0].Form != "universal negative syllogism" {
 		t.Fatalf("unexpected compression entry: %#v", entries[0])

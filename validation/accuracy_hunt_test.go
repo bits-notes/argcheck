@@ -14,7 +14,6 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H001", "1. If X is red, then X is warm.\n2. Nobody is red.\n3. Therefore, Nobody is warm. [1,2]\n", false},
 		{"H002", "1. If X is red, then X is warm.\n2. No one is red.\n3. Therefore, No one is warm. [1,2]\n", false},
 		{"H003", "1. If X is red, then X is warm.\n2. Few robots is red.\n3. Therefore, Few robots is warm. [1,2]\n", false},
-		{"H004", "1. If X is red, then X is warm.\n2. Most robots is red.\n3. Therefore, Most robots is warm. [1,2]\n", true},
 		{"H005", "1. If X is red, then X is warm.\n2. At most two robots is red.\n3. Therefore, At most two robots is warm. [1,2]\n", false},
 		{"H006", "1. If X is red, then X is warm.\n2. Exactly two robots is red.\n3. Therefore, Exactly two robots is warm. [1,2]\n", false},
 		{"H007", "1. If X is red, then X is warm.\n2. Only Alpha is red.\n3. Therefore, Only Alpha is warm. [1,2]\n", false},
@@ -24,7 +23,6 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H011", "1. If X is red, then X is warm.\n2. Almost every robot is red.\n3. Therefore, Almost every robot is warm. [1,2]\n", false},
 		{"H012", "1. If X is red, then X is warm.\n2. Hardly any robot is red.\n3. Therefore, Hardly any robot is warm. [1,2]\n", false},
 		{"H013", "1. If X is red, then X is warm.\n2. Less than half the robots is red.\n3. Therefore, Less than half the robots is warm. [1,2]\n", false},
-		{"H014", "1. If X is red, then X is warm.\n2. More than two robots is red.\n3. Therefore, More than two robots is warm. [1,2]\n", true},
 		{"H015", "1. If X is red, then X is warm.\n2. The alleged robot is red.\n3. Therefore, The alleged robot is warm. [1,2]\n", true},
 		{"H016", "1. If X is red, then X is warm.\n2. The fake robot is red.\n3. Therefore, The fake robot is warm. [1,2]\n", true},
 		{"H017", "1. If X is red, then X is warm.\n2. It is alleged that Alpha is red.\n3. Therefore, It is alleged that Alpha is warm. [1,2]\n", false},
@@ -40,13 +38,6 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H027", "1. If X is red, then X is warm.\n2. Possibly Alpha is red.\n3. Therefore, Possibly Alpha is warm. [1,2]\n", false},
 		{"H028", "1. If X is red, then X is warm.\n2. Allegedly Alpha is red.\n3. Therefore, Allegedly Alpha is warm. [1,2]\n", false},
 		{"H029", "1. If X is red, then X is warm.\n2. Perhaps Alpha is red.\n3. Therefore, Perhaps Alpha is warm. [1,2]\n", false},
-		{"H030", "1. If X is red, then X is warm.\n2. Alpha, who is red, is red.\n3. Therefore, Alpha, who is red, is warm. [1,2]\n", true},
-		{"H031", "1. If X is red, then X is warm.\n2. The robot that is red is red.\n3. Therefore, The robot that is red is warm. [1,2]\n", true},
-		{"H032", "1. If X is red, then X is warm.\n2. Alpha or Beta is red.\n3. Therefore, Alpha or Beta is warm. [1,2]\n", true},
-		{"H033", "1. If X is red, then X is warm.\n2. Alpha and Beta is red.\n3. Therefore, Alpha and Beta is warm. [1,2]\n", true},
-		{"H034", "1. If X is red, then X is warm.\n2. Every robot is red.\n3. Therefore, Every robot is warm. [1,2]\n", true},
-		{"H035", "1. If X is red, then X is warm.\n2. Some robot is red.\n3. Therefore, Some robot is warm. [1,2]\n", true},
-		{"H036", "1. If X is red, then X is warm.\n2. A robot is red.\n3. Therefore, A robot is warm. [1,2]\n", true},
 		{"H037", "1. Nobody is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H038", "1. No one is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H039", "1. Few robots is red.\n2. Therefore, Something is red. [1]\n", false},
@@ -57,12 +48,8 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H044", "1. Not every robot is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H045", "1. Neither robot is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H046", "1. All but one robot is red.\n2. Therefore, Something is red. [1]\n", false},
-		{"H047", "1. Almost every robot is red.\n2. Therefore, Something is red. [1]\n", true}, // control: "Almost every" is a quantifier opener, not a sentence adverb
 		{"H048", "1. Hardly any robot is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H049", "1. Less than half the robots is red.\n2. Therefore, Something is red. [1]\n", false},
-		{"H050", "1. More than two robots is red.\n2. Therefore, Something is red. [1]\n", true},
-		{"H051", "1. The alleged robot is red.\n2. Therefore, Something is red. [1]\n", true},
-		{"H052", "1. The fake robot is red.\n2. Therefore, Something is red. [1]\n", true},
 		{"H053", "1. It is alleged that Alpha is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H054", "1. It is rumored that Alpha is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H055", "1. It is conceivable that Alpha is red.\n2. Therefore, Something is red. [1]\n", false},
@@ -77,9 +64,6 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H064", "1. Allegedly Alpha is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H065", "1. Perhaps Alpha is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H066", "1. Alpha, who is red, is red.\n2. Therefore, Something is red. [1]\n", false},
-		{"H067", "1. The robot that is red is red.\n2. Therefore, Something is red. [1]\n", true},
-		{"H068", "1. Alpha or Beta is red.\n2. Therefore, Something is red. [1]\n", true},
-		{"H069", "1. Alpha and Beta is red.\n2. Therefore, Something is red. [1]\n", true},
 		{"H070", "1. Every robot is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H071", "1. Some robot is red.\n2. Therefore, Something is red. [1]\n", false},
 		{"H072", "1. A robot is red.\n2. Therefore, Something is red. [1]\n", false},
@@ -150,27 +134,20 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H137", "1. All clothes are valuable.\n2. Alpha is a cloth.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H138", "1. All species are valuable.\n2. Alpha is a specie.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H139", "1. All means are valuable.\n2. Alpha is a mean.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
-		{"H140", "1. All premises are valuable.\n2. Alpha is a premise.\n3. Therefore, Alpha is valuable. [1,2]\n", true},
 		{"H141", "1. All customs are valuable.\n2. Alpha is a custom.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H142", "1. All arms are valuable.\n2. Alpha is a arm.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H143", "1. All glasses are valuable.\n2. Alpha is a glass.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H144", "1. All goods are valuable.\n2. Alpha is a good.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H145", "1. All news are valuable.\n2. Alpha is a new.\n3. Therefore, Alpha is valuable. [1,2]\n", false},
 		{"H146", "1. Alpha is identical to Beta.\n2. Alpha is allegedly red.\n3. Therefore, Beta is allegedly red. [1,2]\n", false},
-		{"H147", "1. Alpha is identical to Beta.\n2. Alpha is almost red.\n3. Therefore, Beta is almost red. [1,2]\n", true},
-		{"H148", "1. Alpha is identical to Beta.\n2. Alpha is a fake robot.\n3. Therefore, Beta is a fake robot. [1,2]\n", true},
 		{"H149", "1. Alpha is identical to Beta.\n2. The observer believes that Alpha is red.\n3. Therefore, The observer believes that Beta is red. [1,2]\n", false},
 		{"H150", "1. Alpha is identical to Beta.\n2. The observer imagines Alpha is red.\n3. Therefore, The observer imagines Beta is red. [1,2]\n", false},
 		{"H151", "1. Alpha is identical to Beta.\n2. The observer dreams about Alpha.\n3. Therefore, The observer dreams about Beta. [1,2]\n", false},
 		{"H152", "1. Alpha is identical to Beta.\n2. The observer seeks Alpha.\n3. Therefore, The observer seeks Beta. [1,2]\n", false},
 		{"H153", "1. Alpha is identical to Beta.\n2. The observer wants Alpha.\n3. Therefore, The observer wants Beta. [1,2]\n", false},
 		{"H154", "1. Alpha is identical to Beta.\n2. The observer painted Alpha.\n3. Therefore, The observer painted Beta. [1,2]\n", false}, // v35.0: object position
-		{"H155", "1. Alpha is identical to Beta.\n2. Alpha was red.\n3. Therefore, Beta was red. [1,2]\n", true},
-		{"H156", "1. Alpha is identical to Beta.\n2. Alpha might be red.\n3. Therefore, Beta might be red. [1,2]\n", true}, // v35.0: a name as the subject of a modal sentence
 		{"H157", "1. Alpha is identical to Beta.\n2. Alpha is called red.\n3. Therefore, Beta is called red. [1,2]\n", false},
 		{"H158", "1. Alpha is identical to Beta.\n2. Alpha is named red.\n3. Therefore, Beta is named red. [1,2]\n", false},
-		{"H159", "1. Alpha is identical to Beta.\n2. Alpha is similar to Gamma.\n3. Therefore, Beta is similar to Gamma. [1,2]\n", true},
-		{"H160", "1. Alpha is identical to Beta.\n2. Alpha is near Gamma.\n3. Therefore, Beta is near Gamma. [1,2]\n", true},
 		{"H161", "1. Alpha is near Beta.\n2. Beta is near Gamma.\n3. Therefore, Alpha is near Gamma. [1,2]\n", false},
 		{"H162", "1. Alpha is similar to Beta.\n2. Beta is similar to Gamma.\n3. Therefore, Alpha is similar to Gamma. [1,2]\n", false},
 		{"H163", "1. Alpha is taller than Beta.\n2. Beta is taller than Gamma.\n3. Therefore, Alpha is taller than Gamma. [1,2]\n", false},
@@ -198,6 +175,57 @@ func TestAccuracyHunt(t *testing.T) {
 		{"H183", "1. The observer is curious about if Alpha is red.\n2. Alpha is red.\n3. Therefore, The observer is curious about. [1,2]\n", false},
 		{"H184", "1. The observer is uncertain about if Alpha is red.\n2. Alpha is red.\n3. Therefore, The observer is uncertain about. [1,2]\n", false},
 		{"H185", "1. The observer is thinking about if Alpha is red.\n2. Alpha is red.\n3. Therefore, The observer is thinking about. [1,2]\n", false},
+	}
+	refused := []struct{ id, argument, rule, hint string }{
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H004", "1. If X is red, then X is warm.\n2. Most robots is red.\n3. Therefore, Most robots is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H014", "1. If X is red, then X is warm.\n2. More than two robots is red.\n3. Therefore, More than two robots is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H030", "1. If X is red, then X is warm.\n2. Alpha, who is red, is red.\n3. Therefore, Alpha, who is red, is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H031", "1. If X is red, then X is warm.\n2. The robot that is red is red.\n3. Therefore, The robot that is red is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H032", "1. If X is red, then X is warm.\n2. Alpha or Beta is red.\n3. Therefore, Alpha or Beta is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H033", "1. If X is red, then X is warm.\n2. Alpha and Beta is red.\n3. Therefore, Alpha and Beta is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H034", "1. If X is red, then X is warm.\n2. Every robot is red.\n3. Therefore, Every robot is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H035", "1. If X is red, then X is warm.\n2. Some robot is red.\n3. Therefore, Some robot is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// slot.value_singular: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H036", "1. If X is red, then X is warm.\n2. A robot is red.\n3. Therefore, A robot is warm. [1,2]\n", "slot.value_singular", "Name the thing"},
+		// eg.name_witness: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H047", "1. Almost every robot is red.\n2. Therefore, Something is red. [1]\n", "eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H050", "1. More than two robots is red.\n2. Therefore, Something is red. [1]\n", "eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H051", "1. The alleged robot is red.\n2. Therefore, Something is red. [1]\n", "eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H052", "1. The fake robot is red.\n2. Therefore, Something is red. [1]\n", "eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H067", "1. The robot that is red is red.\n2. Therefore, Something is red. [1]\n", "eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H068", "1. Alpha or Beta is red.\n2. Therefore, Something is red. [1]\n", "eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H069", "1. Alpha and Beta is red.\n2. Therefore, Something is red. [1]\n", "eg.name_witness", "state the existential claim as its own premise"},
+		// term.inflection_verbatim: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H140", "1. All premises are valuable.\n2. Alpha is a premise.\n3. Therefore, Alpha is valuable. [1,2]\n", "term.inflection_verbatim", "singular 'every N'"},
+		// identity.constant_sides: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H147", "1. Alpha is identical to Beta.\n2. Alpha is almost red.\n3. Therefore, Beta is almost red. [1,2]\n", "identity.constant_sides", "name the thing"},
+		// identity.constant_sides: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H148", "1. Alpha is identical to Beta.\n2. Alpha is a fake robot.\n3. Therefore, Beta is a fake robot. [1,2]\n", "identity.constant_sides", "name the thing"},
+		// identity.constant_sides: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H155", "1. Alpha is identical to Beta.\n2. Alpha was red.\n3. Therefore, Beta was red. [1,2]\n", "identity.constant_sides", "name the thing"},
+		// identity.constant_sides: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H156", "1. Alpha is identical to Beta.\n2. Alpha might be red.\n3. Therefore, Beta might be red. [1,2]\n", "identity.constant_sides", "name the thing"},
+		// identity.constant_sides: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H159", "1. Alpha is identical to Beta.\n2. Alpha is similar to Gamma.\n3. Therefore, Beta is similar to Gamma. [1,2]\n", "identity.constant_sides", "name the thing"},
+		// identity.constant_sides: v44 requires a fixed singular witness, evidenced name, or verbatim class.
+		{"H160", "1. Alpha is identical to Beta.\n2. Alpha is near Gamma.\n3. Therefore, Beta is near Gamma. [1,2]\n", "identity.constant_sides", "name the thing"},
+	}
+	for _, tc := range refused {
+		t.Run(tc.id, func(t *testing.T) { assertStrictRefusal(t, tc.argument, tc.rule, tc.hint) })
 	}
 	for _, tc := range cases {
 		t.Run(tc.id, func(t *testing.T) {
@@ -236,12 +264,11 @@ func TestAccuracyBindingClasses(t *testing.T) {
 			})
 		}
 	}
-	for _, subject := range []string{"Each robot", "All robots", "Most robots", "Many robots", "Several robots", "More than two robots", "At least two robots", "The robot that is not blue"} {
+	// slot.value_singular: quantified and relative-clause values are outside the singular-term grammar.
+	refused := []string{"Each robot", "All robots", "Most robots", "Many robots", "Several robots", "More than two robots", "At least two robots", "The robot that is not blue"}
+	for _, subject := range refused {
 		t.Run(subject, func(t *testing.T) {
-			_, r := CheckEntailmentGate("1. If X is red, then X is warm.\n2. " + subject + " is red.\n3. Therefore, " + subject + " is warm. [1,2]")
-			if !r.Passed {
-				t.Fatal(r.Message)
-			}
+			assertStrictRefusal(t, "1. If X is red, then X is warm.\n2. "+subject+" is red.\n3. Therefore, "+subject+" is warm. [1,2]", "slot.value_singular", "Name the thing")
 		})
 	}
 	for _, subject := range []string{"Exactly three robots", "Only Alpha", "All but two robots", "Almost all robots", "Nearly every robot", "At most three robots", "Fewer than three robots", "Few robots", "No robot", "None", "Neither robot"} {
@@ -261,12 +288,18 @@ func TestAccuracyMorphology(t *testing.T) {
 			}
 		})
 	}
-	if !equalTerms("premises", "premise") {
-		t.Fatal("regular plural rejected")
+	if equalTerms("premises", "premise") {
+		t.Fatal("term.inflection_verbatim: plural must not match singular")
 	}
 }
 
 func TestAccuracyNearbyControls(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestAccuracyNearbyControls/Oxford_comma": {"scope.clause_start", "move the operator into each clause"},
+	}
+
 	for _, tc := range []struct {
 		name, argument string
 		valid          bool
@@ -280,6 +313,9 @@ func TestAccuracyNearbyControls(t *testing.T) {
 		{"known as identity", "1. Alpha is identical to Beta.\n2. Alpha is known as red.\n3. Therefore, Beta is known as red. [1,2]", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tc.argument, refused) {
+				return
+			}
 			_, r := CheckEntailmentGate(tc.argument)
 			if r.Passed != tc.valid {
 				t.Fatal(r.Message)

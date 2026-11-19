@@ -15,8 +15,8 @@ func TestNormalizeClauseAndWrapperEquality(t *testing.T) {
 	if equalClauses("the red box", "the blue box") {
 		t.Fatal("clause equality rewrote non-wrapper vocabulary")
 	}
-	if !equalTerms("humans", "a human") || !equalTerms("classes", "the class") {
-		t.Fatal("universal term equality did not tolerate articles and naive plurals")
+	if equalTerms("humans", "a human") || equalTerms("classes", "the class") {
+		t.Fatal("term.inflection_verbatim: plural must not match singular")
 	}
 	if equalClauses("humans", "a human") {
 		t.Fatal("general clause equality inherited universal term tolerance")
@@ -50,6 +50,24 @@ func TestClauseCandidateEnumeration(t *testing.T) {
 }
 
 func TestEntailmentSchemaCatalogPositiveAndNegative(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentSchemaCatalogPositiveAndNegative/conjunction_introduction_positive": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentSchemaCatalogPositiveAndNegative/conjunction_elimination_positive": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentSchemaCatalogPositiveAndNegative/disjunction_introduction_positive": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentSchemaCatalogPositiveAndNegative/disjunctive_syllogism_positive": {"scope.clause_start", "move the operator into each clause"},
+		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
+		"TestEntailmentSchemaCatalogPositiveAndNegative/identity_transitivity_positive": {"identity.constant_sides", "name the thing"},
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestEntailmentSchemaCatalogPositiveAndNegative/universal_instantiation_positive": {"term.inflection_verbatim", "singular 'every N'"},
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestEntailmentSchemaCatalogPositiveAndNegative/universal_instantiation_negative": {"term.inflection_verbatim", "singular 'every N'"},
+	}
+
 	tests := []struct {
 		name             string
 		form             string
@@ -127,6 +145,9 @@ func TestEntailmentSchemaCatalogPositiveAndNegative(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name+" positive", func(t *testing.T) {
+			if listedStrictRefusal(t, test.positive, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(test.positive)
 			if !result.Passed || !report.Passed {
 				t.Fatalf("gate failed: result=%#v report=%#v", result, report)
@@ -136,6 +157,9 @@ func TestEntailmentSchemaCatalogPositiveAndNegative(t *testing.T) {
 			}
 		})
 		t.Run(test.name+" negative", func(t *testing.T) {
+			if listedStrictRefusal(t, test.negative, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(test.negative)
 			if result.Passed || report.Passed {
 				t.Fatalf("gate unexpectedly passed: result=%#v report=%#v", result, report)
@@ -157,7 +181,14 @@ func TestUniversalSyllogismPositiveAndInvalidForms(t *testing.T) {
 	positive := `1. All humans are mammals.
 2. Every mammal is mortal.
 3. Therefore, all humans are mortal. [1,2]`
-	report, result := CheckEntailmentGate(positive)
+	// term.inflection_verbatim: retain the plural/singular historical case
+	// as a refusal, and keep accepted form coverage using its singular rewrite.
+	refused := []string{positive}
+	for _, argument := range refused {
+		assertStrictRefusal(t, argument, "term.inflection_verbatim", "singular 'every N'")
+	}
+	repaired := "1. Every human is a mammal.\n2. Every mammal is mortal.\n3. Therefore, every human is mortal. [1,2]"
+	report, result := CheckEntailmentGate(repaired)
 	if !result.Passed || !report.Passed {
 		t.Fatalf("universal syllogism failed: result=%#v report=%#v", result, report)
 	}

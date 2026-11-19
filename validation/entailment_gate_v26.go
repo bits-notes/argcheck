@@ -94,7 +94,7 @@ func (policy strictRules) countPredicate(s string) (*folFormula, error) {
 	}
 	if end < 0 && !relative && relationWords(s) {
 		class := s
-		if strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") {
+		if !policy.term_inflection_verbatim && strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") {
 			class = strings.TrimSuffix(class, "s")
 		}
 		return &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(class), terms: []string{"$count"}}, nil
@@ -115,7 +115,7 @@ func (policy strictRules) countPredicate(s string) (*folFormula, error) {
 		return nil, fmt.Errorf("missing counting class")
 	}
 	// Controlled plural spelling, only on the newly recognized count surface.
-	if strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") {
+	if !policy.term_inflection_verbatim && strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") {
 		class = strings.TrimSuffix(class, "s")
 	}
 	guard := &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(class), terms: []string{"$count"}}
@@ -331,7 +331,11 @@ func countInfo(f *folFormula) (string, int, *folFormula) {
 	return "", 0, nil
 }
 func countingRule(ps []*folFormula, c *folFormula) string {
-	if form := folRule(ps, c); form != "" {
+	return allStrictRules().countingRule(ps, c)
+}
+
+func (policy strictRules) countingRule(ps []*folFormula, c *folFormula) string {
+	if form := policy.folRule(ps, c); form != "" {
 		return "definition"
 	}
 	// The counted witness may be established by separate cited ground facts.
@@ -407,7 +411,7 @@ func (policy strictRules) gateCounting(c NumberedArgumentStep, steps map[int]Num
 		ps = append(ps, p)
 	}
 	if len(c.Ranges) == 0 {
-		if form := countingRule(ps, target); form != "" {
+		if form := policy.countingRule(ps, target); form != "" {
 			r.Passed = true
 			r.Form = "counting " + form
 			r.NearestForm = ""

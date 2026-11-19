@@ -57,8 +57,8 @@ func (policy strictRules) searchSchematicConjuncts(ps []NumberedArgumentStep, ci
 		seen[key] = true
 		candidate := schemaMatchOutcome{traction: true, score: at}
 		if at == n {
-			want, ok := instantiateSchematicTemplate(cons, state)
-			_, antOK := instantiateSchematicTemplate(ant, state)
+			want, ok := policy.instantiateSchematicTemplate(cons, state)
+			_, antOK := policy.instantiateSchematicTemplate(ant, state)
 			if !ok || !antOK {
 				candidate.mismatch = "unbound schematic variable under binding " + schematicBindingText(state)
 			} else if reason := repeatedSlotMismatch(ant, cons, state); reason != "" {
@@ -245,7 +245,14 @@ func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentSt
 }
 
 func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	policy.slotNames = schematicNameEvidence(steps)
+	policy.termSlots = ruleTermSlots(c, steps)
 	report := policy.gateConclusionStepStrict(c, steps)
+	if reason := policy.round2TermFailure(c, steps, report); reason != "" {
+		report.Passed = false
+		report.NearestForm, report.Form, report.Mismatch = report.Form, "", reason
+		return report
+	}
 	if report.Passed {
 		return report
 	}
@@ -260,6 +267,26 @@ func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[i
 	if retry := policy.gateConclusionStepStrict(c, relaxed); retry.Passed {
 		report.NearestForm = retry.Form
 		report.Mismatch = policy.indefiniteSlotStepMessage(c, steps)
+		// The override bypasses singularBindingSafe/ShapeSafe, including the
+		// description-shape rule nested in singularValue. Other v44 rules are
+		// not bypassed (one-type/name-letter failures were handled above).
+		// Check only this additional rule, not the entire notes catalog on
+		// every failed step. The binding-specific singular message is fallback.
+		for _, note := range strictNotes {
+			if note.ID != "slot.description_shape" || !policy.slot_description_shape {
+				continue
+			}
+			oneOff := policy.without(note.ID)
+			check := oneOff.gateConclusionStepStrict(c, steps)
+			if !check.Passed || oneOff.round2TermFailure(c, steps, check) != "" || oneOff.sentenceFrameFailure(c, steps, check.Form) != "" {
+				continue
+			}
+			report.Mismatch = note.ID + ": " + note.Why
+			for _, fix := range note.Fix {
+				report.Mismatch += " " + fix
+			}
+			break
+		}
 		return report
 	}
 	// task_eb737ad9: a term refused because a word in it can be read as a verb
@@ -274,6 +301,27 @@ func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[i
 			report.NearestForm = retry.Form
 			report.Mismatch = message
 		}
+	}
+	if report.Mismatch != "" {
+		hint := policy.round2RewriteHint(c, steps)
+		// An object existential also needs a witness repair, but an incidental
+		// "some" inside an opaque quotation does not. Confirm the cause.
+		if hint == "" && (policy.eg_subject_only || policy.eg_name_witness) && strings.Contains(strings.ToLower(c.Statement), " some ") {
+			oneOff := policy.without("eg.subject_only").without("eg.name_witness")
+			if retry := oneOff.gateConclusionStepStrict(c, steps); retry.Passed && oneOff.round2TermFailure(c, steps, retry) == "" && oneOff.sentenceFrameFailure(c, steps, retry.Form) == "" {
+				hint = "; state the existential claim as its own premise"
+			}
+		}
+		// Relative and modal class rules need the same inflection repair as
+		// an initial "All/Every" rule. Confirm the rule, rather than guessing
+		// from the leading word ("Everything", "Necessarily", ...).
+		if hint == "" && policy.term_inflection_verbatim && (strings.Contains(report.NearestForm, "universal") || report.NearestForm == "existential counterexample") {
+			oneOff := policy.without("term.inflection_verbatim")
+			if retry := oneOff.gateConclusionStepStrict(c, steps); retry.Passed && oneOff.round2TermFailure(c, steps, retry) == "" && oneOff.sentenceFrameFailure(c, steps, retry.Form) == "" {
+				hint = "; use the same singular noun spelling; write universal rules with singular 'every N' and existential claims as 'There is a N ...'"
+			}
+		}
+		report.Mismatch += hint
 	}
 	return report
 }

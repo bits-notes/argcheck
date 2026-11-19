@@ -107,6 +107,26 @@ var catalogV16GapCases = []struct{ name, argument, wantForm string }{
 }
 
 func TestCatalogV16BiconditionalCompoundSides(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV16BiconditionalCompoundSides/1/7/intro": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV16BiconditionalCompoundSides/1/7/elim_reverse": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV16BiconditionalCompoundSides/2/7/intro": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV16BiconditionalCompoundSides/2/7/elim_reverse": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV16BiconditionalCompoundSides/7/1/intro": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV16BiconditionalCompoundSides/7/1/elim": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV16BiconditionalCompoundSides/7/2/intro": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV16BiconditionalCompoundSides/7/2/elim": {"scope.clause_start", "move the operator into each clause"},
+	}
+
 	iff := func(p, q string) string { return "(" + p + ") if and only if (" + q + ")" }
 	neg := func(p string) string { return "It is not the case that " + p }
 	cond := func(p, q string) string { return "If " + p + ", then " + q }
@@ -150,6 +170,9 @@ func TestCatalogV16BiconditionalCompoundSides(t *testing.T) {
 						refs += fmt.Sprint(k + 1)
 					}
 					argument += fmt.Sprintf("%d. Therefore, %s. [%s]", len(tc.premises)+1, tc.conclusion, refs)
+					if listedStrictRefusal(t, argument, refused) {
+						return
+					}
 					report, result := CheckEntailmentGate(argument)
 					if !report.Passed || !result.Passed {
 						t.Fatalf("%s\n%s", result.Message, argument)

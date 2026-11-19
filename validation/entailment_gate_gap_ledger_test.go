@@ -20,6 +20,42 @@ import "testing"
 //
 // v14 adds scoped derivations, including a premise-free classical theorem.
 func TestEntailmentGateGapLedger(t *testing.T) {
+	// v44 by-design refusals: retained separately from the accepted controls.
+	refused := map[string]strictRefusal{
+		// eg.subject_only: the existential witness is outside the admitted subject/identity position.
+		"TestEntailmentGateGapLedger/relational_EG": {"eg.subject_only", "state the existential claim as its own premise"},
+		// eg.subject_only: the existential witness is outside the admitted subject/identity position.
+		"TestEntailmentGateGapLedger/three-place_recipient_introduction": {"eg.subject_only", "state the existential claim as its own premise"},
+		// identity.extensional_context: the strict grammar excludes this shape.
+		"TestEntailmentGateGapLedger/description_substitution": {"identity.extensional_context", "state the substituted claim as a premise"},
+		// eg.name_witness: existential witnesses must be evidenced names.
+		"TestEntailmentGateGapLedger/counting_subset": {"eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: existential witnesses must be evidenced names.
+		"TestEntailmentGateGapLedger/existential_elimination": {"eg.name_witness", "state the existential claim as its own premise"},
+		// scope.clause_start: an inspected clause has no admitted opener.
+		"TestEntailmentGateGapLedger/modal_distribution_conjunction_forward": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected clause has no admitted opener.
+		"TestEntailmentGateGapLedger/modal_distribution_conjunction_reverse": {"scope.clause_start", "move the operator into each clause"},
+		// identity.constant_sides: identity requires evidenced singular constants.
+		"TestEntailmentGateGapLedger/identity_transitivity": {"identity.constant_sides", "name the thing"},
+		// eg.name_witness: existential witnesses must be evidenced names.
+		"TestEntailmentGateGapLedger/existential_generalization": {"eg.name_witness", "state the existential claim as its own premise"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestEntailmentGateGapLedger/schematic_instantiation": {"slot.value_singular", "Name the thing"},
+		// eg.name_witness: existential witnesses must be evidenced names.
+		"TestEntailmentGateGapLedger/v16_embedded_copula_existential_introduction": {"eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: existential witnesses must be evidenced names.
+		"TestEntailmentGateGapLedger/v16_embedded_copula_existential_generalization": {"eg.name_witness", "state the existential claim as its own premise"},
+		// eg.name_witness: existential witnesses must be evidenced names.
+		"TestEntailmentGateGapLedger/v16_whole_subject_schematic_existential": {"eg.name_witness", "state the existential claim as its own premise"},
+		// identity.constant_sides: identity requires evidenced singular constants.
+		"TestEntailmentGateGapLedger/v16_whole_noun_phrase_substitution": {"identity.constant_sides", "name the thing"},
+		// identity.constant_sides: identity requires evidenced singular constants.
+		"TestEntailmentGateGapLedger/v16_whole_noun_phrase_reverse_substitution": {"identity.constant_sides", "name the thing"},
+		// identity.constant_sides: identity requires evidenced singular constants.
+		"TestEntailmentGateGapLedger/v20_property_UG": {"identity.constant_sides", "name the thing"},
+	}
+
 	tests := []struct {
 		name, argument, wantForm string
 	}{
@@ -238,6 +274,9 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 			if _, parsed := ParseNumberedArgument(tc.argument, numberedArgumentOptions{}); !parsed.Passed {
 				t.Fatalf("invalid ledger fixture: %s\n%s", parsed.Message, tc.argument)
 			}
+			if listedStrictRefusal(t, tc.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(tc.argument)
 			if len(report.Steps) < 1 {
 				t.Fatalf("want at least one gated step: %s %+v", result.Message, report)
@@ -263,8 +302,16 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 
 // v19 intentional rejections are invalid in VW, not missing material rules.
 func TestEntailmentGateV19GapLedger(t *testing.T) {
+	refused := map[string]strictRefusal{
+		// slot.value_singular: term bindings require evidenced names or bounded singular descriptions.
+		"TestEntailmentGateV19GapLedger/schematic_preserves_lowercase_constants": {"slot.value_singular", "Name the thing"},
+	}
+
 	for _, tc := range append(append([]v19GateCase{}, v19AcceptedCases...), v19RejectedCases...) {
 		t.Run(tc.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tc.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(tc.argument)
 			if len(report.Steps) == 0 {
 				t.Fatal(result.Message)

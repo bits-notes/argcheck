@@ -39,6 +39,31 @@ func v26Check(t *testing.T, ps []string, c string, valid bool, domain int) {
 	}
 }
 
+// v26CheckRefused covers a valid-by-intent exercise that v44 refuses. The
+// strict verbatim noun rule can keep "labs" and "lab" apart, so for those the
+// oracle over the verbatim predicates also finds a countermodel (B limit);
+// otherwise the oracle still confirms the entailment.
+func v26CheckRefused(t *testing.T, ps []string, c, rule, hint string, domain int, verbatimCountermodel bool) {
+	t.Helper()
+	arg := v26Argument(ps, c)
+	assertStrictRefusal(t, arg, rule, hint)
+	var fs []*folFormula
+	for _, p := range ps {
+		f, e := countParse(p)
+		if e != nil {
+			t.Fatal(e)
+		}
+		fs = append(fs, f)
+	}
+	f, e := countParse(c)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if finiteCountermodel(fs, f, domain) != verbatimCountermodel {
+		t.Fatalf("oracle (domains 1-%d, countermodel want %v): %s", domain, verbatimCountermodel, arg)
+	}
+}
+
 // Independently assemble the identity semantics, with a different association
 // of conjunctions, rather than using the production counting constructor.
 func v26OracleDefinition(kind string, n int, body *folFormula) *folFormula {
@@ -76,15 +101,22 @@ func TestCatalogV26Definitions(t *testing.T) {
 			if e != nil {
 				t.Fatal(e)
 			}
-			body := foAnd(foAtom("is/lab", "$count"), foAtom("signed", "$count", "pledge"))
+			// v44 strict: noun spelling is kept verbatim (B limit), so the plural surface noun is the class predicate.
+			body := foAnd(foAtom("is/labs", "$count"), foAtom("signed", "$count", "pledge"))
 			expected := v26OracleDefinition(kind, n, body)
 			if finiteCountermodel([]*folFormula{f}, expected, 4) || finiteCountermodel([]*folFormula{expected}, f, 4) {
 				t.Fatal("definition", s)
 			}
 			digits := fmt.Sprintf("%s %d labs signed the pledge", kind, n)
 			v26Check(t, []string{s}, digits, true, 4)
-			v26Check(t, []string{s}, f.Render(), true, 4)
-			v26Check(t, []string{f.Render()}, s, true, 4)
+			if kind == "at least" && n == 1 {
+				v26Check(t, []string{s}, f.Render(), true, 4)
+				v26Check(t, []string{f.Render()}, s, true, 4)
+			} else {
+				// identity.constant_sides: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit); the explicit bound-variable identity is refused.
+				v26CheckRefused(t, []string{s}, f.Render(), "identity.constant_sides", "name the thing", 4, false)
+				v26CheckRefused(t, []string{f.Render()}, s, "identity.constant_sides", "name the thing", 4, false)
+			}
 		}
 	}
 	t.Logf("45 valid conversions; independently specified identity definitions; exhaustive domains 1-4; %s", time.Since(start))
@@ -116,8 +148,28 @@ func TestCatalogV26Exercises(t *testing.T) {
 		{[]string{"Only Ada is a student"}, "Ada is a student and no student other than Ada is a student"},
 		{[]string{"Ada is a student and no student other than Ada is a student"}, "Only Ada is a student"},
 	}
+	type v26Refusal struct {
+		rule, hint string
+		counter    bool
+	}
+	refused := map[string]v26Refusal{
+		// counting definition (no note id; counting.matching_predicates): v44 strict: plural "labs"/"students" vs singular restrictor is not the same predicate (B limit).
+		"Some lab that signed the pledge is not American": {"counting.matching_predicates", "matching predicates", true},
+		// counting definition (no note id; counting.matching_predicates): v44 strict: plural "students" vs singular restrictor is not the same predicate (B limit).
+		"Some student that sent blair to casey is not red": {"counting.matching_predicates", "matching predicates", true},
+		// counting.matching_predicates: v44 strict: "a student" is not the identity-based counting predicate "student" (B limit).
+		"At least one student": {"counting.matching_predicates", "matching predicates", false},
+		// opener.ly_exception: v44 strict: "Only" opener must move into each clause (B limit).
+		"Ada is a student and no student other than Ada is a student": {"opener.ly_exception", "move the adverb into each clause", false},
+		// opener.ly_exception: v44 strict: "Only" opener must move into each clause (B limit).
+		"Only Ada is a student": {"opener.ly_exception", "move the adverb into each clause", false},
+	}
 	for _, tc := range cases {
-		v26Check(t, tc.ps, tc.c, true, 4)
+		if r, ok := refused[tc.c]; ok {
+			v26CheckRefused(t, tc.ps, tc.c, r.rule, r.hint, 4, r.counter)
+		} else {
+			v26Check(t, tc.ps, tc.c, true, 4)
+		}
 		valid++
 	}
 	t.Logf("%d fresh valid flat exercises; exhaustive domains 1-4; %s", valid, time.Since(start))
@@ -154,20 +206,26 @@ func TestCatalogV26Fitch(t *testing.T) {
 | 3. Therefore, contradiction. [1,2]
 4. Therefore, it is not the case that at least two labs are red. [2-3]`,
 	}
-	for _, arg := range proofs {
-		_, r := CheckEntailmentGate(arg)
-		if !r.Passed {
-			t.Fatal(r.Message)
-		}
-	}
+	// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+	assertStrictRefusal(t, proofs[0], "scope.clause_start", "move the operator into each clause")
+	// term.inflection_verbatim: v44 strict: "lab"/"labs" are not the same predicate; letter-free but verbatim-noun refusal (B limit).
+	assertStrictRefusal(t, proofs[1], "term.inflection_verbatim", "matching predicates")
 	// Local subproof obligations plus discharged conclusions, independently
 	// checked as closed entailments (the assumptions are explicit premises).
 	v26Check(t, []string{"Exactly one student admires blair", "Ada is a student and Ada admires blair"}, "No student other than Ada admires blair", true, 4)
-	v26Check(t, []string{"At most one lab is red", "At least two labs are red"}, "Contradiction", true, 4)
-	for _, tc := range []struct{ p, c string }{{"Exactly one student admires blair", "if Ada is a student and Ada admires blair then no student other than Ada admires blair"}, {"At most one lab is red", "it is not the case that at least two labs are red"}} {
+	// term.inflection_verbatim: v44 strict: "lab"/"labs" are not the same predicate (B limit).
+	v26CheckRefused(t, []string{"At most one lab is red", "At least two labs are red"}, "Contradiction", "term.inflection_verbatim", "matching predicates", 4, true)
+	for _, tc := range []struct {
+		p, c    string
+		counter bool
+	}{
+		{"Exactly one student admires blair", "if Ada is a student and Ada admires blair then no student other than Ada admires blair", false},
+		// v44 strict: "lab"/"labs" are different verbatim predicates, so the oracle over the parsed forms has a countermodel (B limit).
+		{"At most one lab is red", "it is not the case that at least two labs are red", true},
+	} {
 		p, _ := countParse(tc.p)
 		c, e := countParse(tc.c)
-		if e != nil || finiteCountermodel([]*folFormula{p}, c, 4) {
+		if e != nil || finiteCountermodel([]*folFormula{p}, c, 4) != tc.counter {
 			t.Fatal("Fitch oracle", e)
 		}
 	}
@@ -179,7 +237,7 @@ func TestCatalogV26Bound(t *testing.T) {
 			t.Fatal(r.Message)
 		}
 	}
-	if EntailmentGateCatalogVersion != "v43.1" {
+	if EntailmentGateCatalogVersion != "v44.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 }

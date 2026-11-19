@@ -19,10 +19,16 @@ type StrictNote struct {
 
 // strictStepPasses repeats the gate and its final sentence guard for one step.
 // Other conclusions are available as cited statements, never re-evaluated here.
-// It calls the strict check directly: gateConclusionStep adds only diagnostic
+// It repeats the verdict-relevant part of gateConclusionStep (v44 name
+// evidence, term slots and round-2 term checks) and skips its diagnostic
 // retries, which change a failing step's message but never its verdict or form.
 func (policy strictRules) strictStepPasses(step NumberedArgumentStep, steps map[int]NumberedArgumentStep) bool {
+	policy.slotNames = schematicNameEvidence(steps)
+	policy.termSlots = ruleTermSlots(step, steps)
 	retry := policy.gateConclusionStepStrict(step, steps)
+	if policy.round2TermFailure(step, steps, retry) != "" {
+		return false
+	}
 	return retry.Passed && policy.sentenceFrameFailure(step, steps, retry.Form) == ""
 }
 
@@ -103,7 +109,9 @@ func attachStrictNotes(argument NumberedArgument, report *EntailmentGateReport) 
 			plainPasses = recorder.strictStepPassesEitherReading(step, steps)
 		}
 		for n, note := range strictNotes {
-			if plainPasses || fired.ids[note.ID] {
+			// v44.0 rules do not report to the recorder yet; always retry them
+			// so their notes match the exhaustive pass.
+			if plainPasses || fired.ids[note.ID] || note.Since == "v44.0" {
 				jobs = append(jobs, recheck{report: i, step: step, note: n})
 			}
 		}
@@ -154,7 +162,7 @@ var strictNotes = []StrictNote{
 		Since:       "v37.0",
 		Why:         "A sentence adverb may weaken or qualify the whole claim: 'Arguably A and B' may assert only that A and B is arguable.",
 		AlsoRefuses: []string{"1. If X is safe, then X is useful.\n2. Highly reliable machinery is safe.\n3. Therefore, highly reliable machinery is useful. [1,2]"},
-		Fix:         []string{"Start with the subject: \"Machinery that is highly reliable is safe.\" Use the same wording in the conclusion."},
+		Fix:         []string{"Start with the subject: \"The reliable machine is safe.\" Use the same wording in the conclusion."},
 	},
 	{
 		ID:          "coordination.clause",
@@ -194,17 +202,25 @@ var strictNotes = []StrictNote{
 		Since:       "v43.0",
 		Why:         "When the rule writes 'a X', the instance need not be an article plus a noun: 'Bob greets a lot of people' would make X 'lot of people'. The catalog has no lexicon to tell that from 'a dog', so such a variable is refused in every position.",
 		AlsoRefuses: []string{"1. If Rex is a X, then Fido is a X.\n2. Rex is a dog.\n3. Therefore, Fido is a dog. [1,2]"},
-		Fix:         []string{"Drop the article and let the variable stand for the whole phrase: \"If Rex is X, then Fido is X\" with X = \"a dog\". This works only when the phrase is an article, modifiers and one noun; otherwise write the phrase itself into the rule."},
+		Fix:         []string{"Write the phrase itself into the rule (\"If Rex is a dog, then Fido is a dog\"), or use a name or singular definite description."},
 	},
 	{
 		ID:    "slot.indefinite_value",
 		Name:  "Indefinite value that need not name one thing",
 		Since: "v43.0",
-		Why:   "An indefinite value is accepted only as a lone 'someone' or as a/an, some or one plus modifiers and one noun with nothing after it. A quantity or complement phrase ('a lot of people', 'a friend of Bob', 'a few runners') need not be one thing. Known limit: a bare idiom such as 'a lot' still passes.",
+		Why:   "The v43.0 shape check requires a lone indefinite pronoun or a/an, some or one plus modifiers and one noun with nothing after it. A quantity or complement phrase ('a lot of people', 'a friend of Bob', 'a few runners') need not be one thing. Since v44.0, slot.value_singular also refuses the remaining indefinite values.",
 		AlsoRefuses: []string{
 			"1. If X arrived, then X is someone who arrived.\n2. A friend of Bob arrived.\n3. Therefore, a friend of Bob is someone who arrived. [1,2]",
 		},
 		Fix: []string{"Write the phrase itself into the rule: \"If a lot of people arrived, then a lot of people is someone who arrived.\" The rule then claims exactly what it says; no variable is filled with the phrase."},
+	},
+	{
+		ID:          "slot.value_singular",
+		Name:        "Schematic value must be a singular term",
+		Since:       "v44.0",
+		Why:         "A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Only evidenced proper names and singular definite descriptions fill term slots. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values.",
+		AlsoRefuses: []string{"1. If X arrived, then X was seen.\n2. A dog arrived.\n3. Therefore, a dog was seen. [1,2]"},
+		Fix:         []string{"Name the thing (Rex arrived), with internal capitals or capitalization evidenced somewhere other than sentence start or after Therefore/So/Thus/Hence; or use a singular definite description (the dog). Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable."},
 	},
 	{
 		ID:          "slot.modified_quantifier",
@@ -212,7 +228,7 @@ var strictNotes = []StrictNote{
 		Since:       "v36.0",
 		Why:         "A modified quantifier ('more than two robots', 'nearly all firms') is not an individual, so it cannot fill X or instantiate a universal.",
 		AlsoRefuses: []string{"1. If X is red, then X is warm.\n2. Nearly every robot is red.\n3. Therefore, nearly every robot is warm. [1,2]"},
-		Fix:         []string{"Use a name in the slot: \"Alpha is red.\" Conclude \"Alpha is warm.\" This certifies an individual instance rather than the quantified claim."},
+		Fix:         []string{"Use a singular definite description: \"The robot is red.\" Conclude \"The robot is warm.\" This certifies an individual instance rather than the quantified claim."},
 	},
 	{
 		ID:          "slot.quantity",
@@ -228,7 +244,7 @@ var strictNotes = []StrictNote{
 		Since:       "v37.0",
 		Why:         "A term that contains a finite verb with a complement may hide an attitude or embedded claim: 'the observer reckons Alpha is red' does not give that Alpha is red.",
 		AlsoRefuses: []string{"1. If X are useful, then X are valuable.\n2. Software exploits not known to humans are useful.\n3. Therefore, software exploits not known to humans are valuable. [1,2]"},
-		Fix:         []string{"Name the thing: \"The exploits are useful.\" Conclude \"The exploits are valuable.\""},
+		Fix:         []string{"Name the thing: \"The exploit is useful.\" Conclude \"The exploit is valuable.\""},
 	},
 	{
 		ID:          "noun.pluralia_tantum",
@@ -262,4 +278,19 @@ var strictNotes = []StrictNote{
 		AlsoRefuses: []string{"1. The alarm sounds unless this battery is dead.\n2. It is not the case that this battery is dead.\n3. Therefore, the alarm sounds. [1,2]"},
 		Fix:         []string{"Replace \"this battery\" with \"the battery\" in both premises."},
 	},
+	{ID: "slot.description_shape", Name: "Short definite descriptions", Since: "v44.0", Why: "A long description may swallow a finite clause or a second name.", AlsoRefuses: []string{"1. If X is red, then X is warm.\n2. The big red dog is red.\n3. Therefore, the big red dog is warm. [1,2]"}, Fix: []string{"Name it, or use 'the dog'."}},
+	{ID: "slot.one_type", Name: "One type per rule variable", Since: "v44.0", Why: "A clause-slot occurrence must not smuggle a clause into another occurrence used as a term.", AlsoRefuses: []string{"1. If when X is red bob smiles, then X is warm.\n2. When the dog is red bob smiles.\n3. Therefore, the dog is warm. [1,2]"}, Fix: []string{"Name the thing in every occurrence, or write the phrase into the rule."}},
+	{ID: "eg.subject_only", Name: "Subject witnesses only", Since: "v44.0", Why: "An object or passive subject may occur in an intensional position without asserting its existence.", AlsoRefuses: []string{"1. Lois greets Zeus.\n2. Therefore, there is an X such that Lois greets X. [1]"}, Fix: []string{"State the existential claim as its own premise."}},
+	{ID: "eg.name_witness", Name: "Named existential witnesses", Since: "v44.0", Why: "A definite may covary with another quantifier; descriptions do not fix one witness.", AlsoRefuses: []string{"1. The dog is red.\n2. Therefore, something is red. [1]"}, Fix: []string{"State the existential claim as its own premise, or use an evidenced proper name in an unquantified subject clause."}},
+	{ID: "term.numeral", Name: "No numeral-led terms", Since: "v44.0", Why: "A numeral phrase can state an exact quantity rather than identify one constant.", AlsoRefuses: []string{"1. All rodents are animals.\n2. Six mice are rodents.\n3. Therefore, six mice are animals. [1,2]"}, Fix: []string{"Name the thing, or use 'the mouse'."}},
+	{ID: "identity.constant_sides", Name: "Constant identity sides", Since: "v44.0", Why: "Pronouns can shift referent and quantities need not identify one object.", AlsoRefuses: []string{"1. He is identical to Alpha.\n2. He is identical to Beta.\n3. Therefore, Alpha is identical to Beta. [1,2]"}, Fix: []string{"Name the thing, or use 'the dog' on each side."}},
+	{ID: "identity.extensional_context", Name: "Closed extensional identity contexts", Since: "v44.0", Why: "An unlisted predicate may describe an intensional role under which co-referring names cannot be exchanged.", AlsoRefuses: []string{"1. The man is identical to Clark.\n2. The man is famous as a hero.\n3. Therefore, Clark is famous as a hero. [1,2]"}, Fix: []string{"State the substituted claim as a premise."}},
+	{ID: "slot.letter_in_name", Name: "Letters adjacent to names", Since: "v44.0", Why: "A schematic letter may be a literal component of Model U or Malcolm X.", AlsoRefuses: []string{"1. If Model U is red, then Model U is warm.\n2. Model U is red.\n3. Therefore, Model U is warm. [1,2]"}, Fix: []string{"Use a variable away from names, or write the name out."}},
+	{ID: "term.inflection_verbatim", Name: "Verbatim noun inflection", Since: "v44.0", Why: "A plural surface may not denote instances of the stem guessed by deleting its suffix.", AlsoRefuses: []string{"1. All dogs are wet.\n2. The dog is a dog.\n3. Therefore, the dog is wet. [1,2]"}, Fix: []string{"Write the rule with singular 'every N' (Every dog is wet)."}},
+	{ID: "scope.mixed_andor", Name: "Mixed connective scope", Since: "v44.0", Why: "A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it.", AlsoRefuses: []string{"1. Ann is a singer who dances and Bob is happy or Cal reads.\n2. Therefore, Ann is a singer who dances. [1]"}, Fix: []string{"Use 'both … and' or 'either … or' to show the grouping."}},
+	{ID: "scope.clause_start", Name: "Controlled clause starts", Since: "v44.0", Why: "An operator such as perhaps inside a negated conjunction may scope over both clauses; distributing the negation changes that scope.", AlsoRefuses: []string{"1. It is not the case that perhaps the lamp is lit and the door is open.\n2. Therefore, either it is not the case that perhaps the lamp is lit or it is not the case that the door is open. [1]"}, Fix: []string{"Move the operator into each clause, or state the claim as an explicit premise."}},
+	{ID: "opener.ing_frame", Name: "Initial -ing frame", Since: "v44.0", Why: "Following the script may qualify the entire conjunction rather than name its subject. Even genuine gerund subjects are refused when inspected.", AlsoRefuses: []string{"1. It is not the case that it is not the case that swimming is healthy.\n2. Therefore, swimming is healthy. [1]"}, Fix: []string{"Move the frame into each clause, or state the framed claim as its own premise."}},
+	{ID: "scope.elided_copula", Name: "Closed copula elision", Since: "v44.0", Why: "In Either the men are quiet or fish, fish may be a verb rather than a predicate with an omitted copula. Unknown predicates are not expanded.", AlsoRefuses: []string{"1. Either the men are quiet or fish.\n2. Therefore, either the men are quiet or the men are fish. [1]"}, Fix: []string{"Repeat the subject and verb: 'or the men are fish'."}},
+	{ID: "scope.description_negation", Name: "Description negation scope", Since: "v44.0", Why: "Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion.", AlsoRefuses: []string{"1. It is not the case that the present king of France is bald.\n2. Therefore, the present king of France is not bald. [1]"}, Fix: []string{"Add 'There is exactly one present king of France' and name it, or keep the wide negation."}},
+	{ID: "opener.ly_exception", Name: "Adverb-capable noun exceptions", Since: "v44.0", Why: "Daily, early and only can be adverbs with scope over an entire sentence, even when they also have nominal uses.", AlsoRefuses: []string{"1. It is not the case that it is not the case that daily the lamp is lit.\n2. Therefore, daily the lamp is lit. [1]"}, Fix: []string{"Move the adverb into each clause, or state the framed claim as its own premise."}},
 }

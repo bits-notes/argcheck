@@ -46,13 +46,12 @@ func TestCatalogV27CorpusRegression(t *testing.T) {
 	}
 }
 func TestCatalogV27InheritedNegation(t *testing.T) {
-	// Compatibility is deliberately stronger than retroactive Russell semantics:
-	// this old negation certificate must retain its complete historical report.
+	// scope.description_negation: the known empty-restrictor countermodel now requires refusal.
 	text := v26Argument([]string{"It is not the case that the present king of France is bald"}, "The present king of France is not bald")
 	v27Parity(t, text)
-	_, r := CheckEntailmentGate(text)
-	if !r.Passed {
-		t.Fatal(r.Message)
+	refused := []string{text}
+	for _, argument := range refused {
+		assertStrictRefusal(t, argument, "scope.description_negation", "keep the wide negation")
 	}
 	g := foAtom("king", "$count")
 	p := foAtom("bald", "$count")

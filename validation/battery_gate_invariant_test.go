@@ -52,11 +52,14 @@ func loadGoldGateCases(t *testing.T, path string) []goldGateCase {
 	return wrapper.Cases
 }
 
-func assertGoldGateConsistent(t *testing.T, path string) {
+func assertGoldGateConsistent(t *testing.T, path string, strictRefused ...map[string]strictRefusal) {
 	t.Helper()
 	for _, c := range loadGoldGateCases(t, path) {
 		c := c
 		t.Run(c.ID, func(t *testing.T) {
+			if len(strictRefused) > 0 && listedStrictRefusal(t, c.text(), strictRefused[0]) {
+				return
+			}
 			parsed, res := ParseNumberedArgument(c.text(), numberedArgumentOptions{})
 			if !res.Passed {
 				t.Fatalf("case %s does not parse: %s", c.ID, res.Message)
@@ -122,7 +125,11 @@ func assertGoldGateConsistent(t *testing.T, path string) {
 }
 
 func TestBatteryGoldIsGateConsistent(t *testing.T) {
-	assertGoldGateConsistent(t, "testdata/entailment_gate/battery.json")
+	// term.inflection_verbatim: the historical All humans / a human case.
+	refused := map[string]strictRefusal{
+		"TestBatteryGoldIsGateConsistent/L-TV-barbara": {"term.inflection_verbatim", "singular 'every N'"},
+	}
+	assertGoldGateConsistent(t, "testdata/entailment_gate/battery.json", refused)
 }
 
 func TestAtomicVerificationGoldIsGateConsistent(t *testing.T) {

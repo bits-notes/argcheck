@@ -245,8 +245,8 @@ func (policy strictRules) v19OpaqueInstantiation(p []NumberedArgumentStep, c Num
 		ant, _ := policy.schematicTemplate(pair.left)
 		result, _ := policy.schematicTemplate(pair.right)
 		for _, sub := range policy.unifySchematicTemplate(ant, p[1].Statement, relaxedInitial(nil, p...)) {
-			a, okA := instantiateSchematicTemplate(ant, sub)
-			b, okB := instantiateSchematicTemplate(result, sub)
+			a, okA := policy.instantiateSchematicTemplate(ant, sub)
+			b, okB := policy.instantiateSchematicTemplate(result, sub)
 			if !okA || !okB || !policy.equalClauses(b, c.Statement) {
 				continue
 			}

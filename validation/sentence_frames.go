@@ -69,7 +69,7 @@ func (policy strictRules) sentenceFrameOpener(s string, steps map[int]NumberedAr
 	if policy.opener_adverb && frameSentenceAdverbs[first] && policy.hit("opener.adverb") {
 		return frameOpenerMessage(words[0])
 	}
-	if policy.opener_adverb && strings.HasSuffix(first, "ly") && !frameLyNouns[first] && !frameLyAdjectiveSubject(strings.Fields(s)) && policy.hit("opener.adverb") {
+	if policy.opener_adverb && strings.HasSuffix(first, "ly") && !frameLyNouns[first] && (policy.opener_ly_exception || !round2OldLyExceptions[first]) && !frameLyAdjectiveSubject(strings.Fields(s)) && policy.hit("opener.adverb") {
 		return frameOpenerMessage(words[0])
 	}
 	// Bare-noun, gerund and adjective+noun subjects ("Beliefs ...", "Trying to
@@ -119,7 +119,7 @@ func frameOpenerMessage(opener string) string {
 // Non-ly sentence adverbs (closed class as far as English allows).
 // "almost"/"nearly" before every/all are quantifier openers handled above.
 var frameSentenceAdverbs = wordSet("perhaps maybe still even just only also too indeed surely certainly again already yet sometimes often once always never seldom soon now today tomorrow yesterday tonight however nevertheless nonetheless moreover furthermore meanwhile otherwise instead anyway anyhow regardless overall altogether hence thus therefore so then thereby accordingly consequently admittedly allegedly supposedly reportedly apparently evidently ostensibly arguably presumably possibly probably else almost nearly quite rather somewhat")
-var frameLyNouns = wordSet("family italy reply assembly subassembly supply ally rally bully belly jelly lily july only early daily holy monopoly anomaly homily melancholy butterfly")
+var frameLyNouns = wordSet("family italy reply assembly subassembly supply ally rally bully belly jelly lily july holy monopoly anomaly homily melancholy butterfly")
 
 // frameLyAdjectives are -ly adjectives that are not used as sentence
 // adverbs, so at the start of a step they open a noun-phrase subject
@@ -246,6 +246,9 @@ func (policy strictRules) punctuationDifference(a, b string) string {
 // Whole-sentence reuse is never an inspection of that sentence. Apply the
 // guards at the final gate boundary so alternate FOL routes cannot bypass it.
 func (policy strictRules) sentenceFrameFailure(c NumberedArgumentStep, steps map[int]NumberedArgumentStep, form string) string {
+	if why := policy.round2ScopeFailure(c, steps); why != "" {
+		return why
+	}
 	for _, id := range c.Citations {
 		if policy.equalClauses(steps[id].Statement, c.Statement) {
 			return ""

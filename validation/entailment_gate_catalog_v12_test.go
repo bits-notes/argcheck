@@ -5,13 +5,29 @@ import "testing"
 // The motivating case: a binary constructive dilemma from a metaethics
 // reconstruction that no earlier catalog certified.
 func TestCatalogV12MotivatingConstructiveDilemma(t *testing.T) {
-	runV11Cases(t, []v11Case{
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV12MotivatingConstructiveDilemma/metaethics": {"scope.clause_start", "move the operator into each clause"},
+	}
+	runV44 := func(t *testing.T, cases []v11Case) { runV11Strict(t, cases, refused) }
+
+	runV44(t, []v11Case{
 		{"metaethics", "1. Either moral facts depend on attitudes or moral facts do not depend on attitudes.\n2. If moral facts depend on attitudes, then robust attitude-independent realism is false.\n3. If moral facts do not depend on attitudes, then the proposed response-dependent account is false.\n4. Therefore, either robust attitude-independent realism is false or the proposed response-dependent account is false. [1,2,3]", "constructive dilemma"},
 	})
 }
 
 func TestCatalogV12ConstructiveDilemma(t *testing.T) {
-	runV11Cases(t, []v11Case{
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV12ConstructiveDilemma/ternary": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV12ConstructiveDilemma/ternary_conclusion_permuted": {"scope.clause_start", "move the operator into each clause"},
+	}
+	runV44 := func(t *testing.T, cases []v11Case) { runV11Strict(t, cases, refused) }
+
+	runV44(t, []v11Case{
 		{"binary", "1. Either it rains or it snows.\n2. If it rains, then the road is wet.\n3. If it snows, then the road is icy.\n4. Therefore, either the road is wet or the road is icy. [1,2,3]", "constructive dilemma"},
 		{"conditionals first", "1. If it rains, then the road is wet.\n2. If it snows, then the road is icy.\n3. Either it rains or it snows.\n4. Therefore, either the road is wet or the road is icy. [1,2,3]", "constructive dilemma"},
 		{"citation order shuffled", "1. If it snows, then the road is icy.\n2. Either it rains or it snows.\n3. If it rains, then the road is wet.\n4. Therefore, either the road is wet or the road is icy. [3,1,2]", "constructive dilemma"},
@@ -46,7 +62,14 @@ func TestCatalogV12SimpleDilemma(t *testing.T) {
 }
 
 func TestCatalogV12DestructiveDilemma(t *testing.T) {
-	runV11Cases(t, []v11Case{
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestCatalogV12DestructiveDilemma/ternary": {"scope.clause_start", "move the operator into each clause"},
+	}
+	runV44 := func(t *testing.T, cases []v11Case) { runV11Strict(t, cases, refused) }
+
+	runV44(t, []v11Case{
 		{"binary", "1. If it rains, then the road is wet.\n2. If it snows, then the road is icy.\n3. Either it is not the case that the road is wet or it is not the case that the road is icy.\n4. Therefore, either it is not the case that it rains or it is not the case that it snows. [1,2,3]", "destructive dilemma"},
 		{"disjunction first, swapped", "1. Either it is not the case that the road is icy or it is not the case that the road is wet.\n2. If it rains, then the road is wet.\n3. If it snows, then the road is icy.\n4. Therefore, either it is not the case that it snows or it is not the case that it rains. [1,2,3]", "destructive dilemma"},
 		{"ternary", "1. If Ada stays, then the lab opens.\n2. If Ben stays, then the shop opens.\n3. If Cy stays, then the cafe opens.\n4. Either it is not the case that the lab opens or it is not the case that the shop opens or it is not the case that the cafe opens.\n5. Therefore, either it is not the case that Ada stays or it is not the case that Ben stays or it is not the case that Cy stays. [1,2,3,4]", "destructive dilemma"},

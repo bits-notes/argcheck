@@ -61,7 +61,15 @@ func TestCatalogV26NonNumericParity(t *testing.T) {
 				}
 				return
 			}
-			v26AssertLegacyParity(t, v26Argument([]string{"If p then " + sentence, "p"}, sentence), false)
+			argument := v26Argument([]string{"If p then " + sentence, "p"}, sentence)
+			// slot.letter_in_name: the quoted corpus phrase contains a
+			// schematic letter adjacent to a capitalised name component.
+			refused := map[int]strictRefusal{18: {"slot.letter_in_name", "write the name out"}}
+			if r, ok := refused[i]; ok {
+				assertStrictRefusal(t, argument, r.rule, r.hint)
+			} else {
+				v26AssertLegacyParity(t, argument, false)
+			}
 			// Also preserve legacy refusals and their diagnostics.
 			v26AssertLegacyParity(t, v26Argument([]string{"q"}, sentence), false)
 		})
@@ -75,7 +83,14 @@ func TestCatalogV26RealArgumentParity(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			v26AssertLegacyParity(t, string(data), true)
+			// v44 strict rules deliberately supersede historical acceptance and diagnostics.
+			refused := map[string]strictRefusal{
+				"GB1.txt":                       {"slot.value_singular", "Name the thing"},
+				"gettier-1963_A2.txt":           {"slot.value_singular", "Name the thing"},
+				"hempel-oppenheim-1948_A23.txt": {"scope.clause_start", "move the operator into each clause"},
+			}
+			r := refused[name]
+			assertStrictRefusal(t, string(data), r.rule, r.hint)
 		})
 	}
 }

@@ -83,11 +83,22 @@ func checkV20Case(t *testing.T, tc v20GateCase) {
 }
 
 func TestCatalogV20(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v43.1" {
+	// identity.constant_sides: Socrates has no non-initial capitalization evidence.
+	refused := map[string]strictRefusal{
+		"TestCatalogV20/property_UG": {"identity.constant_sides", "name the thing"},
+		"TestCatalogV20/nested_UG":   {"identity.extensional_context", "state the substituted claim as a premise"},
+	}
+
+	if EntailmentGateCatalogVersion != "v44.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range append(append([]v20GateCase{}, v20AcceptedCases...), v20KeptGaps...) {
-		t.Run(tc.name, func(t *testing.T) { checkV20Case(t, tc) })
+		t.Run(tc.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tc.argument, refused) {
+				return
+			}
+			checkV20Case(t, tc)
+		})
 	}
 }
 

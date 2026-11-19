@@ -25,7 +25,8 @@ func TestCatalogV25LiteralNames(t *testing.T) {
 	}
 	v25Conversion(t, "X is red", "name{x} is red")
 	v24Check(t, "1. Every x is such that x admires name{x}.\n2. Therefore, alice admires name{x}. [1]")
-	v24Check(t, "1. name{x} is identical to alice.\n2. name{x} is red.\n3. Therefore, alice is red. [1,2]")
+	// identity.constant_sides: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+	assertStrictRefusal(t, "1. name{x} is identical to alice.\n2. name{x} is red.\n3. Therefore, alice is red. [1,2]", "identity.constant_sides", "name the thing")
 	f, _ := parseFOL("x is red")
 	if !folSame(f, foAtom("is/red", "x")) {
 		t.Fatal("bare legacy name changed")

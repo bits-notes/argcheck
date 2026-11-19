@@ -99,6 +99,13 @@ func TestCatalogV25UnboundedVariables(t *testing.T) {
 }
 func v25Conversion(t *testing.T, a, b string) {
 	t.Helper()
+	v25ConversionWith(t, a, b, v24Check)
+}
+
+// v25ConversionWith checks notation equivalence both ways, then applies the
+// supplied entailment-gate check to each direction.
+func v25ConversionWith(t *testing.T, a, b string, gate func(*testing.T, string)) {
+	t.Helper()
 	for _, pair := range [][2]string{{a, b}, {b, a}} {
 		steps := map[int]NumberedArgumentStep{1: {Number: 1, Statement: pair[0]}}
 		c := NumberedArgumentStep{Number: 2, Statement: pair[1], Citations: []int{1}}
@@ -106,7 +113,7 @@ func v25Conversion(t *testing.T, a, b string) {
 		if !r.Passed || r.Form != "notation equivalence" {
 			t.Fatalf("%s -> %s: %+v", pair[0], pair[1], r)
 		}
-		v24Check(t, "1. "+pair[0]+".\n2. Therefore, "+pair[1]+". [1]")
+		gate(t, "1. "+pair[0]+".\n2. Therefore, "+pair[1]+". [1]")
 	}
 }
 func TestCatalogV25NotationEquivalence(t *testing.T) {
@@ -285,7 +292,8 @@ func TestCatalogV25LegacyCoverage(t *testing.T) {
 			t.Errorf("resolved exception must be removed: %s", row.Sentence)
 		}
 		rendered, _ := legacyFOLRender(fs[0])
-		v25Conversion(t, row.Sentence, rendered)
+		// Explicit-FOL renderings with lowercase constants are certified or refused by a named v44 strict rule (B limit).
+		v25ConversionWith(t, row.Sentence, rendered, v24CheckV44)
 		converted++
 		for _, form := range row.Forms {
 			forms[form] = true

@@ -3,6 +3,17 @@ package validation
 import "testing"
 
 func TestEntailmentGateV291NonCopularAgreement(t *testing.T) {
+	refused := map[string]strictRefusal{
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestEntailmentGateV291NonCopularAgreement/have_to_has": {"term.inflection_verbatim", "singular 'every N'"},
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestEntailmentGateV291NonCopularAgreement/regular_-s": {"term.inflection_verbatim", "singular 'every N'"},
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestEntailmentGateV291NonCopularAgreement/consonant_y": {"term.inflection_verbatim", "singular 'every N'"},
+		// term.inflection_verbatim: plural and singular class spellings must match verbatim.
+		"TestEntailmentGateV291NonCopularAgreement/verbatim_plural_still_accepted": {"term.inflection_verbatim", "singular 'every N'"},
+	}
+
 	tests := []struct {
 		name, argument string
 		want           bool
@@ -16,6 +27,9 @@ func TestEntailmentGateV291NonCopularAgreement(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tc.argument, refused) {
+				return
+			}
 			if report, _ := CheckEntailmentGate(tc.argument); report.Passed != tc.want {
 				t.Fatalf("accepted=%v, want %v\n%s", report.Passed, tc.want, tc.argument)
 			}

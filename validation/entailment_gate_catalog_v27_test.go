@@ -83,12 +83,25 @@ func v27Exercises() []nplaceExercise {
 	return out
 }
 func TestCatalogV27Exercises(t *testing.T) {
+	// Strict identity requires evidenced constants, bounded descriptions and closed copular predicates; description negation needs explicit scope.
+	refused := map[string]strictRefusal{
+		"TestCatalogV27Exercises/b2":                                {"identity.extensional_context", "state the substituted claim as a premise"},
+		"TestCatalogV27Exercises/membership":                        {"identity.extensional_context", "state the substituted claim as a premise"},
+		"TestCatalogV27Exercises/uniqueness":                        {"identity.constant_sides", "name the thing"},
+		"TestCatalogV27Exercises/relative_substitution":             {"identity.constant_sides", "name the thing"},
+		"TestCatalogV27Exercises/relative_three-place_substitution": {"identity.constant_sides", "name the thing"},
+		"TestCatalogV27Exercises/both_readings_imply_narrow":        {"scope.description_negation", "keep the wide negation"},
+		// identity.constant_sides: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit); the expansion has explicit bound-variable identity.
+		"TestCatalogV27Exercises/definition_expansion": {"identity.constant_sides", "name the thing"},
+		// identity.constant_sides: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit); the contraction has explicit bound-variable identity.
+		"TestCatalogV27Exercises/definition_contraction": {"identity.constant_sides", "name the thing"},
+	}
 	start := time.Now()
 	valid, invalid := 0, 0
 	for _, tc := range v27Exercises() {
 		t.Run(tc.name, func(t *testing.T) {
 			_, r := CheckEntailmentGate(tc.argument)
-			if r.Passed != tc.valid {
+			if !listedStrictRefusal(t, tc.argument, refused) && r.Passed != tc.valid {
 				t.Errorf("gate: %s\n%s", tc.argument, r.Message)
 			}
 			if nOracleInvalid(tc.p, tc.c) == tc.valid {
@@ -142,9 +155,10 @@ func TestCatalogV27Fitch(t *testing.T) {
 | 2. Suppose the author of Waverley wrote Ivanhoe.
 | 3. Therefore, Scott wrote Ivanhoe. [1,2]
 4. Therefore, if the author of Waverley wrote Ivanhoe then Scott wrote Ivanhoe. [2-3]`
-	_, r := CheckEntailmentGate(proof)
-	if !r.Passed {
-		t.Fatal(r.Message)
+	// identity.extensional_context: "wrote" is outside the closed substitution grammar.
+	refused := []string{proof}
+	for _, argument := range refused {
+		assertStrictRefusal(t, argument, "identity.extensional_context", "state the substituted claim as a premise")
 	}
 	ex := v27Exercises()[0]
 	if finiteCountermodel([]*folFormula{ex.p[0].readings[0]}, fol("implies", ex.p[1].readings[0], ex.c.readings[0]), 4) {

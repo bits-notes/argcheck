@@ -338,6 +338,19 @@ func (policy strictRules) matchRelationalRule(p []NumberedArgumentStep, c Number
 	objectRefused := ""
 	for _, a := range relationCandidates(p[0].Statement) {
 		for _, b := range relationCandidates(c.Statement) {
+			if policy.term_numeral {
+				bad := false
+				for _, terms := range [][]relationTerm{a.terms, b.terms} {
+					for _, term := range terms {
+						if term.quant == "" && numeralTerm(term.text) {
+							bad = true
+						}
+					}
+				}
+				if bad {
+					continue
+				}
+			}
 			if a.verb != b.verb {
 				continue
 			}
@@ -373,7 +386,7 @@ func (policy strictRules) matchRelationalRule(p []NumberedArgumentStep, c Number
 									objectRefused = objectSlotMessage(q.kind+" "+q.class, b.verb)
 									continue
 								}
-								if q.kind == "some" && q.class == member.right && relationEntailsWithMember(x, relationRemove(y, i, member.left), member) {
+								if q.kind == "some" && q.class == member.right && policy.egWitnessSafe(p[0].Statement, member.left) && relationEntailsWithMember(x, relationRemove(y, i, member.left), member) {
 									ok = true
 								}
 							}
@@ -683,6 +696,7 @@ func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map
 	}
 	bindings := map[string]string{}
 	any, all := false, false
+	strictWitnessRefusal := false
 	var failed EntailmentGateStepReport
 	var successful []string
 	selected := make([]string, len(choices))
@@ -716,6 +730,15 @@ func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map
 				} else {
 					failed = r
 					thisAll = false
+					// Failure of a conservative witness grammar is not evidence
+					// that this scope reading has a countermodel. Keep the
+					// refusal, but do not describe it as semantic ambiguity.
+					if policy.eg_subject_only || policy.eg_name_witness {
+						relaxed := policy.without("eg.subject_only").without("eg.name_witness")
+						if relaxed.gateConclusionStepUnscoped(target, local).Passed {
+							strictWitnessRefusal = true
+						}
+					}
 				}
 				return
 			}
@@ -743,6 +766,12 @@ func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map
 	}
 	raw.Passed = false
 	raw.Form = ""
+	if any && strictWitnessRefusal {
+		raw.AmbiguityNote = ""
+		raw.NearestForm = "relational scope conversion"
+		raw.Mismatch = "an explicit scope reading is refused by the strict existential-witness grammar; state the existential claim as its own premise"
+		return raw
+	}
 	if any {
 		ch := choices[0]
 		// The scaffold itself is a plain-English statement of the selected reading.

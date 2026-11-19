@@ -125,11 +125,42 @@ func nplaceExercises() []nplaceExercise {
 	return out
 }
 func TestCatalogV22(t *testing.T) {
-	if EntailmentGateCatalogVersion != "v43.1" {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// eg.subject_only: existential introduction into an object slot is outside the strict witness grammar.
+		"TestCatalogV22/a1": {"eg.subject_only", "state the existential claim as its own premise"},
+		// eg.subject_only: existential introduction into an object slot is outside the strict witness grammar.
+		"TestCatalogV22/3-place_EI_slot_1": {"eg.subject_only", "state the existential claim as its own premise"},
+		// eg.subject_only: existential introduction into an object slot is outside the strict witness grammar.
+		"TestCatalogV22/3-place_EI_slot_2": {"eg.subject_only", "state the existential claim as its own premise"},
+		// eg.subject_only: existential introduction into an object slot is outside the strict witness grammar.
+		"TestCatalogV22/4-place_EI_slot_1": {"eg.subject_only", "state the existential claim as its own premise"},
+		// eg.subject_only: existential introduction into an object slot is outside the strict witness grammar.
+		"TestCatalogV22/4-place_EI_slot_2": {"eg.subject_only", "state the existential claim as its own premise"},
+		// eg.subject_only: existential introduction into an object slot is outside the strict witness grammar.
+		"TestCatalogV22/4-place_EI_slot_3": {"eg.subject_only", "state the existential claim as its own premise"},
+		// eg.name_witness: the existential witness lacks the required name evidence.
+		"TestCatalogV22/3-place_EI_slot_0": {"eg.name_witness", "state the existential claim as its own premise"},
+		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
+		"TestCatalogV22/3-place_identity": {"identity.constant_sides", "name the thing"},
+		// eg.name_witness: the existential witness lacks the required name evidence.
+		"TestCatalogV22/4-place_EI_slot_0": {"eg.name_witness", "state the existential claim as its own premise"},
+		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
+		"TestCatalogV22/4-place_identity": {"identity.constant_sides", "name the thing"},
+		// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+		"TestCatalogV22/3-place_Fitch_EE": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+		"TestCatalogV22/4-place_Fitch_EE": {"scope.clause_start", "move the operator into each clause"},
+	}
+
+	if EntailmentGateCatalogVersion != "v44.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range nplaceExercises() {
 		t.Run(tc.name, func(t *testing.T) {
+			if listedStrictRefusal(t, tc.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(tc.argument)
 			if result.Passed != tc.valid {
 				t.Fatalf("want valid=%v\n%s\n%+v\n%s", tc.valid, tc.argument, report, result.Message)

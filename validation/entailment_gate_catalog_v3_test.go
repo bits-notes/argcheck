@@ -72,6 +72,14 @@ func TestUniversalNegativeInstantiation(t *testing.T) {
 }
 
 func TestSchematicInstantiation(t *testing.T) {
+	// v44 by-design refusals: retained separately from the accepted controls.
+	refused := map[string]strictRefusal{
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestSchematicInstantiation/geoff-059_family": {"slot.value_singular", "Name the thing"},
+		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
+		"TestSchematicInstantiation/geoff-080_X_form": {"slot.value_singular", "Name the thing"},
+	}
+
 	positives := []struct {
 		name     string
 		argument string
@@ -97,6 +105,9 @@ func TestSchematicInstantiation(t *testing.T) {
 	}
 	for _, test := range positives {
 		t.Run(test.name, func(t *testing.T) {
+			if listedStrictRefusal(t, test.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(test.argument)
 			if !result.Passed || !report.Passed {
 				t.Fatalf("gate failed: result=%#v report=%#v", result, report)

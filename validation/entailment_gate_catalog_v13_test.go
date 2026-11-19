@@ -6,6 +6,7 @@ import (
 )
 
 func TestCatalogV13Forms(t *testing.T) {
+
 	tests := []struct {
 		form, name, argument string
 		accepted             bool

@@ -271,7 +271,11 @@ func descriptionInfo(f *folFormula) (g, p *folFormula) {
 	return g, p
 }
 func descriptionRule(ps []*folFormula, c *folFormula) string {
-	if form := folRule(ps, c); form != "" {
+	return allStrictRules().descriptionRule(ps, c)
+}
+
+func (policy strictRules) descriptionRule(ps []*folFormula, c *folFormula) string {
+	if form := policy.folRule(ps, c); form != "" {
 		return "definition"
 	}
 	if len(ps) == 1 {
@@ -284,7 +288,7 @@ func descriptionRule(ps []*folFormula, c *folFormula) string {
 		}
 		if g != nil {
 			for _, part := range []*folFormula{countQ("some", "$count", g), countQ("some", "$count", p), countDefinition("exactly", 1, g)} {
-				if folSame(c, part) {
+				if folSame(c, part) && !(policy.eg_name_witness && c.op == "some") {
 					return "elimination"
 				}
 			}
@@ -465,7 +469,7 @@ func (policy strictRules) gateDescriptions(c NumberedArgumentStep, steps map[int
 			for _, id := range c.Citations {
 				ps = append(ps, selected[descriptionSurfaceKey(steps[id].Statement)])
 			}
-			form = descriptionRule(ps, target)
+			form = policy.descriptionRule(ps, target)
 			return form != ""
 		}
 		translated := map[int]NumberedArgumentStep{}

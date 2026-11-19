@@ -574,6 +574,14 @@ func (f *gateModalOracleFormula) eval(world, frame, valuation int) bool {
 }
 
 func TestEntailmentGateV15ModalOracle(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateV15ModalOracle/conjunction_forward": {"scope.clause_start", "move the operator into each clause"},
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestEntailmentGateV15ModalOracle/conjunction_reverse": {"scope.clause_start", "move the operator into each clause"},
+	}
+
 	p, q := &gateModalOracleFormula{op: "p"}, &gateModalOracleFormula{op: "q"}
 	unary := func(op string, a *gateModalOracleFormula) *gateModalOracleFormula {
 		return &gateModalOracleFormula{op: op, left: a}
@@ -626,6 +634,9 @@ func TestEntailmentGateV15ModalOracle(t *testing.T) {
 				t.Fatalf("valid=%v counterexamples=%d", tc.valid, counterexamples)
 			}
 			argument := fmt.Sprintf("1. %s.\n2. Therefore, %s. [1]", tc.from.english(), tc.to.english())
+			if listedStrictRefusal(t, argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(argument)
 			if report.Passed != tc.valid || result.Passed != tc.valid {
 				t.Fatalf("valid=%v: %s %+v", tc.valid, result.Message, report)

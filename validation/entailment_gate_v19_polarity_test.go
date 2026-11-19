@@ -82,6 +82,11 @@ func TestCounterfactualMixedMaterialRules(t *testing.T) {
 2. Therefore, if the match had been struck, then if the match had been dry, then the match would have lit. [1]`, "", "positive conclusion position"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			// slot.value_singular: the embedded-conditional noun phrase is not an admitted term.
+			refused := map[string]strictRefusal{"TestCounterfactualMixedMaterialRules/schematic_nested_if_with_omitted_then": {"slot.value_singular", "Name the thing"}}
+			if listedStrictRefusal(t, tc.argument, refused) {
+				return
+			}
 			report, result := CheckEntailmentGate(tc.argument)
 			if len(report.Steps) == 0 {
 				t.Fatal(result.Message)

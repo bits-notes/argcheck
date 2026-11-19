@@ -11,6 +11,8 @@ import (
 type rulesDocBlock struct {
 	kind      string
 	form      string
+	rule      string
+	hint      string
 	startLine int
 	body      string
 }
@@ -22,6 +24,7 @@ func parseRulesDocBlocks(t *testing.T, text string) []rulesDocBlock {
 	inFence := false
 	fenceKind := ""
 	fenceForm := ""
+	fenceRule, fenceHint := "", ""
 	fenceStart := 0
 	var bodyLines []string
 
@@ -34,6 +37,12 @@ func parseRulesDocBlocks(t *testing.T, text string) []rulesDocBlock {
 			}
 			info := strings.TrimSpace(strings.TrimPrefix(trimmed, "```"))
 			switch {
+			case strings.HasPrefix(info, "argcheck-refused "):
+				parts := strings.Split(strings.TrimPrefix(info, "argcheck-refused "), " | ")
+				if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+					t.Fatalf("docs/rules.md:%d: refused fence needs rule | fix hint | form", lineNo)
+				}
+				fenceKind, fenceRule, fenceHint, fenceForm = "refused", parts[0], parts[1], parts[2]
 			case info == "argcheck-accept" || strings.HasPrefix(info, "argcheck-accept "):
 				fenceKind = "accept"
 				fenceForm = strings.TrimSpace(strings.TrimPrefix(info, "argcheck-accept"))
@@ -59,10 +68,12 @@ func parseRulesDocBlocks(t *testing.T, text string) []rulesDocBlock {
 		}
 
 		if trimmed == "```" {
-			if fenceKind == "accept" || fenceKind == "reject" {
+			if fenceKind == "accept" || fenceKind == "reject" || fenceKind == "refused" {
 				blocks = append(blocks, rulesDocBlock{
 					kind:      fenceKind,
 					form:      fenceForm,
+					rule:      fenceRule,
+					hint:      fenceHint,
 					startLine: fenceStart,
 					body:      strings.Join(bodyLines, "\n"),
 				})
@@ -70,6 +81,7 @@ func parseRulesDocBlocks(t *testing.T, text string) []rulesDocBlock {
 			inFence = false
 			fenceKind = ""
 			fenceForm = ""
+			fenceRule, fenceHint = "", ""
 			bodyLines = nil
 			continue
 		}
@@ -111,6 +123,7 @@ func TestDocsRulesExamples(t *testing.T) {
 
 	acceptedCount := make(map[string]int, len(catalogForms))
 	rejectedCount := make(map[string]int, len(catalogForms))
+	refusedCount := make(map[string]int, len(catalogForms))
 
 	for _, block := range blocks {
 		if !knownForms[block.form] {
@@ -118,6 +131,12 @@ func TestDocsRulesExamples(t *testing.T) {
 		}
 		valid, report, msg := checkRulesDocArgument(block.body)
 		switch block.kind {
+		case "refused":
+			// The example remains checked, with its v44 rule and rewrite hint.
+			refusedCount[block.form]++
+			if valid || !strings.Contains(strings.ToLower(msg), strings.ToLower(block.hint)) {
+				t.Errorf("docs/rules.md:%d: %s expected refusal with %q: %s\n%s", block.startLine, block.rule, block.hint, msg, block.body)
+			}
 		case "accept":
 			acceptedCount[block.form]++
 			if !valid {
@@ -143,7 +162,7 @@ func TestDocsRulesExamples(t *testing.T) {
 	}
 
 	for _, form := range catalogForms {
-		if acceptedCount[form] == 0 {
+		if acceptedCount[form]+refusedCount[form] == 0 {
 			t.Errorf("docs/rules.md: missing argcheck-accept block for %q", form)
 		}
 		if rejectedCount[form] == 0 {

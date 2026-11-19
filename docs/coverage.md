@@ -1112,7 +1112,7 @@ about the narrower accepted language before the audit requirement is met.
 | same: `attitudeNounContext` | allow (exception) | yes | Exception inside the list check only; `clauseInsideTerm` uses its own determiner/preposition rule. Settled. |
 | same: `attitudeBaseSubject` | allow (verb cue) | yes | Superseded by `clauseInsideTerm`, which treats a base verb after a plural subject as finite. Settled. |
 | same: `attitudeUsedAsVerb` next-token switch | allow (exception) | yes | Exception inside the list check only; `clauseInsideTerm` decides independently. Settled. |
-| same: `nonSingularStem` | block | yes | v37.0: English pluralia tantum and lexically distinct -s nouns listed in full (tongs, scissors, trousers, ..., -ics fields) as a closed class. Settled. |
+| same: `nonSingularStem` | block | yes | v44.0: term.inflection_verbatim disables plural-to-singular matching, including the finite exceptions. The older noun.pluralia_tantum check retains diagnostic attribution. |
 | same: `identityOpaqueExtra` | block | yes | v35 subject-position guard independently protects legacy identity substitution; **open** in other FOL/term-extraction uses. |
 | same: `questionStem`, `incompleteIfConsequent` | block | yes | Backstopped by a structural rule (v37.0): a postposed `C if A` is not read as a conditional when the word before `if` is a finite verb not on the intransitive list (and not a participle after a copula), or any word after a pronoun subject. Settled. |
 | same: `operatorCoordinationAmbiguous` prefix exemptions | allow (exception) | yes | Structural operators own their connectives; this early syntax guard still has legacy opaque-context exemptions. |
@@ -1171,7 +1171,7 @@ about the narrower accepted language before the audit requirement is met.
 | `entailment_gate_v22.go`: n-place preposition and ditransitive switches | allow | yes | Only enumerated slot boundaries and double-object alternations. Other lexical safety inherits `relationWords`. |
 | `entailment_gate_v23.go`: relative markers, quantifier and relation-verb switches | allow | yes | Explicit relative grammar; inherits the lexical relation limitation. |
 | `entailment_gate_v24.go`: `explicitBinder`, variable/name/word patterns | allow | yes | Explicit FOL syntax; atom names are uninterpreted. Readable fallback inherits older lexical limits. |
-| `entailment_gate_v25.go`: readable quantifier families, `identityQuantifierWords` | allow / block | yes | Quantifier families are positive; identity-term exclusion is **open** without independent positive referring-term grammar. |
+| `entailment_gate_v25.go`: readable quantifier families, `identityQuantifierWords` | allow / block | yes | Quantifier families are positive; identity substitution/transitivity now require the positive singular-value grammar under identity.constant_sides (v44.0). |
 | `entailment_gate_v25_literals.go`: `folLiteralStart`, `folNameEscape`, JSON literal syntax | allow | yes | Explicit uninterpreted atom/name syntax, with literal payload preserved. |
 | `entailment_gate_v26.go`: counting prefixes/numerals, signed/wrote predicates | allow | yes | Finite counting grammar; class stemming still shares the morphology limitation. |
 | `entailment_gate_v27.go`: relative/article/grouping marker lists | allow / block | yes | Positive description grammar plus negative ambiguity exclusions; **open** where readable relation parsers supply lexical meaning. |
@@ -1189,9 +1189,9 @@ about the narrower accepted language before the audit requirement is met.
 
 The new guard is a surface recognizer, not a part-of-speech parser. Bare-noun
 and gerund recognition uses predicate cues; noun/verb homonyms and complex
-nominal subjects remain uncertain. The final guard currently classifies rule
-families by certificate name; a new rule that inspects sentences must be added
-to that classification. Explicit grouping of a whole operand permits that
+nominal subjects remain uncertain. The older frame guard classifies rule families by certificate name. Since
+v44.0 the additional scope guards inspect subexpressions independently of that
+classification, including nested negation; initial -ing subjects are refused. Explicit grouping of a whole operand permits that
 operand to remain opaque. A complement's own parentheses do not make its
 content asserted. Unknown intransitive verbs can be conservatively refused;
 use explicit grouping for those cases. No corpus impact percentage was
@@ -1291,12 +1291,7 @@ stay refused.
   The term-only check (`clauseInsideTerm`) is skipped there; every other
   binding check still applies. `that`, `since`, `after` and `before` can open a
   term, so they keep the term check.
-- **Gerund subjects.** An -ing preposition (`considering`, `regarding`,
-  `concerning`, `including`, ...) opening a step is a gerund subject when no
-  comma follows before the main verb, no other subject intervenes, and a
-  singular finite verb follows within six words (`Considering brain emulation
-  invites caution`). With a comma or its own subject (`Considering the cost,
-  the team stops`; `Considering the cost we stop`) it stays a refused frame.
+- **Gerund subjects.** Superseded by v44.0: initial -ing words now refuse inspection even when a gerund-subject reading is available.
 - **Noun/verb homonyms in terms** (`physics exploits not known to humans`)
   stay refused, since `exploits` can be read as the verb, but the message now
   names the refused binding and suggests writing the phrase into the rule.
@@ -1348,23 +1343,13 @@ message (state the existence claim as its own premise) still applies first.
 `a little` is refused even where it is an adjective (`a little dog`), since
 the gate cannot tell the two apart.
 
-**Known limit.** A bare quantity-noun idiom has the shape of an article and one
-noun, so it is still accepted:
-
-```text
-1. If X arrived, then X is someone who arrived.
-2. A lot arrived.
-3. Therefore, a lot is someone who arrived. [1,2]
-```
-
-certifies. The same holds for `a bit`, `a ton`, `a bunch` and similar idioms.
-Refusing them needs a list of quantity nouns, which is an open class; writers
-should not use such an idiom as a variable's value.
+The former bare-idiom limitation is closed by v44.0 below.
 
 With strictness notes on, the two refusals carry the notes
 `slot.indefinite_written` and `slot.indefinite_value`. The `slot.quantity`
-note's example now uses a numeral (`Two robots are registered`), because its
-old example (`A group of robots`) is also refused by `slot.indefinite_value`.
+note lists no `also_refuses` example: none survived that is valid on every
+reading, so the rule refuses only steps with an ambiguous reading. (Its old
+example, `A group of robots`, is also refused by `slot.indefinite_value`.)
 
 ## v43.1: faster strictness notes
 
@@ -1388,3 +1373,147 @@ compares them with the old exhaustive pass on every note example, and
 `ARGCHECK_NOTES_PARITY_LIST`. On a 14-line argument with three failing steps,
 checking with notes went from 51s to about 2.5s, against 1.3s for the plain
 check.
+
+## v44.0: schematic values must be singular terms
+
+The default strict rule `slot.value_singular` allows term bindings only as
+1–4-token proper names with non-sentence-initial capitalization evidence, or
+`the` / a proper-name possessive followed by at most one modifier and a singular head.
+Closed-class determiners, quantifiers, pronouns and numerals cannot be names
+or heads. Coordination and general complements are refused; the bounded “the N of D”
+shape below is admitted.
+
+All indefinite term values are refused, including `a dog`, `someone`, and
+`a lot`; the v43.0 shape check is no longer sufficient for certification.
+Plural and quantity values such as `lots`, `most`, `the dogs`, and
+`Bob and Carol` are refused. `The dog` and `the red dog` pass; `the big red dog` is refused;
+`Rex` and `Bob's dog` require independent capitalization evidence away
+from sentence start and Therefore/So/Thus/Hence. `the Bank of England`
+is refused when its capitalised head is treated as name evidence; a lowercase
+singular head with an evidenced name complement is admitted.
+
+Whole-clause slots retain their behavior only when the rule does not also use the variable as a term. Copular predicate slots
+accept any value after a copula, as in v43.0.
+Bindings are checked again at repeated occurrences, so a predicate cannot
+subsequently escape into a term position. Existing strict checks retain
+priority for their own refusal notes; the new rule has a v42.1-style note.
+
+Repair: use a name with evidence or a singular definite description, state
+existence separately and then name the thing, or write the phrase literally
+into the rule instead of a variable. This intentionally refuses valid
+indefinite inferences, names with only ordinary sentence-initial capitals, and descriptions
+outside the bounded grammar. The morphology check is conservative surface syntax.
+
+Partial noun-head slots such as `the X` remain refused when X alone is not
+an allowed term; put the entire description in X or write it literally.
+
+## v44.0: round-2 term and binding gaps
+
+- **`slot.description_shape` — Short definite descriptions.** A long description may swallow a finite clause or a second name. Rewrite: Name it, or use 'the dog'.
+- **`slot.one_type` — One type per rule variable.** A clause-slot occurrence must not smuggle a clause into another occurrence used as a term. Rewrite: Name the thing in every occurrence, or write the phrase into the rule.
+- **`eg.subject_only` — Subject witnesses only.** An object or passive subject may occur in an intensional position without asserting its existence. Rewrite: State the existential claim as its own premise.
+- **`eg.name_witness` — Named existential witnesses.** A definite may covary with another quantifier; descriptions do not fix one witness. Rewrite: State the existential claim as its own premise, or use an evidenced proper name in an unquantified subject clause.
+- **`term.numeral` — No numeral-led terms.** A numeral phrase can state an exact quantity rather than identify one constant. Rewrite: Name the thing, or use 'the mouse'.
+- **`identity.constant_sides` — Constant identity sides.** Pronouns can shift referent and quantities need not identify one object. Rewrite: Name the thing, or use 'the dog' on each side.
+- **`identity.extensional_context` — Closed extensional identity contexts.** An unlisted predicate may describe an intensional role under which co-referring names cannot be exchanged. Rewrite: State the substituted claim as a premise.
+- **`slot.letter_in_name` — Letters adjacent to names.** A schematic letter may be a literal component of Model U or Malcolm X. Rewrite: Use a variable away from names, or write the name out.
+- **`term.inflection_verbatim` — Verbatim noun inflection.** A plural surface may not denote instances of the stem guessed by deleting its suffix. Rewrite: Write the rule with singular 'every N' (Every dog is wet).
+
+All nine switches are on by default. A10/A22 are covered by description shape and one-type checking; A15 by subject-only EG; A16 by named EG witnesses; A17 by numeral terms; A18 by constant identity sides; A19 by extensional identity contexts; A20 by name-adjacent letters; A05 by verbatim inflection.
+
+The implementation deliberately refuses more than the minimum requested:
+
+- Mixed subordinate-clause/term schemas are refused outright, including valid rules such as “If when X is red bob smiles, then X is warm.” Write the phrase literally into the rule. Pure clause variables and pure copular predicate variables retain their registers.
+- EG uses the closed active-verb register and the closed copular predicate grammar; unfamiliar active verbs, compound matrices, descriptions, and quantified surrounding clauses need an explicit existence premise. Description elimination cannot supply an unnamed existential witness.
+- Identity sides require independent capitalization evidence for names, so a name seen only at sentence start may need a separately evidenced name or a singular definite. Identity substitution permits only the closed copular grammar; modal and ordinary active-verb substitutions are refused.
+- A description has at most one modifier and a head, with no embedded name evidence. Numeral terms are refused independently of noun suffix. Every schematic letter U/V/W/X/Y/Z adjacent to a capitalized name component is refused, even in literal repetition of Model U. Logical scaffolding such as If X is exempt from the predecessor-name test.
+
+Inflection matching has **three acceptance sites**: the shared term-candidate stemmer (including its finite exceptions and plural-only handling), and two counting-class normalizations. All three now preserve spelling. The singular-value shape detector still calls round2Singular only to reject plural-looking heads; it does not match or certify a changed spelling. The shared term-candidate site feeds UI, categorical syllogisms and term-identity comparisons. Existing plural-only note attribution is retained when that older rule alone is disabled in a diagnostic retry.
+
+Focused regression coverage: validation/round2_terms_test.go and TestStrictNotesExamples. The lead must measure the corpus cost on the host.
+## v44.0: strict scope and connective rules
+
+- **`scope.mixed_andor` — Mixed connective scope.** A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it. Use 'both … and' or 'either … or' to show the grouping.
+- **`scope.clause_start` — Controlled clause starts.** An operator such as perhaps inside a negated conjunction may scope over both clauses; distributing the negation changes that scope. Move the operator into each clause, or state the claim as an explicit premise.
+- **`opener.ing_frame` — Initial -ing frame.** Following the script may qualify the entire conjunction rather than name its subject. Even genuine gerund subjects are refused when inspected. Closed-class clause starters such as `something`, `anything`, `everything`, and `nothing` are not frames. Move the frame into each clause, or state the framed claim as its own premise.
+- **`scope.elided_copula` — Closed copula elision.** In Either the men are quiet or fish, fish may be a verb rather than a predicate with an omitted copula. Unknown predicates are not expanded. Repeat the subject and verb: 'or the men are fish'.
+- **`scope.description_negation` — Description negation scope.** Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion. Add 'There is exactly one present king of France' and name it, or keep the wide negation.
+- **`opener.ly_exception` — Adverb-capable noun exceptions.** Daily, early and only can be adverbs with scope over an entire sentence, even when they also have nominal uses. Move the adverb into each clause, or state the framed claim as its own premise.
+
+These final-boundary checks precede normalized equality and apply independently of the certificate name. Whole literal reiteration remains opaque. The conservative scope scan may also refuse nominal coordination, quoted connectives, lowercase names, bare noun subjects, and genuine gerund subjects; use explicit grouping and full clauses. Copula elision requires one word from `singularPredicateHeads`.
+
+### v44.0 refinements after round 2
+
+Predicate positions after a copula accept any value, as in v43.0's
+`afterCopula`: “If Rex is X, then Fido is X” admits “euphoric” and “a hero”.
+A variable also used as a term still needs a singular value at that occurrence.
+Internal capitals (AIXI, McCarthy) provide name evidence even at sentence
+start; an ordinary initial capital alone does not.
+
+The antecedent and consequent of “If P, then Q” are checked separately for
+scope. A compound parenthesised operand is checked part by part, so grouping
+cannot hide an unsafe clause start. Expletive “there” followed by be or a
+modal, and a possessive subject, open a clause. A verb contraction is not a
+possessive: “John's dog” and “John's running” have different shapes.
+After a capitalised subject, the clause-start check accepts the frame verb
+lists plus a closed list of common argument verbs (greets, believes, claims,
+requires, implies, …), so “Alice is happy and Alice greets Bob; therefore Alice
+greets Bob” certifies. The list stays closed; sentence adverbs and -ly/-ing
+words are excluded before it is consulted.
+
+“The N of D” is a singular term when the head is singular and D is an
+evidenced name or an admitted singular definite description, for example
+“the death of the child”. Nested of-complements, indefinite complements,
+plural heads and quantity/partitive heads remain refused.
+
+Refusal diagnostics cover U/V/W as well as X/Y/Z. When a single v44 rule
+accounts for a failed binding, its explanation and rewrite take priority over
+the older indefinite-object fallback. This changes messages, not verdicts.
+
+Closed `atom{...}` literals remain opaque to the English scope scan. The
+canonical “both that …, and that …” scaffold, explicit comma grouping, and
+a conditional used as a complete operand retain their own boundaries. Wide
+negation around an identity is checked around its two terms, rather than
+being mistaken for part of the left term. A conservative witness refusal
+does not claim that an alternative scope reading has a countermodel.
+
+## Known limits
+
+These are completeness limits: valid arguments outside the supported grammar
+can be refused. A rewrite may require an explicit bridge or a separately
+justified premise; adding that premise changes what the validator assumes.
+Rule names in backticks are strict switch IDs where available, otherwise the
+catalog inference name. Audit B numbers refer to `workspace/audit/limits.md`.
+
+| Rule / audit item | Valid example refused | Rewrite for certification |
+| --- | --- | --- |
+| `slot.value_singular` | “If W is useful, W is valuable; water is useful; therefore water is valuable.” Bare kind/mass/plural values and long bare noun phrases cannot fill term slots. | Write “If water is useful, then water is valuable” literally, then apply modus ponens. Do the same for a long phrase such as “signals from the model”. |
+| `slot.value_singular` | “If X arrived, X was seen; Rex arrived; therefore Rex was seen”, with Rex occurring only sentence-initially. | Use a literal “If Rex arrived, then Rex was seen”, or supply independent capitalization evidence. AIXI and McCarthy already have internal-capital evidence. |
+| `term.inflection_verbatim`, `noun.pluralia_tantum` (B13) | “All dogs are animals; the dog is a dog; therefore the dog is an animal.” Plural-to-singular class matching is refused. | Write “Every dog is an animal”, retaining the same singular noun. Lexically distinct glasses/glass requires an explicit bridge, not a spelling change. |
+| `scope.clause_start`, `opener.ing_frame` (B03, B12) | “Swimming is healthy and the lamp is lit; therefore swimming is healthy.” Bare nouns, adjectives and -ing subjects can fail the clause-start grammar; “Highly reliable machinery works and the lamp is lit” also fails the opener check. | Name the activity with a definite subject: “The activity is healthy and the lamp is lit; therefore the activity is healthy.” For an unfamiliar verb such as “Alice pirouettes”, declare a quoted `atom{...}` literal for the complete clause before applying propositional rules. |
+| `scope.clause_start` (capitalised subject) | “Alice is happy and Alice pirouettes; therefore Alice pirouettes.” After a capitalised subject the next word must be a listed finite verb (the frame verb lists plus a closed list of common argument verbs such as greets, believes, claims, requires, implies). | Use a listed verb, or declare an `atom{...}` literal for the clause. |
+| `scope.clause_start`, `identity.constant_sides`, `eg.name_witness` (explicit FOL and Fitch) | “alice admires alice; therefore some x is such that (x admires alice)”; “Suppose c is a student and c greets Bob” as an existential-elimination assumption. Lowercase constants and single-letter eigenvariables are not name evidence. | Use capitalised names with evidence, and a capitalised fresh name for the witness: “Suppose Cyd is a student and Cyd greets Bob.” |
+| `slot.description_shape` | “If X arrived, X was seen; the big red dog arrived; therefore the big red dog was seen.” More than one modifier, or a capitalised modifier counted as name evidence, is refused. | Write the entire description literally in the conditional, or name its referent and use that name consistently. |
+| `scope.clause_start` (B01 surviving completeness boundary) | “Alpha eats, shoots, and leaves; therefore Alpha eats, shoots and leaves.” Even harmless Oxford-comma changes in a verb list can be refused. | Preserve the original punctuation verbatim and reiterate the clause. |
+| `term.clause_inside` (B04) | A schematic inference about “physics exploits not known to humans” can be refused because exploits can be a verb. | Write that phrase literally in the rule instead of filling a variable with it. |
+| `slot.indefinite_written` (B05) | “If a X arrived, then a X departed; a dog arrived; therefore a dog departed.” | Write “If a dog arrived, then a dog departed” literally. |
+| `slot.indefinite_value`, `slot.value_singular` (B06–B07, B14) | “If X arrived, X departed; a little dog arrived; therefore a little dog departed.” “A friend of Bob” is also outside the term grammar. | Write the entire phrase literally in the conditional. For repeated existential witnesses, state existence and introduce a fresh name in a supported existential subproof. |
+| `identity.safe_position` (B08) | “Alpha is Beta; the robot kicks Alpha; therefore the robot kicks Beta.” Extensional object substitution is still refused. | Supply the explicit bridge “If the robot kicks Alpha and Alpha is identical to Beta, then the robot kicks Beta”, then use the cited premises. |
+| `relation.object_extensional` (B09) | “The robot admires every hero; Alpha is a hero; therefore the robot admires Alpha.” | Supply an explicit conditional for that instance and apply it; the dedicated relational grammar has a closed verb vocabulary. |
+| `unless.anaphor` (B10) | “The alarm sounds unless this battery is dead; this battery is not dead; therefore the alarm sounds”, with a fixed battery reference. | Use the same definite name (“the battery”) throughout, or write the conditional with the negated antecedent explicitly. |
+| `conditional.postposed_if` (B11) | “The motor vibrates if the switch is on; the switch is on; therefore the motor vibrates.” | Put the condition first: “If the switch is on, then the motor vibrates.” |
+| `schematic instantiation` / verbatim matching (B17, B22) | “Every bachelor is unmarried; Bob is a bachelor; therefore Bob has no spouse.” The lexical equivalence is not supplied. Temporal paraphrases likewise do not match automatically. | First derive “Bob is unmarried”; add and cite “If Bob is unmarried, then Bob has no spouse.” Supply temporal bridges explicitly too. |
+| `property abstraction` (B23) | “Alice runs; therefore Alice has the property of running.” Noncopular property abstraction is outside the canonical grammar. | Use the canonical copular property form, or supply the exact conditional bridge from the noncopular claim. |
+| `property abstraction` / typed bearer grammar (B18) | “The property of being red is abstract; therefore it has the property of being abstract” is outside the ordinary bearer grammar (repeat the full bearer in the conclusion). | State the higher-order claim as its own explicit premise and reiterate it; do not coerce a property into an individual slot. |
+| `counting introduction` / `counting elimination` (B19, B21) | “Exactly six dogs are red; therefore at least six dogs are red.” Counts above five and proportional-overlap deductions are not implemented. | Supply the exact arithmetic conditional as a premise and apply modus ponens. |
+| `counterfactual conditional proof` (B24) | A valid counterfactual proof using irregular verb recovery can lack a supported surface form. | State the counterfactual result as an explicit premise, then reiterate it; use the catalog's supported auxiliary forms when available. |
+| `necessity introduction` (B25) | In S4, “necessarily P; therefore necessarily necessarily P” is valid but the S4 axiom is not assumed here. | State “If necessarily P, then necessarily necessarily P” as the additional system axiom and apply it. |
+| `FOL universal generalization` (B26) | A proof of an untyped predicate schema from its arbitrary instance is outside the schema-introduction grammar. | State the schema as a premise; use explicit first-order variables for supported individual quantification. |
+| `notation equivalence` (B27, B34) | A readable sentence with enough quantifiers can overflow reading enumeration even when the intended explicit formula is unambiguous. | Write the explicit-variable FOL formula with its scope fixed, then use FOL rules. |
+| `relative universal instantiation` (B28) | “Every runner who jogs is fit; Alpha is a runner; Alpha jogs; therefore Alpha is fit.” The relative-verb vocabulary is closed. | Add the literal bridge “If Alpha is a runner, then if Alpha jogs, then Alpha is fit”; apply modus ponens twice. |
+| `FOL existential elimination` (B29) | A valid scoped witness proof may be refused if its name also occurs in an earlier closed subproof. | Rename the witness to a globally fresh constant throughout its subproof. |
+| `description introduction` / `description elimination` (B30) | A valid description proof can exceed the fallback's reading-enumeration bound. | Name the referent, state its existence and uniqueness explicitly, and split the derivation into smaller FOL steps. |
+| `schematic conjunctive modus ponens` (B31) | A valid inference requiring eleven antecedent conjuncts exceeds the ten-conjunct search bound. | Split the conjunction into intermediate steps and smaller literal conditional applications. |
+| `FOL universal instantiation` (B32) | A valid intended instance is refused when an opaque literal body would collide with a bound-variable spelling. | Alpha-rename the bound variable and quote literal labels before instantiation. |
+| Numbered input and citation bounds (B33) | An otherwise valid proof exceeding input or citation limits is refused. | Split it into smaller separately checked lemmas and cite the explicit lemma statements in the final proof. |
+| Atomic label matching (B36) | “Definition (a) holds” cannot expose an argument inside the label's parentheses. | State the definition's content as a separate numbered premise and cite that content. |

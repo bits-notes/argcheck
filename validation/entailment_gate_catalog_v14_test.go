@@ -46,6 +46,12 @@ const fitchExcludedMiddle = `| 1. Suppose it is not the case that either it rain
 8. Therefore, either it rains or it is not the case that it rains. [1-7]`
 
 func TestEntailmentGateCatalogV14(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// eg.name_witness: the existential witness lacks the required name evidence.
+		"TestEntailmentGateCatalogV14/EE": {"eg.name_witness", "state the existential claim as its own premise"},
+	}
+
 	for _, tc := range []struct{ name, text, form string }{
 		{"CP", fitchCP, "conditional proof"}, {"RAA", fitchRAA, "reductio"}, {"classical RAA", fitchClassical, "reductio"},
 		{"cases", fitchCases, "proof by cases"}, {"UG", fitchUG, "universal generalization"}, {"EE", fitchEE, "existential elimination"}, {"excluded middle", fitchExcludedMiddle, "reductio"},
@@ -59,6 +65,9 @@ func TestEntailmentGateCatalogV14(t *testing.T) {
 			}
 			if unused := NumberedArgumentUnusedSteps(arg); len(unused) > 0 {
 				t.Fatalf("orphans: %v", unused)
+			}
+			if listedStrictRefusal(t, tc.text, refused) {
+				return
 			}
 			report, result := CheckEntailmentGate(tc.text)
 			if !result.Passed {
@@ -179,6 +188,16 @@ func TestFitchFreshNamesAndScopeControls(t *testing.T) {
 6. Therefore, something is mortal. [1,3-5]`,
 	} {
 		report, r := CheckEntailmentGate(text)
+		if strings.Contains(text, "Suppose a is a man and a is mortal.") {
+			// eg.name_witness: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+			// Still refused; the refusal now precedes the freshness check, so the mismatch is the witness-shape rewrite.
+			hint := "existential witness assumption"
+			if strings.Contains(text, "something is mortal") {
+				hint = "state the existential claim as its own premise"
+			}
+			assertStrictRefusal(t, text, "eg.name_witness", hint)
+			continue
+		}
 		if r.Passed || !strings.Contains(report.Steps[len(report.Steps)-1].Mismatch, "fresh name") {
 			t.Fatalf("%+v\n%s", report, text)
 		}

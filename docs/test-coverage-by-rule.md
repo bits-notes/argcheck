@@ -2,7 +2,7 @@
 
 Positive is the number of gated steps the validation tests accepted with that form. Negative is the number of gated steps they rejected with that form as `nearest_form`.
 
-Catalog version: `v43.1`.
+Catalog version: `v44.0`.
 
 The table lists every form `english-arg-validator --forms` prints (`validation.EntailmentGateForms`), in that order. Regenerate it with the commands below.
 

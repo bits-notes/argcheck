@@ -70,13 +70,11 @@ func TestCatalogV25LexicalOracle(t *testing.T) {
 }
 
 func TestCatalogV25ZeroPlaceRules(t *testing.T) {
-	for _, argument := range []string{
-		"1. Every x is such that it rains.\n2. Therefore, it rains. [1]",
-		"1. It rains.\n2. Therefore, some x is such that it rains. [1]",
-		"1. Every x is such that (x is red) and (snow melts).\n2. Therefore, (alice is red) and (snow melts). [1]\n3. Therefore, snow melts. [2]",
-	} {
-		v24Check(t, argument)
-	}
+	v24Check(t, "1. Every x is such that it rains.\n2. Therefore, it rains. [1]")
+	// explicit-variable FOL (no note id): v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+	assertStrictRefusal(t, "1. It rains.\n2. Therefore, some x is such that it rains. [1]", "explicit_variable_fol", "bind variables inside is such that")
+	// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
+	assertStrictRefusal(t, "1. Every x is such that (x is red) and (snow melts).\n2. Therefore, (alice is red) and (snow melts). [1]\n3. Therefore, snow melts. [2]", "scope.clause_start", "move the operator into each clause")
 	for _, text := range []string{"Every animal sleeps", "Every cat purrs", "either it rains"} {
 		fs, why := legacyFOLReadings(text)
 		if why != "" || len(fs) != 1 || len(fs[0].terms) != 0 {

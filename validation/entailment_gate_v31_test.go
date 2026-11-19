@@ -7,6 +7,12 @@ import (
 )
 
 func TestV31Fixtures(t *testing.T) {
+	// Explicit v44 refusal list; original case texts remain in the table below.
+	refused := map[string]strictRefusal{
+		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
+		"TestV31Fixtures/schematic-might.txt": {"scope.clause_start", "move the operator into each clause"},
+	}
+
 	files, err := filepath.Glob("testdata/v31/*.txt")
 	if err != nil || len(files) != 6 {
 		t.Fatalf("fixtures: count=%d err=%v", len(files), err)
@@ -16,6 +22,9 @@ func TestV31Fixtures(t *testing.T) {
 			data, err := os.ReadFile(file)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if listedStrictRefusal(t, string(data), refused) {
+				return
 			}
 			_, result := CheckEntailmentGate(string(data))
 			if !result.Passed {
@@ -82,9 +91,9 @@ func TestV31OpaqueModalAtoms(t *testing.T) {
 func TestV31V27LegacyNegationEmptyRestrictor(t *testing.T) {
 	text := v26Argument([]string{"It is not the case that the present king of France is bald"}, "The present king of France is not bald")
 	v27Parity(t, text)
-	_, result := CheckEntailmentGate(text)
-	if !result.Passed {
-		t.Fatal(result.Message)
+	refused := []string{text}
+	for _, argument := range refused {
+		assertStrictRefusal(t, argument, "scope.description_negation", "keep the wide negation")
 	}
 	king, bald := foAtom("king", "$count"), foAtom("bald", "$count")
 	// Force an empty king extension in a nonempty (one-object) domain.
