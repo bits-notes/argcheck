@@ -74,6 +74,7 @@ func main() {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("english-arg-validator", flag.ContinueOnError)
 	flags.SetOutput(stderr)
+	paraphrase := flags.Bool("paraphrase", false, "print the certified reading of each passed step")
 	jsonOut := flags.Bool("json", false, "print machine-readable JSON")
 	prod := flags.Bool("prod", false, "check against the remote MCP endpoint configured via EAV_REMOTE_URL and EAV_REMOTE_TOOL")
 	both := flags.Bool("both", false, "check locally and against the remote endpoint; exit 3 if they disagree")
@@ -186,6 +187,9 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 				fmt.Fprintln(stdout)
 			}
 			printVerdict(stdout, v)
+			if *paraphrase {
+				printParaphrases(stdout, v)
+			}
 		}
 		if divergent {
 			fmt.Fprintln(stdout, "\nDIVERGENT: local and remote disagree (likely a different catalog or commit).")
@@ -203,6 +207,26 @@ Exit 0 valid, 1 invalid, 2 error, 3 local/remote divergence (--both).`)
 		return exitValid
 	default:
 		return exitInvalid
+	}
+}
+
+func printParaphrases(w io.Writer, v verdict) {
+	if v.Entailment == nil {
+		return
+	}
+	// Remote responses decode to maps; local responses hold typed reports.
+	raw, err := json.Marshal(v.Entailment.Details["steps"])
+	if err != nil {
+		return
+	}
+	var steps []validation.EntailmentGateStepReport
+	if json.Unmarshal(raw, &steps) != nil {
+		return
+	}
+	for _, s := range steps {
+		if s.Passed && s.Paraphrase != "" {
+			fmt.Fprintf(w, "step %d: %s\n", s.Step, s.Paraphrase)
+		}
 	}
 }
 

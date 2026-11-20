@@ -580,6 +580,7 @@ func rewriteRelationScopes(statement string, occurrences []relationScopeOccurren
 // One reading is assigned to each distinct normalized clause, including
 // occurrences inside connectives, negations and Fitch range endpoints.
 func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	var readings []string
 	raw := policy.gateConclusionStepUnscoped(c, steps)
 	ids := append([]int{}, c.Citations...)
 	for _, r := range c.Ranges {
@@ -717,12 +718,14 @@ func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map
 			return
 		}
 		thisAll := true
+		var candidateReadings []string
 		var visit func(int)
 		visit = func(j int) {
 			if j == len(choices) {
 				target := applyBindings(bindings)
 				r := policy.gateConclusionStepUnscoped(target, local)
 				if r.Passed {
+					candidateReadings = append(candidateReadings, r.Paraphrase)
 					any = true
 					if successful == nil {
 						successful = append([]string{}, selected...)
@@ -751,11 +754,13 @@ func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map
 		}
 		visit(0)
 		if thisAll {
+			readings = candidateReadings
 			all = true
 		}
 	}
 	chooseParses(0)
 	if all {
+		raw.Paraphrase = "SEMI-FORMAL: checked scope readings {" + strings.Join(readings, "; ") + "}"
 		if !raw.Passed {
 			raw.Passed = true
 			raw.Form = "relational scope conversion"

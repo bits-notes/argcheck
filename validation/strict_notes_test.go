@@ -2,6 +2,7 @@ package validation
 
 import (
 	"reflect"
+	"sync/atomic"
 	"testing"
 )
 
@@ -73,8 +74,13 @@ func TestStrictNotesExamples(t *testing.T) {
 					t.Fatal(parsed.Message)
 				}
 				baseline, baselineResult := allStrictRules().gateParsedArgument(protectArgumentNameLetters(argument), false)
+				for i := range baseline.Steps {
+					baseline.Steps[i].fired = nil
+				}
 				for i := range report.Steps {
 					report.Steps[i].Notes = nil
+					// v46.3 enriches public failures after the raw gate returns.
+					report.Steps[i].Refusal = nil
 				}
 				if result.Passed != baselineResult.Passed || result.Message != baselineResult.Message || !reflect.DeepEqual(report, baseline) {
 					t.Errorf("diagnostics changed baseline: %+v / %+v", report, baseline)
@@ -95,9 +101,16 @@ func TestStrictNotesExamples(t *testing.T) {
 
 var notesOn = EntailmentGateOptions{StrictNotes: true}
 
-// Notes are opt-in: the default check never re-runs failing steps, so its cost
-// and output are those of v42.0.
+// Notes and all their diagnostic retries remain opt-in.
 func TestStrictNotesOffByDefault(t *testing.T) {
+	var retries atomic.Int64
+	strictRetryCounter.Store(&retries)
+	t.Cleanup(func() { strictRetryCounter.Store(nil) })
+	defer func() {
+		if got := retries.Load(); got != 0 {
+			t.Errorf("StrictNotes off ran %d diagnostic retries", got)
+		}
+	}()
 	for _, note := range strictNotes {
 		if len(note.AlsoRefuses) == 0 {
 			continue

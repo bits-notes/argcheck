@@ -624,7 +624,14 @@ func (policy strictRules) folRule(ps []*folFormula, c *folFormula) string {
 
 func (policy strictRules) gateFOL(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	r := EntailmentGateStepReport{Step: c.Number, Depth: c.Depth, Citations: c.Citations, Ranges: c.Ranges, NearestForm: "explicit-variable FOL", Mismatch: "no one-step FOL rule matches; bind variables inside is such that and parenthesize scopes"}
+	var readingTarget *folFormula
+	var readingPremises []*folFormula
+	var readingDischarges []string
 	accept := func(s string) EntailmentGateStepReport {
+		r.Paraphrase = readingFOLRule(readingPremises, readingTarget)
+		if len(readingDischarges) > 0 {
+			r.Paraphrase = readingFOLScoped(readingPremises, readingTarget, readingDischarges)
+		}
 		r.Passed = true
 		r.Form = "FOL " + s
 		r.NearestForm = ""
@@ -658,6 +665,7 @@ func (policy strictRules) gateFOL(c NumberedArgumentStep, steps map[int]Numbered
 		r.Mismatch = e.Error()
 		return r
 	}
+	readingTarget = target
 	parse := func(s NumberedArgumentStep) *folFormula {
 		if s.Kind == numberedArgumentStepArbitrary {
 			if m := arbitraryFOLPattern.FindStringSubmatch(s.Statement); m != nil {
@@ -675,6 +683,10 @@ func (policy strictRules) gateFOL(c NumberedArgumentStep, steps map[int]Numbered
 			return r
 		}
 		ps = append(ps, f)
+	}
+	readingPremises = append(readingPremises, ps...)
+	for _, span := range c.Ranges {
+		readingDischarges = append(readingDischarges, fmt.Sprintf("assume %s (steps %d-%d); so %s", readingFOL(parse(steps[span[0]])), span[0], span[1], readingFOL(parse(steps[span[1]]))))
 	}
 	if len(c.Ranges) == 0 {
 		if form := policy.folRule(ps, target); form != "" {

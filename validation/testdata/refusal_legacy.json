@@ -1,0 +1,112 @@
+[
+  {
+    "name": "pronoun",
+    "argument": "1. Alice owns the card.\n2. If it is valid, then the alarm sounds.\n3. Bob owns the code.\n4. It is valid.\n5. Therefore, the alarm sounds. [2,4]\n6. Therefore, it is the case both that Alice owns the card, and that Bob owns the code. [1,3]\n7. Therefore, it is the case both that the alarm sounds, and that it is the case both that Alice owns the card, and that Bob owns the code. [5,6]",
+    "syntax": {
+      "passed": true,
+      "message": "output matches numbered_argument_syntax",
+      "details": {
+        "step_count": 7
+      }
+    },
+    "entailment": {
+      "passed": false,
+      "message": "step 5 failed entailment_gate: nearest form modus ponens; term.pronoun_cross_statement: a pronoun's referent depends on context and can differ between statements; replace it with a name or noun phrase",
+      "details": {
+        "catalog": "v46.2",
+        "expansions": [],
+        "gated_steps": 3,
+        "passed_steps": 2,
+        "steps": [
+          {
+            "notes": [
+              {
+                "id": "term.pronoun_cross_statement",
+                "name": "Personal pronouns across statements",
+                "since": "v46.2",
+                "why": "a pronoun's referent depends on context and can differ between statements",
+                "also_refuses": [
+                  "1. If it rains, then it is wet.\n2. It rains.\n3. Therefore, it is wet. [1,2]"
+                ],
+                "fix": [
+                  "replace the pronoun with the name or noun phrase it refers to, e.g. 'the card'"
+                ]
+              }
+            ],
+            "step": 5,
+            "citations": [
+              2,
+              4
+            ],
+            "passed": false,
+            "nearest_form": "modus ponens",
+            "mismatch": "term.pronoun_cross_statement: a pronoun's referent depends on context and can differ between statements; replace it with a name or noun phrase"
+          },
+          {
+            "step": 6,
+            "citations": [
+              1,
+              3
+            ],
+            "passed": true,
+            "form": "conjunction introduction"
+          },
+          {
+            "step": 7,
+            "citations": [
+              5,
+              6
+            ],
+            "passed": true,
+            "form": "conjunction introduction"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "comma",
+    "argument": "1. Ann sings, and Bob dances or Cal reads.\n2. Therefore, Ann sings. [1]",
+    "syntax": {
+      "passed": false,
+      "message": "line 1 sentence \"Ann sings, and Bob dances or Cal reads.\": mixes top-level and/or without explicit grouping; use either...or / both...and, or parentheses to group",
+      "details": {
+        "line": 1,
+        "sentence": "Ann sings, and Bob dances or Cal reads"
+      }
+    },
+    "entailment": null
+  },
+  {
+    "name": "mismatch",
+    "argument": "1. Alice sings.\n2. Therefore, Bob dances. [1]",
+    "syntax": {
+      "passed": true,
+      "message": "output matches numbered_argument_syntax",
+      "details": {
+        "step_count": 2
+      }
+    },
+    "entailment": {
+      "passed": false,
+      "message": "step 2 failed entailment_gate: nearest form self-entailment; premise 1 \"alice sings\" does not match conclusion 2 \"bob dances\" verbatim",
+      "details": {
+        "catalog": "v46.2",
+        "expansions": [],
+        "gated_steps": 1,
+        "passed_steps": 0,
+        "steps": [
+          {
+            "step": 2,
+            "citations": [
+              1
+            ],
+            "passed": false,
+            "nearest_form": "self-entailment",
+            "mismatch": "premise 1 \"alice sings\" does not match conclusion 2 \"bob dances\" verbatim"
+          }
+        ]
+      }
+    }
+  }
+]

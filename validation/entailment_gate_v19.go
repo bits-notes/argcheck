@@ -259,7 +259,7 @@ func (policy strictRules) v19Rules(p []NumberedArgumentStep, c NumberedArgumentS
 			}
 		}
 		if len(states) > 0 {
-			return schemaMatchOutcome{matched: true, traction: true, score: len(rule)}
+			return schemaMatchOutcome{matched: true, traction: true, score: len(rule), reading: readingPatternRule(rule, states[0])}
 		}
 	}
 	return schemaMatchOutcome{}

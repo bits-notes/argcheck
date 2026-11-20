@@ -363,6 +363,7 @@ func (policy strictRules) notationEquivalence(c NumberedArgumentStep, steps map[
 	if folSame(a[0], b[0]) {
 		r.Passed = true
 		r.Form = "notation equivalence"
+		r.Paraphrase = readingFOLRule(a, b[0])
 		r.NearestForm = ""
 		r.Mismatch = ""
 	}

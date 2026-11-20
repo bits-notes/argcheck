@@ -4,6 +4,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // StrictNote explains a conservative catalog refusal. A note is attached only
@@ -17,12 +18,18 @@ type StrictNote struct {
 	Fix         []string `json:"fix"`
 }
 
+// strictRetryCounter is an optional test counter at the diagnostic retry entry.
+var strictRetryCounter atomic.Pointer[atomic.Int64]
+
 // strictStepPasses repeats the gate and its final sentence guard for one step.
 // Other conclusions are available as cited statements, never re-evaluated here.
 // It repeats the verdict-relevant part of gateConclusionStep (v44 name
 // evidence, term slots and round-2 term checks) and skips its diagnostic
 // retries, which change a failing step's message but never its verdict or form.
 func (policy strictRules) strictStepPasses(step NumberedArgumentStep, steps map[int]NumberedArgumentStep) bool {
+	if counter := strictRetryCounter.Load(); counter != nil {
+		counter.Add(1)
+	}
 	policy.slotNames = schematicNameEvidence(steps)
 	policy.termSlots = ruleTermSlots(step, steps)
 	policy.pluralWitnessBlocked = rulePluralWitnessBlocks(step, steps)
@@ -58,12 +65,6 @@ func (policy strictRules) rewrittenStepPasses(step NumberedArgumentStep, steps m
 const strictNoteWorkers = 4
 
 func attachStrictNotes(argument NumberedArgument, report *EntailmentGateReport) {
-	defer func() {
-		// The recorded rules are for this pass only; reports never carry them.
-		for i := range report.Steps {
-			report.Steps[i].fired = nil
-		}
-	}()
 	if report.Passed {
 		return
 	}

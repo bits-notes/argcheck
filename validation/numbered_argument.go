@@ -292,6 +292,16 @@ func (policy strictRules) parseNumberedArgumentLine(line string, lineNumber int)
 		return step, result
 	}
 	if grouping := policy.validateStatementGrouping(strings.TrimPrefix(step.Statement, "Suppose "), lineNumber); !grouping.Passed {
+		rule := "syntax"
+		if strings.Contains(grouping.Message, "and/or") || strings.Contains(grouping.Message, "top-level unless") {
+			rule = "scope.mixed_andor"
+		}
+		refusal := &StepRefusal{Span: wholeRefusalSpan(step), Rule: rule, Hint: grouping.Message, RuleSource: "syntax"}
+		if _, hint, ok := strings.Cut(grouping.Message, "; "); ok {
+			refusal.Hint = hint
+		}
+		grouping.Details["refusal"] = refusal
+		grouping.Details["steps"] = []EntailmentGateStepReport{{Step: step.Number, NearestForm: "syntax", Mismatch: grouping.Message, Refusal: refusal}}
 		return NumberedArgumentStep{}, grouping
 	}
 	step.Depth, step.Line = depth, original

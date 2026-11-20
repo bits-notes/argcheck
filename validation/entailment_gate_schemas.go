@@ -50,11 +50,13 @@ type entailmentSchema struct {
 }
 
 type schemaMatchOutcome struct {
-	refusal  bool // a matched material schema blocked by counterfactual polarity
-	matched  bool
-	score    int
-	traction bool
-	mismatch string
+	reading    string
+	identities []clauseIdentity
+	refusal    bool // a matched material schema blocked by counterfactual polarity
+	matched    bool
+	score      int
+	traction   bool
+	mismatch   string
 }
 
 type clauseIdentity struct {
@@ -1003,7 +1005,7 @@ func (policy strictRules) evaluateTermIdentities(identities ...clauseIdentity) s
 }
 
 func (policy strictRules) evaluateIdentityComparisons(equal func(string, string) bool, identities ...clauseIdentity) schemaMatchOutcome {
-	outcome := schemaMatchOutcome{traction: true}
+	outcome := schemaMatchOutcome{traction: true, identities: append([]clauseIdentity(nil), identities...)}
 	for _, identity := range identities {
 		if equal(identity.left, identity.right) {
 			outcome.score++
@@ -1028,6 +1030,7 @@ func (policy strictRules) evaluateIdentityComparisons(equal func(string, string)
 }
 
 func appendOutcome(current *schemaMatchOutcome, addition schemaMatchOutcome) {
+	current.identities = append(current.identities, addition.identities...)
 	current.score += addition.score
 	current.traction = current.traction || addition.traction
 	if current.mismatch == "" {
@@ -1154,6 +1157,9 @@ func (policy strictRules) evaluateConjunctiveModusPonensCandidate(
 	}
 
 	outcome.matched = outcome.mismatch == "" && len(conjuncts)+1 == len(premises)
+	if outcome.matched {
+		outcome.reading = readingConjunctiveMP(conjuncts, conditional.right)
+	}
 	return outcome
 }
 
@@ -1252,6 +1258,7 @@ func (policy strictRules) matchModusPonens(premises []NumberedArgumentStep, conc
 		)
 		best = betterOutcome(best, candidate)
 		if best.matched {
+			best.reading = readingMP(conditional.left, conditional.right)
 			return best
 		}
 	}
@@ -1271,6 +1278,7 @@ func (policy strictRules) matchModusTollens(premises []NumberedArgumentStep, con
 				)
 				best = betterOutcome(best, candidate)
 				if best.matched {
+					best.reading = readingSequent("¬"+readingAtom(negatedConclusion), readingBinary("→", conditional), "¬"+readingAtom(negatedPremise))
 					return best
 				}
 			}
@@ -1291,6 +1299,7 @@ func (policy strictRules) matchHypotheticalSyllogism(premises []NumberedArgument
 				)
 				best = betterOutcome(best, candidate)
 				if best.matched {
+					best.reading = readingSequent(readingBinary("→", result), readingBinary("→", first), readingBinary("→", second))
 					return best
 				}
 			}
@@ -1312,6 +1321,7 @@ func (policy strictRules) matchBiconditionalIntroduction(premises []NumberedArgu
 				)
 				best = betterOutcome(best, candidate)
 				if best.matched {
+					best.reading = readingSequent(readingBinary("↔", biconditional), readingBinary("→", forward), readingBinary("→", reverse))
 					return best
 				}
 			}
@@ -1372,6 +1382,7 @@ func (policy strictRules) matchBiconditionalElimination(premises []NumberedArgum
 				)
 				best = betterOutcome(best, candidate)
 				if best.matched {
+					best.reading = readingSequent(readingBinary("→", conditional), readingBinary("↔", biconditional))
 					return best
 				}
 			}
@@ -1390,6 +1401,7 @@ func (policy strictRules) matchBiconditionalModusPonens(premises []NumberedArgum
 			)
 			best = betterOutcome(best, candidate)
 			if best.matched {
+				best.reading = readingSequent(readingAtom(direction.right), readingBinary("↔", biconditional), readingAtom(direction.left))
 				return best
 			}
 		}
@@ -1406,6 +1418,7 @@ func (policy strictRules) matchConjunctionIntroduction(premises []NumberedArgume
 		)
 		best = betterOutcome(best, candidate)
 		if best.matched {
+			best.reading = readingSequent(readingBinary("∧", conjunction), readingAtom(conjunction.left), readingAtom(conjunction.right))
 			return best
 		}
 	}
@@ -1432,6 +1445,7 @@ func (policy strictRules) matchConjunctionElimination(premises []NumberedArgumen
 			})
 			best = betterOutcome(best, candidate)
 			if best.matched {
+				best.reading = readingSequent(readingAtom(part.value), readingBinary("∧", conjunction))
 				return best
 			}
 		}
@@ -1452,6 +1466,7 @@ func (policy strictRules) matchDisjunctionIntroduction(premises []NumberedArgume
 			})
 			best = betterOutcome(best, candidate)
 			if best.matched {
+				best.reading = readingSequent(readingBinary("∨", disjunction), readingAtom(part.value))
 				return best
 			}
 		}
@@ -1471,6 +1486,7 @@ func (policy strictRules) matchDisjunctiveSyllogism(premises []NumberedArgumentS
 				)
 				best = betterOutcome(best, candidate)
 				if best.matched {
+					best.reading = readingSequent(readingAtom(variant[1]), readingBinary("∨", disjunction), "¬"+readingAtom(negated))
 					return best
 				}
 			}
@@ -1487,6 +1503,9 @@ func (policy strictRules) matchDoubleNegation(premises []NumberedArgumentStep, c
 				fmt.Sprintf("premise %d doubly negated clause", premises[0].Number), twice,
 				fmt.Sprintf("conclusion %d", conclusion.Number), conclusion.Statement,
 			})
+			if candidate.matched {
+				candidate.reading = readingSequent(readingAtom(twice), "¬(¬"+readingAtom(twice)+")")
+			}
 			best = betterOutcome(best, candidate)
 		}
 	}
@@ -1653,6 +1672,7 @@ func (policy strictRules) matchUniversalSyllogism(premises []NumberedArgumentSte
 				)
 				best = betterOutcome(best, candidate)
 				if best.matched {
+					best.reading = readingFOLRule([]*folFormula{readingUniversal(first), readingUniversal(second)}, readingUniversal(result))
 					return best
 				}
 			}
@@ -1836,6 +1856,7 @@ func (policy strictRules) matchSchematicInstantiationAlphabet(premises []Numbere
 			)
 			best = betterOutcome(best, candidate)
 			if best.matched {
+				best.reading = readingSubstitution(substitution) + readingMP(instantiatedAntecedent, instantiatedConsequent)
 				return best
 			}
 		}

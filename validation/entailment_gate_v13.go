@@ -129,6 +129,9 @@ func (policy strictRules) v13MatchRules(premises []NumberedArgumentStep, conclus
 			outcome.matched = outcome.matched && next.matched
 			appendOutcome(&outcome, next)
 		}
+		if outcome.matched {
+			outcome.reading = readingPatternRule(rule, bindings)
+		}
 		best = betterOutcome(best, outcome)
 		if best.mismatch == "" && outcome.mismatch != "" {
 			best.mismatch = outcome.mismatch

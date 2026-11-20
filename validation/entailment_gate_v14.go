@@ -46,6 +46,7 @@ func (policy strictRules) gateFitchConclusion(c NumberedArgumentStep, steps map[
 	accept := func(form string) EntailmentGateStepReport {
 		report.Passed = true
 		report.Form = form
+		report.Paraphrase = readingScoped(form, c, steps)
 		report.NearestForm = ""
 		report.Mismatch = ""
 		return report

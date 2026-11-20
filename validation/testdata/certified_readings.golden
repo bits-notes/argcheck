@@ -1,0 +1,342 @@
+FORM: modus ponens
+step 3: Premise: if "rain falls", then "the ground is wet". Premise: "rain falls". So: "the ground is wet".
+
+FORM: modus ponens
+step 3: Premise: if "rain falls", then "the ground is wet". Premise: "rain falls". So: "the ground is wet".
+
+FORM: modus ponens
+step 3: Premise: if "it is the case that the street is wet", then "rain fell". Premise: "it is the case that the street is wet". So: "rain fell".
+
+FORM: conjunctive modus ponens
+step 4: if (both ("it is the case that the street is wet") and ("it is the case that  the sky is grey")), then ("rain fell"). "it is the case that the street is wet". "it is the case that  the sky is grey". So: "rain fell".
+
+FORM: modus tollens
+step 4: if ("rain fell"), then ("it is the case that the street is wet"). it is not the case that ("the street is wet"). So: it is not the case that ("rain fell").
+
+FORM: modus ponens
+step 3: Premise: if "rain falls", then "streets get wet". Premise: "rain falls". So: "streets get wet".
+
+FORM: modus ponens
+step 3: Premise: if "rain falls", then "steve will wear a raincoat tomorrow". Premise: "rain falls". So: "steve will wear a raincoat tomorrow".
+
+FORM: modus ponens
+step 3: Premise: if "the system is misaligned", then "the system might seek power". Premise: "the system is misaligned". So: "the system might seek power".
+
+FORM: modus tollens
+step 3: if ("rain falls"), then ("streets get wet"). it is not the case that ("streets get wet"). So: it is not the case that ("rain falls").
+
+FORM: hypothetical syllogism
+step 3: if ("rain falls"), then ("streets get wet"). if ("streets get wet"), then ("traffic slows"). So: if ("rain falls"), then ("traffic slows").
+
+FORM: biconditional introduction
+step 3: if ("the switch is up"), then ("the lamp is lit"). if ("the lamp is lit"), then ("the switch is up"). So: ("the switch is up") if and only if ("the lamp is lit").
+
+FORM: biconditional elimination
+step 2: ("the switch is up") if and only if ("the lamp is lit"). So: if ("the switch is up"), then ("the lamp is lit").
+
+FORM: biconditional modus ponens
+step 3: ("the switch is up") if and only if ("the lamp is lit"). "the lamp is lit". So: "the switch is up".
+
+FORM: double negation
+step 2: it is not the case that ((it is not the case that ("rain falls"))). So: "rain falls".
+
+FORM: self-entailment
+step 2: SEMI-FORMAL: self-entailment {1: "Rain falls" ⊢ "rain falls"} {premise 1 = "Rain falls"; conclusion 2 = "rain falls"}
+
+FORM: universal negative instantiation
+step 3: "i" is aware of something. For every X1: if X1 is a physical thing, then it is not the case that X1 is aware of something. So: it is not the case that "i" is a physical thing.
+
+FORM: schematic instantiation
+step 3: Bindings: {X = "alice"; Y = "bob"}. Premise: if "alice admires bob", then "bob trusts alice". Premise: "alice admires bob". So: "bob trusts alice".
+
+FORM: non-copular universal instantiation
+step 3: SEMI-FORMAL: non-copular universal instantiation {1: "Every cat purrs"; 2: "Felix is a cat" ⊢ "Felix purrs"} {universal class = "cat"; membership class = "a cat"} {instantiated predicate = "felix purrs"; conclusion = "Felix purrs"}
+
+FORM: necessity elimination
+step 2: SEMI-FORMAL: necessity elimination {1: "Necessarily, rain falls" ⊢ "rain falls"} {premise 1 de-necessitated clause = "rain falls"; conclusion 2 = "rain falls"}
+
+FORM: existential syllogism
+step 3: there is an X1 such that both (X1 is in the class "cat") and (X1 is a hunter). For every X1: if X1 is a hunter, then X1 is alert. So: there is an X1 such that both (X1 is in the class "cat") and (X1 is alert).
+
+FORM: existential negative syllogism
+step 3: there is an X1 such that both (X1 is in the class "cat") and (X1 is a hunter). For every X1: if X1 is a hunter, then it is not the case that X1 is lazy. So: there is an X1 such that both (X1 is in the class "cat") and (it is not the case that X1 is lazy).
+
+FORM: constructive dilemma
+step 4: SEMI-FORMAL: constructive dilemma {1: "Either the rain falls or the snow falls"; 2: "If the rain falls, then the road is wet"; 3: "If the snow falls, then the road is icy" ⊢ "either the road is wet or the road is icy"}
+
+FORM: simple dilemma
+step 4: SEMI-FORMAL: simple dilemma {1: "Either the rain falls or the snow falls"; 2: "If the rain falls, then the game is cancelled"; 3: "If the snow falls, then the game is cancelled" ⊢ "the game is cancelled"}
+
+FORM: destructive dilemma
+step 4: SEMI-FORMAL: destructive dilemma {1: "If the rain falls, then the road is wet"; 2: "If the snow falls, then the road is icy"; 3: "Either it is not the case that the road is wet or it is not the case that the road is icy" ⊢ "either it is not the case that the rain falls or it is not the case that the snow falls"}
+
+FORM: contraposition
+step 2: if ("rain falls"), then ("snow falls"). So: if (it is not the case that ("snow falls")), then (it is not the case that ("rain falls")).
+
+FORM: De Morgan
+step 2: it is not the case that (both ("the rain falls") and ("the snow falls")). So: either (it is not the case that ("the rain falls")) or (it is not the case that ("the snow falls")).
+
+FORM: commutation
+step 2: either ("the rain falls") or ("the snow falls"). So: either ("the snow falls") or ("the rain falls").
+
+FORM: exportation
+step 2: if (both ("the rain falls") and ("the snow falls")), then ("the street is wet"). So: if ("the rain falls"), then (if ("the snow falls"), then ("the street is wet")).
+
+FORM: importation
+step 2: if ("the rain falls"), then (if ("the snow falls"), then ("the street is wet")). So: if (both ("the rain falls") and ("the snow falls")), then ("the street is wet").
+
+FORM: material implication
+step 2: if ("the rain falls"), then ("the snow falls"). So: either (it is not the case that ("the rain falls")) or ("the snow falls").
+
+FORM: distribution
+step 2: both ("the rain falls") and (either ("the snow falls") or ("the street is wet")). So: either (both ("the rain falls") and ("the snow falls")) or (both ("the rain falls") and ("the street is wet")).
+
+FORM: absorption
+step 2: if ("the rain falls"), then ("the snow falls"). So: if ("the rain falls"), then (both ("the rain falls") and ("the snow falls")).
+
+FORM: double negation introduction
+step 2: "Rain falls". So: it is not the case that (it is not the case that ("Rain falls")).
+
+FORM: biconditional modus tollens
+step 3: ("rain falls") if and only if ("snow falls"). it is not the case that ("snow falls"). So: it is not the case that ("rain falls").
+
+FORM: biconditional chaining
+step 3: ("rain falls") if and only if ("snow falls"). ("snow falls") if and only if ("the street is wet"). So: ("rain falls") if and only if ("the street is wet").
+
+FORM: biconditional commutation
+step 2: ("rain falls") if and only if ("snow falls"). So: ("snow falls") if and only if ("rain falls").
+
+FORM: negated conditional
+step 2: it is not the case that (if ("rain falls"), then ("snow falls")). So: "rain falls".
+
+FORM: identity symmetry
+step 2: SEMI-FORMAL: identity symmetry {1: "Ada is identical to Ben" ⊢ "Ben is identical to Ada"} {premise identity subject = "ada"; conclusion identity object = "ada"} {premise identity object = "ben"; conclusion identity subject = "ben"}
+
+FORM: quantifier negation
+step 2: SEMI-FORMAL: quantifier negation {1: "It is not the case that every man is mortal" ⊢ "some man is not mortal"} {premise class = "man"; conclusion class = "man"} {premise predicate = "mortal"; conclusion predicate = "mortal"}
+
+FORM: conversion
+step 2: SEMI-FORMAL: conversion {1: "Some poet is a sailor" ⊢ "some sailor is a poet"} {premise class = "poet"; conclusion class = "a poet"} {premise predicate = "a sailor"; conclusion predicate = "sailor"}
+
+FORM: universal modus tollens
+step 3: For every X1: if X1 is a man, then X1 is mortal. it is not the case that "zeus" is mortal. So: it is not the case that "zeus" is a man.
+
+FORM: possibility introduction
+step 2: SEMI-FORMAL: possibility introduction {1: "Rain falls" ⊢ "possibly, rain falls"} {premise clause = "Rain falls"; possible conclusion clause = "rain falls"}
+
+FORM: contradiction introduction
+step 3: SEMI-FORMAL: contradiction introduction {1: "Rain falls"; 2: "It is not the case that rain falls" ⊢ "contradiction"}
+
+FORM: identity reflexivity
+step 2: SEMI-FORMAL: identity reflexivity {1: "Socrates is a man" ⊢ "Socrates is identical to Socrates"}
+
+FORM: modal duality
+step 2: SEMI-FORMAL: it is not the case that (possibility(it is not the case that ("rain falls"))) ⊢ necessity("rain falls")
+
+FORM: modal distribution
+step 2: SEMI-FORMAL: necessity(if ("rain falls"), then ("snow falls")) ⊢ if (necessity("rain falls")), then (necessity("snow falls"))
+
+FORM: relational universal instantiation
+step 4: SEMI-FORMAL: relational universal instantiation {1: "Every lab sells every model to every government"; 2: "Acme is a lab"; 3: "Japan is a government" ⊢ "Acme sells every model to Japan"}
+
+FORM: relational universal negative instantiation
+step 3: SEMI-FORMAL: relational universal negative instantiation {1: "Alice greets no tyrant"; 2: "Bob is a tyrant" ⊢ "it is not the case that Alice greets Bob"}
+
+FORM: relational scope conversion
+step 2: SEMI-FORMAL: checked scope readings {SEMI-FORMAL: relational scope conversion {1: "every student is such that that student admires every teacher" ⊢ "every teacher is such that every student admires that teacher"}; SEMI-FORMAL: self-entailment {1: "every teacher is such that every student admires that teacher" ⊢ "every teacher is such that every student admires that teacher"} {premise 1 = "every teacher is such that every student admires that teacher"; conclusion 2 = "every teacher is such that every student admires that teacher"}}
+
+FORM: counterfactual modus ponens
+step 3: SEMI-FORMAL: counterfactual("The match was struck"; "the match lit"); "The match was struck" ⊢ "the match lit"
+
+FORM: counterfactual modus tollens
+step 3: SEMI-FORMAL: counterfactual("the match was struck"; "the match lit"); it is not the case that ("the match lit") ⊢ it is not the case that ("the match was struck")
+
+FORM: counterfactual to material
+step 2: SEMI-FORMAL: counterfactual("the match was struck"; "the match lit") ⊢ if ("the match was struck"), then ("the match lit")
+
+FORM: counterfactual consequent conjunction
+step 3: SEMI-FORMAL: counterfactual("the match was struck"; "the match lit"); counterfactual("the match was struck"; "the room warmed") ⊢ counterfactual("the match was struck"; both ("the match lit") and ("the room warmed"))
+
+FORM: counterfactual consequent conjunction elimination
+step 2: SEMI-FORMAL: counterfactual("the match was struck"; both ("the match lit") and ("the room warmed")) ⊢ counterfactual("the match was struck"; "the match lit")
+
+FORM: counterfactual consequent disjunction introduction
+step 2: SEMI-FORMAL: counterfactual("the match was struck"; "the match lit") ⊢ counterfactual("the match was struck"; either ("the match lit") or ("the room warmed"))
+
+FORM: counterfactual dilemma
+step 4: SEMI-FORMAL: counterfactual dilemma {1: "Either the match was struck or the lighter was lit"; 2: "If the match had been struck, then the room would have warmed"; 3: "If the lighter had been lit, then the room would have warmed" ⊢ "the room warmed"}
+
+FORM: counterfactual reflexivity
+step 2: SEMI-FORMAL: counterfactual reflexivity {1: "The match was struck" ⊢ "if the match had been struck, then the match would have been struck"}
+
+FORM: conditional proof
+step 4: Premise: if "rain falls", then "the street is wet". Premise: "rain falls". So: "the street is wet".
+step 5: Premise: if "the street is wet", then "the cars slow". Premise: "the street is wet". So: "the cars slow".
+step 6: SEMI-FORMAL: conditional proof: assume "rain falls" (steps 3-5); so "the cars slow"; therefore "if rain falls, then the cars slow"
+
+FORM: reductio
+step 3: SEMI-FORMAL: contradiction introduction {2: "rain falls"; 1: "It is not the case that rain falls" ⊢ "contradiction"}
+step 4: SEMI-FORMAL: reductio: assume "rain falls" (steps 2-3); so "contradiction"; therefore "it is not the case that rain falls"
+
+FORM: proof by cases
+step 5: Premise: if "the rain falls", then "the street is wet". Premise: "the rain falls". So: "the street is wet".
+step 7: Premise: if "the snow falls", then "the street is wet". Premise: "the snow falls". So: "the street is wet".
+step 8: SEMI-FORMAL: proof by cases: "Either the rain falls or the snow falls"; assume "the rain falls" (steps 4-5); so "the street is wet"; assume "the snow falls" (steps 6-7); so "the street is wet"; therefore "the street is wet"
+
+FORM: universal generalization
+step 3: For every X1: if X1 is a man, then X1 is mortal. "a" is a man. So: "a" is mortal.
+step 4: SEMI-FORMAL: universal generalization: assume "Let a be an arbitrary man" (steps 2-3); so "a is mortal"; therefore "every man is mortal"
+
+FORM: relational universal generalization
+step 3: SEMI-FORMAL: checked scope readings {SEMI-FORMAL: non-copular universal instantiation {1: "every student is such that that student admires every teacher"; 2: "b is a student" ⊢ "b admires every teacher"}; SEMI-FORMAL: non-copular universal instantiation {1: "every teacher is such that every student admires that teacher"; 2: "b is a student" ⊢ "b admires every teacher"}}
+step 4: SEMI-FORMAL: checked scope readings {SEMI-FORMAL: relational universal generalization: assume "Let b be an arbitrary student" (steps 2-3); so "b admires every teacher"; therefore "every student is such that that student admires every teacher"; SEMI-FORMAL: relational universal generalization: assume "Let b be an arbitrary student" (steps 2-3); so "b admires every teacher"; therefore "every teacher is such that every student admires that teacher"}
+
+FORM: property abstraction
+step 2: SEMI-FORMAL: property abstraction {1: "Socrates is wise" ⊢ "Socrates has the property of being wise"}
+
+FORM: property concretion
+step 2: SEMI-FORMAL: property concretion {1: "Socrates has the property of being wise" ⊢ "Socrates is wise"}
+
+FORM: property instantiation
+step 3: SEMI-FORMAL: property instantiation {1: "Socrates has every property that Plato has"; 2: "Plato has the property of being wise" ⊢ "Socrates has the property of being wise"}
+
+FORM: property existential
+step 2: SEMI-FORMAL: property existential {1: "Socrates has the property of being wise" ⊢ "Socrates has some property"}
+
+FORM: shared property
+step 3: SEMI-FORMAL: shared property {1: "Socrates has the property of being wise"; 2: "Plato has the property of being wise" ⊢ "Socrates shares some property with Plato"}
+
+FORM: indiscernibility of identicals
+step 2: SEMI-FORMAL: indiscernibility of identicals {1: "Socrates is identical to Plato" ⊢ "Socrates has every property that Plato has"}
+
+FORM: property instantiation (arbitrary property)
+step 4: SEMI-FORMAL: property instantiation (arbitrary property) {1: "Plato has every property that Socrates has"; 3: "Socrates has P" ⊢ "Plato has P"}
+step 5: SEMI-FORMAL: property instantiation (arbitrary property) {2: "Aristotle has every property that Plato has"; 4: "Plato has P" ⊢ "Aristotle has P"}
+step 6: SEMI-FORMAL: property generalization: assume "Let P be an arbitrary property that Socrates has" (steps 3-5); so "Aristotle has P"; therefore "Aristotle has every property that Socrates has"
+
+FORM: distinguishing property
+step 3: SEMI-FORMAL: distinguishing property {1: "Socrates has the property of being wise"; 2: "It is not the case that Plato has the property of being wise" ⊢ "Socrates has some property that Plato lacks"}
+
+FORM: distinguishing property nonidentity
+step 2: SEMI-FORMAL: distinguishing property nonidentity {1: "Socrates has some property that Plato lacks" ⊢ "it is not the case that Socrates is identical to Plato"}
+
+FORM: distinguishing property non-inclusion
+step 2: SEMI-FORMAL: distinguishing property non-inclusion {1: "Socrates has some property that Plato lacks" ⊢ "it is not the case that Plato has every property that Socrates has"}
+
+FORM: relative clause inference
+step 4: SEMI-FORMAL: relative clause inference {1: "Every reader who admires Pat is active"; 2: "Robin is a reader"; 3: "Robin admires Pat" ⊢ "Robin is active"}
+
+FORM: FOL reiteration
+step 2: SEMI-FORMAL: ∀X1 ("is/red"(X1)) ⊢ ∀X1 ("is/red"(X1))
+
+FORM: FOL modus ponens
+step 3: SEMI-FORMAL: (∀X1 ("is/red"(X1)) → "is/blue"("alice")); ∀X1 ("is/red"(X1)) ⊢ "is/blue"("alice")
+
+FORM: FOL contradiction introduction
+step 3: SEMI-FORMAL: ∀X1 ("is/red"(X1)); ¬(∀X1 ("is/red"(X1))) ⊢ ⊥
+
+FORM: FOL contradiction elimination
+step 3: SEMI-FORMAL: ∀X1 ("is/red"(X1)); ¬(∀X1 ("is/red"(X1))) ⊢ ⊥
+step 4: SEMI-FORMAL: ⊥ ⊢ ∃X1 ("is/blue"(X1))
+
+FORM: FOL double negation
+step 2: SEMI-FORMAL: ¬(¬(∀X1 ("is/red"(X1)))) ⊢ ∀X1 ("is/red"(X1))
+
+FORM: FOL double negation introduction
+step 2: SEMI-FORMAL: ∀X1 ("is/red"(X1)) ⊢ ¬(¬(∀X1 ("is/red"(X1))))
+
+FORM: FOL biconditional introduction
+step 3: SEMI-FORMAL: (∀X1 ("is/red"(X1)) → "is/blue"("alice")); ("is/blue"("alice") → ∀X1 ("is/red"(X1))) ⊢ (∀X1 ("is/red"(X1)) ↔ "is/blue"("alice"))
+
+FORM: FOL biconditional elimination
+step 2: SEMI-FORMAL: (∀X1 ("is/red"(X1)) ↔ "is/blue"("alice")) ⊢ (∀X1 ("is/red"(X1)) → "is/blue"("alice"))
+
+FORM: FOL universal instantiation
+step 2: SEMI-FORMAL: ∀X1 (∃X2 ("admires"(X1, X2))) ⊢ ∃X1 ("admires"("alice", X1))
+
+FORM: FOL conditional proof
+step 2: SEMI-FORMAL: ∀X1 ("is/red"(X1)) ⊢ "is/red"("alice")
+step 3: SEMI-FORMAL: assume ∀X1 ("is/red"(X1)) (steps 1-2); so "is/red"("alice"); therefore (∀X1 ("is/red"(X1)) → "is/red"("alice"))
+
+FORM: FOL reductio
+step 3: SEMI-FORMAL: ¬(∀X1 ("is/red"(X1))); ∀X1 ("is/red"(X1)) ⊢ ⊥
+step 4: SEMI-FORMAL: assume ∀X1 ("is/red"(X1)) (steps 2-3); so ⊥; therefore ¬(∀X1 ("is/red"(X1)))
+
+FORM: FOL universal generalization
+step 3: SEMI-FORMAL: ∀X1 ("is/red"(X1)) ⊢ "is/red"("witness")
+step 4: SEMI-FORMAL: assume ("witness" = "witness") (steps 2-3); so "is/red"("witness"); therefore ∀X1 ("is/red"(X1))
+
+FORM: FOL proof by cases
+step 5: SEMI-FORMAL: (∀X1 ("is/red"(X1)) → ∃X2 ("is/green"(X2))); ∀X1 ("is/red"(X1)) ⊢ ∃X1 ("is/green"(X1))
+step 7: SEMI-FORMAL: (∀X1 ("is/blue"(X1)) → ∃X2 ("is/green"(X2))); ∀X1 ("is/blue"(X1)) ⊢ ∃X1 ("is/green"(X1))
+step 8: SEMI-FORMAL: (∀X1 ("is/red"(X1)) ∨ ∀X2 ("is/blue"(X2))); assume ∀X1 ("is/red"(X1)) (steps 4-5); so ∃X1 ("is/green"(X1)); assume ∀X1 ("is/blue"(X1)) (steps 6-7); so ∃X1 ("is/green"(X1)); therefore ∃X1 ("is/green"(X1))
+
+FORM: notation equivalence
+step 2: SEMI-FORMAL: ∀X1 (("is/student"(X1) → "is/red"(X1))) ⊢ ∀X1 (("is/student"(X1) → "is/red"(X1)))
+
+FORM: counting definition
+step 2: SEMI-FORMAL: ∃X1 (("is/lab"(X1) ∧ "is/red"(X1))) ⊢ ∃X1 (("is/lab"(X1) ∧ "is/red"(X1)))
+
+FORM: counting introduction
+step 3: SEMI-FORMAL: ∃X1 ((("is/lab"(X1) ∧ "visits"(X1, "blair")) ∧ "admires"(X1, "casey"))); ¬(∃X1 (∃X2 ((((("is/lab"(X1) ∧ "visits"(X1, "blair")) ∧ "admires"(X1, "casey")) ∧ (("is/lab"(X2) ∧ "visits"(X2, "blair")) ∧ "admires"(X2, "casey"))) ∧ ¬((X1 = X2)))))) ⊢ (∃X1 ((("is/lab"(X1) ∧ "admires"(X1, "casey")) ∧ "visits"(X1, "blair"))) ∧ ¬(∃X2 (∃X3 ((((("is/lab"(X2) ∧ "admires"(X2, "casey")) ∧ "visits"(X2, "blair")) ∧ (("is/lab"(X3) ∧ "admires"(X3, "casey")) ∧ "visits"(X3, "blair"))) ∧ ¬((X2 = X3)))))))
+
+FORM: counting elimination
+step 2: SEMI-FORMAL: (∃X1 ((("is/lab"(X1) ∧ "visits"(X1, "blair")) ∧ "admires"(X1, "casey"))) ∧ ¬(∃X2 (∃X3 ((((("is/lab"(X2) ∧ "visits"(X2, "blair")) ∧ "admires"(X2, "casey")) ∧ (("is/lab"(X3) ∧ "visits"(X3, "blair")) ∧ "admires"(X3, "casey"))) ∧ ¬((X2 = X3))))))) ⊢ ∃X1 ((("is/lab"(X1) ∧ "admires"(X1, "casey")) ∧ "visits"(X1, "blair")))
+
+FORM: counting contradiction
+step 3: SEMI-FORMAL: ∃X1 (∃X2 (∃X3 (∃X4 ((((((((((("is/labs"(X1) ∧ "is/red"(X1)) ∧ ("is/labs"(X2) ∧ "is/red"(X2))) ∧ ("is/labs"(X3) ∧ "is/red"(X3))) ∧ ("is/labs"(X4) ∧ "is/red"(X4))) ∧ ¬((X1 = X2))) ∧ ¬((X1 = X3))) ∧ ¬((X1 = X4))) ∧ ¬((X2 = X3))) ∧ ¬((X2 = X4))) ∧ ¬((X3 = X4))))))); ¬(∃X1 (∃X2 (∃X3 ((((((("is/labs"(X1) ∧ "is/red"(X1)) ∧ ("is/labs"(X2) ∧ "is/red"(X2))) ∧ ("is/labs"(X3) ∧ "is/red"(X3))) ∧ ¬((X1 = X2))) ∧ ¬((X1 = X3))) ∧ ¬((X2 = X3))))))) ⊢ ⊥
+
+FORM: counting uniqueness
+step 3: SEMI-FORMAL: (∃X1 (("is/student"(X1) ∧ "admires"(X1, "blair"))) ∧ ¬(∃X2 (∃X3 (((("is/student"(X2) ∧ "admires"(X2, "blair")) ∧ ("is/student"(X3) ∧ "admires"(X3, "blair"))) ∧ ¬((X2 = X3))))))); ("is/student"("ada") ∧ "admires"("ada", "blair")) ⊢ ∀X1 ((("is/student"(X1) ∧ "admires"(X1, "blair")) → (X1 = "ada")))
+
+FORM: description definition
+step 2: SEMI-FORMAL: checked description readings {SEMI-FORMAL: (∃X1 (("is/lab"(X1) ∧ "is/red"(X1))) ∧ ¬(∃X2 (∃X3 ((("is/lab"(X2) ∧ "is/lab"(X3)) ∧ ¬((X2 = X3))))))) ⊢ ∃X1 (("is/lab"(X1) ∧ "is/red"(X1)))}
+
+FORM: description introduction
+step 4: SEMI-FORMAL: checked description readings {SEMI-FORMAL: "is/lab"("ada"); "is/red"("ada"); ¬(∃X1 (∃X2 ((("is/lab"(X1) ∧ "is/lab"(X2)) ∧ ¬((X1 = X2)))))) ⊢ (∃X1 (("is/lab"(X1) ∧ "is/red"(X1))) ∧ ¬(∃X2 (∃X3 ((("is/lab"(X2) ∧ "is/lab"(X3)) ∧ ¬((X2 = X3)))))))}
+
+FORM: unless elimination
+step 3: SEMI-FORMAL: unless elimination {1: "The alarm sounds unless the battery is dead"; 2: "It is not the case that the battery is dead" ⊢ "the alarm sounds"} {premise 1 unless-clause = "the battery is dead"; premise 2 negated clause = "the battery is dead"} {premise 1 main clause = "the alarm sounds"; conclusion 3 = "the alarm sounds"}
+
+FORM: unless conversion
+step 2: SEMI-FORMAL: unless conversion {1: "The alarm sounds unless the battery is dead" ⊢ "if it is not the case that the battery is dead, then the alarm sounds"} {step 1 unless-clause = "the battery is dead"; step 2 negated antecedent = "the battery is dead"} {step 1 main clause = "the alarm sounds"; step 2 consequent = "the alarm sounds"}
+
+FORM: conjunction elimination
+step 2: both ("ann sings") and ("(bob dances or cal reads)"). So: "ann sings".
+
+FORM: conjunction elimination
+step 2: both ("ann sings") and ("bob dances or cal reads"). So: "ann sings".
+
+FORM: disjunctive syllogism
+step 3: either ("(ann sings and bob dances)") or ("cal reads"). it is not the case that ("ann sings and bob dances"). So: "cal reads".
+
+FORM: modus ponens
+step 3: Premise: if "rain falls", then "the ground is wet". Premise: "rain falls". So: "the ground is wet".
+
+FORM: unless conversion
+step 2: SEMI-FORMAL: unless conversion {1: "(The alarm sounds and the lamp flashes) unless the battery is dead" ⊢ "if it is not the case that the battery is dead, then the alarm sounds and the lamp flashes"} {step 1 unless-clause = "the battery is dead"; step 2 negated antecedent = "the battery is dead"} {step 1 main clause = "the alarm sounds and the lamp flashes"; step 2 consequent = "the alarm sounds and the lamp flashes"}
+
+FORM: unless conversion
+step 2: SEMI-FORMAL: unless conversion {1: "(The alarm sounds and the lamp flashes), unless the battery is dead" ⊢ "if it is not the case that the battery is dead, then the alarm sounds and the lamp flashes"} {step 1 unless-clause = "the battery is dead"; step 2 negated antecedent = "the battery is dead"} {step 1 main clause = "the alarm sounds and the lamp flashes"; step 2 consequent = "the alarm sounds and the lamp flashes"}
+
+FORM: conjunction elimination
+step 2: both ("the server crashed") and ("the network failed"). So: "the network failed".
+
+FORM: schematic instantiation
+step 3: Bindings: {X = "the channel"}. Premise: if "the channel is informational or causal", then "the channel is a link". Premise: "the channel is informational or causal". So: "the channel is a link".
+
+FORM: schematic instantiation
+step 3: Bindings: {X = "the machine"}. Premise: if "the machine is possible and financially feasible", then "the machine will be built". Premise: "the machine is possible and financially feasible". So: "the machine will be built".
+
+FORM: schematic instantiation
+step 3: Bindings: {X = "the game of ordinary chess"}. Premise: if "the game of ordinary chess is solved", then "the game of ordinary chess is boring". Premise: "the game of ordinary chess is solved". So: "the game of ordinary chess is boring".
+
+FORM: schematic instantiation
+step 3: Bindings: {X = "the first ultraintelligent machine"}. Premise: if "the first ultraintelligent machine is a risk", then "the first ultraintelligent machine deserves attention". Premise: "the first ultraintelligent machine is a risk". So: "the first ultraintelligent machine deserves attention".
+
+FORM: schematic instantiation
+step 3: Bindings: {X = "carlsmith's aps concept"}. Premise: if "carlsmith's aps concept is solved", then "carlsmith's aps concept is boring". Premise: "carlsmith's aps concept is solved". So: "carlsmith's aps concept is boring".
+
+FORM: schematic instantiation
+step 3: Bindings: {X = "ultraparallel"}. Premise: if "the machine needs to be ultraparallel", then "the channel is ultraparallel". Premise: "the machine needs to be ultraparallel". So: "the channel is ultraparallel".
+

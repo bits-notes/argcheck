@@ -32,7 +32,7 @@ EOF
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `NOT CERTIFIED`.
 - `--forms` lists all 121 accepted inference forms in catalog `v45.1`.
-- `--version` prints the catalog version and build stamp (`gate catalog v46.2; local english-arg-validator@<commit>`).
+- `--version` prints the catalog version and build stamp (`gate catalog v46.3; local english-arg-validator@<commit>`).
 - Exit codes: `0` valid, `1` not certified, `2` input or operational error.
 - `NOT CERTIFIED` means some step matched no accepted rule. It does not mean the
   argument is invalid; repair the step or add the missing premise.
@@ -147,7 +147,7 @@ visible identity or conditional premise.
   (`Either we should use X or we should use Y.`), refute one side, and apply
   disjunctive syllogism.
 
-### Strict conventions (catalog v35–v46.2)
+### Strict conventions (catalog v35–v46.3)
 
 The gate refuses phrasings that are ambiguous in English, even when the
 inference is fine. Each refusal names its fix; apply exactly that fix.
@@ -332,3 +332,14 @@ See `docs/rules.md` for executable examples and the scope limitation.
 Existing identifiers such as `definition (a)` and parenthetical annotations
 inside atomic clauses retain their opaque reading. Only whole-clause boundary
 parentheses create logical groups; parentheses must always balance.
+
+
+### Read back the certified reading (v46.3)
+
+Use `--paraphrase` or each passed step's JSON `paraphrase` and
+`paraphrase_form`. Read every step's paraphrase back against the source sentence
+it formalizes. A changed quantifier, scope, hedge, or referent is a fidelity
+error to fix even though the step certified. Semi-formal renderings preserve
+opaque lexical slots and the actual rule/formula; do not treat an opaque slot
+as an independently parsed English claim. Failed steps add a structured
+`refusal` with the existing fix and rune offsets into the identified statement.

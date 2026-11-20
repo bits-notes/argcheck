@@ -46,12 +46,12 @@ type strictRules struct {
 	// retries never set it).
 	notes bool
 	// fired, when non-nil, records each strict rule whose refusal changed a
-	// result during this evaluation. Only the notes pass sets it, on its own
-	// copy, so no other evaluation sees it.
+	// result during this evaluation. Each step and diagnostic retry uses its
+	// own copy, so no other evaluation sees it.
 	fired *firedRules
 }
 
-// firedRules is owned by one notes pass on one goroutine.
+// firedRules is owned by one step evaluation on one goroutine.
 type firedRules struct{ ids map[string]bool }
 
 // hit records that rule id refused something and returns true, so it can end

@@ -69,6 +69,13 @@ func (policy strictRules) searchSchematicConjuncts(ps []NumberedArgumentStep, ci
 					candidate.mismatch = "cited premises unused by the conjunctive antecedent"
 				}
 				candidate.matched = candidate.mismatch == ""
+				if candidate.matched {
+					bound := make([]string, len(conjuncts))
+					for i, template := range conjuncts {
+						bound[i] = readingBoundTemplate(template, state)
+					}
+					candidate.reading = readingSubstitution(state) + readingConjunctiveMP(bound, want)
+				}
 			}
 			best = betterOutcome(best, candidate)
 			return candidate.matched
@@ -368,6 +375,7 @@ func (policy strictRules) gateConclusionStepUnisolated(c NumberedArgumentStep, s
 			}
 			old.Passed = true
 			old.Form = "identity substitution"
+			old.Paraphrase = readingApplication(old.Form, ps, c, nil)
 			old.NearestForm = ""
 			old.Mismatch = ""
 			return old

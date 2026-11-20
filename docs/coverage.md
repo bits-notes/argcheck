@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v46.2)
+# Entailment Gate — Coverage and Known Limits (catalog v46.3)
 
 **Type:** reference
-**Status:** current as of catalog v46.2
+**Status:** current as of catalog v46.3
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -1619,3 +1619,35 @@ Schematic unification also rejects pronouns in completed slot bindings, includin
 a variable used only in the antecedent. That slot still links the concrete
 statement to its schematic rule. The isolation replay rejects its private
 spellings in slots too, so a variable cannot absorb a renamed pronoun.
+
+
+## v46.3
+
+Certified-reading output and structured refusals are additive reporting changes;
+the matching catalog and all certification/refusal decisions are unchanged.
+Passed steps expose `paraphrase` and `paraphrase_form` in JSON and validate/MCP
+step details. The text CLI opts in with `--paraphrase`. Renderers use selected
+schema comparison slots, actual substitutions/patterns, and checked FOL ASTs;
+legacy forms without a complete tree retain a labeled semi-formal application.
+Counting, notation equivalence, descriptions, and relational scope choices
+retain their checked readings. Final rejecting guards clear earlier readings.
+
+Failed steps add `refusal.span` (statement number, exact text, rune offsets),
+`refusal.rule`, and `refusal.hint`. Existing notes, mismatches, and messages are
+pinned against v46.2 fixtures. Pronoun diagnostics point to a token; quoted
+mismatch excerpts use the smallest located excerpt. Diagnostics without an
+exact location use a whole statement; scope failures without a statement ID
+fall back to the first statement. Grouping syntax diagnostics add the same
+metadata to syntax details, without running the entailment gate.
+
+Every certified step of every `argcheck-accept` example in rules.md is covered
+by a deterministic golden snapshot, regenerated with `-update-paraphrases`.
+Tests require a nonempty reading, reject personal-pronoun tokens, and apply the
+production grouping check outside quoted literal operands. Additional tests
+cover FOL binder separation, schematic bindings, fallback notation, refusal
+spans, pinned legacy diagnostics, JSON defaults, and the text flag.
+
+Necessitated schema applications explicitly retain the necessity wrapper on
+each premise and the conclusion. Scoped renderings mark discharged ranges
+separately from ordinary premises. Structured refusal fixes may reuse strict
+rule diagnostic retries even when the notes array is not requested.

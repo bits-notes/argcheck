@@ -3489,3 +3489,81 @@ Schematic unification also rejects pronouns in completed slot bindings, includin
 a variable used only in the antecedent. That slot still links the concrete
 statement to its schematic rule. The isolation replay rejects its private
 spellings in slots too, so a variable cannot absorb a renamed pronoun.
+
+## Paraphrase of the certified reading
+
+Every passed entailment step includes `paraphrase` and `paraphrase_form` in
+`entailment.details.steps[]` in CLI JSON. The validate/MCP entailment check
+returns the same fields in its step details. JSON includes the fields by default;
+`--paraphrase` adds `step N: <paraphrase>` lines to text output. Ordinary text
+output is unchanged, apart from the catalog version. `--quiet` still prints
+only the verdict.
+
+The reading comes from the successful match: selected clause comparisons,
+schema substitutions, pattern trees, or the FOL formula actually checked.
+Rendering does not parse the source again and cannot influence certification.
+Read the result against the source: certification establishes the displayed
+formal reading, not fidelity to the author's intended meaning.
+
+Core propositional readings use explicit if/then, both/and, either/or,
+and “it is not the case that” scaffolds. Parentheses fix nested scope.
+Categorical readings use “For every X1” and “there is an X1 such that”.
+They are generated from the matched class, predicate, instance and middle-term
+slots, not by repeating the source premise. A class label without an article
+is displayed as membership in a quoted class, avoiding guessed inflection.
+
+Clauses and bindings use plain double quotes, for example X = "the game of
+ordinary chess". Quoted slots retain the matched spelling, including logical
+scaffolds; words are never hidden with Unicode escapes. Because clauses are
+matched case-insensitively, slots taken from the normalized comparison can
+appear in lower case ("steve will wear a raincoat tomorrow"); the case of the
+source is not part of the certified reading. Bound X1 is distinct
+from the quoted constant "X1". A quoted name such as "i" is a recorded lexical
+slot, not a new pronoun reference introduced by the renderer. The snapshot
+check permits the same impersonal “it is (not) the case (both) that” scaffolds
+as the gate.
+
+The FOL route, counting, counterfactual, modal, property/abstraction and scoped
+proof routes retain explicit `SEMI-FORMAL:` output. Formula renderings use
+∀, ∃, ∧, ∨, ¬, →, ↔ and ⊢. Discharged ranges say “assume … (steps N-M); so …;
+therefore …”. Legacy matcher paths without recorded structured slots also
+retain a semi-formal rule application with the available equality witnesses;
+the renderer does not invent an unrecorded parse.
+
+Real examples copied from `validation/testdata/certified_readings.golden`:
+
+```text
+step 3: Premise: if "rain falls", then "the ground is wet". Premise: "rain falls". So: "the ground is wet".
+```
+
+```text
+step 3: Bindings: {X = "alice"; Y = "bob"}. Premise: if "alice admires bob", then "bob trusts alice". Premise: "alice admires bob". So: "bob trusts alice".
+```
+
+```text
+step 3: For every X1: if X1 is a man, then X1 is mortal. "a" is a man. So: "a" is mortal.
+```
+
+```text
+step 2: SEMI-FORMAL: ∀X1 (∃X2 ("admires"(X1, X2))) ⊢ ∃X1 ("admires"("alice", X1))
+```
+
+A failed step instead includes `refusal`, with a rule ID (or nearest form),
+an existing diagnostic fix, and a statement-relative span. The span identifies
+a numbered statement, including a cited premise where appropriate; offsets
+count Unicode code points, starting at zero, with an exclusive end. When the
+old diagnostic gives no exact substring, the span covers the entire statement.
+Grouping syntax errors occur before entailment checking and carry this metadata
+in `syntax.details`, including a failed diagnostic step in `steps`.
+The original notes, mismatch, and message are unchanged.
+
+The refusal’s `rule_source` is `fired` for a rule recorded during the main
+check, `nearest_form` for the fallback, or `syntax` for a syntax refusal.
+A fired rule is not necessarily the sole cause. With `StrictNotes` enabled,
+an available disable-one-rule proof takes precedence and the source is `note`.
+Default refusal reporting uses recorded rules and static fix text only; notes
+and their diagnostic retries remain opt-in.
+
+A `necessitation` wrapper applies □ separately to every premise and to the
+conclusion of the enclosed rule application; necessity is never silently
+removed from the certified reading.

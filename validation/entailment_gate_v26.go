@@ -414,6 +414,7 @@ func (policy strictRules) gateCounting(c NumberedArgumentStep, steps map[int]Num
 		if form := policy.countingRule(ps, target); form != "" {
 			r.Passed = true
 			r.Form = "counting " + form
+			r.Paraphrase = readingFOLRule(ps, target)
 			r.NearestForm = ""
 			r.Mismatch = ""
 		}

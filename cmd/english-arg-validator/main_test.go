@@ -64,7 +64,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v46.2", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v46.3", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -176,7 +176,7 @@ func TestArgcheckVersion(t *testing.T) {
 	t.Cleanup(func() { commit = old })
 	commit = "v28-test-commit"
 	code, out := runArgcheck(t, "", "--version")
-	if code != exitValid || !strings.Contains(out, "catalog v46.2") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
+	if code != exitValid || !strings.Contains(out, "catalog v46.3") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
 		t.Fatalf("%d: %s", code, out)
 	}
 	if code, _ := runArgcheck(t, "", "--version-typo"); code != exitError {
@@ -299,5 +299,29 @@ func TestStrictNoteOutput(t *testing.T) {
 	code, out = runArgcheck(t, text, "--json")
 	if code == 0 || !strings.Contains(out, `"notes"`) || !strings.Contains(out, `"conditional.postposed_if"`) {
 		t.Fatalf("JSON omits notes: %d %s", code, out)
+	}
+}
+
+func TestParaphraseCLI(t *testing.T) {
+	input := "1. If rain falls, then the street is wet.\n2. Rain falls.\n3. Therefore, the street is wet. [1,2]\n"
+	code, plain := runArgcheck(t, input)
+	if code != exitValid {
+		t.Fatal(plain)
+	}
+	want := "VALID  (gate catalog v46.3; local " + localVersion() + ")\nsyntax: ok\nstep 3 [1,2]: ok: modus ponens\n"
+	if plain != want {
+		t.Fatalf("default output changed: %q; want %q", plain, want)
+	}
+	code, with := runArgcheck(t, input, "--paraphrase")
+	if code != exitValid || !strings.HasPrefix(with, plain) || !strings.Contains(with, "step 3: Premise: if") {
+		t.Fatal(with)
+	}
+	code, jsonOut := runArgcheck(t, input, "--json")
+	if code != exitValid || !strings.Contains(jsonOut, `"paraphrase_form": "modus ponens"`) || !strings.Contains(jsonOut, `"paraphrase":`) {
+		t.Fatal(jsonOut)
+	}
+	_, quiet := runArgcheck(t, input, "--quiet", "--paraphrase")
+	if quiet != "VALID\n" {
+		t.Fatal(quiet)
 	}
 }

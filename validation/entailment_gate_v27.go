@@ -450,6 +450,7 @@ func (policy strictRules) gateDescriptions(c NumberedArgumentStep, steps map[int
 	if !hasDefinition || len(keys) > 12 {
 		return r
 	}
+	var readings []string
 	selected := map[string]*folFormula{}
 	form := ""
 	var check func(int) bool
@@ -470,6 +471,9 @@ func (policy strictRules) gateDescriptions(c NumberedArgumentStep, steps map[int
 				ps = append(ps, selected[descriptionSurfaceKey(steps[id].Statement)])
 			}
 			form = policy.descriptionRule(ps, target)
+			if form != "" {
+				readings = append(readings, readingFOLRule(ps, target))
+			}
 			return form != ""
 		}
 		translated := map[int]NumberedArgumentStep{}
@@ -483,11 +487,15 @@ func (policy strictRules) gateDescriptions(c NumberedArgumentStep, steps map[int
 		next.Statement = policy.renderFOL(target)
 		result := policy.gateFOL(next, translated)
 		form = "definition"
+		if result.Passed {
+			readings = append(readings, result.Paraphrase)
+		}
 		return result.Passed
 	}
 	if check(0) {
 		r.Passed = true
 		r.Form = "description " + form
+		r.Paraphrase = "SEMI-FORMAL: checked description readings {" + strings.Join(readings, "; ") + "}"
 	}
 	return r
 }

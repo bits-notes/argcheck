@@ -8,17 +8,16 @@ import (
 
 // EntailmentGateCatalogVersion identifies the schema catalog in force; bump it
 // whenever a schema is added or changed so certificates stay comparable.
-const EntailmentGateCatalogVersion = "v46.2"
+const EntailmentGateCatalogVersion = "v46.3"
 
 // EntailmentGateOptions are the parsing options shared with the
 // numbered_argument_syntax builtin.
 type EntailmentGateOptions struct {
 	AllowSingleFencedBlock bool `json:"allow_single_fenced_block"`
 	AllowBlankLines        bool `json:"allow_blank_lines"`
-	// StrictNotes attaches a note to each failing step that a single
-	// strictness rule refused (v42.1). It re-checks failing steps once per
-	// rule, so it is off by default; turn it on for human-facing reports, not
-	// inside retry loops.
+	// StrictNotes enables diagnostic retries for failing steps to identify
+	// rules whose individual removal certifies the step. Notes and their
+	// retries are opt-in.
 	StrictNotes bool `json:"strict_notes,omitempty"`
 }
 
@@ -32,19 +31,22 @@ type EntailmentGateReport struct {
 // EntailmentGateStepReport records the matched schema or nearest failed form
 // for one conclusion step.
 type EntailmentGateStepReport struct {
-	Notes         []StrictNote `json:"notes,omitempty"`
-	Step          int          `json:"step"`
-	Depth         int          `json:"depth,omitempty"`
-	Ranges        [][2]int     `json:"ranges,omitempty"`
-	Citations     []int        `json:"citations"`
-	Passed        bool         `json:"passed"`
-	Form          string       `json:"form,omitempty"`
-	NearestForm   string       `json:"nearest_form,omitempty"`
-	Mismatch      string       `json:"mismatch,omitempty"`
-	AmbiguityNote string       `json:"ambiguity_note,omitempty"`
+	Notes          []StrictNote `json:"notes,omitempty"`
+	Step           int          `json:"step"`
+	Depth          int          `json:"depth,omitempty"`
+	Ranges         [][2]int     `json:"ranges,omitempty"`
+	Citations      []int        `json:"citations"`
+	Passed         bool         `json:"passed"`
+	Form           string       `json:"form,omitempty"`
+	NearestForm    string       `json:"nearest_form,omitempty"`
+	Mismatch       string       `json:"mismatch,omitempty"`
+	AmbiguityNote  string       `json:"ambiguity_note,omitempty"`
+	Paraphrase     string       `json:"paraphrase,omitempty"`
+	ParaphraseForm string       `json:"paraphrase_form,omitempty"`
+	Refusal        *StepRefusal `json:"refusal,omitempty"`
 	// fired lists the strict rules that refused something while the gate
-	// checked this step with notes on; nil otherwise. The notes pass retries
-	// only these rules.
+	// checked this step. Refusals read these IDs without retrying; the opt-in
+	// notes pass retries only these rules.
 	fired *firedRules
 }
 
@@ -111,7 +113,11 @@ func checkEntailmentGate(output string, options numberedArgumentOptions) (Entail
 func (policy strictRules) checkEntailmentGate(output string, options numberedArgumentOptions) (EntailmentGateReport, Result) {
 	argument, parseResult := policy.ParseNumberedArgument(output, options)
 	if !parseResult.Passed {
-		return EntailmentGateReport{Passed: false}, parseResult
+		report := EntailmentGateReport{Passed: false}
+		if steps, ok := parseResult.Details["steps"].([]EntailmentGateStepReport); ok {
+			report.Steps = steps
+		}
+		return report, parseResult
 	}
 	argument = protectArgumentNameLetters(argument)
 	report, result := policy.gateParsedArgument(argument, false)
@@ -131,6 +137,7 @@ func (policy strictRules) checkEntailmentGate(output string, options numberedArg
 	if policy.notes {
 		attachStrictNotes(argument, &report)
 	}
+	attachRefusals(argument, &report)
 	return report, result
 }
 
@@ -204,6 +211,7 @@ func (policy strictRules) GateNumberedArgument(arg NumberedArgument) EntailmentG
 	if policy.notes {
 		attachStrictNotes(arg, &report)
 	}
+	attachRefusals(arg, &report)
 	return observeGateReport(report)
 }
 
@@ -231,10 +239,7 @@ func (policy strictRules) gateNumberedArgument(arg NumberedArgument, observe boo
 		if step.Kind != numberedArgumentStepConclusion {
 			continue
 		}
-		stepPolicy, fired := policy, (*firedRules)(nil)
-		if policy.notes {
-			stepPolicy, fired = policy.recording()
-		}
+		stepPolicy, fired := policy.recording()
 		stepReport := stepPolicy.gateConclusionStep(step, stepsByNumber)
 		stepReport.fired = fired
 		if stepReport.Passed {
@@ -253,6 +258,19 @@ func (policy strictRules) gateNumberedArgument(arg NumberedArgument, observe boo
 					stepReport.Mismatch = why
 					break
 				}
+			}
+		}
+		if stepReport.Passed {
+			stepReport.ParaphraseForm = stepReport.Form
+		} else {
+			stepReport.Paraphrase, stepReport.ParaphraseForm = "", ""
+		}
+		// Each step records into its own copy (for structured refusals), but a
+		// caller's recorder must still see every hit: the notes pass and
+		// recording() callers rely on it.
+		if policy.fired != nil {
+			for id := range fired.ids {
+				policy.fired.ids[id] = true
 			}
 		}
 		report.Steps = append(report.Steps, stepReport)
@@ -469,6 +487,13 @@ func (policy strictRules) gateConclusionStepUnscoped(conclusion NumberedArgument
 				if outcome.matched {
 					report.Passed = true
 					report.Form = schema.name + set.formSuffix
+					report.Paraphrase = outcome.reading
+					if report.Paraphrase == "" {
+						report.Paraphrase = readingApplication(report.Form, ordered, set.conclusion, outcome.identities)
+					}
+					if set.formSuffix != "" {
+						report.Paraphrase = "SEMI-FORMAL: necessitation (□ on each premise and on the conclusion) {" + report.Paraphrase + "}"
+					}
 					return report
 				}
 			}
