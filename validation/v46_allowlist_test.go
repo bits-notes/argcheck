@@ -10,7 +10,8 @@ func TestV46Values(t *testing.T) {
 		value, verb string
 		pass        bool
 	}{
-		{"subgoals", "are", true}, {"humanity", "is", true}, {"advanced machines", "are", true},
+		// v46.1: bare plural/mass slot values refused (reading shift)
+		{"subgoals", "are", false}, {"humanity", "is", false}, {"advanced machines", "are", false},
 		{"the pump", "is", true}, {"the main valve", "is", true}, {"the death of the child", "is", true},
 		{"lots", "are", false}, {"plenty", "are", false}, {"dozens", "are", false}, {"hundreds", "are", false},
 		{"ages", "are", false}, {"droves", "are", false}, {"quokkas", "are", false}, {"numerous robots", "are", false},
@@ -19,6 +20,9 @@ func TestV46Values(t *testing.T) {
 	} {
 		t.Run(tc.value+"_"+tc.verb, func(t *testing.T) {
 			text := "1. If X " + tc.verb + " dangerous, then X should be contained.\n2. " + tc.value + " " + tc.verb + " dangerous.\n3. Therefore, " + tc.value + " should be contained. [1,2]"
+			if tc.value == "subgoals" || tc.value == "humanity" || tc.value == "advanced machines" {
+				assertV461SingularRefusal(t, text)
+			}
 			r, res := CheckEntailmentGate(text)
 			if r.Passed != tc.pass {
 				t.Fatalf("pass=%v want=%v: %s", r.Passed, tc.pass, res.Message)
@@ -43,6 +47,14 @@ func TestV46WitnessAndIdentity(t *testing.T) {
 func TestV46AgreementAndShape(t *testing.T) {
 	p := allStrictRules()
 	for _, v := range []string{"robots", "advanced machines", "small advanced machines", "water"} {
+		// v46.1: bare plural/mass slot values refused (reading shift)
+		if p.singularValue(v) {
+			t.Error(v)
+		}
+	}
+	// Keep testing the retained opt-in shape and agreement guards.
+	p.slot_plural_mass_value = true
+	for _, v := range []string{"robots", "advanced machines", "small advanced machines", "water"} {
 		if !p.singularValue(v) || p.without("slot.plural_mass_value").singularValue(v) {
 			t.Error(v)
 		}
@@ -66,19 +78,18 @@ func TestV46AgreementAndShape(t *testing.T) {
 	}
 }
 
-// These values exercise the new path end to end, rather than just membership.
+// These values exercise the default refusal end to end, rather than just membership.
 func TestV46TwentyNewValues(t *testing.T) {
-	accepted := strings.Split("subgoals|humans|machines|robots|systems|agents|humanity|intelligence|evidence|water|information|knowledge|research|software|advanced machines|aligned agents|trained robots|informed humans|reliable systems|dangerous subgoals", "|")
+	// v46.1: bare plural/mass slot values refused (reading shift)
+	bareRefused := strings.Split("subgoals|humans|machines|robots|systems|agents|humanity|intelligence|evidence|water|information|knowledge|research|software|advanced machines|aligned agents|trained robots|informed humans|reliable systems|dangerous subgoals", "|")
 	refused := strings.Split("the heap|the pile|the stack|the ton|the load|the lack|the range|the variety|the gallon|the kind|the sort|the type|the unit|the measure|the measurement|the mile|the pound|the dollar|the year|the hour", "|")
-	for _, value := range accepted {
+	for _, value := range bareRefused {
 		verb := "are"
 		if strings.Contains("|humanity|intelligence|evidence|water|information|knowledge|research|software|", "|"+value+"|") {
 			verb = "is"
 		}
 		text := "1. If X " + verb + " dangerous, then X should be contained.\n2. " + value + " " + verb + " dangerous.\n3. Therefore, " + value + " should be contained. [1,2]"
-		if r, res := CheckEntailmentGate(text); !r.Passed {
-			t.Errorf("%s: %s", value, res.Message)
-		}
+		assertV461SingularRefusal(t, text)
 	}
 	for _, value := range refused {
 		text := "1. If X is dangerous, then X should be contained.\n2. " + value + " is dangerous.\n3. Therefore, " + value + " should be contained. [1,2]"
@@ -86,7 +97,7 @@ func TestV46TwentyNewValues(t *testing.T) {
 			t.Errorf("certified %s", value)
 		}
 	}
-	t.Log("20 newly accepted: " + strings.Join(accepted, ", "))
+	t.Log("20 bare values refused: " + strings.Join(bareRefused, ", "))
 	t.Log("20 newly refused: " + strings.Join(refused, ", "))
 }
 

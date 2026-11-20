@@ -158,3 +158,15 @@ conservative `names.txt` allowlist and quantity/closed-word runtime veto.
 `IsName` is a lowercase lookup; validation additionally requires capitalization.
 The adjective required vocabulary includes WordNet's `deferential` for the
 narrow degree-adverb opener exception; the adjective list now has 5,007 entries.
+
+## v46.1: bare plural/mass slot values refused
+
+A bare plural or mass term ("dogs", "water") has no fixed quantity: its
+reading can shift between premise and conclusion. The default policy now
+disables `slot.plural_mass_value`, refusing these values under
+`slot.value_singular`. Rewrite the claim with an explicit quantifier ("some
+dogs", "every dog"), use a singular definite description or a name, or write
+the phrase itself into the rule. Quantified phrases do not become singular
+slot values. The flag remains available for future designs. The noun
+allowlists still serve description heads, clause starts, adjectives and
+coordinated predicates; `slot.plural_witness` is unchanged.

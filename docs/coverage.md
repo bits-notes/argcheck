@@ -1503,7 +1503,7 @@ catalog inference name. Audit B numbers refer to `workspace/audit/limits.md`.
 
 | Rule / audit item | Valid example refused | Rewrite for certification |
 | --- | --- | --- |
-| `slot.value_singular` | “If W is useful, W is valuable; silt is useful; therefore silt is valuable.” Bare kind/mass/plural values off the v46.0 allowlist (water and other common ones pass, with agreement and witness guards) and long bare noun phrases cannot fill term slots. | Write “If silt is useful, then silt is valuable” literally, then apply modus ponens. Do the same for a long phrase such as “signals from the model”. |
+| `slot.value_singular` | “If W is useful, W is valuable; silt is useful; therefore silt is valuable.” Since v46.1, bare kind/mass/plural values (including allowlisted water) and long bare noun phrases cannot fill term slots: their quantity is not fixed and their reading can shift. | Write “If silt is useful, then silt is valuable” literally, then apply modus ponens. Do the same for a long phrase such as “signals from the model”. |
 | `slot.value_singular` | “If X arrived, X was seen; Rex arrived; therefore Rex was seen”, with Rex occurring only sentence-initially. | Use a literal “If Rex arrived, then Rex was seen”, or supply independent capitalization evidence. AIXI and McCarthy already have internal-capital evidence. |
 | `term.inflection_verbatim`, `noun.pluralia_tantum` (B13) | “All dogs are animals; the dog is a dog; therefore the dog is an animal.” Plural-to-singular class matching is refused. | Write “Every dog is an animal”, retaining the same singular noun. Lexically distinct glasses/glass requires an explicit bridge, not a spelling change. |
 | `scope.clause_start`, `opener.ing_frame` (B03, B12) | “Swimming is healthy and the lamp is lit; therefore swimming is healthy.” Bare nouns, adjectives and -ing subjects can fail the clause-start grammar; “Arguably reliable machinery works and the lamp is lit” also fails the opener check. | Name the activity with a definite subject: “The activity is healthy and the lamp is lit; therefore the activity is healthy.” For an unfamiliar verb such as “Alice pirouettes”, declare a quoted `atom{...}` literal for the complete clause before applying propositional rules. |
@@ -1535,9 +1535,21 @@ catalog inference name. Audit B numbers refer to `workspace/audit/limits.md`.
 | Atomic label matching (B36) | “Definition (a) holds” cannot expose an argument inside the label's parentheses. | State the definition's content as a separate numbered premise and cite that content. |
 
 
-## v46.0: allowlisted plural/mass values and allowlisted heads
+## v46.1: bare plural/mass slot values refused
 
-`slot.plural_mass_value` (since v46.0, on) admits zero to two allowlisted
+A bare plural or mass term ("dogs", "water") has no fixed quantity: its
+reading can shift between premise and conclusion. The default policy now
+disables `slot.plural_mass_value`, refusing these values under
+`slot.value_singular`. Rewrite the claim with an explicit quantifier ("some
+dogs", "every dog"), use a singular definite description or a name, or write
+the phrase itself into the rule. Quantified phrases do not become singular
+slot values. The flag remains available for future designs. The noun
+allowlists still serve description heads, clause starts, adjectives and
+coordinated predicates; `slot.plural_witness` is unchanged.
+
+## v46.0: allowlisted plural/mass values and allowlisted heads (historical)
+
+`slot.plural_mass_value` (on in v46.0, off by default since v46.1) admits zero to two allowlisted
 adjectives followed by an allowlisted plural/mass head in a schematic term slot.
 For example, subgoals are dangerous, advanced machines are dangerous, and
 humanity is valuable can instantiate matching rules. No commas, possessives,

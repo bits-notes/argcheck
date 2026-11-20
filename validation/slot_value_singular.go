@@ -123,6 +123,8 @@ func (policy strictRules) singularName(words []string) bool {
 	return true
 }
 
+// Bare plural/mass values have no fixed quantity: their reading can shift.
+// The optional loosening switch is off by default since v46.1.
 func (policy strictRules) singularValue(value string) bool {
 	return policy.singularOnlyValue(value) || (policy.slot_plural_mass_value && policy.pluralMassValue(value))
 }

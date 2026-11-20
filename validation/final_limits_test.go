@@ -5,7 +5,7 @@ import "testing"
 // Pin the concrete examples and repairs in coverage.md's Known limits table.
 func TestFinalDocumentedLimits(t *testing.T) {
 	cases := []struct{ name, refused, repaired string }{
-		// v46.0 accepts allowlisted mass values ("water"); unlisted ones stay refused.
+		// v46.1 refuses bare mass values, whether allowlisted or unlisted.
 		{"mass", "1. If W is useful, then W is valuable.\n2. Silt is useful.\n3. Therefore, silt is valuable. [1,2]", "1. If silt is useful, then silt is valuable.\n2. Silt is useful.\n3. Therefore, silt is valuable. [1,2]"},
 		{"long noun phrase", "1. If W are useful, then W are valuable.\n2. Signals from the model are useful.\n3. Therefore, signals from the model are valuable. [1,2]", "1. If signals from the model are useful, then signals from the model are valuable.\n2. Signals from the model are useful.\n3. Therefore, signals from the model are valuable. [1,2]"},
 		{"name", "1. If X arrived, then X was seen.\n2. Rex arrived.\n3. Therefore, Rex was seen. [1,2]", "1. If Rex arrived, then Rex was seen.\n2. Rex arrived.\n3. Therefore, Rex was seen. [1,2]"},

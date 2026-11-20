@@ -39,6 +39,12 @@ func TestStrictNotesConcurrentAndOwned(t *testing.T) {
 				if len(note.AlsoRefuses) == 0 {
 					continue
 				}
+				// v46.1: bare plural/mass slot values refused (reading shift).
+				// The singular-value guard now explains the plural-witness example.
+				wantID := note.ID
+				if wantID == "slot.plural_witness" {
+					wantID = "slot.value_singular"
+				}
 				report, _ := CheckEntailmentGate(note.AlsoRefuses[0], notesOn)
 				if report.Passed {
 					t.Errorf("diagnostic leaked into verdict for %s", note.ID)
@@ -47,7 +53,7 @@ func TestStrictNotesConcurrentAndOwned(t *testing.T) {
 				found := false
 				for _, step := range report.Steps {
 					for _, got := range step.Notes {
-						if got.ID == note.ID {
+						if got.ID == wantID {
 							found = true
 							got.Fix[0] = "client edit"
 							got.AlsoRefuses[0] = "client edit"
@@ -55,7 +61,7 @@ func TestStrictNotesConcurrentAndOwned(t *testing.T) {
 					}
 				}
 				if !found {
-					t.Errorf("missing concurrent note %s", note.ID)
+					t.Errorf("missing concurrent note %s", wantID)
 				}
 			}
 		}()

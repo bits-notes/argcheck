@@ -69,7 +69,7 @@ func (rules strictRules) recording() (strictRules, *firedRules) {
 
 func allStrictRules() strictRules {
 	return strictRules{
-		slot_plural_mass_value:       true,
+		slot_plural_mass_value:       false,
 		slot_plural_witness:          true,
 		slot_description_shape:       true,
 		slot_one_type:                true,

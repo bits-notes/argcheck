@@ -42,6 +42,12 @@ func TestStrictNotesExamples(t *testing.T) {
 	}
 	for _, note := range strictNotes {
 		t.Run(note.ID, func(t *testing.T) {
+			// v46.1: bare plural/mass slot values refused (reading shift).
+			// The singular-value guard now explains the plural-witness example.
+			wantID := note.ID
+			if wantID == "slot.plural_witness" {
+				wantID = "slot.value_singular"
+			}
 			for _, example := range note.AlsoRefuses {
 				report, result := CheckEntailmentGate(example, notesOn)
 				if report.Passed || result.Passed {
@@ -50,13 +56,13 @@ func TestStrictNotesExamples(t *testing.T) {
 				found := false
 				for _, step := range report.Steps {
 					for _, got := range step.Notes {
-						if got.ID == note.ID {
+						if got.ID == wantID {
 							found = true
 						}
 					}
 				}
 				if !found {
-					t.Errorf("missing %s: %+v", note.ID, report.Steps)
+					t.Errorf("missing %s: %+v", wantID, report.Steps)
 				}
 				argument, parsed := ParseNumberedArgument(example, numberedArgumentOptions{})
 				if !parsed.Passed {

@@ -217,9 +217,9 @@ var strictNotes = []StrictNote{
 		ID:          "slot.value_singular",
 		Name:        "Schematic value must be a singular term",
 		Since:       "v44.0",
-		Why:         "A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Evidenced proper names and singular definite descriptions fill term slots; since v46.0, allowlisted bare plural/mass values also qualify with agreement and witness guards. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values.",
+		Why:         "A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. A bare plural or mass term (dogs, water) has no fixed quantity and its reading can shift between premise and conclusion. Since v46.1, these values are refused even when allowlisted. Evidenced proper names and singular definite descriptions fill term slots. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values.",
 		AlsoRefuses: []string{"1. If X arrived, then X was seen.\n2. A dog arrived.\n3. Therefore, a dog was seen. [1,2]"},
-		Fix:         []string{"Name the thing (Rex arrived), with internal capitals or capitalization evidenced somewhere other than sentence start or after Therefore/So/Thus/Hence; or use a singular definite description (the dog). Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable."},
+		Fix:         []string{"Name the thing (Rex arrived), with internal capitals or capitalization evidenced somewhere other than sentence start or after Therefore/So/Thus/Hence; or use a singular definite description (the dog). For a plural or mass claim, rewrite with an explicit quantifier (some dogs, every dog); do not substitute a quantified phrase as a singular value. Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable."},
 	},
 	{
 		ID:          "slot.modified_quantifier",
