@@ -3474,7 +3474,7 @@ itself, themselves** (`term.pronoun_cross_statement`). Possessive determiners
 (`term.possessive_cross_statement`). These closed lists match whole tokens,
 case-insensitively; both policy flags default on. “Her” belongs to both lists.
 
-Weather/expletive “it” is refused too. There is no gender or sole-antecedent
+Since v46.4, the closed dummy-it allowlist in [coverage.md](coverage.md#v464) is exempt: extraposition frames require “that”, and the listed weather verbs require a clause boundary. Only that initial “it” is exempt; later pronouns are checked separately. Other weather descriptions such as “it is wet” remain refused. There is no gender or sole-antecedent
 exception. Use “the card” in place of “it”, and a name or pronoun-independent
 phrase in place of “his wife”. Pronouns in unused clauses remain permitted, as
 do within-statement matches. Canonical logical scaffolds consume their “it” as

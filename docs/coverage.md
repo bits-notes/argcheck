@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v46.3)
+# Entailment Gate — Coverage and Known Limits (catalog v46.4)
 
 **Type:** reference
-**Status:** current as of catalog v46.3
+**Status:** current as of catalog v46.4
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -1600,7 +1600,7 @@ they, him, her, them, himself, herself, itself, or themselves.
 `term.possessive_cross_statement` does the same for his, her, their, or its.
 Both are default-on, case-insensitive, whole-token rules. They cover conditions,
 consequents, term comparisons, and schema/slot values across different numbered
-statements, including weather/expletive “it”. A sole apparent antecedent is not
+statements, originally including weather/expletive “it” (corrected by v46.4 below). A sole apparent antecedent is not
 an exception: deciding reference would require open-class knowledge.
 
 A pronoun in an unused conjunct or newly introduced disjunct remains allowed.
@@ -1651,3 +1651,22 @@ Necessitated schema applications explicitly retain the necessity wrapper on
 each premise and the conclusion. Scoped renderings mark discharged ranges
 separately from ordinary premises. Structured refusal fixes may reuse strict
 rule diagnostic retries even when the notes array is not requested.
+
+## v46.4
+
+The v46.2 brief's weather/expletive refusal was too broad. Dummy “it” has no referent to shift. The exemption is a closed allowlist; possessives and all other pronouns retain their existing checks.
+
+### The allowlist (an "it" token is exempt only when the text starting at that token matches)
+1. Extraposition frames with "that" (extend crossStatementScaffold; contractions via
+   expandGateContractions, as now):
+   `it is [not] (true|false|the case|possible|necessary|likely|unlikely|certain|clear|obvious) that`,
+   the existing `it is the case both that`, and `it (seems|appears|follows) that`.
+   "that" is REQUIRED: "It is true." or "it is clear" without "that" is not exempt.
+2. Weather verbs, intransitive only: `it (rains|snows|hails|drizzles|pours|sleets|thunders)` and
+   `it is (raining|snowing|hailing|drizzling|pouring|sleeting|thundering)`.
+   Exempt ONLY if the verb is followed by end of clause: end of statement, a comma, ", then", " then ", " and
+   ", " or ", or a closing parenthesis. "it rains water" / "it pours the tea" (an object follows) is NOT
+   exempt, so a referring "it" (a sprinkler, a teapot) used with that verb stays refused.
+   Adjectival weather ("it is wet", "it is cold") is NOT exempt.
+3. The exemption covers only that one "it" token. A later "it" in the same statement is checked on its own.
+   So "It is true that it is valid" exempts the first "it" and still checks the second.

@@ -32,7 +32,7 @@ EOF
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `NOT CERTIFIED`.
 - `--forms` lists all 121 accepted inference forms in catalog `v45.1`.
-- `--version` prints the catalog version and build stamp (`gate catalog v46.3; local english-arg-validator@<commit>`).
+- `--version` prints the catalog version and build stamp (`gate catalog v46.4; local english-arg-validator@<commit>`).
 - Exit codes: `0` valid, `1` not certified, `2` input or operational error.
 - `NOT CERTIFIED` means some step matched no accepted rule. It does not mean the
   argument is invalid; repair the step or add the missing premise.
@@ -122,7 +122,7 @@ visible identity or conditional premise.
 - **Pronouns across statements (v46.2):** matched clauses, terms, and schema
   values cannot contain he, she, it, they, him, her, them, himself, herself,
   itself, themselves, or possessive his, her, their, its. Matching is
-  case-insensitive and whole-token. This includes weather/expletive "it";
+  case-insensitive and whole-token. Only the closed v46.4 dummy-it allowlist is exempt (see docs/coverage.md); otherwise
   replace it with a name or noun phrase. There is no sole-antecedent exception.
   Pronouns in unused clauses or checks confined to one statement remain allowed.
   Logical scaffolds such as "it is not the case that" consume "it" as syntax.
@@ -147,7 +147,7 @@ visible identity or conditional premise.
   (`Either we should use X or we should use Y.`), refute one side, and apply
   disjunctive syllogism.
 
-### Strict conventions (catalog v35–v46.3)
+### Strict conventions (catalog v35–v46.4)
 
 The gate refuses phrasings that are ambiguous in English, even when the
 inference is fine. Each refusal names its fix; apply exactly that fix.

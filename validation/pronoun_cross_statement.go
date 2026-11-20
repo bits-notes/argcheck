@@ -26,19 +26,26 @@ func crossStatementPossessive(word string) bool {
 	return false
 }
 
-// Logical scaffolds consume "it" as syntax, not as a matched term. Preserve
-// only the catalog's closed spellings, including its contraction aliases.
+// crossStatementItAllowlist is a CLOSED allowlist, not an antecedent heuristic.
+// Extraposition requires "that"; weather verbs require a clause boundary so
+// objects ("it rains water") cannot make referring pronouns exempt.
+const crossStatementItAllowlist = `^it (is (not )?(true|false|the case|possible|necessary|likely|unlikely|certain|clear|obvious) that($|[ ,(])|is the case both that($|[ ,(])|(seems|appears|follows) that($|[ ,(])|((rains|snows|hails|drizzles|pours|sleets|thunders)|is (raining|snowing|hailing|drizzling|pouring|sleeting|thundering))(\.?$|[,)]| (then|and|or) ))`
+
+var crossStatementItPattern = regexp.MustCompile(crossStatementItAllowlist)
+
+// Only the initial "it" is exempt; callers check every later token separately.
+// Contraction aliases and whitespace use the gate's existing normalization.
 func crossStatementScaffold(s string) bool {
 	s = strings.ToLower(strings.Join(strings.Fields(expandGateContractions(s)), " "))
-	for _, prefix := range []string{"it is the case that", "it is not the case that", "it is the case both that"} {
+	// Test the expanded initial contraction only against the same closed list.
+	// This does not broaden the gate's general contraction normalization.
+	for _, prefix := range []string{"it's ", "it’s "} {
 		if strings.HasPrefix(s, prefix) {
-			rest := s[len(prefix):]
-			if rest != "" && (rest[0] == ' ' || rest[0] == ',') {
-				return true
-			}
+			s = "it is " + s[len(prefix):]
+			break
 		}
 	}
-	return false
+	return crossStatementItPattern.MatchString(s)
 }
 
 // isolateStatementPronouns gives each (statement number, token) a private

@@ -19,7 +19,7 @@ var v462PronounProbes = map[string]struct{ text, rule string }{
 	"property comparison": {"1. Socrates is identical to himself.\n2. Therefore, Socrates has the property of being identical to himself. [1]", "term.pronoun_cross_statement"},
 	"pattern matcher":     {"1. If he sings, then the bell rings.\n2. Therefore, if it is not the case that the bell rings, then it is not the case that he sings. [1]", "term.pronoun_cross_statement"},
 	"universal predicate": {"1. Every cat is fond of him.\n2. Felix is a cat.\n3. Therefore, Felix is fond of him. [1,2]", "term.pronoun_cross_statement"},
-	"modal pattern":       {"1. It is not the case that possibly, it is not the case that it rains.\n2. Therefore, necessarily, it rains. [1]", "term.pronoun_cross_statement"},
+	"modal pattern":       {"1. It is not the case that possibly, it is not the case that it is wet.\n2. Therefore, necessarily, it is wet. [1]", "term.pronoun_cross_statement"},
 	"Fitch scope":         {"1. If he sings, then Alice sings.\n| 2. Suppose he sings.\n| 3. Therefore, Alice sings. [1,2]\n4. Therefore, if he sings, then Alice sings. [2-3]", "term.pronoun_cross_statement"},
 	"self entailment":     {"1. They sing.\n2. Therefore, they sing. [1]", "term.pronoun_cross_statement"},
 }
