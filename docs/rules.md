@@ -1,6 +1,6 @@
-# Inference Rule Catalog (`v44.0`)
+# Inference Rule Catalog (`v46.2`)
 
-`english-arg-validator` checks each conclusion step against the 121 inference forms in gate catalog `v44.0` (`english-arg-validator --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions (including `it's (not) the case that` for `it is (not) the case that`), and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
+`english-arg-validator` checks each conclusion step against the 121 inference forms in gate catalog `v46.2` (`english-arg-validator --forms`). Clauses are matched verbatim after normalizing case, whitespace, contractions (including `it's (not) the case that` for `it is (not) the case that`), and edge punctuation; synonyms, paraphrases, and unstated domain assumptions are rejected.
 
 The checker is complete for propositional logic and for function-free first-order logic with identity, within a controlled English (sentences with one reading); a bounded finite-model oracle tests that the checker never accepts an invalid argument; this is not proved.
 
@@ -20,14 +20,14 @@ Only terminal citations identify a derived step. Inline references such as
 steps use canonical `Therefore,`.
 
 ```argcheck-accept modus ponens
-1. If it rains, then the ground is wet.
-2. It rains.
+1. If rain falls, then the ground is wet.
+2. Rain falls.
 3. So, the ground is wet. [1,2]
 ```
 
 ```argcheck-accept modus ponens
-1. If it rains, then the ground is wet.
-2. It rains.
+1. If rain falls, then the ground is wet.
+2. Rain falls.
 3. The ground is wet. [1,2]
 ```
 
@@ -50,24 +50,24 @@ A premise may name earlier steps by number in one place only: a bridge premise w
 
 ```argcheck-accept modus ponens
 1. The street is wet.
-2. If [1], then it rained.
-3. Therefore, it rained. [1,2]
+2. If [1], then rain fell.
+3. Therefore, rain fell. [1,2]
 ```
 
 ```argcheck-accept conjunctive modus ponens
 1. The street is wet.
 2. The sky is grey.
-3. If [1,2], then it rained.
-4. Therefore, it rained. [1,2,3]
+3. If [1,2], then rain fell.
+4. Therefore, rain fell. [1,2,3]
 ```
 
 A consequent reference lets the bridge feed modus tollens:
 
 ```argcheck-accept modus tollens
 1. The street is wet.
-2. If it rained, then [1].
+2. If rain fell, then [1].
 3. It is not the case that the street is wet.
-4. Therefore, it is not the case that it rained. [2,3]
+4. Therefore, it is not the case that rain fell. [2,3]
 ```
 
 ## `schematic conjunctive modus ponens`
@@ -143,8 +143,8 @@ A consequent reference lets the bridge feed modus tollens:
 - **Postposed conditionals (v31.2):** `Y if X.` and `Y, if X.` read exactly as `If X, then Y.` wherever a conditional premise is accepted (modus ponens, modus tollens, hypothetical syllogism, conjunctive antecedents `Y if X and Z`, and step references `C if [1]`). The rewrite is skipped for `only if`, `even if`, `as if`, `if and only if`, any `unless`, embedded questions (including intervening objects/adverbs, progressive or perfect verbs, and preposition-final complements: `asks the robot if`, `wonders aloud if`, `is checking if`, `has forgotten if`, `is curious about if`), a consequent that reports or attributes (`says`, `thinks`, `that`, ...), a consequent containing `and`/`or`/`either` or a comma, an antecedent containing `or`, and statements with more than one `if`. The rewrite applies to whole numbered statements, not to clauses inside another statement, and only when the argument as written fails, so it never turns a passing argument into a failing one.
 
 ```argcheck-accept modus ponens
-1. Steve will wear a raincoat tomorrow if it rains.
-2. It rains.
+1. Steve will wear a raincoat tomorrow if rain falls.
+2. Rain falls.
 3. Therefore, Steve will wear a raincoat tomorrow. [1,2]
 ```
 
@@ -786,9 +786,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept constructive dilemma
-1. Either it rains or it snows.
-2. If it rains, then the road is wet.
-3. If it snows, then the road is icy.
+1. Either the rain falls or the snow falls.
+2. If the rain falls, then the road is wet.
+3. If the snow falls, then the road is icy.
 4. Therefore, either the road is wet or the road is icy. [1,2,3]
 ```
 
@@ -811,9 +811,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept simple dilemma
-1. Either it rains or it snows.
-2. If it rains, then the game is cancelled.
-3. If it snows, then the game is cancelled.
+1. Either the rain falls or the snow falls.
+2. If the rain falls, then the game is cancelled.
+3. If the snow falls, then the game is cancelled.
 4. Therefore, the game is cancelled. [1,2,3]
 ```
 
@@ -836,10 +836,10 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept destructive dilemma
-1. If it rains, then the road is wet.
-2. If it snows, then the road is icy.
+1. If the rain falls, then the road is wet.
+2. If the snow falls, then the road is icy.
 3. Either it is not the case that the road is wet or it is not the case that the road is icy.
-4. Therefore, either it is not the case that it rains or it is not the case that it snows. [1,2,3]
+4. Therefore, either it is not the case that the rain falls or it is not the case that the snow falls. [1,2,3]
 ```
 
 - **Rejected near-miss:**
@@ -861,8 +861,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept contraposition
-1. If it rains, then it snows.
-2. Therefore, if it is not the case that it snows, then it is not the case that it rains. [1]
+1. If rain falls, then snow falls.
+2. Therefore, if it is not the case that snow falls, then it is not the case that rain falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -882,8 +882,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept De Morgan
-1. It is not the case that it is the case both that it rains, and that it snows.
-2. Therefore, either it is not the case that it rains or it is not the case that it snows. [1]
+1. It is not the case that it is the case both that the rain falls, and that the snow falls.
+2. Therefore, either it is not the case that the rain falls or it is not the case that the snow falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -903,8 +903,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept commutation
-1. Either it rains or it snows.
-2. Therefore, either it snows or it rains. [1]
+1. Either the rain falls or the snow falls.
+2. Therefore, either the snow falls or the rain falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -924,8 +924,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept exportation
-1. If it is the case both that it rains, and that it snows, then the street is wet.
-2. Therefore, if it rains, then if it snows, then the street is wet. [1]
+1. If it is the case both that the rain falls, and that the snow falls, then the street is wet.
+2. Therefore, if the rain falls, then if the snow falls, then the street is wet. [1]
 ```
 
 - **Rejected near-miss:**
@@ -945,8 +945,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept importation
-1. If it rains, then if it snows, then the street is wet.
-2. Therefore, if it is the case both that it rains, and that it snows, then the street is wet. [1]
+1. If the rain falls, then if the snow falls, then the street is wet.
+2. Therefore, if it is the case both that the rain falls, and that the snow falls, then the street is wet. [1]
 ```
 
 - **Rejected near-miss:**
@@ -966,8 +966,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept material implication
-1. If it rains, then it snows.
-2. Therefore, either it is not the case that it rains or it snows. [1]
+1. If the rain falls, then the snow falls.
+2. Therefore, either it is not the case that the rain falls or the snow falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -987,8 +987,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept distribution
-1. It is the case both that it rains, and that either it snows or the street is wet.
-2. Therefore, either it is the case both that it rains, and that it snows or it is the case both that it rains, and that the street is wet. [1]
+1. It is the case both that the rain falls, and that either the snow falls or the street is wet.
+2. Therefore, either it is the case both that the rain falls, and that the snow falls or it is the case both that the rain falls, and that the street is wet. [1]
 ```
 
 - **Rejected near-miss:**
@@ -1008,8 +1008,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept absorption
-1. If it rains, then it snows.
-2. Therefore, if it rains, then it is the case both that it rains, and that it snows. [1]
+1. If the rain falls, then the snow falls.
+2. Therefore, if the rain falls, then it is the case both that the rain falls, and that the snow falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -1029,8 +1029,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept double negation introduction
-1. It rains.
-2. Therefore, it is not the case that it is not the case that it rains. [1]
+1. Rain falls.
+2. Therefore, it is not the case that it is not the case that rain falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -1050,9 +1050,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept biconditional modus tollens
-1. It rains if and only if it snows.
-2. It is not the case that it snows.
-3. Therefore, it is not the case that it rains. [1,2]
+1. Rain falls if and only if snow falls.
+2. It is not the case that snow falls.
+3. Therefore, it is not the case that rain falls. [1,2]
 ```
 
 - **Rejected near-miss:**
@@ -1073,9 +1073,9 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept biconditional chaining
-1. It rains if and only if it snows.
-2. It snows if and only if the street is wet.
-3. Therefore, it rains if and only if the street is wet. [1,2]
+1. Rain falls if and only if snow falls.
+2. Snow falls if and only if the street is wet.
+3. Therefore, rain falls if and only if the street is wet. [1,2]
 ```
 
 - **Rejected near-miss:**
@@ -1096,8 +1096,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept biconditional commutation
-1. It rains if and only if it snows.
-2. Therefore, it snows if and only if it rains. [1]
+1. Rain falls if and only if snow falls.
+2. Therefore, snow falls if and only if rain falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -1117,8 +1117,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept negated conditional
-1. It is not the case that if it rains, then it snows.
-2. Therefore, it rains. [1]
+1. It is not the case that if rain falls, then snow falls.
+2. Therefore, rain falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -1224,8 +1224,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept possibility introduction
-1. It rains.
-2. Therefore, possibly, it rains. [1]
+1. Rain falls.
+2. Therefore, possibly, rain falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -1245,8 +1245,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept contradiction introduction
-1. It rains.
-2. It is not the case that it rains.
+1. Rain falls.
+2. It is not the case that rain falls.
 3. Therefore, contradiction. [1,2]
 ```
 
@@ -1289,8 +1289,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept modal duality
-1. It is not the case that possibly, it is not the case that it rains.
-2. Therefore, necessarily, it rains. [1]
+1. It is not the case that possibly, it is not the case that rain falls.
+2. Therefore, necessarily, rain falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -1310,8 +1310,8 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept modal distribution
-1. Necessarily, if it rains, then it snows.
-2. Therefore, if necessarily, it rains, then necessarily, it snows. [1]
+1. Necessarily, if rain falls, then snow falls.
+2. Therefore, if necessarily, rain falls, then necessarily, snow falls. [1]
 ```
 
 - **Rejected near-miss:**
@@ -1601,12 +1601,12 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept conditional proof
-1. If it rains, then the street is wet.
+1. If rain falls, then the street is wet.
 2. If the street is wet, then the cars slow.
-| 3. Suppose it rains.
+| 3. Suppose rain falls.
 | 4. Therefore, the street is wet. [1,3]
 | 5. Therefore, the cars slow. [2,4]
-6. Therefore, if it rains, then the cars slow. [3-5]
+6. Therefore, if rain falls, then the cars slow. [3-5]
 ```
 
 - **Rejected near-miss:**
@@ -1630,10 +1630,10 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept reductio
-1. It is not the case that it rains.
-| 2. Suppose it rains.
+1. It is not the case that rain falls.
+| 2. Suppose rain falls.
 | 3. Therefore, contradiction. [1,2]
-4. Therefore, it is not the case that it rains. [2-3]
+4. Therefore, it is not the case that rain falls. [2-3]
 ```
 
 - **Rejected near-miss:**
@@ -1654,12 +1654,12 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Accepted:**
 
 ```argcheck-accept proof by cases
-1. Either it rains or it snows.
-2. If it rains, then the street is wet.
-3. If it snows, then the street is wet.
-| 4. Suppose it rains.
+1. Either the rain falls or the snow falls.
+2. If the rain falls, then the street is wet.
+3. If the snow falls, then the street is wet.
+| 4. Suppose the rain falls.
 | 5. Therefore, the street is wet. [2,4]
-| 6. Suppose it snows.
+| 6. Suppose the snow falls.
 | 7. Therefore, the street is wet. [3,6]
 8. Therefore, the street is wet. [1,4-5,6-7]
 ```
@@ -2891,35 +2891,26 @@ A clause cannot mix top-level `and` and `or` without visible scope. This is a
 syntax failure, before entailment checking, on premises and conclusions alike,
 including conditional antecedents/consequents and explicit quantified scopes.
 The diagnostic names the line and quotes the original sentence, then says
-`use either...or / both...and, a comma, or parentheses to group`.
+`use either...or / both...and, or parentheses to group`.
 
 Use whole-clause parentheses: `(Ann sings and Bob dances) or Cal reads` is a
 disjunction; `Ann sings and (Bob dances or Cal reads)` is a conjunction.
 Parentheses must balance and remain visible in statement echoes and mismatch
 excerpts. Square brackets such as `[1]` still mean step references, not grouping.
 
-A single comma immediately before the main connective also fixes scope:
-`Ann sings and Bob dances, or Cal reads` means `(Ann sings and Bob dances) or
-Cal reads`; `Ann sings, and Bob dances or Cal reads` means `Ann sings and
-(Bob dances or Cal reads)`. Multiple commas in a mixed clause, including lists
-such as `Ann sings, Bob dances and Cal reads, or Dan sleeps`, are ambiguous;
-use parentheses instead. Plain lists containing only one kind of connective
-retain their existing behavior, including `Ann sings, Bob dances, and Cal reads`
-and `Ann sings, Bob dances, or Cal reads`.
+Commas do not fix scope. Both `Ann sings and Bob dances, or Cal reads` and
+`Ann sings, and Bob dances or Cal reads` are syntax refusals. Replace comma
+grouping with whole-clause parentheses or an explicit `both...and` /
+`either...or` scaffold. Plain lists containing only one kind of connective
+retain their existing behavior.
 
-A leading `either` or `both` opens the first operand of its connective, so
-`Either Ann sings and Bob dances or Cal reads` is a disjunction whose first
-disjunct is `Ann sings and Bob dances`. A single comma still marks the main
-connective: `Either Ann sings and Bob dances, or Cal reads` is a disjunction,
-and so is `Both Ann sings and Bob dances, or Cal reads` (its left disjunct is
-`both Ann sings and Bob dances`). `Either Ann sings, or Bob dances and Cal reads`
-is a disjunction with `Bob dances and Cal reads` as its right disjunct. With no
-comma, the either/both connective is the main one and its second operand runs
-to the end: `Either Ann sings or Bob dances and Cal reads` means `Ann sings or
-(Bob dances and Cal reads)`, and `Both Ann sings and Bob dances or Cal reads`
-means `Ann sings and (Bob dances or Cal reads)`. Parenthesize
-operands if a longer scaffold has further mixed connectives: each operand must
-itself have unambiguous scope.
+A leading `either` or `both` selects its matching main connective, regardless
+of a comma. `Either Ann sings and Bob dances or Cal reads` means
+`(Ann sings and Bob dances) or Cal reads`. `Both Ann sings and Bob dances or
+Cal reads` means `Ann sings and (Bob dances or Cal reads)`.
+To make the whole conjunction the left disjunct, write
+`(Both Ann sings and Bob dances) or Cal reads`. Each operand must itself
+have unambiguous scope; use parentheses for longer mixed scaffolds.
 
 ```argcheck-accept conjunction elimination
 1. Ann sings and (Bob dances or Cal reads).
@@ -2927,7 +2918,7 @@ itself have unambiguous scope.
 ```
 
 ```argcheck-accept conjunction elimination
-1. Ann sings, and Bob dances or Cal reads.
+1. Both Ann sings and Bob dances or Cal reads.
 2. Therefore, Ann sings. [1]
 ```
 
@@ -2948,7 +2939,7 @@ itself have unambiguous scope.
 ```
 
 ```argcheck-reject conjunction elimination
-1. Both Ann sings and Bob dances, or Cal reads.
+1. (Both Ann sings and Bob dances) or Cal reads.
 2. Therefore, Ann sings. [1]
 ```
 
@@ -3017,8 +3008,8 @@ clause identity.
 ```
 
 ```argcheck-accept modus ponens
-1. The ground is wet if it rains.
-2. It rains.
+1. The ground is wet if rain falls.
+2. Rain falls.
 3. Therefore, The ground is wet. [1,2]
 ```
 
@@ -3049,8 +3040,8 @@ Long nominal and gerund bindings
 remain supported. Plural matching preserves singular `princess`, `corps`,
 `class`, `bus`, `glass`, `chaos`, `lens`, `series`, and `species`.
 
-Mixing top-level `unless` with clause-level `and` or `or` requires parentheses,
-a comma before the main connective, or `both`/`either` grouping. The syntax
+Mixing top-level `unless` with clause-level `and` or `or` requires parentheses
+or `both`/`either` grouping. The syntax
 reason is exactly `mixes top-level unless with and/or without explicit grouping`.
 The existing `Either A or B and C` reading remains `A or (B and C)`.
 
@@ -3060,7 +3051,7 @@ The existing `Either A or B and C` reading remains `A or (B and C)`.
 ```
 
 ```argcheck-accept unless conversion
-1. The alarm sounds and the lamp flashes, unless the battery is dead.
+1. (The alarm sounds and the lamp flashes), unless the battery is dead.
 2. Therefore, if it is not the case that the battery is dead, then the alarm sounds and the lamp flashes. [1]
 ```
 
@@ -3145,7 +3136,7 @@ data. `TestStrictNotesExamples` checks every example and its concrete fix.
 | `opener.frame` | Fronted frame | v36.0 | A phrase before the subject may scope over the whole sentence: 'According to the report, A and B' attributes both claims, so A alone is not certified. | 1. If X is registered, then X is eligible.<br>2. In 2019 the firm is registered.<br>3. Therefore, in 2019 the firm is eligible. [1,2] | Move the time phrase after the predicate, including in the schema: "If X is registered in 2019, then X is eligible in 2019." |
 | `opener.adverb` | Fronted adverb | v37.0 | A sentence adverb may weaken or qualify the whole claim: 'Arguably A and B' may assert only that A and B is arguable. | 1. If X is safe, then X is useful.<br>2. Arguably reliable machinery is safe.<br>3. Therefore, arguably reliable machinery is useful. [1,2] | Start with the subject: "The reliable machine is safe." Use the same wording in the conclusion. |
 | `coordination.clause` | Clause coordination after a verb | v36.0 | In 'The observer saw A and B left', 'and' may join two objects or two whole clauses, so splitting off 'B left' is not certified. | 1. The pump malfunctioned.<br>2. The valve stuck.<br>3. Therefore, the pump malfunctioned and the valve stuck. [1,2] | Write "Both the pump malfunctioned and the valve stuck." |
-| `comma.exact` | Commas must match | v36.0 | A comma can change grouping ('A, and B or C' differs from 'A and B or C'), so clauses must repeat their punctuation exactly. | 1. Every device is small, light and portable.<br>2. Alpha is a device.<br>3. Therefore, Alpha is small, light, and portable. [1,2] | Repeat the clause with exactly the same commas wherever it is reused. |
+| `comma.exact` | Commas must match | v36.0 | Commas do not group mixed and/or; use both...and, either...or or parentheses instead. Clauses must repeat their remaining punctuation exactly. | 1. Every device is small, light and portable.<br>2. Alpha is a device.<br>3. Therefore, Alpha is small, light, and portable. [1,2] | Repeat the clause with exactly the same commas wherever it is reused. |
 | `identity.safe_position` | Identity substitution only in subjects | v35.0 | Substituting co-referring names inside an attitude or other opaque context can change truth. The catalog therefore permits identity substitution only in identity sentences and plain clause subjects. | 1. Alpha is identical to Beta.<br>2. The robot kicks Alpha.<br>3. Therefore, the robot kicks Beta. [1,2] | State the substituted sentence as a premise: "The robot kicks Beta." This supplies the missing claim; it does not prove it from the original premises. |
 | `slot.indefinite_object` | Indefinite in an object position | v39.0 | An indefinite object need not pick anything out: 'The robot is looking for a unicorn' does not establish that a unicorn exists. | 1. If the robot admires X, then X is admirable.<br>2. The robot admires a hero.<br>3. Therefore, a hero is admirable. [1,2] | Use a name in the slot: "The robot admires Alpha." Conclude "Alpha is admirable." This changes the premise to identify a particular hero. |
 | `slot.indefinite_written` | Indefinite written before a variable | v43.0 | When the rule writes 'a X', the instance need not be an article plus a noun: 'Bob greets a lot of people' would make X 'lot of people'. The catalog has no lexicon to tell that from 'a dog', so such a variable is refused in every position. | 1. If Rex is a X, then Fido is a X.<br>2. Rex is a dog.<br>3. Therefore, Fido is a dog. [1,2] | Write the phrase itself into the rule ("If Rex is a dog, then Fido is a dog"), or use a name or singular definite description. |
@@ -3174,6 +3165,8 @@ data. `TestStrictNotesExamples` checks every example and its concrete fix.
 | `scope.description_negation` | Description negation scope | v44.0 | Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion. | 1. It is not the case that the present king of France is bald.<br>2. Therefore, the present king of France is not bald. [1] | Add 'There is exactly one present king of France' and name it, or keep the wide negation. |
 | `opener.ly_exception` | Adverb-capable noun exceptions | v44.0 | Daily, early and only can be adverbs with scope over an entire sentence, even when they also have nominal uses. | 1. It is not the case that it is not the case that daily the lamp is lit.<br>2. Therefore, daily the lamp is lit. [1] | Move the adverb into each clause, or state the framed claim as its own premise. |
 | `slot.plural_witness` | No repeated plural or mass witness | v46.0 | Water is in the cup and water is in the bottle does not establish the same water. Repeated antecedent occurrences, multiple fact citations, and consequents containing same, both or together cannot reuse a bare plural or mass witness. | 1. If X is in the cup, then X is in both vessels.<br>2. Water is in the cup.<br>3. Therefore, water is in both vessels. [1,2] | Name each portion or state the conclusion as a premise. |
+| `term.pronoun_cross_statement` | Personal pronouns across statements | v46.2 | a pronoun's referent depends on context and can differ between statements | 1. If it rains, then it is wet.<br>2. It rains.<br>3. Therefore, it is wet. [1,2] | replace the pronoun with the name or noun phrase it refers to, e.g. 'the card' |
+| `term.possessive_cross_statement` | Possessive determiners across statements | v46.2 | a possessive determiner's referent depends on context and can differ between statements | 1. If John helps his wife, then the alarm sounds.<br>2. John helps his wife.<br>3. Therefore, the alarm sounds. [1,2] | replace 'his wife' with a name or a phrase that does not depend on a pronoun |
 <!-- strictness-notes:end -->
 
 ## v44.0: singular schematic term values
@@ -3235,7 +3228,7 @@ accounts for a failed binding, its explanation and rewrite take priority over
 the older indefinite-object fallback. This changes messages, not verdicts.
 
 Closed `atom{...}` literals remain opaque to the English scope scan. The
-canonical “both that …, and that …” scaffold, explicit comma grouping, and
+canonical “both that …, and that …” scaffold, explicit parenthesis grouping, and
 a conditional used as a complete operand retain their own boundaries. Wide
 negation around an identity is checked around its two terms, rather than
 being mistaken for part of the left term. A conservative witness refusal
@@ -3470,3 +3463,29 @@ coordinated predicates; `slot.plural_witness` is unchanged.
 claim and rule with an explicit quantifier ("some subgoals", "every subgoal"),
 or use a singular definite description ("the subgoal") consistently with
 singular agreement.
+
+## v46.2: free pronouns across statements
+
+Identical pronoun text does not guarantee identical reference. Matched terms,
+conditions, consequents, and schema/slot values cannot carry a personal pronoun
+across numbered statements: **he, she, it, they, him, her, them, himself, herself,
+itself, themselves** (`term.pronoun_cross_statement`). Possessive determiners
+**his, her, their, its** are likewise refused
+(`term.possessive_cross_statement`). These closed lists match whole tokens,
+case-insensitively; both policy flags default on. “Her” belongs to both lists.
+
+Weather/expletive “it” is refused too. There is no gender or sole-antecedent
+exception. Use “the card” in place of “it”, and a name or pronoun-independent
+phrase in place of “his wife”. Pronouns in unused clauses remain permitted, as
+do within-statement matches. Canonical logical scaffolds consume their “it” as
+syntax before clause matching.
+
+A successful inference must survive assigning each pronoun a fresh spelling
+local to its numbered statement. This check also covers direct comparisons and
+schema bindings that do not call the shared clause comparator. A rule refusal
+records `policy.hit` and participates in the usual disable-one-rule notes pass.
+
+Schematic unification also rejects pronouns in completed slot bindings, including
+a variable used only in the antecedent. That slot still links the concrete
+statement to its schematic rule. The isolation replay rejects its private
+spellings in slots too, so a variable cannot absorb a renamed pronoun.

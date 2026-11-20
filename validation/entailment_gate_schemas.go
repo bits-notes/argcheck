@@ -807,7 +807,20 @@ func (policy strictRules) schematicTemplate(value string) (string, schematicVari
 func (policy strictRules) unifySchematicTemplate(template, concrete string, initial schematicSubstitution) []schematicSubstitution {
 	templateRunes := []rune(policy.comparisonClause(template))
 	concreteRunes := []rune(policy.comparisonClause(concrete))
-	return policy.unifySchematicRunes(templateRunes, concreteRunes, 0, 0, cloneSchematicSubstitution(initial))
+	candidates := policy.unifySchematicRunes(templateRunes, concreteRunes, 0, 0, cloneSchematicSubstitution(initial))
+	allowed := candidates[:0]
+	for _, candidate := range candidates {
+		refused := false
+		for variable, value := range candidate {
+			if _, slot := schematicVariableMarkers[variable]; slot && policy.crossStatementBindingRefused(value) {
+				refused = true
+			}
+		}
+		if !refused {
+			allowed = append(allowed, candidate)
+		}
+	}
+	return allowed
 }
 
 func (policy strictRules) unifySchematicRunes(

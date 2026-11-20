@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v42.1)
+# Entailment Gate — Coverage and Known Limits (catalog v46.2)
 
 **Type:** reference
-**Status:** current as of catalog v42.1
+**Status:** current as of catalog v46.2
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -840,7 +840,7 @@ the corpus (2,476 arguments).
 ## v32.0: explicit and/or grouping
 
 And/or grouping is checked at numbered-argument parsing, before entailment.
-Whole-clause parentheses, a single main-connective comma, and leading
+At v32.0, whole-clause parentheses, a single main-connective comma, and leading
 either/or or both/and fix scope; ambiguous mixtures and unbalanced parentheses
 fail with line/sentence diagnostics. Single-connective lists and square-bracket
 step references retain their behavior. `validation/andor_grouping_test.go`
@@ -1017,7 +1017,7 @@ visible frame:
    Otherwise write `Both ... and ...`, `Either ... or ...`, parentheses, or
    separate premises. This applies to elimination and introduction alike.
 3. Commas count. Clause and term comparison keeps commas, except structural
-   ones (`If A, then B`, `Therefore,`, the and/or grouping comma). H130-H134
+   ones (`If A, then B`, `Therefore,`, complete-clause coordination commas). H130-H134
    are closed.
 4. Modified quantifiers (from the held-out list): a slot binding or
    universal-instantiation subject that opens with modifiers plus a quantifier
@@ -1473,7 +1473,7 @@ accounts for a failed binding, its explanation and rewrite take priority over
 the older indefinite-object fallback. This changes messages, not verdicts.
 
 Closed `atom{...}` literals remain opaque to the English scope scan. The
-canonical “both that …, and that …” scaffold, explicit comma grouping, and
+canonical “both that …, and that …” scaffold, explicit parenthesis grouping, and
 a conditional used as a complete operand retain their own boundaries. Wide
 negation around an identity is checked around its two terms, rather than
 being mistaken for part of the left term. A conservative witness refusal
@@ -1495,7 +1495,12 @@ check takes 1.2s (v43.1: 0.95s; v45.0: 2.9s), and the check with notes takes
 
 ## Known limits
 
-These are completeness limits: valid arguments outside the supported grammar
+Each word or phrase is assumed to keep one meaning throughout an argument. A
+switch in meaning is a fidelity or premise-truth error, not a validity error.
+“Every bank is regulated; the river edge is a bank; so the river edge is regulated”
+stays VALID: the validator uses the same meaning of “bank” throughout.
+
+The following are completeness limits: valid arguments outside the supported grammar
 can be refused. A rewrite may require an explicit bridge or a separately
 justified premise; adding that premise changes what the validator assumes.
 Rule names in backticks are strict switch IDs where available, otherwise the
@@ -1582,3 +1587,35 @@ never presumed safe. Frequency cutoffs, WordNet coverage, homographs and the
 reviewed mass classification are conservative lexical limits, not a general
 English parser. `former` conflicts with the required legacy-modifier list; the
 explicit adjective exclusion wins, while the separate ordinal rule is retained.
+
+## v46.2: pronouns cannot link numbered statements
+
+A single comma no longer groups mixed top-level and/or. Use both...and,
+either...or or parentheses; otherwise the existing grouping syntax refusal
+applies, with the hint `use either...or / both...and, or parentheses to group`.
+This supersedes the comma grouping introduced in v32.0.
+
+`term.pronoun_cross_statement` refuses matched spans containing he, she, it,
+they, him, her, them, himself, herself, itself, or themselves.
+`term.possessive_cross_statement` does the same for his, her, their, or its.
+Both are default-on, case-insensitive, whole-token rules. They cover conditions,
+consequents, term comparisons, and schema/slot values across different numbered
+statements, including weather/expletive “it”. A sole apparent antecedent is not
+an exception: deciding reference would require open-class knowledge.
+
+A pronoun in an unused conjunct or newly introduced disjunct remains allowed.
+Repeated occurrences within one numbered statement may still match each other.
+The “it” consumed by canonical logical scaffolds is syntax, not a matched term.
+Replace a free pronoun with its name or noun phrase; replace “his wife” with a
+name or a phrase independent of a pronoun.
+
+The gate checks statement isolation after a candidate succeeds: pronouns receive
+fresh statement-local spellings and the same catalog must still accept the
+inference. This covers verbatim comparisons, schematic bindings, direct property
+comparisons, and the scope/FOL fallbacks at one boundary. No existing refusal
+message is rewritten. Both guards record their strict-rule hit for notes.
+
+Schematic unification also rejects pronouns in completed slot bindings, including
+a variable used only in the antecedent. That slot still links the concrete
+statement to its schematic rule. The isolation replay rejects its private
+spellings in slots too, so a variable cannot absorb a renamed pronoun.

@@ -70,7 +70,7 @@
       "gold_status": "transparently_valid",
       "domain": "logic",
       "seed": "Textbook modus ponens. Purely analytic transparent validity.",
-      "argument": "1. If it is raining, then the ground is wet.\n2. It is raining.\n3. Therefore, the ground is wet. [1,2]"
+      "argument": "1. If the rain is falling, then the ground is wet.\n2. The rain is falling.\n3. Therefore, the ground is wet. [1,2]"
     },
     {
       "id": "L-TV-biconditional-introduction",
@@ -101,7 +101,7 @@
       "gold_status": "invalid",
       "domain": "logic",
       "seed": "Textbook affirming-the-consequent fallacy.",
-      "argument": "1. If it is raining, then the ground is wet.\n2. The ground is wet.\n3. Therefore, it is raining. [1,2]"
+      "argument": "1. If the rain is falling, then the ground is wet.\n2. The ground is wet.\n3. Therefore, the rain is falling. [1,2]"
     },
     {
       "id": "L-INV-undistributed-middle",
@@ -152,14 +152,14 @@
       "structural_defect": "unused_premise",
       "domain": "logic",
       "seed": "A clean modus ponens with an extra premise (step 3) that no conclusion cites. The conclusion gate-passes, but the argument is invalid at the recording standard because the inert premise entails nothing.",
-      "argument": "1. If it is the case that it rains, then the ground is wet.\n2. It rains.\n3. The moon orbits the Earth.\n4. Therefore, the ground is wet. [1,2]"
+      "argument": "1. If it is the case that the rain falls, then the ground is wet.\n2. The rain falls.\n3. The moon orbits the Earth.\n4. Therefore, the ground is wet. [1,2]"
     },
     {
       "id": "S-TV-two-conclusions",
       "gold_status": "transparently_valid",
       "domain": "logic",
       "seed": "Two independent conclusions, each a clean modus ponens; every premise is used even though the first conclusion (3) does not feed the last (6). Guards the connectivity check against wrongly flagging valid multi-conclusion arguments.",
-      "argument": "1. If it is the case that it rains, then the ground is wet.\n2. It rains.\n3. Therefore, the ground is wet. [1,2]\n4. If it is the case that the sun shines, then the sky is bright.\n5. The sun shines.\n6. Therefore, the sky is bright. [4,5]"
+      "argument": "1. If it is the case that the rain falls, then the ground is wet.\n2. The rain falls.\n3. Therefore, the ground is wet. [1,2]\n4. If it is the case that the sun shines, then the sky is bright.\n5. The sun shines.\n6. Therefore, the sky is bright. [4,5]"
     },
     {
       "id": "S-INV-inert-citation",
@@ -167,7 +167,7 @@
       "structural_defect": "inert_citation",
       "domain": "logic",
       "seed": "A clean modus ponens whose conclusion over-cites: premise 3 is inert but appears in the conclusion's citation bracket [1,2,3]. Connectivity is clean (every premise is cited), so the connectivity check cannot catch it \u2014 the gate must, because the cited set does not instantiate any schema (arity-2 modus ponens accepts exactly two premises; conjunctive modus ponens requires every cited premise to fill the antecedent). Pins the gate intrinsic 'gate-pass implies every cited premise participates in the matched schema.'",
-      "argument": "1. If it is the case that it rains, then the ground is wet.\n2. It rains.\n3. The moon orbits the Earth.\n4. Therefore, the ground is wet. [1,2,3]"
+      "argument": "1. If it is the case that the rain falls, then the ground is wet.\n2. The rain falls.\n3. The moon orbits the Earth.\n4. Therefore, the ground is wet. [1,2,3]"
     }
   ]
 }

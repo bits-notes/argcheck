@@ -13,9 +13,9 @@ type v19GateCase struct{ name, argument, form, note string }
 var v19AcceptedCases = []v19GateCase{
 	{"material contraposition", `1. If the match had been struck, then the match would have lit.
 2. Therefore, if it is not the case that the match would have lit, then it is not the case that the match had been struck. [1]`, "contraposition", ""},
-	{"predictive would verbatim MP", `1. If he left at noon, then he would arrive by three.
-2. He left at noon.
-3. Therefore, he would arrive by three. [1,2]`, "modus ponens", ""},
+	{"predictive would verbatim MP", `1. If Ben left at noon, then Ben would arrive by three.
+2. Ben left at noon.
+3. Therefore, Ben would arrive by three. [1,2]`, "modus ponens", ""},
 	{"biconditional introduction via weakening", `1. If the match had been struck, then the match would have lit.
 2. If the match would have lit, then the match had been struck.
 3. Therefore, (the match had been struck) if and only if (the match would have lit). [1,2]`, "biconditional introduction", ""},

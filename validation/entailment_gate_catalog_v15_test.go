@@ -41,15 +41,15 @@ func TestEntailmentGateCatalogV15(t *testing.T) {
 		{"multiword term", "Mary Jane sings", "Mary Jane is identical to Mary Jane", "identity reflexivity"},
 		{"punctuation boundary", "Ada admires (Socrates)", "Socrates is identical to Socrates", "identity reflexivity"},
 		{"later whole word", "Socratesian admires Socrates", "Socrates is identical to Socrates", "identity reflexivity"},
-		{"duality necessity forward", "It is not the case that possibly, it is not the case that it rains", "Necessarily, it rains", "modal duality"},
-		{"duality necessity reverse", "Necessarily, it rains", "It is not the case that possibly, it is not the case that it rains", "modal duality"},
-		{"duality possibility forward", "It is not the case that necessarily, it is not the case that it rains", "Possibly, it rains", "modal duality"},
-		{"duality possibility reverse", "Possibly, it rains", "It is not the case that necessarily, it is not the case that it rains", "modal duality"},
-		{"K", "Necessarily, if it rains, then it snows", "If necessarily, it rains, then necessarily, it snows", "modal distribution"},
-		{"possibility monotonicity", "Necessarily, if it rains, then it snows", "If possibly, it rains, then possibly, it snows", "modal distribution"},
-		{"conjunction forward", "Necessarily, it rains and it snows", "It is the case both that necessarily, it rains, and that necessarily, it snows", "modal distribution"},
-		{"conjunction reverse", "It is the case both that necessarily, it rains, and that necessarily, it snows", "Necessarily, it rains and it snows", "modal distribution"},
-		{"conjunction inner scaffold", "Necessarily, it is the case both that it rains, and that it snows", "It is the case both that necessarily, it rains, and that necessarily, it snows", "modal distribution"},
+		{"duality necessity forward", "It is not the case that possibly, it is not the case that the rain falls", "Necessarily, the rain falls", "modal duality"},
+		{"duality necessity reverse", "Necessarily, the rain falls", "It is not the case that possibly, it is not the case that the rain falls", "modal duality"},
+		{"duality possibility forward", "It is not the case that necessarily, it is not the case that the rain falls", "Possibly, the rain falls", "modal duality"},
+		{"duality possibility reverse", "Possibly, the rain falls", "It is not the case that necessarily, it is not the case that the rain falls", "modal duality"},
+		{"K", "Necessarily, if the rain falls, then the snow falls", "If necessarily, the rain falls, then necessarily, the snow falls", "modal distribution"},
+		{"possibility monotonicity", "Necessarily, if the rain falls, then the snow falls", "If possibly, the rain falls, then possibly, the snow falls", "modal distribution"},
+		{"conjunction forward", "Necessarily, the rain falls and the snow falls", "It is the case both that necessarily, the rain falls, and that necessarily, the snow falls", "modal distribution"},
+		{"conjunction reverse", "It is the case both that necessarily, the rain falls, and that necessarily, the snow falls", "Necessarily, the rain falls and the snow falls", "modal distribution"},
+		{"conjunction inner scaffold", "Necessarily, it is the case both that the rain falls, and that the snow falls", "It is the case both that necessarily, the rain falls, and that necessarily, the snow falls", "modal distribution"},
 		{"earlier self entailment", "Socrates is identical to Socrates", "Socrates is identical to Socrates", "self-entailment"},
 	} {
 		// Exercise every combination of optional commas on premise/conclusion.
@@ -85,23 +85,23 @@ func TestEntailmentGateV15NearMisses(t *testing.T) {
 		{"unicode boundary", "éSocrates sings", "Socrates is identical to Socrates"},
 		{"word underscore", "Socrates_jr sings", "Socrates is identical to Socrates"},
 		{"morphology is not identity", "The cat sings", "The cat is identical to The cats"},
-		{"compound pseudo term", "It rains and it snows", "It rains and it snows is identical to it rains and it snows"},
-		{"duality missing inner not necessity", "It is not the case that possibly, it rains", "Necessarily, it rains"},
-		{"duality missing inner not possibility", "It is not the case that necessarily, it rains", "Possibly, it rains"},
-		{"duality reverse missing not necessity", "Necessarily, it rains", "It is not the case that possibly, it rains"},
-		{"duality reverse missing not possibility", "Possibly, it rains", "It is not the case that necessarily, it rains"},
-		{"duality wrong clause", "It is not the case that possibly, it is not the case that it rains", "Necessarily, it snows"},
-		{"converse K", "If necessarily, it rains, then necessarily, it snows", "Necessarily, if it rains, then it snows"},
-		{"possibility to necessity", "Possibly, it rains", "Necessarily, it rains"},
-		{"possible conditional", "Possibly, if it rains, then it snows", "If possibly, it rains, then possibly, it snows"},
-		{"reverse possibility monotonicity", "If possibly, it rains, then possibly, it snows", "Necessarily, if it rains, then it snows"},
-		{"mixed modality", "Necessarily, if it rains, then it snows", "If possibly, it rains, then necessarily, it snows"},
-		{"K reversed clauses", "Necessarily, if it rains, then it snows", "If necessarily, it snows, then necessarily, it rains"},
-		{"S4 outside T", "Necessarily, it rains", "Necessarily, necessarily, it rains"},
-		{"S5 outside T", "Possibly, it rains", "Necessarily, possibly, it rains"},
-		{"conjunction different clause", "Necessarily, it rains and it snows", "It is the case both that necessarily, it rains, and that necessarily, it hails"},
-		{"conjunction one merely possible", "It is the case both that necessarily, it rains, and that possibly, it snows", "Necessarily, it rains and it snows"},
-		{"ambiguous outer conjunction", "Necessarily, it rains and it snows", "Necessarily, it rains, and necessarily, it snows"},
+		{"compound pseudo term", "The rain falls and the snow falls", "The rain falls and the snow falls is identical to the rain falls and the snow falls"},
+		{"duality missing inner not necessity", "It is not the case that possibly, the rain falls", "Necessarily, the rain falls"},
+		{"duality missing inner not possibility", "It is not the case that necessarily, the rain falls", "Possibly, the rain falls"},
+		{"duality reverse missing not necessity", "Necessarily, the rain falls", "It is not the case that possibly, the rain falls"},
+		{"duality reverse missing not possibility", "Possibly, the rain falls", "It is not the case that necessarily, the rain falls"},
+		{"duality wrong clause", "It is not the case that possibly, it is not the case that the rain falls", "Necessarily, the snow falls"},
+		{"converse K", "If necessarily, the rain falls, then necessarily, the snow falls", "Necessarily, if the rain falls, then the snow falls"},
+		{"possibility to necessity", "Possibly, the rain falls", "Necessarily, the rain falls"},
+		{"possible conditional", "Possibly, if the rain falls, then the snow falls", "If possibly, the rain falls, then possibly, the snow falls"},
+		{"reverse possibility monotonicity", "If possibly, the rain falls, then possibly, the snow falls", "Necessarily, if the rain falls, then the snow falls"},
+		{"mixed modality", "Necessarily, if the rain falls, then the snow falls", "If possibly, the rain falls, then necessarily, the snow falls"},
+		{"K reversed clauses", "Necessarily, if the rain falls, then the snow falls", "If necessarily, the snow falls, then necessarily, the rain falls"},
+		{"S4 outside T", "Necessarily, the rain falls", "Necessarily, necessarily, the rain falls"},
+		{"S5 outside T", "Possibly, the rain falls", "Necessarily, possibly, the rain falls"},
+		{"conjunction different clause", "Necessarily, the rain falls and the snow falls", "It is the case both that necessarily, the rain falls, and that necessarily, the hail falls"},
+		{"conjunction one merely possible", "It is the case both that necessarily, the rain falls, and that possibly, the snow falls", "Necessarily, the rain falls and the snow falls"},
+		{"ambiguous outer conjunction", "Necessarily, the rain falls and the snow falls", "Necessarily, the rain falls, and necessarily, the snow falls"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			argument := fmt.Sprintf("1. %s.\n2. Therefore, %s. [1]", tc.premise, tc.conclusion)
@@ -117,9 +117,9 @@ func TestEntailmentGateV15NearMisses(t *testing.T) {
 }
 
 func TestEntailmentGateV15FitchDuality(t *testing.T) {
-	argument := `| 1. Suppose it is not the case that possibly, it is not the case that it rains.
-| 2. Therefore, necessarily, it rains. [1]
-3. Therefore, if it is not the case that possibly, it is not the case that it rains, then necessarily, it rains. [1-2]`
+	argument := `| 1. Suppose it is not the case that possibly, it is not the case that the rain falls.
+| 2. Therefore, necessarily, the rain falls. [1]
+3. Therefore, if it is not the case that possibly, it is not the case that the rain falls, then necessarily, the rain falls. [1-2]`
 	report, result := CheckEntailmentGate(argument)
 	if !report.Passed || !result.Passed || len(report.Steps) != 2 || report.Steps[0].Form != "modal duality" || report.Steps[1].Form != "conditional proof" {
 		t.Fatalf("%s %+v", result.Message, report)

@@ -13,10 +13,10 @@ const roundFiveArgument = `1. Any standard for load-bearing argumentation that s
 4. Therefore, if the articulability thesis is true, then the transparent-validity standard satisfies condition (a). [2,3]
 5. Every inferential link of an argument that meets the transparent-validity standard is an immediate entailment.
 6. Every immediate entailment can be verified by direct inspection of the propositions involved.
-7. If every inferential link of an argument that meets the transparent-validity standard is an immediate entailment, then, if every immediate entailment can be verified by direct inspection of the propositions involved, then every argument that meets the transparent-validity standard has every one of its inferential links verifiable by direct inspection.
-8. Therefore, if every immediate entailment can be verified by direct inspection of the propositions involved, then every argument that meets the transparent-validity standard has every one of its inferential links verifiable by direct inspection. [5,7]
-9. Therefore, every argument that meets the transparent-validity standard has every one of its inferential links verifiable by direct inspection. [6,8]
-10. If every argument that meets the transparent-validity standard has every one of its inferential links verifiable by direct inspection, then the transparent-validity standard satisfies condition (b).
+7. If every inferential link of an argument that meets the transparent-validity standard is an immediate entailment, then, if every immediate entailment can be verified by direct inspection of the propositions involved, then every argument that meets the transparent-validity standard has every inferential link of that argument verifiable by direct inspection.
+8. Therefore, if every immediate entailment can be verified by direct inspection of the propositions involved, then every argument that meets the transparent-validity standard has every inferential link of that argument verifiable by direct inspection. [5,7]
+9. Therefore, every argument that meets the transparent-validity standard has every inferential link of that argument verifiable by direct inspection. [6,8]
+10. If every argument that meets the transparent-validity standard has every inferential link of that argument verifiable by direct inspection, then the transparent-validity standard satisfies condition (b).
 11. Therefore, the transparent-validity standard satisfies condition (b). [9,10]
 12. If the transparent-validity standard satisfies condition (b), then, if it is the case that, if the articulability thesis is true, then the transparent-validity standard satisfies condition (a), then, if the articulability thesis is true, then the transparent-validity standard satisfies both condition (a) and condition (b).
 13. Therefore, if it is the case that, if the articulability thesis is true, then the transparent-validity standard satisfies condition (a), then, if the articulability thesis is true, then the transparent-validity standard satisfies both condition (a) and condition (b). [11,12]
@@ -37,7 +37,7 @@ func TestRoundFiveBracketBridgeVariantPasses(t *testing.T) {
 	variant := roundFiveArgument
 	replacements := map[string]string{
 		"3. If it is the case that, if the articulability thesis is true, then any valid argument can be brought to meet the transparent-validity standard, then it is the case that, if the articulability thesis is true, then the transparent-validity standard satisfies condition (a).":                                                                                                                                                                                   "3. If [2], then it is the case that, if the articulability thesis is true, then the transparent-validity standard satisfies condition (a).",
-		"7. If every inferential link of an argument that meets the transparent-validity standard is an immediate entailment, then, if every immediate entailment can be verified by direct inspection of the propositions involved, then every argument that meets the transparent-validity standard has every one of its inferential links verifiable by direct inspection.":                                                                                                 "7. If [5], then, if every immediate entailment can be verified by direct inspection of the propositions involved, then every argument that meets the transparent-validity standard has every one of its inferential links verifiable by direct inspection.",
+		"7. If every inferential link of an argument that meets the transparent-validity standard is an immediate entailment, then, if every immediate entailment can be verified by direct inspection of the propositions involved, then every argument that meets the transparent-validity standard has every inferential link of that argument verifiable by direct inspection.":                                                                                            "7. If [5], then, if every immediate entailment can be verified by direct inspection of the propositions involved, then every argument that meets the transparent-validity standard has every inferential link of that argument verifiable by direct inspection.",
 		"12. If the transparent-validity standard satisfies condition (b), then, if it is the case that, if the articulability thesis is true, then the transparent-validity standard satisfies condition (a), then, if the articulability thesis is true, then the transparent-validity standard satisfies both condition (a) and condition (b).":                                                                                                                             "12. If [11], then, if it is the case that, if the articulability thesis is true, then the transparent-validity standard satisfies condition (a), then, if the articulability thesis is true, then the transparent-validity standard satisfies both condition (a) and condition (b).",
 		"15. If any standard for load-bearing argumentation that satisfies both condition (a) and condition (b) is the correct standard for load-bearing argumentation, then, if it is the case that, if the articulability thesis is true, then the transparent-validity standard satisfies both condition (a) and condition (b), then, if the articulability thesis is true, then the transparent-validity standard is the correct standard for load-bearing argumentation.": "15. If [1], then, if it is the case that, if the articulability thesis is true, then the transparent-validity standard satisfies both condition (a) and condition (b), then, if the articulability thesis is true, then the transparent-validity standard is the correct standard for load-bearing argumentation.",
 	}
@@ -232,9 +232,9 @@ func TestEntailmentGateOpaqueAndInvalidInvariants(t *testing.T) {
 		},
 		{
 			name: "affirming the consequent",
-			argument: `1. If it rains, the ground gets wet.
+			argument: `1. If the rain falls, the ground gets wet.
 2. The ground gets wet.
-3. Therefore, it rains. [1,2]`,
+3. Therefore, the rain falls. [1,2]`,
 		},
 		{
 			name: "undistributed middle",
@@ -288,8 +288,8 @@ func TestNumberedArgumentInertCitations(t *testing.T) {
 	}{
 		{
 			name: "extra premise beside modus ponens",
-			argument: `1. If it is the case that it rains, then the ground is wet.
-2. It rains.
+			argument: `1. If it is the case that the rain falls, then the ground is wet.
+2. The rain falls.
 3. The moon orbits the Earth.
 4. Therefore, the ground is wet. [1,2,3]`,
 			want: []int{3},
@@ -302,8 +302,8 @@ func TestNumberedArgumentInertCitations(t *testing.T) {
 		},
 		{
 			name: "full citation set gate passes",
-			argument: `1. If it is the case that it rains, then the ground is wet.
-2. It rains.
+			argument: `1. If it is the case that the rain falls, then the ground is wet.
+2. The rain falls.
 3. Therefore, the ground is wet. [1,2]`,
 		},
 	}

@@ -4,8 +4,8 @@ In the lighthouse keeper's scenario the absence of a relief boat does not make t
 According to the harbor master’s account safety of the quay consists in the conformity of the moorings to the posted rules, not in exemption from the weather
 Under the proposal to number the berths, pilots can quickly determine the position of arbitrary visiting vessels
 A firm booking with a ferry operator means there is no room for questions concerning the timing of departures or returns of later sailings
-Tide prediction without a gauge reading takes its baseline from the published almanac
-The question of berth allocation concerns not the relation between what a captain requests and what the office assigns, but the requests themselves
+Tide prediction without a gauge reading takes the prediction baseline from the published almanac
+The question of berth allocation concerns not the relation between what a captain requests and what the office assigns, but the requests
 A candidate timetable must give correct times for every crossing on the basis of the tide table
 Fog can prevent an unsafe direct approach to the harbor mouth and can obscure the position of an individual buoy
 choosing the preferred mooring in rough weather requires comparing the importance of shelter and quick departure
@@ -13,7 +13,7 @@ When the charts of two harbors differ, each chart can show depths absent from th
 The ferry is the vessel that regularly carries the islanders to the mainland
 The quay is a structure
 The pilot is a pilot engaged in guiding cargo ships through the narrows
-If it rains, then the street is wet
+If the rain falls, then the street is wet
 Berth allocation is a form of harbor planning
 The evidential meaning of outcome x in the mixture is identical to the evidential meaning of outcome y in the mixture.      ◀ S
 For the crossing under consideration the forecast estimates the severity or calmness of the sea if the forecast is wrong

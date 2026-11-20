@@ -63,16 +63,16 @@ func TestCatalogV27InheritedNegation(t *testing.T) {
 func TestCatalogV27PropositionalScopeRegression(t *testing.T) {
 	// All ten accepted-invalid candidates from the propositional oracle.
 	for _, tc := range []struct{ premise, conclusion string }{
-		{"either it rains or it rains and the street is wet", "the street is wet"},
-		{"either it rains or it snows and the street is wet", "the street is wet"},
-		{"either it rains or the street is wet and it snows", "it snows"},
-		{"either it rains or the street is wet and the street is wet", "the street is wet"},
-		{"either it snows or it rains and the street is wet", "the street is wet"},
-		{"either it snows or it snows and the street is wet", "the street is wet"},
-		{"either it snows or the street is wet and it rains", "it rains"},
-		{"either it snows or the street is wet and the street is wet", "the street is wet"},
-		{"either the street is wet or the street is wet and it rains", "it rains"},
-		{"either the street is wet or the street is wet and it snows", "it snows"},
+		{"either the rain falls or the rain falls and the street is wet", "the street is wet"},
+		{"either the rain falls or the snow falls and the street is wet", "the street is wet"},
+		{"either the rain falls or the street is wet and the snow falls", "the snow falls"},
+		{"either the rain falls or the street is wet and the street is wet", "the street is wet"},
+		{"either the snow falls or the rain falls and the street is wet", "the street is wet"},
+		{"either the snow falls or the snow falls and the street is wet", "the street is wet"},
+		{"either the snow falls or the street is wet and the rain falls", "the rain falls"},
+		{"either the snow falls or the street is wet and the street is wet", "the street is wet"},
+		{"either the street is wet or the street is wet and the rain falls", "the rain falls"},
+		{"either the street is wet or the street is wet and the snow falls", "the snow falls"},
 	} {
 		t.Run(tc.premise, func(t *testing.T) {
 			text := v26Argument([]string{tc.premise}, tc.conclusion)
@@ -89,7 +89,7 @@ func TestCatalogV27PropositionalScopeRegression(t *testing.T) {
 }
 
 func TestCatalogV27PredicateTermRegression(t *testing.T) {
-	for _, tail := range []string{"is wet or it rains", "is wet and it rains", "wobbles", "signed"} {
+	for _, tail := range []string{"is wet or the rain falls", "is wet and the rain falls", "wobbles", "signed"} {
 		if f, err := descriptionPredication(tail); err == nil {
 			t.Errorf("non-atomic or opaque tail %q accepted as %s", tail, f.Render())
 		}
@@ -101,7 +101,7 @@ func TestCatalogV27PredicateTermRegression(t *testing.T) {
 	}
 	// Explicit parentheses preserve the disjunction: its right conjunct cannot
 	// be projected through the disjunction even with a real description term.
-	text := v26Argument([]string{"(it rains) or ((the street is wet) and (it snows))"}, "it snows")
+	text := v26Argument([]string{"(the rain falls) or ((the street is wet) and (the snow falls))"}, "the snow falls")
 	_, r := CheckEntailmentGate(text)
 	if r.Passed {
 		t.Fatal("parenthesized disjunction projected a conjunct")

@@ -23,7 +23,7 @@ func TestCatalogV10NaryConjunctionIntroduction(t *testing.T) {
 		{"no oxford comma", "1. Rain falls.\n2. Wind blows.\n3. Snow melts.\n4. Therefore, rain falls, wind blows and snow melts. [1,2,3]", true},
 		{"chained and", "1. Rain falls.\n2. Wind blows.\n3. Snow melts.\n4. Therefore, rain falls and wind blows and snow melts. [1,2,3]", true},
 		{"any order", "1. Rain falls.\n2. Wind blows.\n3. Snow melts.\n4. Therefore, snow melts, rain falls, and wind blows. [1,2,3]", true},
-		{"premise with internal list", "1. The firm has no employee, no manager, and no building in common with its founder.\n2. The firm moved twice.\n3. The charter survives.\n4. Therefore, the firm has no employee, no manager, and no building in common with its founder, the firm moved twice, and the charter survives. [1,2,3]", true},
+		{"premise with internal list", "1. The firm has no employee, no manager, and no building in common with the firm's founder.\n2. The firm moved twice.\n3. The charter survives.\n4. Therefore, the firm has no employee, no manager, and no building in common with the firm's founder, the firm moved twice, and the charter survives. [1,2,3]", true},
 		{"missing conjunct", "1. Rain falls.\n2. Wind blows.\n3. Snow melts.\n4. Therefore, rain falls and wind blows. [1,2,3]", false},
 		{"extra conjunct", "1. Rain falls.\n2. Wind blows.\n3. Snow melts.\n4. Therefore, rain falls, wind blows, snow melts, and ice cracks. [1,2,3]", false},
 		{"reworded conjunct", "1. Rain falls.\n2. Wind blows.\n3. Snow melts.\n4. Therefore, rain falls, wind blows, and the snow melts. [1,2,3]", false},

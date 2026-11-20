@@ -3,7 +3,7 @@
 `english-arg-validator` (formerly `argcheck`) is a deterministic checker in Go for transparently valid numbered
 arguments. It runs offline with no LLM and no network access by default: every
 conclusion step must instantiate a named inference form from the catalog
-(currently **v46.1**, 121 forms) using only its cited earlier steps, with clauses
+(currently **v46.2**, 121 forms) using only its cited earlier steps, with clauses
 matched word for word after light surface normalization.
 
 Coverage: complete for propositional logic and for function-free first-order
@@ -37,7 +37,7 @@ An eleven-step argument about an outage. Each "Therefore" line cites the earlier
 `english-arg-validator incident.txt` certifies every derived step and names the rule it matched:
 
 ```text
-VALID  (gate catalog v46.1; local english-arg-validator@853afe2)
+VALID  (gate catalog v46.2; local english-arg-validator@853afe2)
 syntax: ok
 step 4 [2,3]: ok: modus tollens
 step 5 [1,4]: ok: disjunctive syllogism
@@ -49,7 +49,7 @@ step 11 [5,9,10]: ok: conjunctive modus ponens
 One natural slip: write premise 3 as "The checkout request did not time out." English readers see the same claim, but the checker matches clauses word for word, so step 4 is no longer certified:
 
 ```text
-NOT CERTIFIED  (gate catalog v46.1; local english-arg-validator@853afe2)
+NOT CERTIFIED  (gate catalog v46.2; local english-arg-validator@853afe2)
 syntax: ok
 step 4 [2,3]: FAIL: nearest form modus ponens: premise 2 antecedent "the network failed" does not match premise 3 "the checkout request did not time out" verbatim
 step 5 [1,4]: ok: disjunctive syllogism
@@ -85,7 +85,7 @@ english-arg-validator < argument.txt      # read from stdin
 cat argument.txt | english-arg-validator -
 english-arg-validator --quiet argument.txt
 english-arg-validator --json argument.txt
-english-arg-validator --forms             # list all 121 inference forms in catalog v46.1
+english-arg-validator --forms             # list all 121 inference forms in catalog v46.2
 english-arg-validator --version           # print catalog version and build stamp
 ```
 
@@ -107,15 +107,15 @@ Put flags before the file argument.
 Input (`valid.txt`):
 
 ```text
-1. If it rains, then the street is wet.
-2. It rains.
+1. If rain falls, then the street is wet.
+2. Rain falls.
 3. Therefore, the street is wet. [1,2]
 ```
 
 Output (`english-arg-validator valid.txt`, exit `0`):
 
 ```text
-VALID  (gate catalog v46.1; local english-arg-validator@853afe2)
+VALID  (gate catalog v46.2; local english-arg-validator@853afe2)
 syntax: ok
 step 3 [1,2]: ok: modus ponens
 ```
@@ -128,15 +128,15 @@ that`), and optional
 not certified (`uncertified.txt`):
 
 ```text
-1. If it rains, then the street is wet.
-2. It rains.
+1. If rain falls, then the street is wet.
+2. Rain falls.
 3. Therefore, the road is wet. [1,2]
 ```
 
 Output (`english-arg-validator uncertified.txt`, exit `1`):
 
 ```text
-NOT CERTIFIED  (gate catalog v46.1; local english-arg-validator@853afe2)
+NOT CERTIFIED  (gate catalog v46.2; local english-arg-validator@853afe2)
 syntax: ok
 step 3 [1,2]: FAIL: nearest form modus ponens: premise 1 consequent "the street is wet" does not match conclusion 3 "the road is wet" verbatim
 ```
@@ -180,12 +180,12 @@ universal generalization) and discharge the closed subproof by citing its full
 line range `[i-j]`:
 
 ```text
-1. If it rains, then the street is wet.
+1. If rain falls, then the street is wet.
 2. If the street is wet, then the cars slow.
-| 3. Suppose it rains.
+| 3. Suppose rain falls.
 | 4. Therefore, the street is wet. [1,3]
 | 5. Therefore, the cars slow. [2,4]
-6. Therefore, if it rains, then the cars slow. [3-5]
+6. Therefore, if rain falls, then the cars slow. [3-5]
 ```
 
 Steps outside a closed subproof cannot cite individual lines inside it. Reductio
@@ -208,7 +208,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
     "passed": true,
     "message": "output passes entailment_gate",
     "details": {
-      "catalog": "v46.1",
+      "catalog": "v46.2",
       "expansions": [],
       "gated_steps": 1,
       "passed_steps": 1,
@@ -217,7 +217,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
       ]
     }
   },
-  "entailment_catalog": "v46.1",
+  "entailment_catalog": "v46.2",
   "backend": "local",
   "version": "english-arg-validator@ef44658"
 }
@@ -227,7 +227,7 @@ subproofs conclude `Therefore, contradiction. [i,j]`.
 existing clients. A failing check means english-arg-validator found no accepted rule for some
 step, not that the argument is invalid.
 
-`--forms` prints the catalog header (`entailment gate catalog v46.1 (...)`)
+`--forms` prints the catalog header (`entailment gate catalog v46.2 (...)`)
 followed by all 121 accepted form names, covering propositional schemas,
 syllogisms, schematic rules (`U`, `V`, `W`, `X`, `Y`, `Z` up to 10 conjuncts),
 identity, system-T modals, counterfactuals, properties, n-place relations,
@@ -294,3 +294,11 @@ the phrase itself into the rule. Quantified phrases do not become singular
 slot values. The flag remains available for future designs. The noun
 allowlists still serve description heads, clause starts, adjectives and
 coordinated predicates; `slot.plural_witness` is unchanged.
+
+## v46.2: pronouns across statements
+
+Matched clauses, terms, and schema values may not use personal pronouns or
+possessive determiners to link different numbered statements. This includes
+weather “it” and “his wife”; use explicit names or noun phrases instead.
+Pronouns inside unused clauses remain allowed. See [the rule reference](docs/rules.md#v462-free-pronouns-across-statements)
+for the closed token lists and strict-note IDs.

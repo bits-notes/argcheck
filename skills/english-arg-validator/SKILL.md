@@ -22,8 +22,8 @@ never checks whether premises are true or faithful to a text.
 
 ```bash
 english-arg-validator <<'EOF'
-1. If it rains, then the street is wet.
-2. It rains.
+1. If rain falls, then the street is wet.
+2. Rain falls.
 3. Therefore, the street is wet. [1,2]
 EOF
 ```
@@ -32,7 +32,7 @@ EOF
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `NOT CERTIFIED`.
 - `--forms` lists all 121 accepted inference forms in catalog `v45.1`.
-- `--version` prints the catalog version and build stamp (`gate catalog v45.1; local english-arg-validator@<commit>`).
+- `--version` prints the catalog version and build stamp (`gate catalog v46.2; local english-arg-validator@<commit>`).
 - Exit codes: `0` valid, `1` not certified, `2` input or operational error.
 - `NOT CERTIFIED` means some step matched no accepted rule. It does not mean the
   argument is invalid; repair the step or add the missing premise.
@@ -73,12 +73,12 @@ that passes on the used subset and the inert citation(s) to remove.
   individual lines inside it.
 
 ```text
-1. If it rains, then the street is wet.
+1. If rain falls, then the street is wet.
 2. If the street is wet, then the cars slow.
-| 3. Suppose it rains.
+| 3. Suppose rain falls.
 | 4. Therefore, the street is wet. [1,3]
 | 5. Therefore, the cars slow. [2,4]
-6. Therefore, if it rains, then the cars slow. [3-5]
+6. Therefore, if rain falls, then the cars slow. [3-5]
 ```
 
 ## The repair loop
@@ -119,6 +119,15 @@ with straight or curly apostrophes, while `it's raining` stays an ordinary claus
 out of scope: if two wordings mean the same thing, state that equivalence as a
 visible identity or conditional premise.
 
+- **Pronouns across statements (v46.2):** matched clauses, terms, and schema
+  values cannot contain he, she, it, they, him, her, them, himself, herself,
+  itself, themselves, or possessive his, her, their, its. Matching is
+  case-insensitive and whole-token. This includes weather/expletive "it";
+  replace it with a name or noun phrase. There is no sole-antecedent exception.
+  Pronouns in unused clauses or checks confined to one statement remain allowed.
+  Logical scaffolds such as "it is not the case that" consume "it" as syntax.
+  Refusals carry `term.pronoun_cross_statement` or
+  `term.possessive_cross_statement` in strict notes.
 - **Repeat clauses word for word:** `the street is wet` does not match
   `the road is wet`.
 - **Negation:** write `It is not the case that X.` Modus tollens fails on
@@ -138,7 +147,7 @@ visible identity or conditional premise.
   (`Either we should use X or we should use Y.`), refute one side, and apply
   disjunctive syllogism.
 
-### Strict conventions (catalog v35–v44)
+### Strict conventions (catalog v35–v46.2)
 
 The gate refuses phrasings that are ambiguous in English, even when the
 inference is fine. Each refusal names its fix; apply exactly that fix.
@@ -301,20 +310,19 @@ and rejected examples, and `docs/coverage.md` for full grammar boundaries.
 
 Never mix top-level `and` and `or` without grouping, including inside `If ...,
 then ...` or `every x is such that ...`. The syntax diagnostic identifies the
-line and sentence and asks you to use `either...or / both...and`, a comma, or
-parentheses. Parentheses group whole clauses and must balance; `[n]` remains a
-step reference. Keep parentheses in source quotations and repairs.
+line and sentence and asks you to use `either...or / both...and, or parentheses to group`.
+Parentheses group whole clauses and must balance; `[n]` remains a step reference.
+Keep parentheses in source quotations and repairs.
 
-- `(Ann sings and Bob dances) or Cal reads` and `Ann sings and Bob dances, or
-  Cal reads` are disjunctions; neither licenses extracting `Ann sings`.
-- `Ann sings and (Bob dances or Cal reads)` and `Ann sings, and Bob dances or
-  Cal reads` are conjunctions and do license that extraction.
-- Leading `either`/`both` opens the first operand; a single comma still marks the
-  main connective. `Both Ann sings and Bob dances, or Cal reads` is a disjunction.
-  With no comma, the either/both connective is main and its second operand runs
-  to the end: `Either Ann sings or Bob dances and Cal reads` = A or (B and C).
-- Multiple comma boundaries in a mixed clause are ambiguous. Rewrite with
-  parentheses. Single-connective lists retain their existing behavior.
+- `(Ann sings and Bob dances) or Cal reads` is a disjunction and does not
+  license extracting `Ann sings`.
+- `Ann sings and (Bob dances or Cal reads)` and `Both Ann sings and Bob dances
+  or Cal reads` are conjunctions and do license that extraction.
+- Leading `either`/`both` selects its matching main connective; its second
+  operand runs to the end. Each operand must itself have unambiguous scope.
+- Since v46.2, commas never fix mixed and/or scope. `Ann sings, and Bob dances
+  or Cal reads` is refused. Use both/either or parentheses. Single-connective
+  lists retain their existing behavior.
 
 Opaque complements, relative clauses, `unless`, quoted text, `whether or not`,
 and noun-phrase coordination are conservatively exempt. The exemption can

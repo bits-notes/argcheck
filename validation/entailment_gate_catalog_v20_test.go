@@ -9,14 +9,14 @@ import (
 
 type v20GateCase struct{ name, argument, wantForm string }
 
-const v20Descartes = `1. If Descartes is identical to his body, then Descartes has every property that his body has.
-2. His body has the property of being doubtable by Descartes.
+const v20Descartes = `1. If Descartes is identical to the body of Descartes, then Descartes has every property that the body of Descartes has.
+2. The body of Descartes has the property of being doubtable by Descartes.
 3. It is not the case that Descartes has the property of being doubtable by Descartes.
-| 4. Suppose Descartes has every property that his body has.
+| 4. Suppose Descartes has every property that the body of Descartes has.
 | 5. Therefore, Descartes has the property of being doubtable by Descartes. [2,4]
 | 6. Therefore, contradiction. [3,5]
-7. Therefore, it is not the case that Descartes has every property that his body has. [4-6]
-8. Therefore, it is not the case that Descartes is identical to his body. [1,7]`
+7. Therefore, it is not the case that Descartes has every property that the body of Descartes has. [4-6]
+8. Therefore, it is not the case that Descartes is identical to the body of Descartes. [1,7]`
 
 const v20IdentityOfIndiscernibles = `1. Socrates has every property that Plato has.
 2. Therefore, Plato is identical to Plato. [1]
@@ -85,12 +85,16 @@ func checkV20Case(t *testing.T, tc v20GateCase) {
 func TestCatalogV20(t *testing.T) {
 	// v46.0: evidenced names reach the closed extensional predicate guard.
 	refused := map[string]strictRefusal{
+		// v46.2: possessive pronouns cannot be matched across statements.
+		"TestCatalogV20/possessive_bearer": {"term.possessive_cross_statement", "replace"},
+		// v46.2: reflexive pronouns cannot be matched across statements.
+		"TestCatalogV20/pronoun_preserved": {"term.pronoun_cross_statement", "replace"},
 		// v46.0: names are evidenced; the predicate still fails identity.extensional_context.
 		"TestCatalogV20/property_UG": {"identity.extensional_context", "state the substituted claim as a premise"},
 		"TestCatalogV20/nested_UG":   {"identity.extensional_context", "state the substituted claim as a premise"},
 	}
 
-	if EntailmentGateCatalogVersion != "v46.1" {
+	if EntailmentGateCatalogVersion != "v46.2" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range append(append([]v20GateCase{}, v20AcceptedCases...), v20KeptGaps...) {

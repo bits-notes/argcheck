@@ -10,16 +10,16 @@ func TestCatalogV18ParenthesizedBiconditionalSides(t *testing.T) {
 	tests := []struct {
 		name, argument, wantForm string
 	}{
-		{"bare parentheses", `1. (If it rains, then the street is wet) if and only if (the city is prepared).
-2. If it rains, then the street is wet.
+		{"bare parentheses", `1. (If the rain falls, then the street is wet) if and only if (the city is prepared).
+2. If the rain falls, then the street is wet.
 3. Therefore, the city is prepared. [1,2]`, "biconditional modus ponens"},
-		{"wrapped in it is the case that", `1. It is the case that (if it rains, then the street is wet) if and only if (the city is prepared).
-2. If it rains, then the street is wet.
+		{"wrapped in it is the case that", `1. It is the case that (if the rain falls, then the street is wet) if and only if (the city is prepared).
+2. If the rain falls, then the street is wet.
 3. Therefore, the city is prepared. [1,2]`, "biconditional modus ponens"},
-		{"wrapper and bare spellings are the same clause", `1. It is the case that (if it rains, then the street is wet) if and only if (the city is prepared).
-2. Therefore, (if it rains, then the street is wet) if and only if (the city is prepared). [1]`, "self-entailment"},
-		{"unparenthesized reading unchanged", `1. If it rains, then the street is wet if and only if the city is prepared.
-2. It rains.
+		{"wrapper and bare spellings are the same clause", `1. It is the case that (if the rain falls, then the street is wet) if and only if (the city is prepared).
+2. Therefore, (if the rain falls, then the street is wet) if and only if (the city is prepared). [1]`, "self-entailment"},
+		{"unparenthesized reading unchanged", `1. If the rain falls, then the street is wet if and only if the city is prepared.
+2. The rain falls.
 3. Therefore, the street is wet if and only if the city is prepared. [1,2]`, "modus ponens"},
 	}
 	for _, tc := range tests {
@@ -37,10 +37,10 @@ func TestCatalogV18ParenthesizedBiconditionalSides(t *testing.T) {
 
 func TestCatalogV18ItHoldsThatIsOrdinaryText(t *testing.T) {
 	for _, argument := range []string{
-		`1. It holds that it rains.
-2. Therefore, it rains. [1]`,
-		`1. It holds that (if it rains, then the street is wet) if and only if (the city is prepared).
-2. If it rains, then the street is wet.
+		`1. It holds that the rain falls.
+2. Therefore, the rain falls. [1]`,
+		`1. It holds that (if the rain falls, then the street is wet) if and only if (the city is prepared).
+2. If the rain falls, then the street is wet.
 3. Therefore, the city is prepared. [1,2]`,
 	} {
 		if report, _ := CheckEntailmentGate(argument); report.Passed {

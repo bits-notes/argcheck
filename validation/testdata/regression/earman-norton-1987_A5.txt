@@ -1,9 +1,9 @@
 1. In local spacetime theories, every field equation states that a tensor vanishes.
-2. A tensor vanishes exactly when its components vanish in every coordinate system.
+2. A tensor vanishes exactly when the components of that tensor vanish in every coordinate system.
 3. Local spacetime theories are spacetime theories.
 4. Diffeomorphism carry-along is a tensor transport.
 5. Diffeomorphism carry-along preserves components in corresponding coordinate systems.
-6. If X is a tensor transport and X preserves components in corresponding coordinate systems and a tensor vanishes exactly when its components vanish in every coordinate system, then X preserves tensor vanishing.
+6. If X is a tensor transport and X preserves components in corresponding coordinate systems and a tensor vanishes exactly when the components of that tensor vanish in every coordinate system, then X preserves tensor vanishing.
 7. Therefore, diffeomorphism carry-along preserves tensor vanishing. [2,4,5,6]
 8. If X are spacetime theories and in X every field equation states that a tensor vanishes and diffeomorphism carry-along preserves tensor vanishing, then carrying a model's tensors along by a diffeomorphism preserves the field equations of X.
 9. Therefore, carrying a model's tensors along by a diffeomorphism preserves the field equations of local spacetime theories. [1,3,7,8]

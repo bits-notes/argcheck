@@ -86,41 +86,12 @@ func groupingPlan(s string) (op, left, right string, managed bool, reason string
 		return "", "", "", true, "ambiguous comma grouping: multiple commas mix list punctuation with connective boundaries"
 	}
 	selected := -1
-	if prefix != "" && mixed && len(commas) == 1 {
-		// A comma before a connective makes it the main one, also after a
-		// leading either/both: "Both A and B, or C" is (both A and B) or C;
-		// "Either A, or B and C" is A or (B and C).
-		for i, b := range bs {
-			if b.start == commas[0]+1 {
-				selected = i
-			}
-		}
-		if selected < 0 {
-			return "", "", "", true, "ambiguous comma grouping: the comma must immediately precede the main connective"
-		}
-		b := bs[selected]
-		left := strings.TrimSpace(strings.TrimSuffix(body[:b.start], ","))
-		if b.op != op {
-			// The either/both scaffold belongs to the left operand.
-			left = strings.TrimSpace(s[:len(prefix)+b.start])
-			left = strings.TrimSpace(strings.TrimSuffix(left, ","))
-		}
-		return b.op, left, strings.TrimSpace(body[b.end:]), true, ""
-	} else if prefix != "" {
+	if prefix != "" {
 		for i, b := range bs {
 			if b.op == op {
 				selected = i
 				break
 			}
-		}
-	} else if mixed && len(commas) > 0 {
-		for i, b := range bs {
-			if b.start == commas[0]+1 {
-				selected = i
-			}
-		}
-		if selected < 0 {
-			return "", "", "", true, "ambiguous comma grouping: the comma must immediately precede the main connective"
 		}
 	} else if mixed {
 		if unless {
@@ -283,7 +254,7 @@ func (policy strictRules) validateStatementGrouping(s string, line int) Result {
 	if why == "" {
 		return Result{Passed: true}
 	}
-	return Result{Passed: false, Message: fmt.Sprintf("line %d sentence %q: %s; use either...or / both...and, a comma, or parentheses to group", line, s+".", why), Details: map[string]any{"line": line, "sentence": s}}
+	return Result{Passed: false, Message: fmt.Sprintf("line %d sentence %q: %s; use either...or / both...and, or parentheses to group", line, s+".", why), Details: map[string]any{"line": line, "sentence": s}}
 }
 
 var clauseStartWords = map[string]bool{

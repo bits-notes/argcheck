@@ -17,21 +17,21 @@ func runArgcheck(t *testing.T, input string, args ...string) (int, string) {
 }
 
 func TestArgcheckValid(t *testing.T) {
-	code, out := runArgcheck(t, "1. If it rains, then the street is wet.\n2. It rains.\n3. Therefore, the street is wet. [1,2]\n")
+	code, out := runArgcheck(t, "1. If rain falls, then the street is wet.\n2. Rain falls.\n3. Therefore, the street is wet. [1,2]\n")
 	if code != exitValid || !strings.Contains(out, "step 3 [1,2]: ok: modus ponens") {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 }
 
 func TestArgcheckReportsFailingStep(t *testing.T) {
-	code, out := runArgcheck(t, "1. If it rains, then the street is wet.\n2. The street is wet.\n3. Therefore, it rains. [1,2]")
+	code, out := runArgcheck(t, "1. If rain falls, then the street is wet.\n2. The street is wet.\n3. Therefore, rain falls. [1,2]")
 	if code != exitInvalid || !strings.Contains(out, "step 3 [1,2]: FAIL: nearest form") {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 }
 
 func TestArgcheckHintsInertCitation(t *testing.T) {
-	input := "1. If it rains, then the street is wet.\n2. It rains.\n3. The sky is grey.\n4. Therefore, the street is wet. [1,2,3]"
+	input := "1. If rain falls, then the street is wet.\n2. Rain falls.\n3. The sky is grey.\n4. Therefore, the street is wet. [1,2,3]"
 	code, out := runArgcheck(t, input)
 	if code != exitInvalid || !strings.Contains(out, "modus ponens passes on [1,2]; citation(s) [3] do no work") {
 		t.Fatalf("exit %d, output:\n%s", code, out)
@@ -39,7 +39,7 @@ func TestArgcheckHintsInertCitation(t *testing.T) {
 }
 
 func TestArgcheckSyntaxFailureJSON(t *testing.T) {
-	code, out := runArgcheck(t, "1. It rains.\n2. The street is wet [1]", "--json")
+	code, out := runArgcheck(t, "1. Rain falls.\n2. The street is wet [1]", "--json")
 	if code != exitInvalid {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
@@ -64,7 +64,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v46.1", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v46.2", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -86,9 +86,9 @@ func TestArgcheckForms(t *testing.T) {
 }
 
 func TestArgcheckFitch(t *testing.T) {
-	const text = "1. If it rains, then it snows.\n| 2. Suppose it rains.\n| 3. Therefore, it snows. [1,2]\n4. Therefore, if it rains, then it snows. [2-3]"
+	const text = "1. If rain falls, then snow falls.\n| 2. Suppose rain falls.\n| 3. Therefore, snow falls. [1,2]\n4. Therefore, if rain falls, then snow falls. [2-3]"
 	code, out := runArgcheck(t, text)
-	if code != 0 || !strings.Contains(out, "| 2. Suppose it rains.") || !strings.Contains(out, "step 4 [2-3]: ok: conditional proof") {
+	if code != 0 || !strings.Contains(out, "| 2. Suppose rain falls.") || !strings.Contains(out, "step 4 [2-3]: ok: conditional proof") {
 		t.Fatalf("%d %s", code, out)
 	}
 	code, out = runArgcheck(t, text, "--json")
@@ -176,7 +176,7 @@ func TestArgcheckVersion(t *testing.T) {
 	t.Cleanup(func() { commit = old })
 	commit = "v28-test-commit"
 	code, out := runArgcheck(t, "", "--version")
-	if code != exitValid || !strings.Contains(out, "catalog v46.1") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
+	if code != exitValid || !strings.Contains(out, "catalog v46.2") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
 		t.Fatalf("%d: %s", code, out)
 	}
 	if code, _ := runArgcheck(t, "", "--version-typo"); code != exitError {
@@ -189,27 +189,27 @@ func TestArgcheckVersion(t *testing.T) {
 }
 
 func TestArgcheckVerdictLineFirstWithSubproof(t *testing.T) {
-	const text = "1. If it rains, then it snows.\n| 2. Suppose it rains.\n| 3. Therefore, it snows. [1,2]\n4. Therefore, if it rains, then it snows. [2-3]"
+	const text = "1. If rain falls, then snow falls.\n| 2. Suppose rain falls.\n| 3. Therefore, snow falls. [1,2]\n4. Therefore, if rain falls, then snow falls. [2-3]"
 	code, out := runArgcheck(t, text)
-	if code != 0 || !strings.HasPrefix(out, "VALID  (") || !strings.Contains(out, "| 2. Suppose it rains.") {
+	if code != 0 || !strings.HasPrefix(out, "VALID  (") || !strings.Contains(out, "| 2. Suppose rain falls.") {
 		t.Fatalf("code=%d out=%q", code, out)
 	}
 }
 
 func TestArgcheckQuiet(t *testing.T) {
-	const valid = "1. If it rains, then it snows.\n| 2. Suppose it rains.\n| 3. Therefore, it snows. [1,2]\n4. Therefore, if it rains, then it snows. [2-3]"
+	const valid = "1. If rain falls, then snow falls.\n| 2. Suppose rain falls.\n| 3. Therefore, snow falls. [1,2]\n4. Therefore, if rain falls, then snow falls. [2-3]"
 	code, out := runArgcheck(t, valid, "--quiet")
 	if code != 0 || out != "VALID\n" {
 		t.Fatalf("valid: code=%d out=%q", code, out)
 	}
-	code, out = runArgcheck(t, "1. If it rains, then it snows.\n2. It snows.\n3. Therefore, it rains. [1,2]", "--quiet")
+	code, out = runArgcheck(t, "1. If rain falls, then snow falls.\n2. Snow falls.\n3. Therefore, rain falls. [1,2]", "--quiet")
 	if code != 1 || out != "NOT CERTIFIED\n" {
 		t.Fatalf("invalid: code=%d out=%q", code, out)
 	}
 }
 
 func TestArgcheckRemoteRequiresEnv(t *testing.T) {
-	const valid = "1. If it rains, then the street is wet.\n2. It rains.\n3. Therefore, the street is wet. [1,2]"
+	const valid = "1. If rain falls, then the street is wet.\n2. Rain falls.\n3. Therefore, the street is wet. [1,2]"
 	// Isolate from any user config file (~/.config/english-arg-validator/config, ~/.config/argcheck/config).
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("EAV_REMOTE_URL", "")
@@ -232,7 +232,7 @@ func TestArgcheckRemoteRequiresEnv(t *testing.T) {
 }
 
 func TestArgcheckRemoteAndBoth(t *testing.T) {
-	const valid = "1. If it rains, then the street is wet.\n2. It rains.\n3. Therefore, the street is wet. [1,2]"
+	const valid = "1. If rain falls, then the street is wet.\n2. Rain falls.\n3. Therefore, the street is wet. [1,2]"
 	flip := false
 	seenTool := ""
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

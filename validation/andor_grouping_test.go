@@ -8,6 +8,8 @@ import (
 
 func TestAndOrGroupingSyntax(t *testing.T) {
 	for _, tc := range []struct{ name, sentence, reason string }{
+		{"single comma conjunction", "Ann sings, and Bob dances or Cal reads", "mixes top-level and/or without explicit grouping"},
+		{"single comma disjunction", "Ann sings and Bob dances, or Cal reads", "mixes top-level and/or without explicit grouping"},
 		{"symbolic mixture", "A and B or C", "mixes top-level and/or without explicit grouping"},
 		{"empty parentheses", "() and Ann sings", "parentheses must contain a clause"},
 		{"and then or", "Ann sings and Bob dances or Cal reads", "mixes top-level and/or without explicit grouping"},
@@ -32,7 +34,7 @@ func TestAndOrGroupingSyntax(t *testing.T) {
 					text = "1. Ann sings.\n2. Therefore, " + tc.sentence + ". [1]"
 					line = 2
 				}
-				want := fmt.Sprintf("line %d sentence %q: %s; use either...or / both...and, a comma, or parentheses to group", line, tc.sentence+".", tc.reason)
+				want := fmt.Sprintf("line %d sentence %q: %s; use either...or / both...and, or parentheses to group", line, tc.sentence+".", tc.reason)
 				_, result := CheckEntailmentGate(text)
 				if result.Passed || result.Message != want {
 					t.Fatalf("got %v %q; want %q", result.Passed, result.Message, want)
@@ -56,20 +58,20 @@ func TestAndOrGroupingEntailment(t *testing.T) {
 		{"parenthesized disjunction no elimination", "(Ann sings and Bob dances) or Cal reads", "Ann sings", false},
 		{"parenthesized conjunction elimination", "Ann sings and (Bob dances or Cal reads)", "Ann sings", true},
 		{"comma disjunction no elimination", "Ann sings and Bob dances, or Cal reads", "Ann sings", false},
-		{"comma conjunction elimination", "Ann sings, and Bob dances or Cal reads", "Ann sings", true},
+		{"comma conjunction refused", "Ann sings, and Bob dances or Cal reads", "Ann sings", false},
 		{"either disjunction", "Either Ann sings and Bob dances, or Cal reads", "Ann sings", false},
-		{"both comma disjunction", "Both Ann sings and Bob dances, or Cal reads", "Ann sings", false},
+		{"parenthesized both disjunction", "(Both Ann sings and Bob dances) or Cal reads", "Ann sings", false},
 		{"either comma right conjunct", "Either Ann sings, or Bob dances and Cal reads", "Cal reads", false},
 		{"either scopes over the rest", "Either Ann sings or Bob dances and Cal reads", "Cal reads", false},
 		{"both scopes over the rest", "Both Ann sings and Bob dances or Cal reads", "Ann sings", true},
-		{"both comma left operand", "Both Ann sings and Bob dances, or Cal reads", "Both Ann sings and Bob dances, or Cal reads", true},
+		{"parenthesized both left operand", "(Both Ann sings and Bob dances) or Cal reads", "(Both Ann sings and Bob dances) or Cal reads", true},
 		{"either without comma", "Either Ann sings and Bob dances or Cal reads", "Ann sings", false},
 		{"grouped right conjunct", "Ann sings and (Bob dances or Cal reads)", "Bob dances or Cal reads", true},
 		{"nested parentheses", "((Ann sings and Bob dances)) and Cal reads", "Ann sings and Bob dances", true},
 		{"single conjunction elimination", "Ann sings and Bob dances", "Ann sings", true},
 		{"single disjunction no elimination", "Ann sings or Bob dances", "Ann sings", false},
 		{"conjunction list elimination", "Ann sings, Bob dances, and Cal reads", "Cal reads", true},
-		{"comma parentheses equivalence", "Ann sings and Bob dances, or Cal reads", "(Ann sings and Bob dances) or Cal reads", true},
+		{"either parentheses equivalence", "Either Ann sings and Bob dances or Cal reads", "(Ann sings and Bob dances) or Cal reads", true},
 		{"conjunction list", "Ann sings, Bob dances, and Cal reads", "Ann sings, Bob dances, and Cal reads", true},
 		{"disjunction list", "Ann sings, Bob dances, or Cal reads", "Ann sings, Bob dances, or Cal reads", true},
 	} {
@@ -86,7 +88,7 @@ func TestAndOrGroupingEntailment(t *testing.T) {
 }
 
 func TestAndOrGroupingDisjunctionElimination(t *testing.T) {
-	for _, premise := range []string{"(Ann sings and Bob dances) or Cal reads", "Ann sings and Bob dances, or Cal reads", "Either Ann sings and Bob dances, or Cal reads"} {
+	for _, premise := range []string{"(Ann sings and Bob dances) or Cal reads", "Either Ann sings and Bob dances or Cal reads", "Either Ann sings and Bob dances, or Cal reads"} {
 		text := "1. " + premise + ".\n2. It is not the case that Ann sings and Bob dances.\n3. Therefore, Cal reads. [1,2]"
 		_, result := CheckEntailmentGate(text)
 		if !result.Passed {
@@ -153,7 +155,7 @@ func TestAndOrGroupingDilemmaBoundaries(t *testing.T) {
 }
 
 func TestAndOrGroupingProofByCases(t *testing.T) {
-	for _, premise := range []string{"(Ann sings and Bob dances) or Cal reads", "Ann sings and Bob dances, or Cal reads", "Either Ann sings and Bob dances, or Cal reads"} {
+	for _, premise := range []string{"(Ann sings and Bob dances) or Cal reads", "Either Ann sings and Bob dances or Cal reads", "Either Ann sings and Bob dances, or Cal reads"} {
 		text := "1. " + premise + ".\n2. If Ann sings and Bob dances, then Dan sleeps.\n3. If Cal reads, then Dan sleeps.\n4. Therefore, Dan sleeps. [1,2,3]"
 		_, result := CheckEntailmentGate(text)
 		if !result.Passed {

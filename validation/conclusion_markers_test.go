@@ -10,7 +10,7 @@ import (
 func TestConclusionMarkersModusPonens(t *testing.T) {
 	for _, marker := range []string{"Therefore, ", "So, ", "Thus, ", "Hence, ", "Therefore ", "So ", "Thus ", "Hence ", "", "therefore, ", "so, ", "thus, ", "hence, ", "sO "} {
 		t.Run(marker, func(t *testing.T) {
-			input := "1. If it rains, then the ground is wet.\n2. It rains.\n3. " + marker + "the ground is wet. [1,2]"
+			input := "1. If the rain falls, then the ground is wet.\n2. The rain falls.\n3. " + marker + "the ground is wet. [1,2]"
 			arg, result := ParseNumberedArgument(input, numberedArgumentOptions{})
 			if !result.Passed {
 				t.Fatal(result.Message)
@@ -47,7 +47,7 @@ func TestConclusionMarkersRequireTerminalCitations(t *testing.T) {
 	for _, marker := range []string{"Therefore", "So", "Thus", "Hence", "so", "THUS"} {
 		for _, separator := range []string{", ", " "} {
 			for _, ending := range []string{".", ". [1, 2]", ". []", ". [1,2] trailing", ". [1,2]."} {
-				input := "1. If it rains, then the ground is wet.\n2. It rains.\n3. " + marker + separator + "the ground is wet" + ending
+				input := "1. If the rain falls, then the ground is wet.\n2. The rain falls.\n3. " + marker + separator + "the ground is wet" + ending
 				_, result := ParseNumberedArgument(input, numberedArgumentOptions{})
 				want := fmt.Sprintf("line 3 starts with %s, but does not have valid terminal citations", marker)
 				if result.Passed || !strings.HasPrefix(result.Message, want+": ") {
@@ -59,7 +59,7 @@ func TestConclusionMarkersRequireTerminalCitations(t *testing.T) {
 }
 
 func TestConclusionMarkersOrdinaryPremises(t *testing.T) {
-	for _, statement := range []string{"Sophie is tall", "It rains", "So many lamps are lit", "Thusly is a word", "Henceforth it rains", "The label says therefore, then stops"} {
+	for _, statement := range []string{"Sophie is tall", "The rain falls", "So many lamps are lit", "Thusly is a word", "Henceforth the rain falls", "The label says therefore, then stops"} {
 		step, result := parseNumberedArgumentLine("1. "+statement+".", 1)
 		if !result.Passed || step.Kind != numberedArgumentStepPremise || step.Statement != statement {
 			t.Errorf("%q: step=%+v result=%+v", statement, step, result)
@@ -69,7 +69,7 @@ func TestConclusionMarkersOrdinaryPremises(t *testing.T) {
 
 func TestConclusionMarkersScopedRanges(t *testing.T) {
 	for _, marker := range []string{"So, ", "thus ", ""} {
-		input := "1. If it rains, then the ground is wet.\n| 2. Suppose it rains.\n| 3. " + marker + "the ground is wet. [1,2]\n4. " + marker + "if it rains, then the ground is wet. [2-3]"
+		input := "1. If the rain falls, then the ground is wet.\n| 2. Suppose the rain falls.\n| 3. " + marker + "the ground is wet. [1,2]\n4. " + marker + "if the rain falls, then the ground is wet. [2-3]"
 		if valid, _, msg := checkRulesDocArgument(input); !valid {
 			t.Fatalf("%q: %s", marker, msg)
 		}

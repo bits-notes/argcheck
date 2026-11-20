@@ -14,7 +14,7 @@ func TestCatalogV25LiteralNames(t *testing.T) {
 		{"every y2 is such that name{y2} is identical to y2", v24Q("every", "$y2", &folFormula{op: "equal", terms: []string{"y2", "$y2"}})},
 		{"name{x} is very active", foAtom("is/very active", "x")},
 		{"name{x} is identical to name{x}", &folFormula{op: "equal", terms: []string{"x", "x"}}},
-		{`name{"claim that it rains"} is identical to name{"$slot0"}`, &folFormula{op: "equal", terms: []string{"claim that it rains", legacyFOLTerm("$slot0")}}},
+		{`name{"claim that the rain falls"} is identical to name{"$slot0"}`, &folFormula{op: "equal", terms: []string{"claim that the rain falls", legacyFOLTerm("$slot0")}}},
 	}
 	for _, tc := range cases {
 		f, err := parseFOL(tc.text)
@@ -36,8 +36,8 @@ func TestCatalogV25LiteralAtoms(t *testing.T) {
 	cases := []*folFormula{
 		foAtom("works with", "alice", "$x"),
 		foAtom("is/nearby is retracted", "claim that the store"),
-		foAtom("either it rains"),
-		foAtom("every hero is such that it rains"),
+		foAtom("either the rain falls"),
+		foAtom("every hero is such that the rain falls"),
 		foAtom(`literal ( and ) or "quoted" text`),
 		foAtom("is/red", "x"),
 		foAtom("p", "alice", "blair", "casey"),
@@ -55,8 +55,8 @@ func TestCatalogV25LiteralAtoms(t *testing.T) {
 			t.Fatalf("literal render %s: %v", rendered, roundErr)
 		}
 		if len(f.terms) == 0 {
-			c := fol("and", f, foAtom("it rains"))
-			text := "(" + folRenderLiteral(f) + ") and (it rains)"
+			c := fol("and", f, foAtom("rain falls"))
+			text := "(" + folRenderLiteral(f) + ") and (" + folRenderLiteral(foAtom("rain falls")) + ")"
 			got, err = parseFOL(text)
 			if err != nil || !folSame(c, got) {
 				t.Fatalf("compound %s: %v", text, err)
@@ -69,7 +69,7 @@ func TestCatalogV25LiteralAtoms(t *testing.T) {
 			t.Fatal("malformed literal accepted", text)
 		}
 	}
-	if folSame(foAtom("it rains"), foAtom("it rains", "alice")) {
+	if folSame(foAtom("rain falls"), foAtom("rain falls", "alice")) {
 		t.Fatal("arity collapsed")
 	}
 }
@@ -126,7 +126,7 @@ func TestCatalogV25LiteralFreshness(t *testing.T) {
 }
 
 func TestCatalogV25LiteralSignatureRoundTrip(t *testing.T) {
-	symbols := []string{"p", "is/very red", "works/with", "either it rains", `a ( b ) and c, "d"`, "every x is such that rain", "can't fly", "東京", "literal [1] and [x]", "a  b", "a\u2003b"}
+	symbols := []string{"p", "is/very red", "works/with", "either the rain falls", `a ( b ) and c, "d"`, "every x is such that rain", "can't fly", "東京", "literal [1] and [x]", "a  b", "a\u2003b"}
 	constants := []string{"x", "y2", "claim that the store is nearby", "either alice or blair", legacyFOLTerm("$slot0"), "alice", "can't", "東京"}
 	for i, symbol := range symbols {
 		for arity := 0; arity < 6; arity++ {

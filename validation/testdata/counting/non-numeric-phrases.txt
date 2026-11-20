@@ -12,15 +12,15 @@ class of the minimal components of X is exactly the class of components derivabl
 e cent while opening either box assures at least a dollar
 ior p terminates with prior probability at most p/q
 is of gender, feminine gender identity, at least in one sense of the term, is a psychologic
-ition that it produces or would produce at least as much net happiness as any alternative o
+ition that the action produces or would produce at least as much net happiness as any alternative o
 itional schema T fixes T's extension as exactly the true sentences of the object language
 itional schema X fixes X's extension as exactly the true sentences of the object language, 
 itional schema Y fixes Y's extension as exactly the true sentences of the object language, 
 n if Under X, feminine gender identity, at least in one sense of the term, is a psychologic
-rgument whose conclusion probability is at least that of its premise
-rgument whose conclusion probability is at least that of its premise, then X cannot lower all
-s one over alpha keeps its type I error at most alpha under any stopping rule
-s one over alpha keeps its type I error at most alpha under any stopping rule, then continuou
+rgument whose conclusion probability is at least that of the argument’s premise
+rgument whose conclusion probability is at least that of the argument’s premise, then X cannot lower all
+s one over alpha keeps the test’s type I error at most alpha under any stopping rule
+s one over alpha keeps the test’s type I error at most alpha under any stopping rule, then continuou
 tions and would produce true beliefs or at least inhibit false beliefs in relevant counterfactua
 tribution, an e-process has probability at most alpha of ever reaching one over alpha
 tribution, an e-process has probability at most alpha of ever reaching one over alpha, then a

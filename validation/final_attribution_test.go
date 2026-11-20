@@ -58,9 +58,9 @@ func TestFinalCounterfactualAttribution(t *testing.T) {
 }
 
 func TestFinalOpaqueLiteralScope(t *testing.T) {
-	for _, payload := range []string{`either it rains`, `perhaps Alice is red and Bob is blue`, `daily Alice sings or Bob dances`} {
+	for _, payload := range []string{`either the rain falls`, `perhaps Alice is red and Bob is blue`, `daily Alice sings or Bob dances`} {
 		atom := `atom{"` + payload + `"}`
-		text := "1. (" + atom + ") and (it rains).\n2. Therefore, " + atom + ". [1]"
+		text := "1. (" + atom + ") and (the rain falls).\n2. Therefore, " + atom + ". [1]"
 		if _, result := CheckEntailmentGate(text); !result.Passed {
 			t.Fatal(result.Message)
 		}
@@ -73,7 +73,7 @@ func TestFinalOpaqueLiteralScope(t *testing.T) {
 }
 
 func TestFinalCanonicalDistributionScope(t *testing.T) {
-	text := "1. It is the case both that it rains, and that either it snows or the street is wet.\n2. Therefore, either it is the case both that it rains, and that it snows or it is the case both that it rains, and that the street is wet. [1]"
+	text := "1. It is the case both that the rain falls, and that either the snow falls or the street is wet.\n2. Therefore, either it is the case both that the rain falls, and that the snow falls or it is the case both that the rain falls, and that the street is wet. [1]"
 	if _, result := CheckEntailmentGate(text); !result.Passed {
 		t.Fatal(result.Message)
 	}

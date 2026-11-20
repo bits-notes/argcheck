@@ -339,6 +339,17 @@ func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[i
 }
 
 func (policy strictRules) gateConclusionStepStrict(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	report := policy.gateConclusionStepUnisolated(c, steps)
+	if report.Passed && policy.round2TermFailure(c, steps, report) == "" {
+		if reason := policy.crossStatementFailure(c, steps); reason != "" {
+			report.Passed = false
+			report.NearestForm, report.Form, report.Mismatch = report.Form, "", reason
+		}
+	}
+	return report
+}
+
+func (policy strictRules) gateConclusionStepUnisolated(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	old := policy.gateConclusionStepV27(c, steps)
 	if old.Passed {
 		return old

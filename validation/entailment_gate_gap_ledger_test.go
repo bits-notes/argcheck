@@ -100,11 +100,11 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 2. Ben greets Cy.
 3. Therefore, Ada greets Cy. [1,2]`, ""},
 		// Intentionally rejected: contradictory or irrelevant premises must not certify arbitrary conclusions.
-		{"explosion", `1. it rains.
-2. it is not the case that it rains.
-3. Therefore, it snows. [1,2]`, ""},
+		{"explosion", `1. the rain falls.
+2. it is not the case that the rain falls.
+3. Therefore, the snow falls. [1,2]`, ""},
 		{"excluded middle from anything", `1. the street is wet.
-2. Therefore, either it rains or it is not the case that it rains. [1]`, ""},
+2. Therefore, either the rain falls or it is not the case that the rain falls. [1]`, ""},
 		{"conditional proof", fitchCP, "conditional proof"},
 		{"reductio", fitchRAA, "reductio"},
 		{"proof by cases", fitchCases, "proof by cases"},
@@ -112,72 +112,72 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 		{"existential elimination", fitchEE, "existential elimination"},
 		{"excluded middle without premises", fitchExcludedMiddle, "reductio"},
 		// Outside system T: S4 requires transitivity of accessibility.
-		{"S4 outside system T", `1. necessarily, it rains.
-2. Therefore, necessarily, necessarily, it rains. [1]`, ""},
+		{"S4 outside system T", `1. necessarily, the rain falls.
+2. Therefore, necessarily, necessarily, the rain falls. [1]`, ""},
 		// Accepted v15 additions.
 		{"identity reflexivity", `1. Socrates is a man.
 2. Therefore, Socrates is identical to Socrates. [1]`, "identity reflexivity"},
-		{"modal duality necessity forward", `1. it is not the case that possibly, it is not the case that it rains.
-2. Therefore, necessarily, it rains. [1]`, "modal duality"},
-		{"modal duality necessity reverse", `1. necessarily, it rains.
-2. Therefore, it is not the case that possibly, it is not the case that it rains. [1]`, "modal duality"},
-		{"modal duality possibility forward", `1. it is not the case that necessarily, it is not the case that it rains.
-2. Therefore, possibly, it rains. [1]`, "modal duality"},
-		{"modal duality possibility reverse", `1. possibly, it rains.
-2. Therefore, it is not the case that necessarily, it is not the case that it rains. [1]`, "modal duality"},
-		{"modal distribution K", `1. necessarily, if it rains, then it snows.
-2. Therefore, if necessarily, it rains, then necessarily, it snows. [1]`, "modal distribution"},
-		{"modal distribution possibility", `1. necessarily, if it rains, then it snows.
-2. Therefore, if possibly, it rains, then possibly, it snows. [1]`, "modal distribution"},
-		{"modal distribution conjunction forward", `1. necessarily, it rains and it snows.
-2. Therefore, it is the case both that necessarily, it rains, and that necessarily, it snows. [1]`, "modal distribution"},
-		{"modal distribution conjunction reverse", `1. it is the case both that necessarily, it rains, and that necessarily, it snows.
-2. Therefore, necessarily, it rains and it snows. [1]`, "modal distribution"},
+		{"modal duality necessity forward", `1. it is not the case that possibly, it is not the case that the rain falls.
+2. Therefore, necessarily, the rain falls. [1]`, "modal duality"},
+		{"modal duality necessity reverse", `1. necessarily, the rain falls.
+2. Therefore, it is not the case that possibly, it is not the case that the rain falls. [1]`, "modal duality"},
+		{"modal duality possibility forward", `1. it is not the case that necessarily, it is not the case that the rain falls.
+2. Therefore, possibly, the rain falls. [1]`, "modal duality"},
+		{"modal duality possibility reverse", `1. possibly, the rain falls.
+2. Therefore, it is not the case that necessarily, it is not the case that the rain falls. [1]`, "modal duality"},
+		{"modal distribution K", `1. necessarily, if the rain falls, then the snow falls.
+2. Therefore, if necessarily, the rain falls, then necessarily, the snow falls. [1]`, "modal distribution"},
+		{"modal distribution possibility", `1. necessarily, if the rain falls, then the snow falls.
+2. Therefore, if possibly, the rain falls, then possibly, the snow falls. [1]`, "modal distribution"},
+		{"modal distribution conjunction forward", `1. necessarily, the rain falls and the snow falls.
+2. Therefore, it is the case both that necessarily, the rain falls, and that necessarily, the snow falls. [1]`, "modal distribution"},
+		{"modal distribution conjunction reverse", `1. it is the case both that necessarily, the rain falls, and that necessarily, the snow falls.
+2. Therefore, necessarily, the rain falls and the snow falls. [1]`, "modal distribution"},
 		// Accepted v13 additions (formerly known gaps).
-		{"contraposition", `1. if it rains, then it snows.
-2. Therefore, if it is not the case that it snows, then it is not the case that it rains. [1]`, "contraposition"},
-		{"De Morgan and forward", `1. it is not the case that it is the case both that it rains, and that it snows.
-2. Therefore, either it is not the case that it rains or it is not the case that it snows. [1]`, "De Morgan"},
-		{"De Morgan and reverse", `1. either it is not the case that it rains or it is not the case that it snows.
-2. Therefore, it is not the case that it is the case both that it rains, and that it snows. [1]`, "De Morgan"},
-		{"De Morgan or forward", `1. it is not the case that either it rains or it snows.
-2. Therefore, it is the case both that it is not the case that it rains, and that it is not the case that it snows. [1]`, "De Morgan"},
-		{"De Morgan or reverse", `1. it is the case both that it is not the case that it rains, and that it is not the case that it snows.
-2. Therefore, it is not the case that either it rains or it snows. [1]`, "De Morgan"},
-		{"and commutation", `1. it rains and it snows.
-2. Therefore, it snows and it rains. [1]`, "commutation"},
-		{"or commutation", `1. either it rains or it snows.
-2. Therefore, either it snows or it rains. [1]`, "commutation"},
-		{"exportation", `1. if it rains and it snows, then the street is wet.
-2. Therefore, if it rains, then if it snows, then the street is wet. [1]`, "exportation"},
-		{"importation", `1. if it rains, then if it snows, then the street is wet.
-2. Therefore, if it rains and it snows, then the street is wet. [1]`, "importation"},
-		{"material implication forward", `1. if it rains, then it snows.
-2. Therefore, either it is not the case that it rains or it snows. [1]`, "material implication"},
-		{"material implication reverse", `1. either it is not the case that it rains or it snows.
-2. Therefore, if it rains, then it snows. [1]`, "material implication"},
-		{"and distribution", `1. it is the case both that it rains, and that either it snows or the street is wet.
-2. Therefore, either it rains and it snows or it rains and the street is wet. [1]`, "distribution"},
-		{"or distribution", `1. either it rains or it snows and the street is wet.
-2. Therefore, it is the case both that either it rains or it snows, and that either it rains or the street is wet. [1]`, "distribution"},
-		{"absorption", `1. either it rains or it rains and it snows.
-2. Therefore, it rains. [1]`, "absorption"},
-		{"conditional absorption", `1. if it rains, then it snows.
-2. Therefore, if it rains, then it rains and it snows. [1]`, "absorption"},
-		{"double negation introduction", `1. it rains.
-2. Therefore, it is not the case that it is not the case that it rains. [1]`, "double negation introduction"},
-		{"biconditional modus tollens", `1. it rains if and only if it snows.
-2. it is not the case that it snows.
-3. Therefore, it is not the case that it rains. [1,2]`, "biconditional modus tollens"},
-		{"biconditional chaining", `1. it rains if and only if it snows.
-2. it snows if and only if the street is wet.
-3. Therefore, it rains if and only if the street is wet. [1,2]`, "biconditional chaining"},
-		{"biconditional commutation", `1. it rains if and only if it snows.
-2. Therefore, it snows if and only if it rains. [1]`, "biconditional commutation"},
-		{"negated conditional antecedent", `1. it is not the case that if it rains, then it snows.
-2. Therefore, it rains. [1]`, "negated conditional"},
-		{"negated conditional negated consequent", `1. it is not the case that if it rains, then it snows.
-2. Therefore, it is not the case that it snows. [1]`, "negated conditional"},
+		{"contraposition", `1. if the rain falls, then the snow falls.
+2. Therefore, if it is not the case that the snow falls, then it is not the case that the rain falls. [1]`, "contraposition"},
+		{"De Morgan and forward", `1. it is not the case that it is the case both that the rain falls, and that the snow falls.
+2. Therefore, either it is not the case that the rain falls or it is not the case that the snow falls. [1]`, "De Morgan"},
+		{"De Morgan and reverse", `1. either it is not the case that the rain falls or it is not the case that the snow falls.
+2. Therefore, it is not the case that it is the case both that the rain falls, and that the snow falls. [1]`, "De Morgan"},
+		{"De Morgan or forward", `1. it is not the case that either the rain falls or the snow falls.
+2. Therefore, it is the case both that it is not the case that the rain falls, and that it is not the case that the snow falls. [1]`, "De Morgan"},
+		{"De Morgan or reverse", `1. it is the case both that it is not the case that the rain falls, and that it is not the case that the snow falls.
+2. Therefore, it is not the case that either the rain falls or the snow falls. [1]`, "De Morgan"},
+		{"and commutation", `1. the rain falls and the snow falls.
+2. Therefore, the snow falls and the rain falls. [1]`, "commutation"},
+		{"or commutation", `1. either the rain falls or the snow falls.
+2. Therefore, either the snow falls or the rain falls. [1]`, "commutation"},
+		{"exportation", `1. if the rain falls and the snow falls, then the street is wet.
+2. Therefore, if the rain falls, then if the snow falls, then the street is wet. [1]`, "exportation"},
+		{"importation", `1. if the rain falls, then if the snow falls, then the street is wet.
+2. Therefore, if the rain falls and the snow falls, then the street is wet. [1]`, "importation"},
+		{"material implication forward", `1. if the rain falls, then the snow falls.
+2. Therefore, either it is not the case that the rain falls or the snow falls. [1]`, "material implication"},
+		{"material implication reverse", `1. either it is not the case that the rain falls or the snow falls.
+2. Therefore, if the rain falls, then the snow falls. [1]`, "material implication"},
+		{"and distribution", `1. it is the case both that the rain falls, and that either the snow falls or the street is wet.
+2. Therefore, either the rain falls and the snow falls or the rain falls and the street is wet. [1]`, "distribution"},
+		{"or distribution", `1. either the rain falls or the snow falls and the street is wet.
+2. Therefore, it is the case both that either the rain falls or the snow falls, and that either the rain falls or the street is wet. [1]`, "distribution"},
+		{"absorption", `1. either the rain falls or the rain falls and the snow falls.
+2. Therefore, the rain falls. [1]`, "absorption"},
+		{"conditional absorption", `1. if the rain falls, then the snow falls.
+2. Therefore, if the rain falls, then the rain falls and the snow falls. [1]`, "absorption"},
+		{"double negation introduction", `1. the rain falls.
+2. Therefore, it is not the case that it is not the case that the rain falls. [1]`, "double negation introduction"},
+		{"biconditional modus tollens", `1. the rain falls if and only if the snow falls.
+2. it is not the case that the snow falls.
+3. Therefore, it is not the case that the rain falls. [1,2]`, "biconditional modus tollens"},
+		{"biconditional chaining", `1. the rain falls if and only if the snow falls.
+2. the snow falls if and only if the street is wet.
+3. Therefore, the rain falls if and only if the street is wet. [1,2]`, "biconditional chaining"},
+		{"biconditional commutation", `1. the rain falls if and only if the snow falls.
+2. Therefore, the snow falls if and only if the rain falls. [1]`, "biconditional commutation"},
+		{"negated conditional antecedent", `1. it is not the case that if the rain falls, then the snow falls.
+2. Therefore, the rain falls. [1]`, "negated conditional"},
+		{"negated conditional negated consequent", `1. it is not the case that if the rain falls, then the snow falls.
+2. Therefore, it is not the case that the snow falls. [1]`, "negated conditional"},
 		{"identity symmetry", `1. Ada is identical to Ben.
 2. Therefore, Ben is identical to Ada. [1]`, "identity symmetry"},
 		{"quantifier negation universal", `1. it is not the case that every man is mortal.
@@ -191,44 +191,44 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 		{"universal modus tollens", `1. every man is mortal.
 2. it is not the case that Zeus is mortal.
 3. Therefore, it is not the case that Zeus is a man. [1,2]`, "universal modus tollens"},
-		{"necessity implies possibility", `1. necessarily, it rains.
-2. Therefore, possibly, it rains. [1]`, "possibility introduction"},
+		{"necessity implies possibility", `1. necessarily, the rain falls.
+2. Therefore, possibly, the rain falls. [1]`, "possibility introduction"},
 		// Currently accepted forms, across the major catalog families.
-		{"modus ponens", `1. if it rains, then it snows.
-2. it rains.
-3. Therefore, it snows. [1,2]`, "modus ponens"},
-		{"modus tollens", `1. if it rains, then it snows.
-2. it is not the case that it snows.
-3. Therefore, it is not the case that it rains. [1,2]`, "modus tollens"},
-		{"hypothetical syllogism", `1. if it rains, then it snows.
-2. if it snows, then the street is wet.
-3. Therefore, if it rains, then the street is wet. [1,2]`, "hypothetical syllogism"},
-		{"conjunctive modus ponens", `1. if it rains and it snows, then the street is wet.
-2. it rains.
-3. it snows.
+		{"modus ponens", `1. if the rain falls, then the snow falls.
+2. the rain falls.
+3. Therefore, the snow falls. [1,2]`, "modus ponens"},
+		{"modus tollens", `1. if the rain falls, then the snow falls.
+2. it is not the case that the snow falls.
+3. Therefore, it is not the case that the rain falls. [1,2]`, "modus tollens"},
+		{"hypothetical syllogism", `1. if the rain falls, then the snow falls.
+2. if the snow falls, then the street is wet.
+3. Therefore, if the rain falls, then the street is wet. [1,2]`, "hypothetical syllogism"},
+		{"conjunctive modus ponens", `1. if the rain falls and the snow falls, then the street is wet.
+2. the rain falls.
+3. the snow falls.
 4. Therefore, the street is wet. [1,2,3]`, "conjunctive modus ponens"},
-		{"biconditional introduction", `1. if it rains, then it snows.
-2. if it snows, then it rains.
-3. Therefore, it rains if and only if it snows. [1,2]`, "biconditional introduction"},
-		{"biconditional elimination", `1. it rains if and only if it snows.
-2. Therefore, if it rains, then it snows. [1]`, "biconditional elimination"},
-		{"biconditional modus ponens", `1. it rains if and only if it snows.
-2. it rains.
-3. Therefore, it snows. [1,2]`, "biconditional modus ponens"},
-		{"conjunction introduction", `1. it rains.
-2. it snows.
-3. Therefore, it rains and it snows. [1,2]`, "conjunction introduction"},
-		{"conjunction elimination", `1. it rains and it snows.
-2. Therefore, it rains. [1]`, "conjunction elimination"},
-		{"disjunction introduction", `1. it rains.
-2. Therefore, either it rains or it snows. [1]`, "disjunction introduction"},
-		{"disjunctive syllogism", `1. either it rains or it snows.
-2. it is not the case that it rains.
-3. Therefore, it snows. [1,2]`, "disjunctive syllogism"},
-		{"double negation elimination", `1. it is not the case that it is not the case that it rains.
-2. Therefore, it rains. [1]`, "double negation"},
-		{"self entailment", `1. it rains.
-2. Therefore, it rains. [1]`, "self-entailment"},
+		{"biconditional introduction", `1. if the rain falls, then the snow falls.
+2. if the snow falls, then the rain falls.
+3. Therefore, the rain falls if and only if the snow falls. [1,2]`, "biconditional introduction"},
+		{"biconditional elimination", `1. the rain falls if and only if the snow falls.
+2. Therefore, if the rain falls, then the snow falls. [1]`, "biconditional elimination"},
+		{"biconditional modus ponens", `1. the rain falls if and only if the snow falls.
+2. the rain falls.
+3. Therefore, the snow falls. [1,2]`, "biconditional modus ponens"},
+		{"conjunction introduction", `1. the rain falls.
+2. the snow falls.
+3. Therefore, both the rain falls and the snow falls. [1,2]`, "conjunction introduction"},
+		{"conjunction elimination", `1. both the rain falls and the snow falls.
+2. Therefore, the rain falls. [1]`, "conjunction elimination"},
+		{"disjunction introduction", `1. the rain falls.
+2. Therefore, either the rain falls or the snow falls. [1]`, "disjunction introduction"},
+		{"disjunctive syllogism", `1. either the rain falls or the snow falls.
+2. it is not the case that the rain falls.
+3. Therefore, the snow falls. [1,2]`, "disjunctive syllogism"},
+		{"double negation elimination", `1. it is not the case that it is not the case that the rain falls.
+2. Therefore, the rain falls. [1]`, "double negation"},
+		{"self entailment", `1. the rain falls.
+2. Therefore, the rain falls. [1]`, "self-entailment"},
 		{"identity transitivity", `1. Zorvan is identical to Ben.
 2. Ben is identical to Cy.
 3. Therefore, Zorvan is identical to Cy. [1,2]`, "identity transitivity"},
@@ -240,23 +240,23 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 3. Therefore, every man is vulnerable. [1,2]`, "universal syllogism"},
 		{"existential generalization", `1. Zorvan is mortal.
 2. Therefore, something is mortal. [1]`, "existential generalization"},
-		{"necessity elimination", `1. necessarily, it rains.
-2. Therefore, it rains. [1]`, "necessity elimination"},
+		{"necessity elimination", `1. necessarily, the rain falls.
+2. Therefore, the rain falls. [1]`, "necessity elimination"},
 		{"schematic instantiation", `1. if X sings, then X dances.
 2. Zorvan sings.
 3. Therefore, Zorvan dances. [1,2]`, "schematic instantiation"},
-		{"simple dilemma", `1. either it rains or it snows.
-2. if it rains, then the street is wet.
-3. if it snows, then the street is wet.
+		{"simple dilemma", `1. either the rain falls or the snow falls.
+2. if the rain falls, then the street is wet.
+3. if the snow falls, then the street is wet.
 4. Therefore, the street is wet. [1,2,3]`, "simple dilemma"},
-		{"constructive dilemma", `1. either it rains or it snows.
-2. if it rains, then the street is wet.
-3. if it snows, then it rains.
-4. Therefore, either the street is wet or it rains. [1,2,3]`, "constructive dilemma"},
-		{"destructive dilemma", `1. if it rains, then it snows.
-2. if it snows, then the street is wet.
-3. either it is not the case that it snows or it is not the case that the street is wet.
-4. Therefore, either it is not the case that it rains or it is not the case that it snows. [1,2,3]`, "destructive dilemma"},
+		{"constructive dilemma", `1. either the rain falls or the snow falls.
+2. if the rain falls, then the street is wet.
+3. if the snow falls, then the rain falls.
+4. Therefore, either the street is wet or the rain falls. [1,2,3]`, "constructive dilemma"},
+		{"destructive dilemma", `1. if the rain falls, then the snow falls.
+2. if the snow falls, then the street is wet.
+3. either it is not the case that the snow falls or it is not the case that the street is wet.
+4. Therefore, either it is not the case that the rain falls or it is not the case that the snow falls. [1,2,3]`, "destructive dilemma"},
 	}
 	tests = append(tests, catalogV16GapCases...)
 	for _, tc := range append(append([]v20GateCase{}, v20AcceptedCases[:9]...), v20KeptGaps...) {

@@ -197,7 +197,7 @@ func TestStructuralTermRules(t *testing.T) {
 		assertStrictRefusal(t, tc.text, tc.rule, tc.hint)
 	}
 	for _, text := range []string{
-		"1. The ground is wet if it rains.\n2. It rains.\n3. Therefore, the ground is wet. [1,2]",
+		"1. The ground is wet if the rain falls.\n2. The rain falls.\n3. Therefore, the ground is wet. [1,2]",
 	} {
 		if _, r := CheckEntailmentGate(text); !r.Passed {
 			t.Errorf("control refused: %s: %s", text, r.Message)

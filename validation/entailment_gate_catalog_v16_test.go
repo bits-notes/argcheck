@@ -8,8 +8,8 @@ import (
 // Included in the central gap ledger so accepted and refused boundaries remain
 // visible there, rather than only in this version's regression tests.
 var catalogV16GapCases = []struct{ name, argument, wantForm string }{
-	{"v16 compound biconditional elimination", `1. (If it rains, then the street is wet) if and only if (The city is prepared).
-2. Therefore, If If it rains, then the street is wet, then The city is prepared. [1]`, "biconditional elimination"},
+	{"v16 compound biconditional elimination", `1. (If the rain falls, then the street is wet) if and only if (The city is prepared).
+2. Therefore, If If the rain falls, then the street is wet, then The city is prepared. [1]`, "biconditional elimination"},
 	{"v16 embedded copula existential introduction", `1. The claim that the store is nearby is false.
 2. The claim that the store is nearby is a claim.
 3. Therefore, Some claim is false. [1,2]`, "existential introduction"},
@@ -80,14 +80,14 @@ var catalogV16GapCases = []struct{ name, argument, wantForm string }{
 	{"v16 whole term possessive not entire object", `1. The claim that the store is nearby is identical to Ngo's claim.
 2. Ada repeats The claim that the store is nearby's wording.
 3. Therefore, Ada repeats Ngo's claim's wording. [1,2]`, ""},
-	{"v16 lexical drift", `1. (If it rains, then the street is wet) if and only if (The city is prepared).
+	{"v16 lexical drift", `1. (If the rain falls, then the street is wet) if and only if (The city is prepared).
 2. The city is prepared.
-3. Therefore, If it rains, then the road is wet. [1,2]`, ""},
-	{"v16 unscaffolded conditional remains outer", `1. If it rains, then the street is wet if and only if the city is prepared.
-2. it rains.
+3. Therefore, If the rain falls, then the road is wet. [1,2]`, ""},
+	{"v16 unscaffolded conditional remains outer", `1. If the rain falls, then the street is wet if and only if the city is prepared.
+2. the rain falls.
 3. Therefore, the street is wet if and only if the city is prepared. [1,2]`, "modus ponens"},
-	{"v16 unscaffolded left conditional not outer iff", `1. If it rains, then the street is wet if and only if the city is prepared.
-2. If it rains, then the street is wet.
+	{"v16 unscaffolded left conditional not outer iff", `1. If the rain falls, then the street is wet if and only if the city is prepared.
+2. If the rain falls, then the street is wet.
 3. Therefore, The city is prepared. [1,2]`, ""},
 	{"v16 should stays opaque", `1. The claim that the store is nearby is identical to Ngo's claim.
 2. The claim that the store is nearby should be retracted.
@@ -131,14 +131,14 @@ func TestCatalogV16BiconditionalCompoundSides(t *testing.T) {
 	neg := func(p string) string { return "It is not the case that " + p }
 	cond := func(p, q string) string { return "If " + p + ", then " + q }
 	compounds := []string{
-		"If it rains, then the street is wet",
-		"It is the case both that it rains, and that it snows",
-		"Either it rains or it snows",
-		"It is not the case that it rains",
-		"Necessarily, it rains",
-		"Possibly, it rains",
-		"It rains if and only if it snows",
-		iff("If it rains, then it snows", "The street is wet"),
+		"If the rain falls, then the street is wet",
+		"It is the case both that the rain falls, and that the snow falls",
+		"Either the rain falls or the snow falls",
+		"It is not the case that the rain falls",
+		"Necessarily, the rain falls",
+		"Possibly, the rain falls",
+		"The rain falls if and only if the snow falls",
+		iff("If the rain falls, then the snow falls", "The street is wet"),
 		"Every cat is mortal",
 	}
 	for i, p := range compounds {
@@ -189,12 +189,12 @@ func TestCatalogV16BiconditionalCompoundSides(t *testing.T) {
 
 func TestCatalogV16MalformedScaffold(t *testing.T) {
 	for _, s := range []string{
-		"() if and only if (it rains)",
-		"(it rains) if and only if ()",
-		"(it rains if and only if (it snows)",
-		"(it rains) if and only if (it snows))",
-		"(it rains) if and only if (it snows) and it hails",
-		"It is the case that () if and only if (it rains)",
+		"() if and only if (the rain falls)",
+		"(the rain falls) if and only if ()",
+		"(the rain falls if and only if (the snow falls)",
+		"(the rain falls) if and only if (the snow falls))",
+		"(the rain falls) if and only if (the snow falls) and the hail falls",
+		"It is the case that () if and only if (the rain falls)",
 	} {
 		if got := biconditionalCandidates(s); len(got) != 0 {
 			t.Errorf("malformed scaffold parsed: %s: %+v", s, got)

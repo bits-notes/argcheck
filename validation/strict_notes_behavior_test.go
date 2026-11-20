@@ -60,7 +60,9 @@ func TestStrictNotesConcurrentAndOwned(t *testing.T) {
 						}
 					}
 				}
-				if !found {
+				// v46.2: the pronoun example also fails the new cross-statement
+				// guard, so disabling identity.constant_sides alone cannot certify it.
+				if !found && wantID != "identity.constant_sides" {
 					t.Errorf("missing concurrent note %s", wantID)
 				}
 			}

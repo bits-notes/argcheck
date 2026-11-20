@@ -8,7 +8,7 @@
 8. Smith does not know proposition (e) in Case I.
 9. If X is a proposition and Y is a person and Y's belief in X satisfies all three conditions in definition (a) and Y does not know X in Case I, then at least one belief satisfies all three conditions in definition (a) without being knowledge.
 10. Therefore, at least one belief satisfies all three conditions in definition (a) without being knowledge. [1,2,7,8,9]
-11. Definition (a) states that every belief satisfying its three conditions is knowledge.
+11. Definition (a) states that every belief satisfying the three conditions of that definition is knowledge.
 12. Definition (a) is a definition of knowledge.
-13. If X is a definition of knowledge and X states that every belief satisfying its three conditions is knowledge and at least one belief satisfies all three conditions in X without being knowledge, then X does not state a sufficient condition for knowledge.
+13. If X is a definition of knowledge and X states that every belief satisfying the three conditions of that definition is knowledge and at least one belief satisfies all three conditions in X without being knowledge, then X does not state a sufficient condition for knowledge.
 14. Therefore, definition (a) does not state a sufficient condition for knowledge. [10,11,12,13]

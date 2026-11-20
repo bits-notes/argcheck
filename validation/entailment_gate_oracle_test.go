@@ -69,7 +69,7 @@ func (f *gateOracleFormula) english() (string, bool) {
 		return "", false
 	}
 	if f.op == "atom" {
-		return []string{"it rains", "it snows", "the street is wet"}[f.atom], true
+		return []string{"Ann sings", "Bob dances", "Cal reads"}[f.atom], true
 	}
 	left, ok := f.left.english()
 	if !ok {
@@ -336,7 +336,7 @@ func TestEntailmentGateTruthTableOracle(t *testing.T) {
 		if report.Passed {
 			byForm[report.Steps[0].Form]++
 			if counterexample != -1 {
-				t.Errorf("UNSOUND form=%q valuation=(rains=%t, snows=%t, wet=%t)\n%s", report.Steps[0].Form,
+				t.Errorf("UNSOUND form=%q valuation=(Ann sings=%t, Bob dances=%t, Cal reads=%t)\n%s", report.Steps[0].Form,
 					counterexample&1 != 0, counterexample&2 != 0, counterexample&4 != 0, argument)
 			}
 		}
@@ -524,9 +524,9 @@ type gateModalOracleFormula struct {
 func (f *gateModalOracleFormula) english() string {
 	switch f.op {
 	case "p":
-		return "it rains"
+		return "the rain falls"
 	case "q":
-		return "it snows"
+		return "the snow falls"
 	case "not":
 		return "it is not the case that " + f.left.english()
 	case "box":

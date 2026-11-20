@@ -25,3 +25,11 @@ func TestFinalDocumentedLimits(t *testing.T) {
 		})
 	}
 }
+
+// Meaning is fixed across statements; equivocation is a fidelity/truth issue.
+func TestFinalDocumentedLimitsBankMeaning(t *testing.T) {
+	_, result := CheckEntailmentGate("1. Every bank is regulated.\n2. The river edge is a bank.\n3. Therefore, the river edge is regulated. [1,2]")
+	if !result.Passed {
+		t.Fatal(result.Message)
+	}
+}

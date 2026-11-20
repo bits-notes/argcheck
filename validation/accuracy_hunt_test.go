@@ -304,8 +304,8 @@ func TestAccuracyNearbyControls(t *testing.T) {
 		name, argument string
 		valid          bool
 	}{
-		{"wet if rain", "1. The ground is wet if it rains.\n2. It rains.\n3. Therefore, The ground is wet. [1,2]", true},
-		{"dies if poison", "1. The philosopher dies if he drinks the hemlock.\n2. He drinks the hemlock.\n3. Therefore, The philosopher dies. [1,2]", true},
+		{"wet if rain", "1. The ground is wet if the rain falls.\n2. The rain falls.\n3. Therefore, The ground is wet. [1,2]", true},
+		{"dies if poison", "1. The philosopher dies if the philosopher drinks the hemlock.\n2. The philosopher drinks the hemlock.\n3. Therefore, The philosopher dies. [1,2]", true},
 		{"atomic attitude MP", "1. If the light is on, then the observer believes Alpha is red.\n2. The light is on.\n3. Therefore, The observer believes Alpha is red. [1,2]", true},
 		{"Oxford comma", "1. Alpha eats, shoots, and leaves.\n2. Therefore, Alpha eats, shoots and leaves. [1]", true},
 		{"reported identity", "1. Alpha is identical to Beta.\n2. Alpha is reportedly red.\n3. Therefore, Beta is reportedly red. [1,2]", false},

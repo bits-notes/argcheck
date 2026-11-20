@@ -260,7 +260,7 @@ func TestCatalogV25LegacyCoverage(t *testing.T) {
 		// transparency bug: the numbered parser must now reject it.
 		if row.Sentence == "If C and C or D, then E" {
 			result := validateStatementGrouping(row.Sentence, 1)
-			want := `line 1 sentence "If C and C or D, then E.": mixes top-level and/or without explicit grouping; use either...or / both...and, a comma, or parentheses to group`
+			want := `line 1 sentence "If C and C or D, then E.": mixes top-level and/or without explicit grouping; use either...or / both...and, or parentheses to group`
 			if result.Passed || result.Message != want {
 				t.Fatalf("mixed antecedent: %s", result.Message)
 			}

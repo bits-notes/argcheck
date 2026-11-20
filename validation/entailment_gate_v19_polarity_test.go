@@ -51,8 +51,8 @@ func TestCounterfactualMixedMaterialRules(t *testing.T) {
 5. Therefore, it is not the case that if the match had been struck, then the match would have lit. [2-4]`, "reductio", ""},
 
 		{"schematic nested if with omitted then", `1. The principle that if help is possible, then we should help takes no account of distance.
-2. If X takes no account of distance, then if X were acted upon, even in its qualified form, our world would be changed.
-3. Therefore, if the principle that if help is possible, then we should help were acted upon, even in its qualified form, our world would be changed. [1,2]`, "schematic instantiation", ""},
+2. If X takes no account of distance, then if X were acted upon, even in qualified form, our world would be changed.
+3. Therefore, if the principle that if help is possible, then we should help were acted upon, even in qualified form, our world would be changed. [1,2]`, "schematic instantiation", ""},
 
 		{"opaque schematic cf consequent", `1. Alice is ready.
 2. If X is ready, then if X had been struck, then X would have lit.

@@ -163,11 +163,6 @@ func (policy strictRules) operatorCoordinationAmbiguous(s string) bool {
 	if len(bs) == 0 {
 		return false
 	}
-	if bs[0].start > 0 && s[bs[0].start-1] == ',' {
-		// A comma before the connective makes it the main one (v32.0), so
-		// the operator's scope ends at the comma.
-		return false
-	}
 	first := strings.TrimSpace(s[:bs[0].start])
 	lower := strings.ToLower(first)
 	if strings.HasPrefix(lower, "both ") || strings.HasPrefix(lower, "either ") || strings.HasPrefix(lower, "(") {

@@ -7,13 +7,13 @@ func TestCatalogV25LexicalOracle(t *testing.T) {
 		text string
 		want *folFormula
 	}{
-		{"It rains", foAtom("it rains")},
+		{"Rain falls", foAtom("rain falls")},
 		{"Snow melts", foAtom("snow melts")},
-		{"If it snows, then it rains", fol("implies", foAtom("it snows"), foAtom("it rains"))},
+		{"If snow falls, then rain falls", fol("implies", foAtom("snow falls"), foAtom("rain falls"))},
 		{"The FTC is active", foAtom("is/active", "ftc")},
 		{"Japan's ministry is very active", foAtom("is/very active", "japan's ministry")},
 		{"Alice sends blair into casey", foAtom("sends/into", "alice", "blair", "casey")},
-		{"Every x is such that (x is very active) and (it rains)", v24Q("every", "$x", fol("and", foAtom("is/very active", "$x"), foAtom("it rains")))},
+		{"Every x is such that (x is very active) and (atom{\"rain falls\"})", v24Q("every", "$x", fol("and", foAtom("is/very active", "$x"), foAtom("rain falls")))},
 	}
 	for _, tc := range cases {
 		t.Run(tc.text, func(t *testing.T) {
@@ -39,10 +39,10 @@ func TestCatalogV25LexicalOracle(t *testing.T) {
 		text  string
 		valid bool
 	}{
-		{"If it rains, then it rains", true},
-		{"Either it rains or it is not the case that it rains", true},
-		{"If it rains, then snow melts", false},
-		{"It rains and it is not the case that it rains", false},
+		{"If the rain falls, then the rain falls", true},
+		{"Either the rain falls or it is not the case that the rain falls", true},
+		{"If the rain falls, then snow melts", false},
+		{"The rain falls and it is not the case that the rain falls", false},
 	} {
 		fs, why := legacyFOLReadings(tc.text)
 		if why != "" || len(fs) != 1 {
@@ -70,12 +70,12 @@ func TestCatalogV25LexicalOracle(t *testing.T) {
 }
 
 func TestCatalogV25ZeroPlaceRules(t *testing.T) {
-	v24Check(t, "1. Every x is such that it rains.\n2. Therefore, it rains. [1]")
+	v24Check(t, "1. Every x is such that rain falls.\n2. Therefore, rain falls. [1]")
 	// explicit-variable FOL (no note id): v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
 	assertStrictRefusal(t, "1. It rains.\n2. Therefore, some x is such that it rains. [1]", "explicit_variable_fol", "bind variables inside is such that")
 	// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
 	assertStrictRefusal(t, "1. Every x is such that (x is red) and (snow melts).\n2. Therefore, (alice is red) and (snow melts). [1]\n3. Therefore, snow melts. [2]", "scope.clause_start", "move the operator into each clause")
-	for _, text := range []string{"Every animal sleeps", "Every cat purrs", "either it rains"} {
+	for _, text := range []string{"Every animal sleeps", "Every cat purrs", "either the rain falls"} {
 		fs, why := legacyFOLReadings(text)
 		if why != "" || len(fs) != 1 || len(fs[0].terms) != 0 {
 			t.Fatal(text, why)

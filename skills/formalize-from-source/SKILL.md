@@ -68,8 +68,8 @@ Bad (the supplied rule re-joins its premises):
 ```text
 1. Most residents rely on the river for drinking water.
 2. The council has approved a chemical plant upstream.
-3. If most residents rely on the river for drinking water and the council has approved a chemical plant upstream, then most residents rely on the river for drinking water and a chemical plant has been approved upstream of it.   (supplied)
-4. Therefore, most residents rely on the river for drinking water and a chemical plant has been approved upstream of it. [1,2,3]
+3. If most residents rely on the river for drinking water and the council has approved a chemical plant upstream, then most residents rely on the river for drinking water and a chemical plant has been approved upstream of the river.   (supplied)
+4. Therefore, most residents rely on the river for drinking water and a chemical plant has been approved upstream of the river. [1,2,3]
 ```
 
 Good (the supplied rule states why the facts matter, as the passage implies):

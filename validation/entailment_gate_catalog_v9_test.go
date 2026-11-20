@@ -23,7 +23,7 @@ func TestCatalogV9SurfaceForms(t *testing.T) {
 		{"when", "1. When interest rates rise, mortgages become more expensive.\n2. Interest rates rise.\n3. Therefore, mortgages become more expensive. [1,2]", true},
 		{"whenever", "1. Whenever interest rates rise, mortgages become more expensive.\n2. Interest rates rise.\n3. Therefore, mortgages become more expensive. [1,2]", true},
 		{"final if", "1. The lamp is lit if the switch is up.\n2. The switch is up.\n3. Therefore, the lamp is lit. [1,2]", true},
-		{"final if rain", "1. The ground is wet if it rains.\n2. It rains.\n3. Therefore, the ground is wet. [1,2]", true},
+		{"final if rain", "1. The ground is wet if the rain falls.\n2. The rain falls.\n3. Therefore, the ground is wet. [1,2]", true},
 		{"final if alarm", "1. The alarm sounds if the door is open.\n2. The door is open.\n3. Therefore, the alarm sounds. [1,2]", true},
 		{"symbolic final if", "1. B if A.\n2. A.\n3. Therefore, B. [1,2]", true},
 		{"conditional identity", "1. When the switch is up, the lamp is lit.\n2. Therefore, if the switch is up, then the lamp is lit. [1]", true},
@@ -74,11 +74,11 @@ func TestCatalogV9Contractions(t *testing.T) {
 			case "is not", "was not":
 				complement = "ready"
 			case "are not", "were not":
-				subject, complement = "They", "ready"
+				subject, complement = "The students", "ready"
 			case "do not":
-				subject = "They"
+				subject = "The students"
 			case "have not":
-				subject, complement = "They", "agreed"
+				subject, complement = "The students", "agreed"
 			case "has not", "had not":
 				complement = "agreed"
 			}

@@ -93,9 +93,9 @@ func TestCatalogV28Schematic(t *testing.T) {
 }
 
 func TestCatalogV28PremiseOrder(t *testing.T) {
-	v28Check(t, "1. It rains.\n2. Therefore, it rains. [1]\n3. If it rains, then it pours.\n4. Therefore, it pours. [2,3]", true)
-	v28Check(t, "1. It rains.\n2. Therefore, it pours. [1,3]\n3. If it rains, then it pours.\n4. Therefore, it pours. [2]", false)
-	v28Check(t, "| 1. Suppose it rains.\n| 2. Therefore, it rains. [1]\n3. Therefore, if it rains, then it rains. [1-2]\n4. It rains.\n5. Therefore, it rains. [3,4]", true)
+	v28Check(t, "1. The rain falls.\n2. Therefore, the rain falls. [1]\n3. If the rain falls, then the rain pours.\n4. Therefore, the rain pours. [2,3]", true)
+	v28Check(t, "1. The rain falls.\n2. Therefore, the rain pours. [1,3]\n3. If the rain falls, then the rain pours.\n4. Therefore, the rain pours. [2]", false)
+	v28Check(t, "| 1. Suppose the rain falls.\n| 2. Therefore, the rain falls. [1]\n3. Therefore, if the rain falls, then the rain falls. [1-2]\n4. The rain falls.\n5. Therefore, the rain falls. [3,4]", true)
 }
 
 func TestCatalogV28IdentityOracle(t *testing.T) {
