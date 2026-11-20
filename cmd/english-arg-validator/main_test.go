@@ -64,7 +64,7 @@ func TestArgcheckForms(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 	for _, name := range []string{
-		"entailment gate catalog v46.4", "modus tollens", "destructive dilemma",
+		"entailment gate catalog v46.5", "modus tollens", "destructive dilemma",
 		"contraposition", "De Morgan", "commutation", "exportation", "importation",
 		"material implication", "distribution", "absorption", "double negation introduction",
 		"biconditional modus tollens", "biconditional chaining", "biconditional commutation",
@@ -176,7 +176,7 @@ func TestArgcheckVersion(t *testing.T) {
 	t.Cleanup(func() { commit = old })
 	commit = "v28-test-commit"
 	code, out := runArgcheck(t, "", "--version")
-	if code != exitValid || !strings.Contains(out, "catalog v46.4") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
+	if code != exitValid || !strings.Contains(out, "catalog v46.5") || !strings.Contains(out, "english-arg-validator@v28-test-commit") {
 		t.Fatalf("%d: %s", code, out)
 	}
 	if code, _ := runArgcheck(t, "", "--version-typo"); code != exitError {
@@ -308,7 +308,7 @@ func TestParaphraseCLI(t *testing.T) {
 	if code != exitValid {
 		t.Fatal(plain)
 	}
-	want := "VALID  (gate catalog v46.4; local " + localVersion() + ")\nsyntax: ok\nstep 3 [1,2]: ok: modus ponens\n"
+	want := "VALID  (gate catalog v46.5; local " + localVersion() + ")\nsyntax: ok\nstep 3 [1,2]: ok: modus ponens\n"
 	if plain != want {
 		t.Fatalf("default output changed: %q; want %q", plain, want)
 	}

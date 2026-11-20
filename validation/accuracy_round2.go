@@ -125,6 +125,9 @@ func round2Singular(word string) string {
 func instanceSubjectAllowed(s string) bool { return allStrictRules().instanceSubjectAllowed(s) }
 
 func (policy strictRules) instanceSubjectAllowed(s string) bool {
+	if policy.indefiniteTermRefused(s) {
+		return false
+	}
 	lower := strings.ToLower(strings.TrimSpace(s))
 	if policy.term_numeral && numeralTerm(lower) && policy.hit("term.numeral") {
 		return false

@@ -67,6 +67,11 @@ func v13Pairs(op, statement string) []clausePair {
 		}
 	case "conjunction":
 		pairs := conjunctionCandidates(s)
+		// An explicit both frame owns its first and boundary, just as the
+		// both-that scaffold does. The scope gate rejects unmarked mixtures.
+		if strings.HasPrefix(s, "both ") && len(pairs) > 0 && mixedFrameHint(s) == "" {
+			return pairs[:1]
+		}
 		if strings.HasPrefix(s, "it is the case both that ") && strings.Count(s, ", and that ") == 1 && len(pairs) > 0 {
 			return pairs[:1]
 		}

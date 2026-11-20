@@ -61,17 +61,23 @@ func (f *gateOracleFormula) literal() bool {
 
 // Render bounded formulas with explicit scope. Conjunctions containing any
 // compound child use the both-that scaffold; a negated conjunction does too.
-// Either joins literals or atomic conjunctions; nested conditionals occur only
-// in consequents. Compound iff sides use the parenthesized v16 scaffold; no ambiguous
-// flattened and/or tree is emitted.
+// Conjunctions directly inside disjunctions also use both-that; disjunctions
+// always use either ... or, including inside conjunctions. This grouping is
+// applied recursively. Either joins literals or atomic conjunctions; nested
+// conditionals occur only in consequents. Compound iff sides use the
+// parenthesized v16 scaffold; no ambiguous flattened and/or tree is emitted.
 func (f *gateOracleFormula) english() (string, bool) {
+	return f.englishWithin("")
+}
+
+func (f *gateOracleFormula) englishWithin(parent string) (string, bool) {
 	if f.depth() > 2 {
 		return "", false
 	}
 	if f.op == "atom" {
 		return []string{"Ann sings", "Bob dances", "Cal reads"}[f.atom], true
 	}
-	left, ok := f.left.english()
+	left, ok := f.left.englishWithin(f.op)
 	if !ok {
 		return "", false
 	}
@@ -83,12 +89,16 @@ func (f *gateOracleFormula) english() (string, bool) {
 		}
 		return "it is not the case that " + left, true
 	}
-	right, ok := f.right.english()
+	right, ok := f.right.englishWithin(f.op)
 	if !ok {
 		return "", false
 	}
 	switch f.op {
 	case "and":
+		if parent == "or" {
+			// Exercise the explicit inner grouping recommended by repair hints.
+			return "both " + left + " and " + right, true
+		}
 		if f.left.op == "atom" && f.right.op == "atom" {
 			return left + " and " + right, true
 		}
@@ -355,6 +365,9 @@ func TestEntailmentGateTruthTableOracle(t *testing.T) {
 	}
 	if total.accepted == 0 || total.valid == total.total {
 		t.Fatal("oracle needs both gate acceptances and truth-table-invalid controls")
+	}
+	if total.accepted < 8734 {
+		t.Errorf("oracle accepted=%d, below the v46.4 coverage baseline of 8734", total.accepted)
 	}
 	t.Logf("oracle: formulas=%d candidates=%d valid=%d accepted=%d invalid=%d", len(pool), total.total, total.valid, total.accepted, total.total-total.valid)
 	shapes := make([]string, 0, len(byShape))

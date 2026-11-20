@@ -256,6 +256,9 @@ func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[i
 	policy.termSlots = ruleTermSlots(c, steps)
 	policy.pluralWitnessBlocked = rulePluralWitnessBlocks(c, steps)
 	report := policy.gateConclusionStepStrict(c, steps)
+	if report.Mismatch == indefiniteTermMessage {
+		return report
+	}
 	if reason := policy.round2TermFailure(c, steps, report); reason != "" {
 		report.Passed = false
 		report.NearestForm, report.Form, report.Mismatch = report.Form, "", reason
@@ -345,7 +348,27 @@ func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[i
 	return report
 }
 
+// Preserve historical refusals and their mismatch strings before applying the
+// new restriction. Re-evaluate successful proofs with term checks enabled so
+// an alternative propositional proof may still certify the same step.
 func (policy strictRules) gateConclusionStepStrict(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
+	if !policy.term_indefinite_singular {
+		return policy.gateConclusionStepWithTerms(c, steps)
+	}
+	oldPolicy := policy.without("term.indefinite_singular")
+	old := oldPolicy.gateConclusionStepWithTerms(c, steps)
+	if !old.Passed || oldPolicy.round2TermFailure(c, steps, old) != "" || oldPolicy.sentenceFrameFailure(c, steps, old.Form) != "" {
+		return old
+	}
+	checked := policy.gateConclusionStepWithTerms(c, steps)
+	if !checked.Passed {
+		checked.NearestForm = old.Form
+		checked.Mismatch = indefiniteTermMessage
+	}
+	return checked
+}
+
+func (policy strictRules) gateConclusionStepWithTerms(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	report := policy.gateConclusionStepUnisolated(c, steps)
 	if report.Passed && policy.round2TermFailure(c, steps, report) == "" {
 		if reason := policy.crossStatementFailure(c, steps); reason != "" {

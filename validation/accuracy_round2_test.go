@@ -92,8 +92,8 @@ func TestAccuracyRound2ValidControls(t *testing.T) {
 		"schema":                "1. If X is a man, then X is mortal.\n2. Socrates is a man.\n3. Therefore, Socrates is mortal. [1,2]",
 		"modified bare generic": "1. Red things are not blue things.\n2. The balls are red things.\n3. Therefore, it is not the case that the balls are blue things. [1,2]",
 
-		"indefinite UI": "1. Every poet is mortal.\n2. A senator is a poet.\n3. Therefore, a senator is mortal. [1,2]",
-		"definite UI":   "1. Every poet is mortal.\n2. The senator is a poet.\n3. Therefore, the senator is mortal. [1,2]",
+		"named UI":    "1. Every poet is mortal.\n2. Sam is a poet.\n3. Therefore, Sam is mortal. [1,2]",
+		"definite UI": "1. Every poet is mortal.\n2. The senator is a poet.\n3. Therefore, the senator is mortal. [1,2]",
 
 		"unless": "1. The alarm sounds unless the battery is dead.\n2. Therefore, if it is not the case that the battery is dead, then the alarm sounds. [1]",
 		"ui":     "1. Every billionaire is mortal.\n2. Alice is a billionaire.\n3. Therefore, Alice is mortal. [1,2]",

@@ -106,7 +106,7 @@ func (policy strictRules) parseFOLScopeMode(s string, bound map[string]bool, str
 		return bad()
 	}
 	if strings.HasPrefix(s, "atom{") && len(folLiteralSpans(s)) == 1 && folLiteralSpans(s)[0][1] == len(s) {
-		return folLiteralAtom(s, bound)
+		return policy.folLiteralAtom(s, bound)
 	}
 	if s == "contradiction" {
 		return fol("bottom"), nil
@@ -174,7 +174,7 @@ func (policy strictRules) parseFOLScopeMode(s string, bound map[string]bool, str
 		for _, span := range folLiteralSpans(s) {
 			literal := s[span[0]:span[1]]
 			name, ok := folParseName(literal)
-			if !ok {
+			if !ok || policy.indefiniteTermRefused(name) {
 				return bad()
 			}
 			placeholder := fmt.Sprintf("zzfolconstant%dzz", span[0])

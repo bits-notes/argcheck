@@ -310,4 +310,8 @@ var strictNotes = []StrictNote{
 		AlsoRefuses: []string{"1. If John helps his wife, then the alarm sounds.\n2. John helps his wife.\n3. Therefore, the alarm sounds. [1,2]"},
 		Fix:         []string{"replace 'his wife' with a name or a phrase that does not depend on a pronoun"},
 	},
+	{ID: "term.indefinite_singular", Name: "No indefinite singular constants", Since: "v46.5",
+		Why:         `"a/an N" can mean any N (generic) or some N (existential), and the step can depend on which`,
+		Fix:         []string{`use a name (Rex), "every N" for the generic reading, or "some N" / "there is an N that ..." for the existential reading`},
+		AlsoRefuses: []string{"1. Every guard is awake.\n2. An officer is a guard.\n3. Therefore, an officer is awake. [1,2]"}},
 }

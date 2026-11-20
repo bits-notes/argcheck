@@ -13,6 +13,16 @@ func legacyFOLReadings(text string) ([]*folFormula, string) {
 }
 
 func (policy strictRules) legacyFOLReadings(text string) ([]*folFormula, string) {
+	fs, why := policy.legacyFOLReadingsUnchecked(text)
+	for _, f := range fs {
+		if policy.indefiniteFormulaRefused(f) {
+			return nil, indefiniteTermMessage
+		}
+	}
+	return fs, why
+}
+
+func (policy strictRules) legacyFOLReadingsUnchecked(text string) ([]*folFormula, string) {
 	s := folStrip(stripClauseWrappers(normalizeClause(text)))
 	if folExplicit(s) {
 		f, err := policy.parseFOL(s)
@@ -176,7 +186,7 @@ func (policy strictRules) legacyFOLReadings(text string) ([]*folFormula, string)
 			if quantifiedIdentitySide(c.left) || quantifiedIdentitySide(c.right) {
 				continue
 			}
-			out = append(out, &folFormula{op: "equal", terms: []string{policy.legacyFOLTerm(c.left), policy.legacyFOLTerm(c.right)}})
+			out = append(out, &folFormula{op: "equal", terms: []string{policy.legacyFOLConstant(c.left), policy.legacyFOLConstant(c.right)}})
 		}
 		if len(out) == 0 {
 			return nil, "identity needs names on both sides, not quantifier phrases"
@@ -186,18 +196,18 @@ func (policy strictRules) legacyFOLReadings(text string) ([]*folFormula, string)
 	if cs := negativeInstanceCandidates(s); len(cs) > 0 {
 		var out []*folFormula
 		for _, c := range cs {
-			out = append(out, fol("not", unary(c.right, policy.legacyFOLTerm(c.left))))
+			out = append(out, fol("not", unary(c.right, policy.legacyFOLConstant(c.left))))
 		}
 		return unique(out), ""
 	}
 	if cs := policy.groundInstanceCandidates(s); len(cs) > 0 {
 		var out []*folFormula
 		for _, c := range cs {
-			out = append(out, unary(c.right, policy.legacyFOLTerm(c.left)))
+			out = append(out, unary(c.right, policy.legacyFOLConstant(c.left)))
 		}
 		return unique(out), ""
 	}
-	if cs := relationCandidates(s); len(cs) > 0 {
+	if cs := policy.relationCandidates(s); len(cs) > 0 {
 		var out []*folFormula
 		for _, c := range cs {
 			orders := relationOrders(c)
@@ -207,7 +217,13 @@ func (policy strictRules) legacyFOLReadings(text string) ([]*folFormula, string)
 			for _, order := range orders {
 				terms := make([]string, len(c.terms))
 				for i, t := range c.terms {
-					terms[i] = policy.legacyFOLTerm(t.text)
+					// A stranded article is not a relational individual. The
+					// explicit FOL parser and copular arbitrary a are separate.
+					if policy.term_indefinite_singular && t.quant == "" && (t.text == "a" || t.text == "an") {
+						policy.hit("term.indefinite_singular")
+						return nil, indefiniteTermMessage
+					}
+					terms[i] = policy.legacyFOLConstant(t.text)
 					if t.quant != "" {
 						terms[i] = fmt.Sprintf("$slot%d", i)
 					}
@@ -229,6 +245,11 @@ func (policy strictRules) legacyFOLReadings(text string) ([]*folFormula, string)
 			}
 		}
 		return unique(out), ""
+	}
+	// Removing indefinite relational candidates must not turn a previously
+	// ambiguous relation into a single opaque reading. Preserve that refusal.
+	if policy.term_indefinite_singular && len(policy.without("term.indefinite_singular").relationCandidates(s)) > 1 {
+		return nil, indefiniteTermMessage
 	}
 	// Historical propositional schemas use verbatim opaque clauses. Keep them
 	// zero-ary; never invent an individual or silently change predicate arity.

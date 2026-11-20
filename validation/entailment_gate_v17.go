@@ -79,7 +79,7 @@ func opaqueContextWord(w string) bool {
 func relationTermCandidate(s string) (relationTerm, bool) {
 	t := relationTerm{text: s}
 	first, rest, _ := strings.Cut(s, " ")
-	if (first == "a" || first == "an") && rest != "" {
+	if indefiniteSingularTerm(s) {
 		return relationTerm{}, false
 	}
 	switch first {
@@ -112,7 +112,11 @@ func relationVerb(s string) bool {
 }
 
 func relationCandidates(statement string) []relationClause {
-	if out := nplaceCandidates(statement); len(out) > 0 {
+	return allStrictRules().relationCandidates(statement)
+}
+
+func (policy strictRules) relationCandidates(statement string) []relationClause {
+	if out := policy.nplaceCandidates(statement); len(out) > 0 {
 		return out
 	}
 	s := normalizeClause(statement)
@@ -172,7 +176,7 @@ func relationCandidates(statement string) []relationClause {
 			}
 			pieces := [2]string{strings.Join(words[:i], " "), strings.Join(words[j:], " ")}
 			verb := strings.Join(words[i:j], " ")
-			if !relationVerb(verb) {
+			if !relationVerb(verb) || policy.indefinitePredicateObjectRefused(verb+" "+pieces[1]) {
 				continue
 			}
 			r := relationClause{terms: make([]relationTerm, 2), verb: verb, outerNot: outerNot, innerNot: innerNot, scaffold: scaffold}
@@ -331,13 +335,13 @@ func relationHasQuantifier(s string) bool {
 }
 
 func (policy strictRules) matchRelationalRule(p []NumberedArgumentStep, c NumberedArgumentStep, rule string) schemaMatchOutcome {
-	if !relationHasQuantifier(p[0].Statement) && !relationHasQuantifier(c.Statement) && len(nplaceCandidates(p[0].Statement)) == 0 && len(nplaceCandidates(c.Statement)) == 0 {
+	if !relationHasQuantifier(p[0].Statement) && !relationHasQuantifier(c.Statement) && len(policy.nplaceCandidates(p[0].Statement)) == 0 && len(policy.nplaceCandidates(c.Statement)) == 0 {
 		return schemaMatchOutcome{}
 	}
 
 	objectRefused := ""
-	for _, a := range relationCandidates(p[0].Statement) {
-		for _, b := range relationCandidates(c.Statement) {
+	for _, a := range policy.relationCandidates(p[0].Statement) {
+		for _, b := range policy.relationCandidates(c.Statement) {
 			if policy.term_numeral {
 				bad := false
 				for _, terms := range [][]relationTerm{a.terms, b.terms} {
@@ -606,7 +610,7 @@ func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map
 		if id == c.Number {
 			s = c
 		}
-		if !relationHasQuantifier(s.Statement) && len(nplaceCandidates(s.Statement)) == 0 {
+		if !relationHasQuantifier(s.Statement) && len(policy.nplaceCandidates(s.Statement)) == 0 {
 			continue
 		}
 		quantifiers := 0
@@ -618,7 +622,7 @@ func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map
 				}
 			}
 		}
-		for _, r := range nplaceCandidates(s.Statement) {
+		for _, r := range policy.nplaceCandidates(s.Statement) {
 			if len(r.order) > quantifiers {
 				quantifiers = len(r.order)
 			}
@@ -797,7 +801,7 @@ func (policy strictRules) gateRelationalScopes(c NumberedArgumentStep, steps map
 			raw.AmbiguityNote = fmt.Sprintf("step %d: %q has two scope readings; this step follows only under some combinations of readings. One certified combination uses these explicit scopes: %s", c.Number, normalizeClause(ch.original), strings.Join(selectedReadings, "; "))
 		}
 		raw.NearestForm = "relational scope conversion"
-		if len(nplaceCandidates(choices[0].original)) > 0 {
+		if len(policy.nplaceCandidates(choices[0].original)) > 0 {
 			raw.AmbiguityNote = strings.ReplaceAll(raw.AmbiguityNote, "two scope readings", "multiple scope readings")
 		}
 		raw.Mismatch = raw.AmbiguityNote
@@ -871,8 +875,8 @@ func (policy strictRules) relationalEEName(first, existential NumberedArgumentSt
 				if !fitchNamePattern.MatchString(m.left) {
 					continue
 				}
-				for _, source := range relationCandidates(existential.Statement) {
-					for _, witness := range relationCandidates(sides[1]) {
+				for _, source := range policy.relationCandidates(existential.Statement) {
+					for _, witness := range policy.relationCandidates(sides[1]) {
 						all := true
 						for _, x := range source.readings() {
 							for _, y := range witness.readings() {

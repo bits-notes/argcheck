@@ -85,6 +85,10 @@ func folNormalizeLiterals(s string) (string, bool) {
 // atom{"verbatim symbol", "constant", x} fixes lexical boundaries and arity.
 // Strings are constants; unquoted variables must be bound in the current scope.
 func folLiteralAtom(s string, bound map[string]bool) (*folFormula, error) {
+	return allStrictRules().folLiteralAtom(s, bound)
+}
+
+func (policy strictRules) folLiteralAtom(s string, bound map[string]bool) (*folFormula, error) {
 	bad := func() (*folFormula, error) {
 		return nil, fmt.Errorf("malformed atom literal: quote its symbol and constants; bind variable arguments")
 	}
@@ -124,7 +128,7 @@ func folLiteralAtom(s string, bound map[string]bool) (*folFormula, error) {
 			continue
 		}
 		var name string
-		if json.Unmarshal([]byte(p), &name) != nil || name == "" {
+		if json.Unmarshal([]byte(p), &name) != nil || name == "" || policy.indefiniteTermRefused(name) {
 			return bad()
 		}
 		f.terms = append(f.terms, folLiteralConstant(name))

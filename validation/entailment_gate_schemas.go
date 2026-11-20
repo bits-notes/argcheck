@@ -1565,6 +1565,9 @@ func (policy strictRules) matchNonCopularUniversalInstantiation(premises []Numbe
 		}
 	}
 	class, predicate, ok := strings.Cut(remainder, " ")
+	if policy.indefinitePredicateObjectRefused(predicate) {
+		return schemaMatchOutcome{}
+	}
 	if !ok || class == "" || predicate == "" {
 		return schemaMatchOutcome{}
 	}

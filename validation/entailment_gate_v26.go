@@ -62,7 +62,7 @@ func (policy strictRules) countAtom(s string) (*folFormula, error) {
 			if !relationWords(a) || !relationWords(b) {
 				break
 			}
-			return &folFormula{op: "atom", symbol: strings.TrimSpace(verb), terms: []string{policy.legacyFOLTerm(a), policy.legacyFOLTerm(b)}}, nil
+			return &folFormula{op: "atom", symbol: strings.TrimSpace(verb), terms: []string{policy.legacyFOLConstant(a), policy.legacyFOLConstant(b)}}, nil
 		}
 	}
 	fs, why := policy.legacyFOLReadings(s)
@@ -157,6 +157,13 @@ func (policy strictRules) countPredicate(s string) (*folFormula, error) {
 func countParse(text string) (*folFormula, error) { return allStrictRules().countParse(text) }
 
 func (policy strictRules) countParse(text string) (*folFormula, error) {
+	f, err := policy.countParseUnchecked(text)
+	if err == nil && policy.indefiniteFormulaRefused(f) {
+		return nil, fmt.Errorf("%s", indefiniteTermMessage)
+	}
+	return f, err
+}
+func (policy strictRules) countParseUnchecked(text string) (*folFormula, error) {
 	s := folStrip(normalizeClause(text))
 	if m := countingPrefix.FindStringSubmatch(s); m != nil {
 		n, _ := strconv.Atoi(m[2])
@@ -186,7 +193,7 @@ func (policy strictRules) countParse(text string) (*folFormula, error) {
 		}
 		p := strings.TrimPrefix(strings.TrimPrefix(b, "a "), "an ")
 		body := &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(p), terms: []string{"$count"}}
-		return fol("and", instance, countUnique(body, policy.legacyFOLTerm(a))), nil
+		return fol("and", instance, countUnique(body, policy.legacyFOLConstant(a))), nil
 	}
 	if strings.HasPrefix(s, "no ") && strings.Contains(s, " other than ") {
 		cl, rest, _ := strings.Cut(strings.TrimPrefix(s, "no "), " other than ")
@@ -201,7 +208,7 @@ func (policy strictRules) countParse(text string) (*folFormula, error) {
 		if at < 1 {
 			return nil, fmt.Errorf("other than requires a name and predicate")
 		}
-		name := policy.legacyFOLTerm(strings.Join(words[:at], " "))
+		name := policy.legacyFOLConstant(strings.Join(words[:at], " "))
 		body, e := policy.countPredicate(cl + " " + strings.Join(words[at:], " "))
 		if e != nil {
 			return nil, e

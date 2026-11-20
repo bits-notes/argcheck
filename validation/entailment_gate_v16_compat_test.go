@@ -13,9 +13,11 @@ import (
 // testdata/ against git 37ba4d4, before Fix 1 changed the gate. Capture occurred
 // at GateNumberedArgument after bridge expansion, not from expected test flags.
 // The golden stores every distinct accepted AST and its actual per-step forms.
-// One deliberate edit since capture: catalog v18 retired the v16 spelling
+// Deliberate edits since capture: catalog v18 retired the v16 spelling
 // "It holds that (X) if and only if (Y)" in favor of bare "(X) if and only if
 // (Y)", so every such statement and line was rewritten to the bare spelling.
+// v46.5 explicitly groups the conjunctions in cases 933 (absorption), 934 and
+// 972 (distribution), preserving their accepted status and per-step form names.
 func TestEntailmentGateV16AcceptedCompatibility(t *testing.T) {
 	// v44 by-design refusals: retained separately from the accepted controls.
 	refused := map[string]strictRefusal{

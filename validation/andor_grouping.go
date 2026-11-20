@@ -490,3 +490,113 @@ func mixedGroupingWords(s string) bool {
 	a, o, u := strings.Contains(s, " and "), strings.Contains(s, " or "), strings.Contains(s, " unless ")
 	return a && o || u && (a || o)
 }
+
+// mixedFrameHint visits explicit logical scopes without assigning an unmarked
+// opposite connective to a both/either frame. Keep this separate from the legacy
+// syntax check: old refusals retain their diagnostics, and strict-rule retries
+// can disable only scope.mixed_andor.
+func mixedFrameHint(s string) string {
+	s = folStrip(scopeText(s))
+	if scopeLiteralAtom(s) || groupingParenthesisPlacement(s) != "" {
+		return ""
+	}
+	lower := strings.ToLower(s)
+	if m := explicitBinder.FindStringSubmatchIndex(lower); m != nil && m[0] == 0 {
+		return mixedFrameHint(s[m[1]:])
+	}
+	for _, prefix := range []string{"it is not the case that ", "it is the case that ", "necessarily, ", "necessarily ", "possibly, ", "possibly "} {
+		if strings.HasPrefix(lower, prefix) {
+			return mixedFrameHint(s[len(prefix):])
+		}
+	}
+	for _, prefix := range []string{"if ", "when ", "whenever "} {
+		if strings.HasPrefix(lower, prefix) {
+			for _, sep := range []string{", then ", " then ", ", "} {
+				if a, b, ok := folSplit(s[len(prefix):], sep); ok {
+					if hint := mixedFrameHint(a); hint != "" {
+						return hint
+					}
+					return mixedFrameHint(b)
+				}
+			}
+		}
+	}
+	if a, b, ok := folSplit(s, " if and only if "); ok {
+		if hint := mixedFrameHint(a); hint != "" {
+			return hint
+		}
+		return mixedFrameHint(b)
+	}
+	const scaffold = "it is the case both that "
+	if strings.HasPrefix(lower, scaffold) {
+		if a, b, ok := folSplit(s[len(scaffold):], ", and that "); ok {
+			if hint := mixedFrameHint(a); hint != "" {
+				return hint
+			}
+			return mixedFrameHint(b)
+		}
+	}
+	for _, frame := range []struct{ prefix, op, inner string }{{"both ", "and", "either "}, {"either ", "or", "both "}} {
+		if !strings.HasPrefix(lower, frame.prefix) {
+			continue
+		}
+		body := s[len(frame.prefix):]
+		bs, _ := groupingBoundaries(body)
+		for _, boundary := range bs {
+			if boundary.op != frame.op {
+				continue
+			}
+			a := strings.TrimSpace(strings.TrimSuffix(body[:boundary.start], ","))
+			b := strings.TrimSpace(body[boundary.end:])
+			for i, operand := range []string{a, b} {
+				// Parentheses and nested explicit frames own their internal operators.
+				ol := strings.ToLower(operand)
+				explicit := stripGroupedClause(operand) != operand || strings.HasPrefix(ol, "both ") || strings.HasPrefix(ol, "either ") || strings.HasPrefix(ol, scaffold)
+				if !explicit {
+					inner, _ := groupingBoundaries(operand)
+					for _, ib := range inner {
+						if ib.op != frame.op && (ib.op == "and" || ib.op == "or") {
+							// Use exactly the existing unframed scope policy for phrase/relative
+							// coordination, rather than introducing a new linguistic classifier.
+							unframed := groupingProblem(body) != "" || allStrictRules().scopeExpressionFailure(body) == mixedScopeHint
+							if unframed {
+								if i == 0 {
+									a = frame.inner + a
+								} else {
+									b = frame.inner + b
+								}
+								fixed := frame.prefix + a + " " + frame.op + " " + b
+								return "mixed and/or inside an explicit frame; use '" + strings.ToUpper(fixed[:1]) + fixed[1:] + ".'"
+							}
+						}
+					}
+				}
+				if hint := mixedFrameHint(operand); hint != "" {
+					return hint
+				}
+			}
+			return ""
+		}
+		return ""
+	}
+	if groupingOpaque(s) {
+		return ""
+	}
+	if _, a, b, managed, why := groupingPlan(s); managed && why == "" && a != "" && b != "" {
+		if hint := mixedFrameHint(a); hint != "" {
+			return hint
+		}
+		return mixedFrameHint(b)
+	}
+	// A same-connective outer list may contain a frame even without parentheses.
+	bs, _ := groupingBoundaries(s)
+	for _, b := range bs {
+		if clauseOperandStart(s[b.end:]) {
+			if hint := mixedFrameHint(s[:b.start]); hint != "" {
+				return hint
+			}
+			return mixedFrameHint(s[b.end:])
+		}
+	}
+	return ""
+}

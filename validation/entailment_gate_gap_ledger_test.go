@@ -157,10 +157,10 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 		{"material implication reverse", `1. either it is not the case that the rain falls or the snow falls.
 2. Therefore, if the rain falls, then the snow falls. [1]`, "material implication"},
 		{"and distribution", `1. it is the case both that the rain falls, and that either the snow falls or the street is wet.
-2. Therefore, either the rain falls and the snow falls or the rain falls and the street is wet. [1]`, "distribution"},
-		{"or distribution", `1. either the rain falls or the snow falls and the street is wet.
+2. Therefore, either it is the case both that the rain falls, and that the snow falls or it is the case both that the rain falls, and that the street is wet. [1]`, "distribution"},
+		{"or distribution", `1. either the rain falls or it is the case both that the snow falls, and that the street is wet.
 2. Therefore, it is the case both that either the rain falls or the snow falls, and that either the rain falls or the street is wet. [1]`, "distribution"},
-		{"absorption", `1. either the rain falls or the rain falls and the snow falls.
+		{"absorption", `1. either the rain falls or it is the case both that the rain falls, and that the snow falls.
 2. Therefore, the rain falls. [1]`, "absorption"},
 		{"conditional absorption", `1. if the rain falls, then the snow falls.
 2. Therefore, if the rain falls, then the rain falls and the snow falls. [1]`, "absorption"},

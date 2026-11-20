@@ -76,6 +76,11 @@ func refusalFor(failed EntailmentGateStepReport, steps map[int]NumberedArgumentS
 	if note != nil {
 		r.Rule = note.ID
 		r.Hint = strings.Join(note.Fix, " ")
+		if note.ID == "scope.mixed_andor" && strings.HasPrefix(failed.Mismatch, "mixed and/or inside an explicit frame; ") {
+			// New frame refusals carry a repair using the actual operands.
+			// Keep the catalog hint unchanged for all pre-existing refusals.
+			_, r.Hint, _ = strings.Cut(failed.Mismatch, "; ")
+		}
 	}
 	candidates := []NumberedArgumentStep{step}
 	for _, id := range failed.Citations {

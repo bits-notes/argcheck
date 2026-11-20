@@ -2905,8 +2905,8 @@ grouping with whole-clause parentheses or an explicit `both...and` /
 retain their existing behavior.
 
 A leading `either` or `both` selects its matching main connective, regardless
-of a comma. `Either Ann sings and Bob dances or Cal reads` means
-`(Ann sings and Bob dances) or Cal reads`. `Both Ann sings and Bob dances or
+of a comma. `Either (Ann sings and Bob dances) or Cal reads` means
+`(Ann sings and Bob dances) or Cal reads`. `Both Ann sings and either Bob dances or
 Cal reads` means `Ann sings and (Bob dances or Cal reads)`.
 To make the whole conjunction the left disjunct, write
 `(Both Ann sings and Bob dances) or Cal reads`. Each operand must itself
@@ -2918,7 +2918,7 @@ have unambiguous scope; use parentheses for longer mixed scaffolds.
 ```
 
 ```argcheck-accept conjunction elimination
-1. Both Ann sings and Bob dances or Cal reads.
+1. Both Ann sings and either Bob dances or Cal reads.
 2. Therefore, Ann sings. [1]
 ```
 
@@ -3167,6 +3167,7 @@ data. `TestStrictNotesExamples` checks every example and its concrete fix.
 | `slot.plural_witness` | No repeated plural or mass witness | v46.0 | Water is in the cup and water is in the bottle does not establish the same water. Repeated antecedent occurrences, multiple fact citations, and consequents containing same, both or together cannot reuse a bare plural or mass witness. | 1. If X is in the cup, then X is in both vessels.<br>2. Water is in the cup.<br>3. Therefore, water is in both vessels. [1,2] | Name each portion or state the conclusion as a premise. |
 | `term.pronoun_cross_statement` | Personal pronouns across statements | v46.2 | a pronoun's referent depends on context and can differ between statements | 1. If it rains, then it is wet.<br>2. It rains.<br>3. Therefore, it is wet. [1,2] | replace the pronoun with the name or noun phrase it refers to, e.g. 'the card' |
 | `term.possessive_cross_statement` | Possessive determiners across statements | v46.2 | a possessive determiner's referent depends on context and can differ between statements | 1. If John helps his wife, then the alarm sounds.<br>2. John helps his wife.<br>3. Therefore, the alarm sounds. [1,2] | replace 'his wife' with a name or a phrase that does not depend on a pronoun |
+| `term.indefinite_singular` | No indefinite singular constants | v46.5 | "a/an N" can mean any N (generic) or some N (existential), and the step can depend on which | 1. Every guard is awake.<br>2. An officer is a guard.<br>3. Therefore, an officer is awake. [1,2] | use a name (Rex), "every N" for the generic reading, or "some N" / "there is an N that ..." for the existential reading |
 <!-- strictness-notes:end -->
 
 ## v44.0: singular schematic term values
@@ -3195,14 +3196,14 @@ an allowed term; put the entire description in X or write it literally.
 Since v45.0 descriptions admit any number of recognized modifiers plus a head (see below). Mixed subordinate-clause/term schemas are conservatively refused outright. EG uses a closed active-verb/copular grammar and refuses compound matrices and other quantified material. Noun inflection is verbatim in ordinary matching and counting classes; rewrite plural rules with singular “every N”. Ordinary initial-capital name evidence requires either membership in the generated name allowlist or a mid-sentence term-position occurrence with no lowercase occurrence anywhere in the argument. Quantity/closed words cannot establish either route. Internal capitals also count at sentence start. These intentional costs and the three inflection acceptance sites are detailed in the v44.0 coverage entry.
 ## v44.0: strict scope and connective rules
 
-- **`scope.mixed_andor` — Mixed connective scope.** A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it. Use 'both … and' or 'either … or' to show the grouping.
+- **`scope.mixed_andor` — Mixed connective scope.** A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it. Use 'both … and' or 'either … or' to show the grouping. A frame marks only its own connective: `Both the lamp is lit and the door is open or the bell rings` is refused. Write `Both the lamp is lit and either the door is open or the bell rings`, or parenthesize the disjunction. Likewise, an `either ... or` frame needs `both ... and` or parentheses around an inner conjunction. This applies recursively, including premises, conclusions, conditionals, negations and modal scopes.
 - **`scope.clause_start` — Controlled clause starts.** Each inspected clause must start with a determiner, proper name, pronoun or numeral. An unrecognized start may be an operator with wider scope. Move the operator into each clause, or state the claim as an explicit premise.
 - **`opener.ing_frame` — Initial -ing frame.** Following the script may qualify the entire conjunction rather than name its subject. Even genuine gerund subjects are refused when inspected. Closed-class clause starters such as `something`, `anything`, `everything`, and `nothing` are not frames. Move the frame into each clause, or state the framed claim as its own premise.
 - **`scope.elided_copula` — Closed copula elision.** In Either the men are quiet or fish, fish may be a verb rather than a predicate with an omitted copula. Unknown predicates are not expanded. Repeat the subject and verb: 'or the men are fish'.
 - **`scope.description_negation` — Description negation scope.** Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion. Add 'There is exactly one present king of France' and name it, or keep the wide negation.
 - **`opener.ly_exception` — Adverb-capable noun exceptions.** Daily, early and only can be adverbs with scope over an entire sentence, even when they also have nominal uses. Move the adverb into each clause, or state the framed claim as its own premise.
 
-These final-boundary checks precede normalized equality and apply independently of the certificate name. Whole literal reiteration remains opaque. The conservative scope scan may also refuse nominal coordination, quoted connectives, lowercase names, bare noun subjects, and genuine gerund subjects; use explicit grouping and full clauses. Copula elision requires one word from `singularPredicateHeads`.
+These final-boundary checks precede normalized equality and apply independently of the certificate name. Whole literal reiteration remains opaque to the legacy checks; the explicit-frame mixed-connective check also requires grouping in reiterated statements. The conservative scope scan may also refuse nominal coordination, quoted connectives, lowercase names, bare noun subjects, and genuine gerund subjects; use explicit grouping and full clauses. Copula elision requires one word from `singularPredicateHeads`.
 
 ### v44.0 refinements after round 2
 
@@ -3437,6 +3438,24 @@ deferential moral philosophy is unstable” qualifies. `deferential` is retained
 as required WordNet adjective vocabulary. A comma after the adverb, a following
 non-adjective, or a hedge/sentence adverb (Only, Likely, Probably, Arguably,
 Clearly, Obviously, etc.) does not receive this exception.
+
+## v46.5: indefinite singular terms refused
+
+`term.indefinite_singular` refuses a noun phrase headed by “a” or “an” as an
+individual constant shared across numbered statements. “A/an N” can mean any N
+(generic) or some N (existential), and the step can depend on which.
+Use a name (Rex), “every N” for the generic reading, or “some N” / “there is an N
+that ...” for the existential reading. Predication remains allowed: “Rex is a
+guard” and “Every guard is an officer”. Names, singular definite descriptions,
+and verbatim whole-clause propositional reasoning retain their existing rules.
+
+Explicit existential syntax (“there is a/an N ...”) and the closed n-place
+object reading (“Alice gave Bob a book”) still introduce existential binders,
+not individual constants. Indefinite subjects in the description and n-place
+grammars are refused because they can be generic.
+
+Refused: Every guard is awake; an officer is a guard; therefore an officer is awake.
+Accepted: Every guard is awake; Rex is a guard; therefore Rex is awake.
 
 ## v46.1: bare plural/mass slot values refused
 

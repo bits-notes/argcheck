@@ -66,7 +66,7 @@ func v27Exercises() []nplaceExercise {
 	add("both readings imply narrow", []nOracleSurface{ambiguous}, narrow, true)
 	add("negative substitution all readings", []nOracleSurface{named, nOracleSurface{"The author of Waverley is not red", []*folFormula{v27Russell(author, foNot(red)), foNot(v27Russell(author, red))}}}, rcSurface("Scott is not red", foNot(folSub(red, x, "scott"))), true)
 	add("no existence", []nOracleSurface{rcSurface("At most one author of Waverley", v26OracleDefinition("at most", 1, author)), scott}, rcSurface("Scott is an author of Waverley", folSub(author, x, "scott")), false)
-	add("missing uniqueness", []nOracleSurface{rcSurface("An author of Waverley is Scott", countQ("some", x, foAnd(author, foEqual(x, "scott")))), rcSurface("Some author of Waverley wrote Ivanhoe", countQ("some", x, foAnd(author, writer(x))))}, scott, false)
+	add("missing uniqueness", []nOracleSurface{rcSurface("Some author of Waverley is Scott", countQ("some", x, foAnd(author, foEqual(x, "scott")))), rcSurface("Some author of Waverley wrote Ivanhoe", countQ("some", x, foAnd(author, writer(x))))}, scott, false)
 	for _, prefix := range []string{"Ann believes that ", "It is necessary that ", "It is obligatory that "} {
 		p := prefix + "the author of Waverley wrote Ivanhoe"
 		c := prefix + "Scott wrote Ivanhoe"

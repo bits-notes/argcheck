@@ -1,7 +1,7 @@
-# Entailment Gate — Coverage and Known Limits (catalog v46.4)
+# Entailment Gate — Coverage and Known Limits (catalog v46.5)
 
 **Type:** reference
-**Status:** current as of catalog v46.4
+**Status:** current as of catalog v46.5
 
 Coverage claim: complete for propositional logic and for function-free
 first-order logic with identity, within a controlled English (sentences with one
@@ -1670,3 +1670,9 @@ The v46.2 brief's weather/expletive refusal was too broad. Dummy “it” has no
    Adjectival weather ("it is wet", "it is cold") is NOT exempt.
 3. The exemption covers only that one "it" token. A later "it" in the same statement is checked on its own.
    So "It is true that it is valid" exempts the first "it" and still checks the second.
+
+## v46.5
+
+`term.indefinite_singular` refuses a/an noun phrases as individual constants across statements, including instantiation, FOL, counting and ambiguous indefinite quantifier readings. Predication and verbatim propositional steps are unchanged.
+
+`scope.mixed_andor` now treats a `both ... and` or `either ... or` frame as marking only its own connective. `Both A and B or C` is refused; write `Both A and either B or C`, or parenthesize. Likewise, an either-frame needs an inner `both ... and` or parentheses around a conjunction. This applies recursively in premises, conclusions, conditionals, negations and modal scopes. Before v46.5 the docs gave `Both A and B or C` as the grouped repair; that form is now refused.

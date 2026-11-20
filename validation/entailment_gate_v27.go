@@ -158,9 +158,16 @@ func (policy strictRules) descriptionParse(text string) ([]*folFormula, error) {
 			return policy.descriptionPair(pair.op, original[:len(a)], original[len(original)-len(b):])
 		}
 	}
-	// Opaque clauses remain whole propositions, with no replaceable name slots.
-	for _, prefix := range []string{"an ", "a "} {
+	// Explicit existential descriptions with a named complement use the same
+	// identity predication as definite descriptions, without uniqueness.
+	for _, prefix := range []string{"an ", "a ", "some "} {
 		if strings.HasPrefix(s, prefix) {
+			if prefix == "some " && descriptionName(text) == "" {
+				continue
+			}
+			if policy.indefiniteTermRefused(s) {
+				return nil, fmt.Errorf("%s", indefiniteTermMessage)
+			}
 			fs, e := policy.descriptionParse("The " + original[len(prefix):])
 			if e != nil || len(fs) != 1 {
 				return nil, fmt.Errorf("unsupported indefinite description")

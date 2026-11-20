@@ -3,6 +3,7 @@ package validation
 // strictRules belongs to one evaluation. Diagnostic retries copy it; no mutable
 // package state or locks are needed, including for concurrent library callers.
 type strictRules struct {
+	term_indefinite_singular        bool
 	isolatedPronounPrefix           string // private replay spelling; never user vocabulary
 	term_pronoun_cross_statement    bool
 	term_possessive_cross_statement bool
@@ -72,6 +73,7 @@ func (rules strictRules) recording() (strictRules, *firedRules) {
 
 func allStrictRules() strictRules {
 	return strictRules{
+		term_indefinite_singular:        true,
 		term_pronoun_cross_statement:    true,
 		term_possessive_cross_statement: true,
 		slot_plural_mass_value:          false,
@@ -112,6 +114,8 @@ func allStrictRules() strictRules {
 
 func (rules strictRules) without(id string) strictRules {
 	switch id {
+	case "term.indefinite_singular":
+		rules.term_indefinite_singular = false
 	case "term.pronoun_cross_statement":
 		rules.term_pronoun_cross_statement = false
 	case "term.possessive_cross_statement":

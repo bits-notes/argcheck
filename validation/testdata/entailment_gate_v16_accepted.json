@@ -30440,8 +30440,8 @@
           {
             "number": 1,
             "kind": "premise",
-            "statement": "either the rain falls or the rain falls and the snow falls",
-            "line": "1. either the rain falls or the rain falls and the snow falls."
+            "statement": "either the rain falls or it is the case both that the rain falls, and that the snow falls",
+            "line": "1. either the rain falls or it is the case both that the rain falls, and that the snow falls."
           },
           {
             "number": 2,
@@ -30467,8 +30467,8 @@
           {
             "number": 1,
             "kind": "premise",
-            "statement": "either the rain falls or the snow falls and the street is wet",
-            "line": "1. either the rain falls or the snow falls and the street is wet."
+            "statement": "either the rain falls or it is the case both that the snow falls, and that the street is wet",
+            "line": "1. either the rain falls or it is the case both that the snow falls, and that the street is wet."
           },
           {
             "number": 2,
@@ -31643,11 +31643,11 @@
           {
             "number": 2,
             "kind": "conclusion",
-            "statement": "either the rain falls and the snow falls or the rain falls and the street is wet",
+            "statement": "either it is the case both that the rain falls, and that the snow falls or it is the case both that the rain falls, and that the street is wet",
             "citations": [
               1
             ],
-            "line": "2. Therefore, either the rain falls and the snow falls or the rain falls and the street is wet. [1]"
+            "line": "2. Therefore, either it is the case both that the rain falls, and that the snow falls or it is the case both that the rain falls, and that the street is wet. [1]"
           }
         ]
       },

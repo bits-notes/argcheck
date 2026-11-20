@@ -8,6 +8,7 @@ import (
 
 func TestStrictNotesExamples(t *testing.T) {
 	fixes := map[string]string{
+		"term.indefinite_singular":        "1. Every guard is awake.\n2. Rex is a guard.\n3. Therefore, Rex is awake. [1,2]",
 		"term.pronoun_cross_statement":    "1. If the card is valid, then the alarm sounds.\n2. The card is valid.\n3. Therefore, the alarm sounds. [1,2]",
 		"term.possessive_cross_statement": "1. If John helps Mary, then the alarm sounds.\n2. John helps Mary.\n3. Therefore, the alarm sounds. [1,2]",
 		"slot.plural_witness":             "1. If the water is in the cup, then the water is in both vessels.\n2. The water is in the cup.\n3. Therefore, the water is in both vessels. [1,2]",

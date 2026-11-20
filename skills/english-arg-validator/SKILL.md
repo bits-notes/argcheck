@@ -32,7 +32,7 @@ EOF
 - `--json` prints structured syntax, step reports, and provenance.
 - `--quiet` prints only `VALID` or `NOT CERTIFIED`.
 - `--forms` lists all 121 accepted inference forms in catalog `v45.1`.
-- `--version` prints the catalog version and build stamp (`gate catalog v46.4; local english-arg-validator@<commit>`).
+- `--version` prints the catalog version and build stamp (`gate catalog v46.5; local english-arg-validator@<commit>`).
 - Exit codes: `0` valid, `1` not certified, `2` input or operational error.
 - `NOT CERTIFIED` means some step matched no accepted rule. It does not mean the
   argument is invalid; repair the step or add the missing premise.
@@ -147,7 +147,7 @@ visible identity or conditional premise.
   (`Either we should use X or we should use Y.`), refute one side, and apply
   disjunctive syllogism.
 
-### Strict conventions (catalog v35–v46.4)
+### Strict conventions (catalog v35–v46.5)
 
 The gate refuses phrasings that are ambiguous in English, even when the
 inference is fine. Each refusal names its fix; apply exactly that fix.
@@ -174,6 +174,7 @@ inference is fine. Each refusal names its fix; apply exactly that fix.
   `a hero`, `some firm`, `someone`, bare nouns (`water`, `humanity`), plurals,
   quantities or numerals (`many firms`, `two robots`), coordinations
   (`Alice and Bob`), partitives, nested `of`, or longer descriptions.
+- v46.5: `term.indefinite_singular` refuses a/an noun phrases as cross-statement constants: use a name, every N, or some N. Predicates such as “Rex is a guard” remain allowed.
 - **Names need evidence away from sentence start.** A capital that appears
   only at the start of a sentence (or after `Therefore,`) does not show that a
   word is a name, so `Alpha is valuable.` alone cannot fill `X`. Make sure the
@@ -316,10 +317,13 @@ Keep parentheses in source quotations and repairs.
 
 - `(Ann sings and Bob dances) or Cal reads` is a disjunction and does not
   license extracting `Ann sings`.
-- `Ann sings and (Bob dances or Cal reads)` and `Both Ann sings and Bob dances
+- `Ann sings and (Bob dances or Cal reads)` and `Both Ann sings and either Bob dances
   or Cal reads` are conjunctions and do license that extraction.
 - Leading `either`/`both` selects its matching main connective; its second
   operand runs to the end. Each operand must itself have unambiguous scope.
+- A `both ... and` frame does not group an unmarked inner `or`; add inner
+  `either ... or` or parentheses. Conversely, inside `either ... or`, group
+  an inner `and` with `both ... and` or parentheses. Apply this recursively.
 - Since v46.2, commas never fix mixed and/or scope. `Ann sings, and Bob dances
   or Cal reads` is refused. Use both/either or parentheses. Single-connective
   lists retain their existing behavior.

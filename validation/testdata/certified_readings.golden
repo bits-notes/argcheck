@@ -305,7 +305,7 @@ FORM: conjunction elimination
 step 2: both ("ann sings") and ("(bob dances or cal reads)"). So: "ann sings".
 
 FORM: conjunction elimination
-step 2: both ("ann sings") and ("bob dances or cal reads"). So: "ann sings".
+step 2: both ("ann sings") and ("either bob dances or cal reads"). So: "ann sings".
 
 FORM: disjunctive syllogism
 step 3: either ("(ann sings and bob dances)") or ("cal reads"). it is not the case that ("ann sings and bob dances"). So: "cal reads".

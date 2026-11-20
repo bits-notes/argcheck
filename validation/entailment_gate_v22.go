@@ -6,6 +6,10 @@ import "strings"
 // they remain part of the predicate's identity. Only the listed double-object
 // verbs admit the to alternation. No active/passive or lexical rewriting occurs.
 func nplaceCandidates(statement string) []relationClause {
+	return allStrictRules().nplaceCandidates(statement)
+}
+
+func (policy strictRules) nplaceCandidates(statement string) []relationClause {
 	// Most historical clauses cannot contain a new argument boundary. Avoid
 	// running the new parser at all on that hot path.
 	possible := false
@@ -71,12 +75,17 @@ func nplaceCandidates(statement string) []relationClause {
 		}
 		return false
 	}
-	term := func(piece string) (relationTerm, bool) {
+	term := func(piece string, subject bool) (relationTerm, bool) {
+		if subject && policy.indefiniteTermRefused(piece) {
+			return relationTerm{}, false
+		}
 		for _, b := range bounds {
 			if piece == "that "+b.text {
 				return b, true
 			}
 		}
+		// In this closed object grammar, a/an introduces an existential
+		// binder. It never supplies an individual constant shared by steps.
 		for _, a := range []string{"a ", "an "} {
 			if strings.HasPrefix(piece, a) {
 				piece = "some " + strings.TrimPrefix(piece, a)
@@ -98,7 +107,7 @@ func nplaceCandidates(statement string) []relationClause {
 		r := relationClause{verb: verb + "\x00" + strings.Join(seps, "\x00"), separators: seps, terms: make([]relationTerm, len(pieces)), outerNot: outer, innerNot: inner, scaffold: len(bounds) > 0, boundCount: len(bounds)}
 		used := map[int]bool{}
 		for i, p := range pieces {
-			t, ok := term(p)
+			t, ok := term(p, i == 0)
 			if !ok {
 				return
 			}
@@ -243,8 +252,8 @@ func (policy strictRules) matchNplaceInstantiation(p []NumberedArgumentStep, c N
 		return schemaMatchOutcome{}
 	}
 	for source, step := range p {
-		for _, a := range nplaceCandidates(step.Statement) {
-			for _, b := range nplaceCandidates(c.Statement) {
+		for _, a := range policy.nplaceCandidates(step.Statement) {
+			for _, b := range policy.nplaceCandidates(c.Statement) {
 				var members []clausePair
 				good := true
 				for i, m := range p {

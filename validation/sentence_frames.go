@@ -248,9 +248,27 @@ func (policy strictRules) punctuationDifference(a, b string) string {
 	return ""
 }
 
-// Whole-sentence reuse is never an inspection of that sentence. Apply the
-// guards at the final gate boundary so alternate FOL routes cannot bypass it.
+// Apply the guards at the final gate boundary so alternate FOL routes cannot
+// bypass them. Preserve legacy diagnostics before checking explicit frames.
 func (policy strictRules) sentenceFrameFailure(c NumberedArgumentStep, steps map[int]NumberedArgumentStep, form string) string {
+	if why := policy.legacySentenceFrameFailure(c, steps, form); why != "" {
+		return why
+	}
+	if policy.scope_mixed_andor {
+		texts := []string{c.Statement}
+		for _, id := range c.Citations {
+			texts = append(texts, fitchAssumptionStatement(steps[id]))
+		}
+		for _, text := range texts {
+			if hint := mixedFrameHint(text); hint != "" && policy.hit("scope.mixed_andor") {
+				return hint
+			}
+		}
+	}
+	return ""
+}
+
+func (policy strictRules) legacySentenceFrameFailure(c NumberedArgumentStep, steps map[int]NumberedArgumentStep, form string) string {
 	if why := policy.round2ScopeFailure(c, steps); why != "" {
 		return why
 	}
