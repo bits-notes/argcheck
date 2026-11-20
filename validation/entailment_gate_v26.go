@@ -94,7 +94,7 @@ func (policy strictRules) countPredicate(s string) (*folFormula, error) {
 	}
 	if end < 0 && !relative && relationWords(s) {
 		class := s
-		if !policy.term_inflection_verbatim && strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") {
+		if strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") && (!policy.term_inflection_verbatim || !policy.hit("term.inflection_verbatim")) {
 			class = strings.TrimSuffix(class, "s")
 		}
 		return &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(class), terms: []string{"$count"}}, nil
@@ -115,7 +115,7 @@ func (policy strictRules) countPredicate(s string) (*folFormula, error) {
 		return nil, fmt.Errorf("missing counting class")
 	}
 	// Controlled plural spelling, only on the newly recognized count surface.
-	if !policy.term_inflection_verbatim && strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") {
+	if strings.HasSuffix(class, "s") && !strings.HasSuffix(class, "ss") && (!policy.term_inflection_verbatim || !policy.hit("term.inflection_verbatim")) {
 		class = strings.TrimSuffix(class, "s")
 	}
 	guard := &folFormula{op: "atom", symbol: "is/" + policy.legacyFOLTerm(class), terms: []string{"$count"}}
@@ -426,11 +426,11 @@ func (policy strictRules) gateCounting(c NumberedArgumentStep, steps map[int]Num
 		if s.Kind != numberedArgumentStepArbitrary {
 			f, e := policy.countParse(s.Statement)
 			if e == nil {
-				s.Statement = f.Render()
+				s.Statement = policy.renderFOL(f)
 			}
 		}
 		translated[id] = s
 	}
-	c.Statement = target.Render()
+	c.Statement = policy.renderFOL(target)
 	return policy.gateFOL(c, translated)
 }

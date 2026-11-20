@@ -74,12 +74,12 @@ func (policy strictRules) round2ScopeFailure(c NumberedArgumentStep, steps map[i
 		texts = append(texts, scopeText(fitchAssumptionStatement(steps[id])))
 	}
 	for _, s := range texts {
-		if policy.scope_description_negation && unsafeDescriptionNegation(s) && descriptionConversionIn(s, texts) {
+		if policy.scope_description_negation && unsafeDescriptionNegation(s) && descriptionConversionIn(s, texts) && policy.hit("scope.description_negation") {
 			return descriptionNegationHint
 		}
 		if policy.scope_elided_copula && expandGateElidedDisjunction(s) != s {
 			_, right, _ := strings.Cut(strings.ToLower(s), " or ")
-			if !singularPredicateHeads[right] {
+			if !singularPredicateHeads[right] && policy.hit("scope.elided_copula") {
 				return copulaHint
 			}
 		}
@@ -132,7 +132,7 @@ func (policy strictRules) scopeExpressionFailure(s string) string {
 	}
 	if expanded := expandGateElidedDisjunction(s); expanded != s {
 		_, right, _ := strings.Cut(strings.ToLower(s), " or ")
-		if policy.scope_elided_copula && !singularPredicateHeads[right] {
+		if policy.scope_elided_copula && !singularPredicateHeads[right] && policy.hit("scope.elided_copula") {
 			return copulaHint
 		}
 		s = expanded
@@ -189,10 +189,10 @@ func (policy strictRules) scopeExpressionFailure(s string) string {
 	}
 	first := strings.ToLower(strings.Trim(words[0], ","))
 	// Closed-class clause starters such as "something" are not -ing frames.
-	if policy.opener_ing_frame && !scopeClauseWords[first] && strings.HasSuffix(first, "ing") {
+	if policy.opener_ing_frame && !scopeClauseWords[first] && strings.HasSuffix(first, "ing") && policy.hit("opener.ing_frame") {
 		return ingFrameHint
 	}
-	if policy.opener_ly_exception && round2OldLyExceptions[first] {
+	if policy.opener_ly_exception && round2OldLyExceptions[first] && policy.hit("opener.ly_exception") {
 		return lyExceptionHint
 	}
 	// Nor has the same ambiguity as or, but is absent from the older splitter.
@@ -211,7 +211,7 @@ func (policy strictRules) scopeExpressionFailure(s string) string {
 	}
 	if and && or {
 		explicit := strings.HasPrefix(lower, "both ") || strings.HasPrefix(lower, "either ")
-		if !explicit && policy.scope_mixed_andor {
+		if !explicit && policy.scope_mixed_andor && policy.hit("scope.mixed_andor") {
 			return mixedScopeHint
 		}
 	}
@@ -294,6 +294,7 @@ func (policy strictRules) scopeOperandFailure(s string) string {
 	if i > 0 && i < len(words) && (framePredicates[strings.ToLower(words[i])] || frameIntransitives[strings.ToLower(words[i])] || frameTransitives[strings.ToLower(words[i])] || scopeNameVerbs[strings.ToLower(words[i])]) {
 		return ""
 	}
+	policy.hit("scope.clause_start")
 	return fmt.Sprintf("scope.clause_start: clause %q starts with token %q; %s", s, words[0], clauseStartHint)
 }
 

@@ -2,6 +2,8 @@ package validation
 
 import (
 	"strings"
+	"sync"
+	"sync/atomic"
 	"unicode"
 )
 
@@ -157,7 +159,7 @@ func (policy strictRules) singularValue(value string) bool {
 // noun-phrase shapes (including identity complements) must pass the allowlist.
 func (policy strictRules) singularBindingSafe(template []rune, ti int, concrete []rune, ci int, value string) bool {
 	variable, _ := schematicVariableForMarker(template[ti])
-	if policy.slot_one_type && policy.termSlots[variable] && clauseSlotBefore(template, ti) {
+	if policy.slot_one_type && policy.termSlots[variable] && clauseSlotBefore(template, ti) && policy.hit("slot.one_type") {
 		return policy.singularValue(value)
 	}
 	// During unification the older checks actually run. Preserve their
@@ -170,7 +172,7 @@ func (policy strictRules) singularBindingSafe(template []rune, ti int, concrete 
 }
 
 func (policy strictRules) singularBindingShapeSafe(template []rune, ti int, concrete []rune, ci int, value string) bool {
-	if !policy.slot_value_singular {
+	if !policy.slot_value_singular || !policy.hit("slot.value_singular") {
 		return true
 	}
 	before := strings.TrimSpace(string(template[:ti]))
@@ -179,7 +181,7 @@ func (policy strictRules) singularBindingShapeSafe(template []rune, ti int, conc
 		return true
 	}
 	variable, _ := schematicVariableForMarker(template[ti])
-	if policy.slot_one_type && policy.termSlots[variable] {
+	if policy.slot_one_type && policy.termSlots[variable] && policy.hit("slot.one_type") {
 		return policy.singularValue(value)
 	}
 	if clauseSlotBefore(template, ti) && repeatedSlotClause(value) {
@@ -209,7 +211,35 @@ const singularLegacyOverride rune = '\uFFFD'
 
 func legacySingularRefusal(concrete []rune, ci int, value string) bool {
 	legacy := allStrictRules()
-	return !legacy.indefiniteBindingPositionSafe(concrete, ci, value) || !legacy.schematicBindingAllowedAs(value, clauseSlotBefore(concrete, ci)) || (ci == 0 && legacy.sentenceFrameOpener(string(concrete), nil) != "")
+	return !legacy.indefiniteBindingPositionSafe(concrete, ci, value) || !legacyBindingAllowedAs(value, clauseSlotBefore(concrete, ci)) || (ci == 0 && legacy.sentenceFrameOpener(string(concrete), nil) != "")
+}
+
+// legacyBindingAllowedAs is schematicBindingAllowedAs under the full default
+// rules with no recorder, which depends only on its arguments. Unification asks
+// it for every candidate segment of every binding, so results are cached; past
+// the limit, values are checked without caching.
+var (
+	legacyBindingCache [2]sync.Map
+	legacyBindingCount atomic.Int64
+)
+
+const legacyBindingCacheLimit = 50000
+
+func legacyBindingAllowedAs(value string, clauseSlot bool) bool {
+	slot := 0
+	if clauseSlot {
+		slot = 1
+	}
+	if cached, ok := legacyBindingCache[slot].Load(value); ok {
+		return cached.(bool)
+	}
+	allowed := allStrictRules().schematicBindingAllowedAs(value, clauseSlot)
+	if legacyBindingCount.Load() < legacyBindingCacheLimit {
+		if _, loaded := legacyBindingCache[slot].LoadOrStore(value, allowed); !loaded {
+			legacyBindingCount.Add(1)
+		}
+	}
+	return allowed
 }
 
 // The gate has no general noun/adjective parser. Preserve a closed set of
@@ -240,15 +270,18 @@ func (policy strictRules) descriptionWords(words []string, plural bool) bool {
 		}
 		if policy.slot_description_shape {
 			if policy.hasSlotName(w) && !(w == "aps" && i < len(words)-1) {
+				policy.hit("slot.description_shape")
 				return false
 			}
 			// v44.0 accepted one unrestricted modifier ("the hard-takeoff concept");
 			// v45 must stay a superset, so the closed modifier list and the verb-head
 			// check apply only to descriptions with two or more modifiers.
 			if len(words) > 2 && i < len(words)-1 && !descriptionModifiers[w] && !coordinatedAdjective(w) {
+				policy.hit("slot.description_shape")
 				return false
 			}
 			if len(words) > 2 && i == len(words)-1 && (framePredicates[w] || frameTransitives[w] || frameIntransitives[w] || scopeNameVerbs[w]) {
+				policy.hit("slot.description_shape")
 				return false
 			}
 		}

@@ -70,6 +70,9 @@ func (policy strictRules) sentenceFrameOpener(s string, steps map[int]NumberedAr
 		return frameOpenerMessage(words[0])
 	}
 	if policy.opener_adverb && strings.HasSuffix(first, "ly") && !frameLyNouns[first] && (policy.opener_ly_exception || !round2OldLyExceptions[first]) && !frameLyAdjectiveSubject(strings.Fields(s)) && policy.hit("opener.adverb") {
+		if policy.opener_ly_exception && round2OldLyExceptions[first] {
+			policy.hit("opener.ly_exception")
+		}
 		return frameOpenerMessage(words[0])
 	}
 	// Bare-noun, gerund and adjective+noun subjects ("Beliefs ...", "Trying to

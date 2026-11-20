@@ -1479,6 +1479,20 @@ negation around an identity is checked around its two terms, rather than
 being mistaken for part of the left term. A conservative witness refusal
 does not claim that an alternative scope reading has a countermodel.
 
+## v45.1: faster checks
+
+No verdict or note changes from v45.0. Clause normalization depends only on
+its input clause, and schema search asks for the same clauses many times, so
+its results are now cached, as is the default-rule binding check repeated for
+every candidate value. Both caches stop growing at 50,000 entries.
+
+The 16 strict rules introduced in v44.0 now report to the strictness-notes
+recorder, including the refusal paths changed in v45.0. The notes pass
+re-checks them only when they recorded a hit, with no version-wide fallback.
+On the 14-line argument with three failing steps used for v43.1, the plain
+check takes 1.2s (v43.1: 0.95s; v45.0: 2.9s), and the check with notes takes
+1.7s (v43.1: 1.8s; v45.0: 10.2s). These are medians of three runs on one host.
+
 ## Known limits
 
 These are completeness limits: valid arguments outside the supported grammar

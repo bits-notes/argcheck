@@ -109,9 +109,7 @@ func attachStrictNotes(argument NumberedArgument, report *EntailmentGateReport) 
 			plainPasses = recorder.strictStepPassesEitherReading(step, steps)
 		}
 		for n, note := range strictNotes {
-			// v44.0 rules do not report to the recorder yet; always retry them
-			// so their notes match the exhaustive pass.
-			if plainPasses || fired.ids[note.ID] || (note.Since == "v44.0" || note.Since == "v45.0") {
+			if plainPasses || fired.ids[note.ID] {
 				jobs = append(jobs, recheck{report: i, step: step, note: n})
 			}
 		}

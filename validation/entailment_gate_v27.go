@@ -288,7 +288,7 @@ func (policy strictRules) descriptionRule(ps []*folFormula, c *folFormula) strin
 		}
 		if g != nil {
 			for _, part := range []*folFormula{countQ("some", "$count", g), countQ("some", "$count", p), countDefinition("exactly", 1, g)} {
-				if folSame(c, part) && !(policy.eg_name_witness && c.op == "some") {
+				if folSame(c, part) && !(policy.eg_name_witness && c.op == "some" && policy.hit("eg.name_witness")) {
 					return "elimination"
 				}
 			}
@@ -475,12 +475,12 @@ func (policy strictRules) gateDescriptions(c NumberedArgumentStep, steps map[int
 		translated := map[int]NumberedArgumentStep{}
 		for id, s := range steps {
 			if f := selected[descriptionSurfaceKey(s.Statement)]; f != nil {
-				s.Statement = f.Render()
+				s.Statement = policy.renderFOL(f)
 			}
 			translated[id] = s
 		}
 		next := c
-		next.Statement = target.Render()
+		next.Statement = policy.renderFOL(target)
 		result := policy.gateFOL(next, translated)
 		form = "definition"
 		return result.Passed

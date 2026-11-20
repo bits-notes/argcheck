@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"unicode"
 )
 
@@ -185,6 +186,30 @@ func (policy strictRules) buildSchemas() []entailmentSchema {
 // premise the argument must state visibly. See the "Non-goal: paraphrase
 // matching" section of repo_wiki/concepts/arguments/entailment-gate-spec.md.
 func normalizeClause(value string) string {
+	if cached, ok := normalizedClauseCache.Load(value); ok {
+		return cached.(string)
+	}
+	normalized := normalizeClauseUncached(value)
+	if normalizedClauseCount.Load() < normalizedClauseCacheLimit {
+		if _, loaded := normalizedClauseCache.LoadOrStore(value, normalized); !loaded {
+			normalizedClauseCount.Add(1)
+		}
+	}
+	return normalized
+}
+
+// normalizeClause depends only on its input, and the schema search asks for the
+// same clauses many times (every permutation, reading and binding), so results
+// are cached. The limit bounds the cache in long-running servers; past it,
+// clauses are normalized without caching.
+var (
+	normalizedClauseCache sync.Map
+	normalizedClauseCount atomic.Int64
+)
+
+const normalizedClauseCacheLimit = 50000
+
+func normalizeClauseUncached(value string) string {
 	if normalized, ok := folNormalizeLiterals(value); ok {
 		return normalized
 	}
@@ -562,14 +587,14 @@ func necessityCandidates(statement string) []string {
 func equalTerms(left, right string) bool { return allStrictRules().equalTerms(left, right) }
 
 func (policy strictRules) equalTerms(left, right string) bool {
-	if policy.term_numeral && (numeralTerm(left) || numeralTerm(right)) {
+	if policy.term_numeral && (numeralTerm(left) || numeralTerm(right)) && policy.hit("term.numeral") {
 		return false
 	}
 	leftCandidates := policy.termCandidates(left)
 	rightCandidates := policy.termCandidates(right)
 	for _, leftCandidate := range leftCandidates {
 		for _, rightCandidate := range rightCandidates {
-			if policy.term_numeral && (numeralTerm(leftCandidate) || numeralTerm(rightCandidate)) {
+			if policy.term_numeral && (numeralTerm(leftCandidate) || numeralTerm(rightCandidate)) && policy.hit("term.numeral") {
 				continue
 			}
 			if leftCandidate == rightCandidate {
@@ -599,6 +624,10 @@ func (policy strictRules) termCandidates(value string) []string {
 	result := []string{value}
 	// Preserve older plural-only diagnostic attribution when that rule alone is off.
 	if policy.term_inflection_verbatim && (policy.noun_pluralia_tantum || !nonSingularStem.MatchString(value)) {
+		words := strings.Fields(value)
+		if !(policy.noun_pluralia_tantum && nonSingularStem.MatchString(value)) && len(words) > 0 && round2Singular(words[len(words)-1]) != words[len(words)-1] {
+			policy.hit("term.inflection_verbatim")
+		}
 		if policy.noun_pluralia_tantum && nonSingularStem.MatchString(value) {
 			// Switching noun.pluralia_tantum off alone reaches the stem
 			// matcher below, so its refusal must be recorded here too.

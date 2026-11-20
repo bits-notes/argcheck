@@ -372,7 +372,11 @@ func (policy strictRules) folParsePair(op, a, b string, scope map[string]bool, s
 
 // Render uses ordinary atoms and connectives; only unrestricted quantifiers
 // need the explicit-variable escape hatch. Parentheses fix every body boundary.
-func (f *folFormula) Render() string { return folRenderNames(f, nil, 0).renderSurface() }
+func (f *folFormula) Render() string { return allStrictRules().renderFOL(f) }
+
+func (policy strictRules) renderFOL(f *folFormula) string {
+	return policy.renderFOLSurface(folRenderNames(f, nil, 0))
+}
 
 // folVariableName supplies an unbounded sequence of distinct surface binders.
 func folVariableName(depth int) string {
@@ -413,7 +417,9 @@ func folRenderNames(f *folFormula, env map[string]string, depth int) *folFormula
 	}
 	return &n
 }
-func (f *folFormula) renderSurface() string {
+func (f *folFormula) renderSurface() string { return allStrictRules().renderFOLSurface(f) }
+
+func (policy strictRules) renderFOLSurface(f *folFormula) string {
 	term := func(t string) string {
 		if folVariable.MatchString(t) {
 			return "name{" + t + "}"
@@ -423,12 +429,12 @@ func (f *folFormula) renderSurface() string {
 		}
 		return strings.TrimPrefix(t, "$")
 	}
-	wrap := func(c *folFormula) string { return "(" + c.renderSurface() + ")" }
+	wrap := func(c *folFormula) string { return "(" + policy.renderFOLSurface(c) + ")" }
 	switch f.op {
 	case "bottom":
 		return "contradiction"
 	case "atom":
-		return f.renderAtomSurface(term)
+		return policy.renderFOLAtomSurface(f, term)
 	case "equal":
 		return term(f.terms[0]) + " is identical to " + term(f.terms[1])
 	case "not":
@@ -446,7 +452,7 @@ func (f *folFormula) renderSurface() string {
 	}
 	panic("unknown FOL operator")
 }
-func (f *folFormula) renderAtomSurface(term func(string) string) string {
+func (policy strictRules) renderFOLAtomSurface(f *folFormula, term func(string) string) string {
 	plain := func() string {
 		if len(f.terms) == 0 {
 			return f.symbol
@@ -470,9 +476,9 @@ func (f *folFormula) renderAtomSurface(term func(string) string) string {
 			bound[t[1:]] = true
 		}
 	}
-	got, err := parseFOLScope(plain, bound, true)
+	got, err := policy.parseFOLScope(plain, bound, true)
 	// Check the old parenthesized parser too: it has different opaque priorities.
-	old, oldErr := parseFOLScopeMode(plain, bound, true, false)
+	old, oldErr := policy.parseFOLScopeMode(plain, bound, true, false)
 	if err == nil && folSame(f, got) && (oldErr != nil || folSame(f, old)) {
 		return plain
 	}
@@ -543,11 +549,11 @@ func folRule(ps []*folFormula, c *folFormula) string { return allStrictRules().f
 
 func (policy strictRules) folRule(ps []*folFormula, c *folFormula) string {
 	if policy.term_numeral {
-		if formulaNumeralTerm(c) {
+		if formulaNumeralTerm(c) && policy.hit("term.numeral") {
 			return ""
 		}
 		for _, p := range ps {
-			if formulaNumeralTerm(p) {
+			if formulaNumeralTerm(p) && policy.hit("term.numeral") {
 				return ""
 			}
 		}
@@ -637,7 +643,7 @@ func (policy strictRules) gateFOL(c NumberedArgumentStep, steps map[int]Numbered
 			// The readable enumerator is not a precedence specification for
 			// unrestricted mixed connectives. New compound fallback inputs must
 			// use the renderer's explicit parentheses; old schemas handle prose.
-			if len(f.children) > 0 && s != f.Render() {
+			if len(f.children) > 0 && s != policy.renderFOL(f) {
 				return nil, fmt.Errorf("parenthesize compound scopes for explicit FOL rules")
 			}
 			readings, why := policy.legacyFOLReadings(s)

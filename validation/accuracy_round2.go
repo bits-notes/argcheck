@@ -126,7 +126,7 @@ func instanceSubjectAllowed(s string) bool { return allStrictRules().instanceSub
 
 func (policy strictRules) instanceSubjectAllowed(s string) bool {
 	lower := strings.ToLower(strings.TrimSpace(s))
-	if policy.term_numeral && numeralTerm(lower) {
+	if policy.term_numeral && numeralTerm(lower) && policy.hit("term.numeral") {
 		return false
 	}
 	if policy.modifiedQuantifierPhrase(lower) || policy.quantityPhrase(lower) {

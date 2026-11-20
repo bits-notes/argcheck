@@ -347,7 +347,7 @@ func (policy strictRules) matchRelationalRule(p []NumberedArgumentStep, c Number
 						}
 					}
 				}
-				if bad {
+				if bad && policy.hit("term.numeral") {
 					continue
 				}
 			}

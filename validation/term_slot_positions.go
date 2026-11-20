@@ -514,6 +514,7 @@ func (policy strictRules) pluralCopulaSlotMessage(c NumberedArgumentStep, steps 
 				if !strings.EqualFold(scopeText(want), scopeText(c.Statement)) {
 					continue
 				}
+				policy.hit("slot.value_singular")
 				return fmt.Sprintf("slot.value_singular: premise %d would bind %s to %q; a plural or bare value is refused for a term slot. Name the thing or write the phrase itself into the rule", other, variable, value)
 			}
 		}

@@ -287,7 +287,7 @@ func (policy strictRules) legacyFOLConjunction(texts []string) ([]*folFormula, s
 func legacyFOLRender(f *folFormula) (string, string) { return allStrictRules().legacyFOLRender(f) }
 
 func (policy strictRules) legacyFOLRender(f *folFormula) (string, string) {
-	s := f.Render()
+	s := policy.renderFOL(f)
 	got, err := policy.parseFOLScope(s, map[string]bool{}, true)
 	if err != nil || !folSame(f, got) {
 		why := policy.legacyFOLRenderReason(folRenderNames(f, nil, 0), map[string]bool{})
@@ -328,7 +328,7 @@ func (policy strictRules) legacyFOLRenderReason(f *folFormula, bound map[string]
 		}
 	}
 	if f.op == "atom" || f.op == "equal" {
-		got, err := policy.parseFOLScope(f.renderSurface(), bound, true)
+		got, err := policy.parseFOLScope(policy.renderFOLSurface(f), bound, true)
 		if err != nil {
 			if len(f.terms) == 0 {
 				return "opaque clause conflicts with explicit scope or connective syntax"

@@ -52,16 +52,16 @@ func (p strictRules) egWitnessSafe(statement, term string) bool {
 	s := normalizeClause(statement)
 	t := normalizeClause(term)
 	if p.eg_name_witness {
-		if !p.singularName(strings.Fields(t)) {
+		if !p.singularName(strings.Fields(t)) && p.hit("eg.name_witness") {
 			return false
 		}
 		for _, w := range strings.Fields(s) {
-			if termNumeralWords[w] || termDeterminers[w] || numeralTerm(w) {
+			if (termNumeralWords[w] || termDeterminers[w] || numeralTerm(w)) && p.hit("eg.name_witness") {
 				return false
 			}
 		}
 	}
-	if !p.eg_subject_only {
+	if !p.eg_subject_only || !p.hit("eg.subject_only") {
 		return true
 	}
 	for _, pair := range identityCandidates(statement) {
@@ -93,7 +93,7 @@ func (p strictRules) egWitnessSafe(statement, term string) bool {
 }
 
 func (p strictRules) egFormulaSafe(f *folFormula, witness string) bool {
-	if p.eg_name_witness && !p.singularName(strings.Fields(witness)) {
+	if p.eg_name_witness && !p.singularName(strings.Fields(witness)) && p.hit("eg.name_witness") {
 		return false
 	}
 	if f.op == "equal" {
@@ -102,9 +102,11 @@ func (p strictRules) egFormulaSafe(f *folFormula, witness string) bool {
 	// Conservative: a compound or quantified matrix needs its own existence
 	// premise; an atom must expose its subject as the first argument.
 	if f.op != "atom" {
-		return !p.eg_subject_only && !p.eg_name_witness
+		subjectAllowed := !p.eg_subject_only || !p.hit("eg.subject_only")
+		nameAllowed := !p.eg_name_witness || !p.hit("eg.name_witness")
+		return subjectAllowed && nameAllowed
 	}
-	if !p.eg_subject_only {
+	if !p.eg_subject_only || !p.hit("eg.subject_only") {
 		return true
 	}
 	if len(f.terms) == 0 || f.terms[0] != witness {
@@ -203,7 +205,7 @@ func (p strictRules) round2TermFailure(c NumberedArgumentStep, steps map[int]Num
 					continue
 				}
 				before := strings.TrimSpace(string(rs[:i]))
-				if clauseSlotBefore(rs, i) && !(before == "if" || strings.HasSuffix(before, " if")) {
+				if clauseSlotBefore(rs, i) && !(before == "if" || strings.HasSuffix(before, " if")) && p.hit("slot.one_type") {
 					return "slot.one_type: mixed subordinate-clause and term uses are ambiguous; write the phrase into the rule, or name the thing in a rule without mixed slots"
 				}
 			}
@@ -211,7 +213,7 @@ func (p strictRules) round2TermFailure(c NumberedArgumentStep, steps map[int]Num
 	}
 	if p.slot_letter_in_name {
 		for _, id := range c.Citations {
-			if letterNearName(steps[id].Statement) {
+			if letterNearName(steps[id].Statement) && p.hit("slot.letter_in_name") {
 				return "slot.letter_in_name: a schematic letter adjacent to a capitalized word may be part of a proper name; use a variable away from names, or write the name out"
 			}
 		}
@@ -228,7 +230,7 @@ func (p strictRules) round2TermFailure(c NumberedArgumentStep, steps map[int]Num
 		if p.identity_constant_sides {
 			for _, s := range statements {
 				for _, pair := range p.round2IdentityPairs(s) {
-					if !p.singularValue(pair.left) || !p.singularValue(pair.right) {
+					if (!p.singularValue(pair.left) || !p.singularValue(pair.right)) && p.hit("identity.constant_sides") {
 						return "identity.constant_sides: identity sides must be names or singular definites; name the thing, or use 'the dog'; alternatively, state the substituted claim as a premise"
 					}
 				}
@@ -252,7 +254,7 @@ func (p strictRules) round2TermFailure(c NumberedArgumentStep, steps map[int]Num
 									continue
 								}
 							}
-							if !extensionalIdentityContext(other, t) {
+							if !extensionalIdentityContext(other, t) && p.hit("identity.extensional_context") {
 								return "identity.extensional_context: substitution requires a closed extensional copular predicate; state the substituted claim as a premise"
 							}
 						}
