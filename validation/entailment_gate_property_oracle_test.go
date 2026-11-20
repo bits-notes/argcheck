@@ -333,10 +333,11 @@ func propertyOracleCompositions() []propertyOracleCandidate {
 }
 
 func TestEntailmentGatePropertyOracle(t *testing.T) {
-	// identity.constant_sides: the historical UG surface lacks strict constant evidence.
+	// v46.0: evidenced names reach the closed extensional predicate guard.
 	// Keep every independent model check, including target steps in a refused proof.
 	refused := map[string]strictRefusal{
-		"1. Socrates is identical to Plato.\n| 2. Let P be an arbitrary property that Plato has.\n| 3. Therefore, Socrates has P. [1,2]\n4. Therefore, Socrates has every property that Plato has. [2-3]": {"identity.constant_sides", "name the thing"},
+		// v46.0: names are evidenced; the predicate still fails identity.extensional_context.
+		"1. Socrates is identical to Plato.\n| 2. Let P be an arbitrary property that Plato has.\n| 3. Therefore, Socrates has P. [1,2]\n4. Therefore, Socrates has every property that Plato has. [2-3]": {"identity.extensional_context", "state the substituted claim as a premise"},
 	}
 
 	candidates := append(propertyOracleCandidates(), propertyOracleCompositions()...)

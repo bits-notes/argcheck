@@ -1,6 +1,9 @@
 package validation
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // This ledger pins the boundary between supported one-step forms and valid
 // inferences that the gate cannot yet certify. An empty wantForm asserts a
@@ -226,22 +229,22 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 2. Therefore, it rains. [1]`, "double negation"},
 		{"self entailment", `1. it rains.
 2. Therefore, it rains. [1]`, "self-entailment"},
-		{"identity transitivity", `1. Ada is identical to Ben.
+		{"identity transitivity", `1. Zorvan is identical to Ben.
 2. Ben is identical to Cy.
-3. Therefore, Ada is identical to Cy. [1,2]`, "identity transitivity"},
+3. Therefore, Zorvan is identical to Cy. [1,2]`, "identity transitivity"},
 		{"universal instantiation", `1. every man is mortal.
 2. Zeus is a man.
 3. Therefore, Zeus is mortal. [1,2]`, "universal instantiation"},
 		{"universal syllogism", `1. every man is mortal.
 2. every mortal is vulnerable.
 3. Therefore, every man is vulnerable. [1,2]`, "universal syllogism"},
-		{"existential generalization", `1. Zeus is mortal.
+		{"existential generalization", `1. Zorvan is mortal.
 2. Therefore, something is mortal. [1]`, "existential generalization"},
 		{"necessity elimination", `1. necessarily, it rains.
 2. Therefore, it rains. [1]`, "necessity elimination"},
 		{"schematic instantiation", `1. if X sings, then X dances.
-2. Ada sings.
-3. Therefore, Ada dances. [1,2]`, "schematic instantiation"},
+2. Zorvan sings.
+3. Therefore, Zorvan dances. [1,2]`, "schematic instantiation"},
 		{"simple dilemma", `1. either it rains or it snows.
 2. if it rains, then the street is wet.
 3. if it snows, then the street is wet.
@@ -270,6 +273,10 @@ func TestEntailmentGateGapLedger(t *testing.T) {
 			accepted++
 		}
 		t.Run(tc.name, func(t *testing.T) {
+			// v46.0: preserve refusal examples with unlisted, sentence-initial Zorvan.
+			if tc.name == "v20 property UG" {
+				tc.argument = strings.ReplaceAll(tc.argument, "Socrates", "Zorvan")
+			}
 			// A syntax failure must never masquerade as a known entailment gap.
 			if _, parsed := ParseNumberedArgument(tc.argument, numberedArgumentOptions{}); !parsed.Passed {
 				t.Fatalf("invalid ledger fixture: %s\n%s", parsed.Message, tc.argument)
@@ -309,6 +316,10 @@ func TestEntailmentGateV19GapLedger(t *testing.T) {
 
 	for _, tc := range append(append([]v19GateCase{}, v19AcceptedCases...), v19RejectedCases...) {
 		t.Run(tc.name, func(t *testing.T) {
+			// v46.0: unlisted sentence-initial Zorvan retains the same refusal.
+			if tc.name == "schematic preserves lowercase constants" {
+				tc.argument = strings.ReplaceAll(tc.argument, "Alice", "Zorvan")
+			}
 			if listedStrictRefusal(t, tc.argument, refused) {
 				return
 			}

@@ -33,6 +33,10 @@ func TestEntailmentGateSlotBindingScope(t *testing.T) {
 		{"at most", one("At most one philosopher is wise.", "at most one philosopher is happy."), false},
 		{"conjunctive rule under negation", "1. It is not the case that Socrates is wise.\n2. Plato is tall.\n3. If it is the case that X is wise and Y is tall, then the city is safe.\n4. Therefore, the city is safe. [1,2,3]", false},
 
+		// v46.0: Socrates is now evidenced (names allowlist); valid.
+		{"name", one("Socrates is wise.", "Socrates is happy."), true},
+		// v46.0: Socrates is now evidenced (names allowlist); valid.
+		{"repeated name", twice("Socrates"), true},
 		// v30: a slot repeated in the antecedent binds one fixed thing.
 		{"repeated some", twice("Some philosopher"), false},
 		{"repeated a", twice("A philosopher"), false},
@@ -45,8 +49,6 @@ func TestEntailmentGateSlotBindingScope(t *testing.T) {
 	}
 	refused := []struct{ name, argument, hint string }{
 		// slot.value_singular: only evidenced names and bounded singular descriptions fill term slots.
-		{"name", one("Socrates is wise.", "Socrates is happy."), "Name the thing"},
-		// slot.value_singular: only evidenced names and bounded singular descriptions fill term slots.
 		{"every", one("Every philosopher is wise.", "every philosopher is happy."), "Name the thing"},
 		// slot.value_singular: only evidenced names and bounded singular descriptions fill term slots.
 		{"some", one("Some philosopher is wise.", "some philosopher is happy."), "Name the thing"},
@@ -56,8 +58,6 @@ func TestEntailmentGateSlotBindingScope(t *testing.T) {
 		{"conditional consequent", one("If Plato is right, Socrates is wise.", "if Plato is right, Socrates is happy."), "Name the thing"},
 		// slot.value_singular: only evidenced names and bounded singular descriptions fill term slots.
 		{"complete clause inside a noun phrase", one("The claim that the store is nearby is wise.", "the claim that the store is nearby is happy."), "Name the thing"},
-		// slot.value_singular: only evidenced names and bounded singular descriptions fill term slots.
-		{"repeated name", twice("Socrates"), "Name the thing"},
 		// slot.value_singular: only evidenced names and bounded singular descriptions fill term slots.
 		{"repeated every", twice("Every philosopher"), "Name the thing"},
 		// slot.value_singular: only evidenced names and bounded singular descriptions fill term slots.

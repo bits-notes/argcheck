@@ -46,10 +46,10 @@ func TestAcceptedFixtureStepParity(t *testing.T) {
 		"TestAcceptedFixtureStepParity/goldman-1967_A7.txt": {"scope.clause_start", "move the operator into each clause"},
 		// scope.clause_start: an inspected clause has no admitted opener.
 		"TestAcceptedFixtureStepParity/hempel-oppenheim-1948_A23.txt": {"scope.clause_start", "move the operator into each clause"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestAcceptedFixtureStepParity/every_parcel_in_a_crate": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestAcceptedFixtureStepParity/a_parcel_with_no_label": {"slot.value_singular", "Name the thing"},
+		// v46.0: Ada is evidenced; the embedded schematic clause still fails scope.clause_start.
+		"TestAcceptedFixtureStepParity/every_parcel_in_a_crate": {"scope.clause_start", "move the operator into each clause"},
+		// v46.0: Ada is evidenced; the embedded schematic clause still fails scope.clause_start.
+		"TestAcceptedFixtureStepParity/a_parcel_with_no_label": {"scope.clause_start", "move the operator into each clause"},
 	}
 
 	// The 999 frozen accepted ASTs and their per-step forms use the same

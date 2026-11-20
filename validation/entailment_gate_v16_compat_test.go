@@ -35,10 +35,8 @@ func TestEntailmentGateV16AcceptedCompatibility(t *testing.T) {
 		"TestEntailmentGateV16AcceptedCompatibility/case_920": {"term.inflection_verbatim", "singular 'every N'"},
 		// eg.name_witness: existential witnesses must be evidenced names.
 		"TestEntailmentGateV16AcceptedCompatibility/case_11": {"eg.name_witness", "state the existential claim as its own premise"},
-		// identity.constant_sides: identity requires evidenced singular constants.
-		"TestEntailmentGateV16AcceptedCompatibility/case_13": {"identity.constant_sides", "name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestEntailmentGateV16AcceptedCompatibility/case_16": {"slot.value_singular", "Name the thing"},
+		// v46.0: Ada is now evidenced (names allowlist); valid.
+		// v46.0: Ada is now evidenced (names allowlist); valid.
 		// eg.name_witness: existential witnesses must be evidenced names.
 		"TestEntailmentGateV16AcceptedCompatibility/case_17": {"eg.name_witness", "state the existential claim as its own premise"},
 		// term.inflection_verbatim: class spellings differ.
@@ -181,10 +179,8 @@ func TestEntailmentGateV16AcceptedCompatibility(t *testing.T) {
 		"TestEntailmentGateV16AcceptedCompatibility/case_909": {"identity.constant_sides", "name the thing"},
 		// scope.clause_start: an inspected clause has no admitted opener.
 		"TestEntailmentGateV16AcceptedCompatibility/case_921": {"scope.clause_start", "move the operator into each clause"},
-		// eg.name_witness: existential witnesses must be evidenced names.
-		"TestEntailmentGateV16AcceptedCompatibility/case_927": {"eg.name_witness", "state the existential claim as its own premise"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestEntailmentGateV16AcceptedCompatibility/case_942": {"slot.value_singular", "Name the thing"},
+		// v46.0: Zeus is now evidenced (names allowlist); valid.
+		// v46.0: Ada is now evidenced (names allowlist); valid.
 		// scope.clause_start: an inspected clause has no admitted opener.
 		"TestEntailmentGateV16AcceptedCompatibility/case_974": {"scope.clause_start", "move the operator into each clause"},
 		// scope.clause_start: an inspected clause has no admitted opener.

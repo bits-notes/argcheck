@@ -175,8 +175,8 @@ func TestAndOrGroupingPhraseLevelCoordination(t *testing.T) {
 	refused := map[string]strictRefusal{
 		// scope.mixed_andor: mixed scope lacks an admitted explicit scaffold.
 		"TestAndOrGroupingPhraseLevelCoordination/noun_phrase_or_after_determiner": {"scope.mixed_andor", "use 'both … and'"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestAndOrGroupingPhraseLevelCoordination/adjective_or": {"slot.value_singular", "Name the thing"},
+		// v46.0: Sam and Ron are evidenced; mixed coordination still needs grouping.
+		"TestAndOrGroupingPhraseLevelCoordination/adjective_or": {"scope.mixed_andor", "use 'both … and'"},
 		// scope.mixed_andor: mixed scope lacks an admitted explicit scaffold.
 		"TestAndOrGroupingPhraseLevelCoordination/verb_phrase_or": {"scope.mixed_andor", "use 'both … and'"},
 		// scope.mixed_andor: mixed scope lacks an admitted explicit scaffold.

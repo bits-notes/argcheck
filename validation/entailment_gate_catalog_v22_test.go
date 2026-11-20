@@ -139,14 +139,12 @@ func TestCatalogV22(t *testing.T) {
 		"TestCatalogV22/4-place_EI_slot_2": {"eg.subject_only", "state the existential claim as its own premise"},
 		// eg.subject_only: existential introduction into an object slot is outside the strict witness grammar.
 		"TestCatalogV22/4-place_EI_slot_3": {"eg.subject_only", "state the existential claim as its own premise"},
-		// eg.name_witness: the existential witness lacks the required name evidence.
-		"TestCatalogV22/3-place_EI_slot_0": {"eg.name_witness", "state the existential claim as its own premise"},
-		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
-		"TestCatalogV22/3-place_identity": {"identity.constant_sides", "name the thing"},
-		// eg.name_witness: the existential witness lacks the required name evidence.
-		"TestCatalogV22/4-place_EI_slot_0": {"eg.name_witness", "state the existential claim as its own premise"},
-		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
-		"TestCatalogV22/4-place_identity": {"identity.constant_sides", "name the thing"},
+		// v46.0: Alice is now evidenced (names allowlist); valid.
+		// v46.0: names are evidenced; the predicate still fails identity.extensional_context.
+		"TestCatalogV22/3-place_identity": {"identity.extensional_context", "state the substituted claim as a premise"},
+		// v46.0: Alice is now evidenced (names allowlist); valid.
+		// v46.0: names are evidenced; the predicate still fails identity.extensional_context.
+		"TestCatalogV22/4-place_identity": {"identity.extensional_context", "state the substituted claim as a premise"},
 		// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).
 		"TestCatalogV22/3-place_Fitch_EE": {"scope.clause_start", "move the operator into each clause"},
 		// scope.clause_start: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit).

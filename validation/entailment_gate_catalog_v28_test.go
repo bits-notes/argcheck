@@ -72,51 +72,23 @@ func v28LongMP(n int, letter string, bad bool) string {
 	return v26Argument(ps, "Ada celebrates")
 }
 func TestCatalogV28Schematic(t *testing.T) {
-	// v44 by-design refusals: retained separately from the accepted controls.
-	refused := map[string]strictRefusal{
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/6": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/7": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/8": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/9": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/10": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/U": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/V": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/W": {"slot.value_singular", "Name the thing"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV28Schematic/same_category_and_from_Y": {"slot.value_singular", "Name the thing"},
-	}
-
-	checkV44 := func(t *testing.T, text string, valid bool) {
-		if valid && listedStrictRefusal(t, text, refused) {
-			return
-		}
-		v28Check(t, text, valid)
-	}
-
+	// v46.0: Ada is now evidenced (names allowlist); valid.
 	for n := 6; n <= 10; n++ {
 		t.Run(fmt.Sprint(n), func(t *testing.T) {
-			checkV44(t, v28LongMP(n, "X", false), true)
-			checkV44(t, v28LongMP(n, "X", true), false)
+			v28Check(t, v28LongMP(n, "X", false), true)
+			v28Check(t, v28LongMP(n, "X", true), false)
 		})
 	}
 	for _, letter := range []string{"U", "V", "W"} {
 		t.Run(letter, func(t *testing.T) {
-			checkV44(t, v28LongMP(3, letter, false), true)
-			checkV44(t, v28LongMP(3, letter, true), false)
+			v28Check(t, v28LongMP(3, letter, false), true)
+			v28Check(t, v28LongMP(3, letter, true), false)
 		})
 	}
 	ps := []string{"If X is a person and Y is a person and Z is a person and X receives help from Y and Y receives help from Z, then X thanks Z", "Ada is a person", "Ben is a person", "Cy is a person", "Ada receives help from Ben", "Ben receives help from Cy"}
 	t.Run("same category and from Y", func(t *testing.T) {
-		checkV44(t, v26Argument(ps, "Ada thanks Cy"), true)
-		checkV44(t, v26Argument(ps, "Ada thanks Ben"), false)
+		v28Check(t, v26Argument(ps, "Ada thanks Cy"), true)
+		v28Check(t, v26Argument(ps, "Ada thanks Ben"), false)
 	})
 }
 
@@ -209,7 +181,8 @@ func TestCatalogV28Diagnostics(t *testing.T) {
 	text := v28LongMP(6, "X", true)
 	report, _ := CheckEntailmentGate(text)
 	mismatch := report.Steps[len(report.Steps)-1].Mismatch
-	for _, want := range []string{"X satisfies condition5", "binding {}", "no matching"} {
+	// v46.0: Ada now binds X before the final mismatched conjunct is checked.
+	for _, want := range []string{"X satisfies condition5", `binding {X="ada"}`, "no matching"} {
 		if !strings.Contains(mismatch, want) {
 			t.Errorf("missing %q in %q", want, mismatch)
 		}
@@ -223,8 +196,10 @@ func TestCatalogV28Diagnostics(t *testing.T) {
 
 func TestCatalogV28LegacyLettersAndNegation(t *testing.T) {
 	for _, letter := range []string{"U", "V", "W"} {
-		assertStrictRefusal(t, v26Argument([]string{"If X smiles, then X admires " + letter, "Ada smiles"}, "Ada admires "+letter), "slot.value_singular", "Name the thing")
-		assertStrictRefusal(t, v26Argument([]string{"If " + letter + " smiles, then " + letter + " dances", "Ada smiles"}, "Ada dances"), "slot.value_singular", "Name the thing")
+		// v46.0: Ada is now evidenced (names allowlist); valid.
+		v28Check(t, v26Argument([]string{"If X smiles, then X admires " + letter, "Ada smiles"}, "Ada admires "+letter), true)
+		// v46.0: Ada is now evidenced (names allowlist); valid.
+		v28Check(t, v26Argument([]string{"If " + letter + " smiles, then " + letter + " dances", "Ada smiles"}, "Ada dances"), true)
 		v28Check(t, v26Argument([]string{"If " + letter + " smiles, then " + letter + " dances", "Ada smiles"}, "Ben dances"), false)
 	}
 	TestCatalogV27InheritedNegation(t)
@@ -293,10 +268,7 @@ func TestCatalogV28PartitionLimit(t *testing.T) {
 func TestCatalogV28WrappedLengthCompatibility(t *testing.T) {
 	text := v28LongMP(11, "X", false)
 	text = strings.ReplaceAll(text, " and X", ", and it is the case that X")
-	// slot.value_singular: Ada has only sentence-initial capitalization.
-	refused := []string{text}
-	for _, argument := range refused {
-		assertStrictRefusal(t, argument, "slot.value_singular", "Name the thing")
-	}
+	// v46.0: Ada is now evidenced (names allowlist); valid.
+	v28Check(t, text, true)
 	v28Check(t, strings.Replace(text, "Ada satisfies condition10", "Ben satisfies condition10", 1), false)
 }

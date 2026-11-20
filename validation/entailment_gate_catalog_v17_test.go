@@ -31,8 +31,7 @@ func TestEntailmentGateCatalogV17(t *testing.T) {
 	refused := map[string]strictRefusal{
 		// eg.subject_only: dedicated object witnesses remain conservatively refused.
 		"TestEntailmentGateCatalogV17/object_EG": {"eg.subject_only", "state the existential claim as its own premise"},
-		// eg.name_witness: the existential witness lacks the required name evidence.
-		"TestEntailmentGateCatalogV17/subject_EG": {"eg.name_witness", "state the existential claim as its own premise"},
+		// v46.0: Alice is now evidenced (names allowlist); valid.
 		// scope.clause_start: an inspected operand lacks the admitted clause-start shape.
 		"TestEntailmentGateCatalogV17/caused": {"eg.subject_only", "state the existential claim as its own premise"},
 	}

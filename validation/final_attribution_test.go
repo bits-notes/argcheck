@@ -52,7 +52,8 @@ func TestFinalDescriptionAttribution(t *testing.T) {
 }
 
 func TestFinalCounterfactualAttribution(t *testing.T) {
-	argument := "1. If X had struck x, then X would have lit.\n2. Alice struck x.\n3. Therefore, Alice lit. [1,2]"
+	// v46.0: unlisted sentence-initial Zorvan preserves slot.value_singular attribution.
+	argument := "1. If X had struck x, then X would have lit.\n2. Zorvan struck x.\n3. Therefore, Zorvan lit. [1,2]"
 	assertStrictRefusal(t, argument, "slot.value_singular", "Name the thing")
 }
 

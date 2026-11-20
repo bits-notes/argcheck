@@ -178,16 +178,10 @@ var v19RejectedCases = []v19GateCase{
 }
 
 func TestCatalogV19(t *testing.T) {
-	refused := map[string]strictRefusal{
-		// slot.value_singular: term bindings require evidenced names or bounded singular descriptions.
-		"TestCatalogV19/schematic_preserves_lowercase_constants": {"slot.value_singular", "Name the thing"},
-	}
+	// v46.0: Alice is now evidenced (names allowlist); valid.
 
 	for _, tc := range append(append([]v19GateCase{}, v19AcceptedCases...), v19RejectedCases...) {
 		t.Run(tc.name, func(t *testing.T) {
-			if listedStrictRefusal(t, tc.argument, refused) {
-				return
-			}
 			report, result := CheckEntailmentGate(tc.argument)
 			if len(report.Steps) == 0 {
 				t.Fatalf("no gated steps: %s", result.Message)

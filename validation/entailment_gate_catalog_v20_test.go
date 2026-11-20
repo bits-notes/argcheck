@@ -83,9 +83,10 @@ func checkV20Case(t *testing.T, tc v20GateCase) {
 }
 
 func TestCatalogV20(t *testing.T) {
-	// identity.constant_sides: Socrates has no non-initial capitalization evidence.
+	// v46.0: evidenced names reach the closed extensional predicate guard.
 	refused := map[string]strictRefusal{
-		"TestCatalogV20/property_UG": {"identity.constant_sides", "name the thing"},
+		// v46.0: names are evidenced; the predicate still fails identity.extensional_context.
+		"TestCatalogV20/property_UG": {"identity.extensional_context", "state the substituted claim as a premise"},
 		"TestCatalogV20/nested_UG":   {"identity.extensional_context", "state the substituted claim as a premise"},
 	}
 

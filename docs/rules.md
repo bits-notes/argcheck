@@ -1920,10 +1920,10 @@ The modal cannot be dropped, introduced, or replaced with another modal. This al
 - **Valid form, refused by v44 strict grammar (`identity.constant_sides`):**
 
 ```argcheck-refused identity.constant_sides | name the thing | property generalization
-1. Socrates is identical to Plato.
+1. Zorvan is identical to Plato.
 | 2. Let P be an arbitrary property that Plato has.
-| 3. Therefore, Socrates has P. [1,2]
-4. Therefore, Socrates has every property that Plato has. [2-3]
+| 3. Therefore, Zorvan has P. [1,2]
+4. Therefore, Zorvan has every property that Plato has. [2-3]
 ```
 
 - **Rejected near-miss:**
@@ -2805,8 +2805,8 @@ state it as a premise.
 
 ```argcheck-refused identity.constant_sides | name the thing | description uniqueness
 1. The author of Waverley is Scott.
-2. Blair is an author of Waverley.
-3. Therefore, Blair is Scott. [1,2]
+2. Zorvan is an author of Waverley.
+3. Therefore, Zorvan is Scott. [1,2]
 ```
 
 - **Rejected near-miss:**
@@ -3150,7 +3150,7 @@ data. `TestStrictNotesExamples` checks every example and its concrete fix.
 | `slot.indefinite_object` | Indefinite in an object position | v39.0 | An indefinite object need not pick anything out: 'The robot is looking for a unicorn' does not establish that a unicorn exists. | 1. If the robot admires X, then X is admirable.<br>2. The robot admires a hero.<br>3. Therefore, a hero is admirable. [1,2] | Use a name in the slot: "The robot admires Alpha." Conclude "Alpha is admirable." This changes the premise to identify a particular hero. |
 | `slot.indefinite_written` | Indefinite written before a variable | v43.0 | When the rule writes 'a X', the instance need not be an article plus a noun: 'Bob greets a lot of people' would make X 'lot of people'. The catalog has no lexicon to tell that from 'a dog', so such a variable is refused in every position. | 1. If Rex is a X, then Fido is a X.<br>2. Rex is a dog.<br>3. Therefore, Fido is a dog. [1,2] | Write the phrase itself into the rule ("If Rex is a dog, then Fido is a dog"), or use a name or singular definite description. |
 | `slot.indefinite_value` | Indefinite value that need not name one thing | v43.0 | The v43.0 shape check requires a lone indefinite pronoun or a/an, some or one plus modifiers and one noun with nothing after it. A quantity or complement phrase ('a lot of people', 'a friend of Bob', 'a few runners') need not be one thing. Since v44.0, slot.value_singular also refuses the remaining indefinite values. | 1. If X arrived, then X is someone who arrived.<br>2. A friend of Bob arrived.<br>3. Therefore, a friend of Bob is someone who arrived. [1,2] | Write the phrase itself into the rule: "If a lot of people arrived, then a lot of people is someone who arrived." The rule then claims exactly what it says; no variable is filled with the phrase. |
-| `slot.value_singular` | Schematic value must be a singular term | v44.0 | A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Evidenced proper names and singular definite descriptions fill term slots; since v46.0, allowlisted bare plural/mass values also qualify with agreement and witness guards. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values. | 1. If X arrived, then X was seen.<br>2. A dog arrived.<br>3. Therefore, a dog was seen. [1,2] | Name the thing (Rex arrived), with internal capitals, generated-name membership, or capitalization in a mid-sentence term position with no lowercase occurrence anywhere; or use a singular definite description (the dog). Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable. |
+| `slot.value_singular` | Schematic value must be a singular term | v44.0 | A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Evidenced proper names and singular definite descriptions fill term slots; since v46.0, allowlisted bare plural/mass values also qualify with agreement and witness guards. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values. | 1. If X arrived, then X was seen.<br>2. A dog arrived.<br>3. Therefore, a dog was seen. [1,2] | Name the thing (Rex arrived), with internal capitals or capitalization evidenced somewhere other than sentence start or after Therefore/So/Thus/Hence; or use a singular definite description (the dog). Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable. |
 | `slot.modified_quantifier` | Modified quantifier in a term slot | v36.0 | A modified quantifier ('more than two robots', 'nearly all firms') is not an individual, so it cannot fill X or instantiate a universal. | 1. If X is red, then X is warm.<br>2. Nearly every robot is red.<br>3. Therefore, nearly every robot is warm. [1,2] | Use a singular definite description: "The robot is red." Conclude "The robot is warm." This certifies an individual instance rather than the quantified claim. |
 | `slot.quantity` | Quantity expression in a term slot | v38.0 | A quantity phrase ('two robots', 'a minority of voters', 'zero cases') may mean exactly that many, so it is not an individual for X or for instantiation. Since v43.0 the rule refuses only readings that are ambiguous ('exactly two'); collective quantity phrases such as 'a group of robots' are refused by slot.indefinite_value instead, so no step valid on every reading is refused by this rule alone. |  | Name the group: "The team is registered." Conclude "The team is eligible." |
 | `term.clause_inside` | Clause inside a term | v37.0 | A term that contains a finite verb with a complement may hide an attitude or embedded claim: 'the observer reckons Alpha is red' does not give that Alpha is red. | 1. If X are useful, then X are valuable.<br>2. Software exploits not known to humans are useful.<br>3. Therefore, software exploits not known to humans are valuable. [1,2] | Name the thing: "The exploit is useful." Conclude "The exploit is valuable." |

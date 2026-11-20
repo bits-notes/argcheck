@@ -88,6 +88,8 @@ func TestAccuracyRound2Cases(t *testing.T) {
 
 func TestAccuracyRound2ValidControls(t *testing.T) {
 	cases := map[string]string{
+		// v46.0: Socrates is now evidenced (names allowlist); valid.
+		"schema":                "1. If X is a man, then X is mortal.\n2. Socrates is a man.\n3. Therefore, Socrates is mortal. [1,2]",
 		"modified bare generic": "1. Red things are not blue things.\n2. The balls are red things.\n3. Therefore, it is not the case that the balls are blue things. [1,2]",
 
 		"indefinite UI": "1. Every poet is mortal.\n2. A senator is a poet.\n3. Therefore, a senator is mortal. [1,2]",
@@ -113,8 +115,6 @@ func TestAccuracyRound2ValidControls(t *testing.T) {
 		{"literal name conditional", "1. If Plan X fails, then Plan X is abandoned.\n2. Plan X fails.\n3. Therefore, Plan X is abandoned. [1,2]", "use a variable away from names, or write the name out"},
 		// slot.letter_in_name: intentionally refused under v44.0 strictness.
 		{"name plus variable", "1. If X supports Plan Y, then X recommends Plan Y.\n2. Alice supports Plan Y.\n3. Therefore, Alice recommends Plan Y. [1,2]", "use a variable away from names, or write the name out"},
-		// slot.value_singular: intentionally refused under v44.0 strictness.
-		{"schema", "1. If X is a man, then X is mortal.\n2. Socrates is a man.\n3. Therefore, Socrates is mortal. [1,2]", "Name the thing"},
 		// slot.value_singular: intentionally refused under v44.0 strictness.
 		{"theory", "1. If the theory of X is true, then X is useful.\n2. The theory of gravity is true.\n3. Therefore, gravity is useful. [1,2]", "Name the thing"},
 		// term.inflection_verbatim: intentionally refused under v44.0 strictness.

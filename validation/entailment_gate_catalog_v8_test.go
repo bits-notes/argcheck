@@ -19,8 +19,7 @@ func TestCatalogV8Coverage(t *testing.T) {
 		"TestCatalogV8Coverage/embedded_and": {"scope.clause_start", "move the operator into each clause"},
 		// term.inflection_verbatim: class spellings differ.
 		"TestCatalogV8Coverage/existing_class_plural_normalization": {"term.inflection_verbatim", "singular 'every N'"},
-		// slot.value_singular: term is outside the evidenced-name/singular-description grammar.
-		"TestCatalogV8Coverage/schematic_three": {"slot.value_singular", "Name the thing"},
+		// v46.0: Ada is now evidenced (names allowlist); valid.
 	}
 
 	tests := []struct {

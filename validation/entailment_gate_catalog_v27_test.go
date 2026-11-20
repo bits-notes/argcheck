@@ -85,17 +85,18 @@ func v27Exercises() []nplaceExercise {
 func TestCatalogV27Exercises(t *testing.T) {
 	// Strict identity requires evidenced constants, bounded descriptions and closed copular predicates; description negation needs explicit scope.
 	refused := map[string]strictRefusal{
-		"TestCatalogV27Exercises/b2":                                {"identity.extensional_context", "state the substituted claim as a premise"},
-		"TestCatalogV27Exercises/membership":                        {"identity.extensional_context", "state the substituted claim as a premise"},
-		"TestCatalogV27Exercises/uniqueness":                        {"identity.constant_sides", "name the thing"},
-		"TestCatalogV27Exercises/relative_substitution":             {"identity.constant_sides", "name the thing"},
-		"TestCatalogV27Exercises/relative_three-place_substitution": {"identity.constant_sides", "name the thing"},
-		"TestCatalogV27Exercises/both_readings_imply_narrow":        {"scope.description_negation", "keep the wide negation"},
+		"TestCatalogV27Exercises/b2":                         {"identity.extensional_context", "state the substituted claim as a premise"},
+		"TestCatalogV27Exercises/membership":                 {"identity.extensional_context", "state the substituted claim as a premise"},
+		"TestCatalogV27Exercises/relative_substitution":      {"identity.constant_sides", "name the thing"},
+		"TestCatalogV27Exercises/both_readings_imply_narrow": {"scope.description_negation", "keep the wide negation"},
 		// identity.constant_sides: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit); the expansion has explicit bound-variable identity.
 		"TestCatalogV27Exercises/definition_expansion": {"identity.constant_sides", "name the thing"},
 		// identity.constant_sides: v44 strict: lowercase constant / letter eigenvariable is not name evidence (B limit); the contraction has explicit bound-variable identity.
 		"TestCatalogV27Exercises/definition_contraction": {"identity.constant_sides", "name the thing"},
 	}
+	// v46.0: Blair is now evidenced (names allowlist); valid.
+	// v46.0: Ada is now evidenced (names allowlist); valid.
+	// Uniqueness and relative three-place substitution retain their independent oracle checks.
 	start := time.Now()
 	valid, invalid := 0, 0
 	for _, tc := range v27Exercises() {

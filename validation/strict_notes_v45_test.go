@@ -5,7 +5,7 @@ import "testing"
 func TestStrictNotesV45RefusalHits(t *testing.T) {
 	for _, words := range [][]string{
 		{"bob", "dog"},              // A name inside a description.
-		{"muddy", "wooden", "cart"}, // Unknown modifiers.
+		{"brick", "garden", "wall"}, // v46.0: noun modifiers still fail; muddy/wooden are allowlisted adjectives.
 		{"big", "red", "sees"},      // A finite verb as the head.
 	} {
 		p, fired := allStrictRules().recording()
