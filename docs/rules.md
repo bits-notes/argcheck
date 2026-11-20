@@ -3331,34 +3331,44 @@ Clause-start failures quote both the offending clause and its first token.
 
 ## Noun allowlist (v46 lexicon)
 
-The isolated `validation/lexicon` package embeds **8,001** lowercase plural/mass
+The isolated `validation/lexicon` package embeds **9,002** lowercase plural/mass
 nouns. This data-only slice does not change any validation rule. Regenerate with:
 
 ```sh
 python3 scripts/gen-noun-allowlist/generate.py
 ```
 
-The sources are Princeton **WordNet 3.0** (Princeton WordNet license), pinned via
-NLTK data commit `550b6625bcef1f2abff2ff770a5a0d272c9c6b2a`, and
-[`brekker23/English-word-frequencies`](https://github.com/brekker23/English-word-frequencies/tree/815665f95ddab30520dff6df260ed3b6244b9638)
-commit `815665f95ddab30520dff6df260ed3b6244b9638` (**Apache-2.0**, frequencies from
-public-domain books). Exact download URLs and SHA256 checksums are in
-`scripts/gen-noun-allowlist/sources.json`; license notices accompany the lexicon.
+Sources are Princeton **WordNet 3.0** (Princeton WordNet license), pinned via
+NLTK data commit `550b6625bcef1f2abff2ff770a5a0d272c9c6b2a`;
+[English-word-frequencies](https://github.com/brekker23/English-word-frequencies/tree/815665f95ddab30520dff6df260ed3b6244b9638)
+(**Apache-2.0**, public-domain books); and
+[wikipedia-word-frequency](https://github.com/IlyaSemenov/wikipedia-word-frequency/tree/d11c4fab211156e96ab5943850dd6f98604707fb)
+(**MIT**, English frequency table from the 2023-04-13 Wikipedia dump).
+Exact URLs, commits and SHA256 checksums are in
+`scripts/gen-noun-allowlist/sources.json`; upstream license notices accompany
+the lexicon. The Wikipedia frequency repository's MIT license covers the
+published table; it does not relicense Wikipedia article text.
 
-Selection takes the highest-frequency attested regular/WordNet-irregular noun
-plurals, reviewed plural-only nouns and curated mass nouns. Required domain
-vocabulary is retained; `subgoals` is the sole supplied count-noun form absent
-from WordNet and the frequency corpus. The literary frequency ranking favors
-older vocabulary. WordNet lacks countability tags, so morphology plus attestation
-is an approximation, supplemented by explicit mass-noun review.
+Selection uses attested regular/WordNet-irregular noun plurals, reviewed
+plural-only nouns and curated WordNet mass nouns. Rank words independently
+in each corpus by descending count (alphabetical ties), take the better rank,
+and break combined ties alphabetically. Keep the top 9,000 eligible forms plus
+required vocabulary, including WordNet-derived `credences`. `subgoals` remains
+the sole supplied count form absent from WordNet. Literary and encyclopedic
+biases remain. WordNet lacks countability tags, so morphology and attestation
+are an approximation, supplemented by mass-noun review.
 
-Exclusions cover quantities, proportions, partitives, container measures, units,
-number words, all words in the validator's four designated closed-word sets,
-pronoun compounds and third-person forms of common verbs (at least five tagged
-WordNet verb uses). WordNet quantity senses and measure descendants are denied
-in every sense, with one documented exception: required `information` also has
-a technical numerical-measure sense. `goods` remains a plural noun; `means` is
-excluded as a common verb form. No cross-POS first-sense ordering is assumed.
-See `validation/lexicon/EXCLUDED.md` for exclusion counts, examples and remaining
-rare/untagged verb overlaps, and `scripts/gen-noun-allowlist/README.md` for the
-full selection procedure and limitations.
+The explicit quantity list and its plurals remain excluded unchanged. Semantic
+quantity exclusion now uses only the first WordNet noun sense under
+quantity.n.01 / measure.n.02 / amount.n.03, including unit and number descendants.
+An inflection's own noun entry takes precedence over its base when available.
+Later quantity senses no longer disqualify a word; `information` needs no
+exception. The four validator closed-word sets, supplemental closed words and
+pronoun compounds remain excluded. **Verb overlaps are informational only**;
+common and rare overlaps are recorded, never removed for being verbs.
+
+Core probe exceptions are `nuclear` (adjective), `datasets` and `qualia`
+(no WordNet noun synsets), and `norms`, `money`, `probabilities` (first noun
+senses still descend from quantity). See `scripts/gen-noun-allowlist/README.md`
+for their ancestry and the selection procedure, and
+`validation/lexicon/EXCLUDED.md` for counts, boundaries and verb-overlap reviews.

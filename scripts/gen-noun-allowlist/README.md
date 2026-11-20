@@ -9,101 +9,109 @@ python3 scripts/gen-noun-allowlist/generate.py
 Downloads are cached in ignored `.cache/noun-allowlist/`. Pass `--cache DIR`
 for an existing cache. Every file is SHA256-verified on every run, including
 cached files; a mismatch fails before writing output. `sources.json` records
-exact URLs, commits, licenses and checksums for every downloaded file, including
-the frequency producer's script retained in the cache for provenance review.
-The generator does not execute that script. No raw source data is committed.
-The generated list, exclusion report and license notices are byte deterministic.
-Frequency ties use alphabetical order. No current date or local path is emitted.
+exact URLs, commits, licenses and checksums for all downloads, including both
+frequency producer scripts retained for provenance review (never executed).
+Generated data, reports and license notices are byte deterministic. No current
+date or local path is emitted.
 
 ## Sources and licenses
 
 * Princeton WordNet 3.0, mirrored in NLTK data at commit
-  `550b6625bcef1f2abff2ff770a5a0d272c9c6b2a`, provides noun lemmas, irregular
-  morphology, semantic relations, verb lemmas and tagged sense counts.
-  Its permissive Princeton WordNet license is reproduced in
-  `validation/lexicon/LICENSE-WordNet.txt`.
-* `brekker23/English-word-frequencies` at commit
-  `815665f95ddab30520dff6df260ed3b6244b9638` provides `word_count.txt`.
-  The repository licenses the material under Apache-2.0 and describes the input
-  as public-domain books. Its producer script counts English Gutenberg texts,
-  strips punctuation and filters against a word list. The source's Apache-2.0
-  license is reproduced in `validation/lexicon/LICENSE-frequency.txt`.
-  This corpus is biased toward older literature; it is not a contemporary
-  balanced-English ranking. Source claims about the entire English vocabulary
-  are not assumed. We use only observed counts.
+  `550b6625bcef1f2abff2ff770a5a0d272c9c6b2a`, supplies noun lemmas, ordered noun
+  senses, morphology, semantic relations, verbs and tagged sense counts.
+  Its permissive license is reproduced in `validation/lexicon/LICENSE-WordNet.txt`.
+* `brekker23/English-word-frequencies`, commit
+  `815665f95ddab30520dff6df260ed3b6244b9638`, supplies `word_count.txt` under
+  Apache-2.0. The producer counts English public-domain Gutenberg books, strips
+  punctuation and filters against a word list. This ranking favors older
+  literature; it is not a balanced contemporary corpus. Its notice is retained
+  in `validation/lexicon/LICENSE-frequency.txt`.
+* `IlyaSemenov/wikipedia-word-frequency`, commit
+  `d11c4fab211156e96ab5943850dd6f98604707fb`, supplies the English Wikipedia
+  frequency table `results/enwiki-2023-04-13.txt` under the repository's MIT
+  license, retained verbatim in `validation/lexicon/LICENSE-wikipedia-frequency.txt`.
+  The producer lowercases article text, normalizes dashes/apostrophes, rejects
+  words with digits and requires occurrence in at least three articles. The
+  table supplies modern encyclopedic vocabulary, with encyclopedia-specific
+  bias. We use the published word counts, not Wikipedia article text; the MIT
+  notice is the frequency repository's license, not a relicensing of Wikipedia.
 
-These are permissive sources; no wordfreq, CC-BY-SA, Google/LDC frequency data,
-Norvig-derived frequency data, or Wiktionary data is used. The selected sources'
-notices remain with the derived data; the repository's MIT license does not
-replace their licenses. Upstream URLs are in the checksum manifest.
+No wordfreq, Google/LDC, Norvig-derived or Wiktionary frequency data is used.
+Upstream notices remain with the derived data; this repository's MIT license
+does not replace them. Upstream URLs are in the checksum manifest.
 
 ## Selection
 
-1. Parse WordNet noun synsets. Keep lowercase ASCII single-word lemmas from
-   non-instance synsets (exclude capitalized names and named-instance senses).
-2. Generate regular plurals: consonant-y → ies; s/x/z/ch/sh → es; otherwise s.
-   WordNet `noun.exc` takes precedence for irregular plurals. A small reviewed
-   override adds people/persons and invariant plurals (sheep, deer, moose,
-   aircraft, spacecraft, offspring, bison, salmon, trout, swine, grouse, squid),
-   which WordNet's exception file omits. Retain only frequency-attested forms.
-   This combines morphological and
-   corpus evidence; WordNet does **not** annotate countability, so this is an
-   approximation rather than a proof that each lemma has a count use.
-3. Add a small explicitly reviewed list of plural-only nouns, and the reviewed
-   uncountable senses in `mass-nouns.txt`. Every mass noun must exist in WordNet;
-   no broad "abstract noun" or suffix heuristic admits singular count nouns.
-4. Apply all exclusions, then select the 8,000 highest-frequency eligible forms.
-   Include the brief's 14 required terms even below that cutoff. `subgoals`
-   is the sole supplied count-noun form absent from WordNet and from the ranking.
-   It receives count zero. The result currently contains **8,001 words**.
+1. Keep lowercase ASCII single-word WordNet noun lemmas from non-instance
+   synsets (exclude capitalized names and named-instance senses).
+2. Generate plurals: consonant-y → ies; s/x/z/ch/sh → es; otherwise s.
+   WordNet `noun.exc` takes precedence. Reviewed overrides add people/persons
+   and invariant sheep, deer, moose, aircraft, spacecraft, offspring, bison,
+   salmon, trout, swine, grouse, squid and species. Retain frequency-attested
+   forms. WordNet has no countability annotation: morphology plus attestation
+   is an approximation, not proof of a count use.
+3. Add reviewed plural-only nouns and `mass-nouns.txt` (each mass noun must
+   have a WordNet noun synset). No broad suffix or abstract-noun heuristic.
+4. Rank each source's lowercase ASCII words independently by descending count,
+   breaking count ties alphabetically. Rank a word by its better (smaller)
+   position in either source; absent words rank last. Break combined-rank ties
+   alphabetically. Counts from different corpora are never compared directly.
+5. Apply exclusions, select the best-ranked 9,000 eligible forms, and retain
+   the 14 original required terms plus `credences` even below the cutoff.
+   `credences` is checked against WordNet noun `credence` and its plural.
+   `subgoals` remains the sole supplied count form absent from WordNet.
+   The result contains **9,002 words**.
 
-## Exclusions
+## Exclusions and overlap review
 
-* `quantity-words.txt` supplies partitives, quantities, proportions, container
-  measures, collectives usable as quantities, units, cardinal and ordinal words.
-  Both each supplied form and its regular/WordNet irregular plurals are denied.
-* Deny every lemma (and its plurals) in WordNet's `noun.quantity` category or any
-  descendant of synset `00033615` (measure/quantity/amount). This catches obscure
-  measures, currencies and time quantities too. Any such sense disqualifies the
-  word, even when another sense is a normal count noun. The filter deliberately
-  over-excludes ambiguous words such as feet, seconds and glasses.
-  **One explicit conflict resolution:** the brief requires `information`, but
-  WordNet gives it an information-theory numerical-measure sense. That word alone
-  is exempted from the semantic quantity filter; its ordinary mass use is kept.
+* `quantity-words.txt` is unchanged: partitives, quantities, proportions,
+  container measures, collectives, units, cardinals and ordinals remain denied,
+  including their regular/WordNet irregular plurals.
+* Semantic exclusion uses only the **first noun sense** in `index.noun` and
+  its hypernym ancestry. The root `00033615` is quantity.n.01 / measure.n.02 /
+  amount.n.03, with descendants including unit_of_measurement.n.01 and
+  number.n.02. Later quantity senses do not disqualify a word. For inflections
+  without their own noun entry, use the base's first sense; a surface form's
+  own first noun sense takes precedence (species is not excluded as the
+  generated plural of specie). There is no special information exception.
 * Read `singularPartitiveWords`, `termDeterminers`, `quantityNumerals` and
   `singularClosedWords` directly from `validation/*.go`; fail on missing or
-  ambiguous declarations. Deny those words and their plurals, plus a supplemental
-  closed-class list and every/some/any/no + one/body/thing/where compounds.
-* Deny third-person singular forms of common verbs, defined reproducibly as
-  verb lemmas with at least five tagged occurrences across WordNet verb senses.
-  Use regular morphology plus WordNet's irregular verb forms ending in s.
-  This removes means, runs, works, leads, claims and results. It leaves machines
-  (required by the brief), whose verb lemma has zero tagged occurrences.
-  **Goods stays:** good is adjectival, but goods is an established plural noun
-  and not a common third-person verb form. We do not compare "first senses"
-  across POS: WordNet orders senses separately within POS, not in one global
-  noun/verb/adjective order. Tagged counts are sparse and historical, so the
-  full list of remaining rare/untagged verb overlaps is provided for review.
+  ambiguous declarations. Deny these and their plurals, supplemental closed
+  words and every/some/any/no + one/body/thing/where compounds.
+* **Verb forms are not an exclusion.** Report overlaps with common verbs
+  (at least five tagged WordNet verb uses) and rare/untagged verbs separately
+  for review. Noun/verb overlap does not invalidate a noun; there is no global
+  cross-POS first-sense ordering. For example, does also pluralizes doe.
 
-`EXCLUDED.md` reports overlapping exclusion counts in the candidate pool,
-30 frequency-ordered examples per global deny set, the global
-deny-set sizes, the selection boundary, and both common and rare verb-overlap
-review lists. Exclusions are enforced even when no candidate demonstrates them.
-The final 50 highest- and lowest-frequency words are printed and recorded there.
+`EXCLUDED.md` gives overlapping candidate exclusion counts, global deny-set
+sizes, frequency-ordered examples, selection boundaries, both verb-overlap
+review lists, and the highest/lowest 50 included words.
 
-This slice supplies data and an isolated lookup only. No validator calls it and
-no acceptance/rejection rule changes. Future integration must still validate
-syntax and context; lexical membership alone cannot establish countability or POS.
+## Core probe exceptions
+
+The must-include test covers the core argument probe except:
+
+* `nuclear`: adjective only.
+* `datasets`: no dataset noun lemma in WordNet 3.0.
+* `qualia`: noun.exc lists qualia → quale, but quale has no noun synset.
+* `norms`: norm's first sense → standard → system_of_measurement → quantity.
+* `money`: first sense → medium_of_exchange → standard → system_of_measurement
+  → quantity.
+* `probabilities`: probability's first sense directly descends from quantity.
+
+The last three remain excluded by the requested first-sense rule; no semantic
+exceptions are supplied. The probe therefore reports these six missing words.
+
+This is isolated lexical data and lookup only: no validator imports it and no
+acceptance/rejection rules change. Membership alone cannot establish POS or
+countability in a sentence.
 
 ## Bounded verification
 
 ```sh
-go vet ./validation/...
-go test -vet=off ./validation -run 'Lexicon|DocsRules'
-go test -vet=off ./validation/lexicon -run Lexicon
+go vet ./validation/lexicon/...
+go test -vet=off ./validation/lexicon ./validation -run 'Lexicon|DocsRules'
 ```
 
-The lookup and its tests live in the separate `lexicon` package, so the final
-command is necessary: testing `./validation` alone does not visit subpackages.
-The lookup is intentionally package-private, as requested; this slice adds no
-public bridge or production import into the validator.
+Regenerate twice and compare all generated files byte for byte. The lookup
+remains package-private; testing `./validation` alone misses the lexicon tests.

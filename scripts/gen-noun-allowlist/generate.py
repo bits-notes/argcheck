@@ -12,8 +12,8 @@ import zipfile
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 OUT = ROOT / 'validation' / 'lexicon'
-REQUIRED = set('subgoals humans machines robots systems agents humanity intelligence evidence water information knowledge research software'.split())
-LIMIT = 8000
+REQUIRED = set('subgoals humans machines robots systems agents humanity intelligence evidence water information knowledge research software credences'.split())
+LIMIT = 9000
 
 
 def words(path):
@@ -50,6 +50,11 @@ def main():
         def read(name):
             return z.read('wordnet/' + name).decode('utf-8')
         noun_data, exceptions, senses = read('data.noun'), read('noun.exc'), read('index.sense')
+        # index.noun lists synsets in WordNet frequency order (within nouns).
+        first_noun = {f[0]: f[6 + int(f[3])]
+                      for line in read('index.noun').splitlines()
+                      if line and not line.startswith(' ')
+                      for f in [line.split()]}
         wn_license = read('LICENSE')
         verbs = {line.split()[0] for line in read('index.verb').splitlines()
                  if line and not line.startswith(' ')}
@@ -81,7 +86,7 @@ def main():
             irregular[base].add(inflected)
     # noun.exc is not exhaustive: it omits common invariant plurals and people.
     irregular['person'].update(('people', 'persons'))
-    for base in 'sheep deer moose aircraft spacecraft offspring bison salmon trout swine grouse squid'.split():
+    for base in 'sheep deer moose aircraft spacecraft offspring bison salmon trout swine grouse squid species'.split():
         irregular[base] = {base}
 
     def plurals(base):
@@ -105,28 +110,37 @@ def main():
     # Product vocabulary explicitly required by the brief; subgoal is absent
     # from WordNet 3.0. This is the sole manually supplied count-noun lemma.
     candidates.add('subgoals')
+    if 'credence' not in noun_senses or 'credences' not in plurals('credence'):
+        raise SystemExit('Required credences must be a WordNet-derived noun plural')
 
-    freq = {}
-    for line in (args.cache / 'word_count.txt').read_text().splitlines():
-        w, n = line.split()
-        if re.fullmatch('[a-z]+', w):
-            freq[w] = int(n)
-    rank = lambda w: (-freq.get(w, 0), w)
+    # Rank each source independently; alphabetical order resolves equal counts.
+    # Use the better observed rank, never compare counts across corpora.
+    ranks = {}
+    for filename in ('word_count.txt', 'enwiki-2023-04-13.txt'):
+        freq = {}
+        for line in (args.cache / filename).read_text().splitlines():
+            w, n = line.split()
+            if re.fullmatch('[a-z]+', w):
+                freq[w] = int(n)
+        for position, w in enumerate(sorted(freq, key=lambda w: (-freq[w], w)), 1):
+            ranks[w] = min(ranks.get(w, position), position)
+    rank = lambda w: (ranks.get(w, float('inf')), w)
 
     quantity = expand(words(HERE / 'quantity-words.txt'))
-    # Every noun.quantity synset, plus descendants of measure/quantity/amount
-    # (00033615): units, monetary units, ratios, numbers and time measures.
-    quantity_synsets = {s for s, (_, _, _, lex) in synsets.items() if lex == 23}
-    quantity_synsets.add('00033615')
+    # quantity.n.01 = measure.n.02 = amount.n.03 (00033615).
+    # Its descendants include unit_of_measurement.n.01 and number.n.02.
+    quantity_synsets = {'00033615'}
     while True:
         added = {s for s, (_, parents, _, _) in synsets.items() if parents & quantity_synsets}
         if added <= quantity_synsets:
             break
         quantity_synsets |= added
-    semantic_quantity = expand({w for s in quantity_synsets for w in synsets[s][0]
-                                if re.fullmatch('[a-z]+', w)})
-    # Required by the brief despite its technical numerical-measure sense.
-    semantic_quantity.discard('information')
+    quantity_bases = {w for w, first in first_noun.items()
+                      if first in quantity_synsets and re.fullmatch('[a-z]+', w)}
+    # Prefer a surface form's own noun entry over another lemma's inflection:
+    # species is a taxonomic noun, even though regular(specie) also yields it.
+    semantic_quantity = {w for w in expand(quantity_bases)
+                         if first_noun.get(w) in quantity_synsets or w not in first_noun}
 
     closed = set()
     for name in ('singularPartitiveWords', 'termDeterminers', 'quantityNumerals', 'singularClosedWords'):
@@ -164,14 +178,13 @@ def main():
 
     categories = [
         ('explicit quantity, proportion, partitive, measure and number words', quantity),
-        ('WordNet quantity senses and measure descendants', semantic_quantity),
+        ('WordNet first noun sense under quantity or measure', semantic_quantity),
         ('Go closed-word sets, pronouns, determiners and quantifiers', closed),
         ('indefinite pronoun compounds', compounds),
-        ('common third-person singular verb forms', common_forms),
     ]
     # Report independent matches among all attested candidates plus required
     # terms. Categories overlap; counts are not a disjoint subtraction ledger.
-    pool = candidates & freq.keys() | REQUIRED
+    pool = candidates & ranks.keys() | REQUIRED
     excluded = set().union(*(values for _, values in categories))
     eligible = sorted(pool - excluded, key=rank)
     missing = REQUIRED - set(eligible)
@@ -183,7 +196,7 @@ def main():
     header = ['# Generated noun allowlist; do not edit.',
               '# Command: python3 scripts/gen-noun-allowlist/generate.py',
               '# Sources (URLs and SHA256: scripts/gen-noun-allowlist/sources.json):']
-    header += ['# ' + s['name'] + '; ' + s['version'] + '; ' + s['license'] for s in sources[:2]]
+    header += ['# ' + s['name'] + '; ' + s['version'] + '; ' + s['license'] for s in sources if s['file'] in ('word_count.txt', 'wordnet.zip', 'enwiki-2023-04-13.txt')]
     header += ['# Manual mass nouns and required domain vocabulary: see generator README.md.',
                '# Words: ' + str(len(chosen))]
     (OUT / 'plural_mass_nouns.txt').write_text('\n'.join(header + sorted(chosen)) + '\n')
@@ -197,27 +210,30 @@ def main():
         report += [f'## {label}', '', f'Count: {len(matches)}. Global deny-set size: {len(values)}.', '',
                    ', '.join(sorted(values, key=rank)[:30]), '']
         print(f'{label}: {len(matches)}')
-    unranked = sorted(chosen - freq.keys())
+    unranked = sorted(chosen - ranks.keys())
     review = sorted({w for w in chosen if w.endswith('s')} & common_forms, key=rank)
     uncommon = sorted({w for w in chosen if w.endswith('s')} & (all_forms - common_forms), key=rank)
     report += ['## Selection boundary', '',
                f'Eligible: {len(eligible)}. Included: {len(chosen)}. Below size cutoff: {len(set(eligible) - chosen)}.', '',
                'Required terms without frequency observations: ' + (', '.join(unranked) or 'none') + '.', '',
+               '## Verb/noun overlaps (informational only; never excluded)', '',
+               f'Common verb overlaps in candidate pool: {len(pool & common_forms)}. Included: {len(review)}.', '',
                '## Included common verb forms ending in -s', '', ', '.join(review) or 'None.', '',
                '## Included rare or untagged WordNet verb forms ending in -s', '',
                ', '.join(uncommon) or 'None.', '',
-               'These remain eligible: their verb lemmas have fewer than five tagged uses. This is a corpus-relative definition, not a guarantee of everyday rarity.', '',
+               'All verb overlaps remain eligible. These verb lemmas have fewer than five tagged uses. This is a corpus-relative definition, not a guarantee of everyday rarity.', '',
                '## 50 most frequent included words', '', ', '.join(chosen_ranked[:50]), '',
                '## 50 least frequent included words', '', ', '.join(chosen_ranked[-50:]), '']
     (OUT / 'EXCLUDED.md').write_text('\n'.join(report))
     (OUT / 'LICENSE-WordNet.txt').write_text(wn_license)
     (OUT / 'LICENSE-frequency.txt').write_bytes((args.cache / 'frequency-LICENSE').read_bytes())
+    (OUT / 'LICENSE-wikipedia-frequency.txt').write_bytes((args.cache / 'wikipedia-LICENSE').read_bytes())
     print(f'Final word count: {len(chosen)}')
     print('50 most frequent: ' + ', '.join(chosen_ranked[:50]))
     print('50 least frequent: ' + ', '.join(chosen_ranked[-50:]))
-    print('Included common verb forms ending in -s: ' + (', '.join(review) or 'none'))
+    print(f'Common verb overlaps: {len(pool & common_forms)} candidates, {len(review)} included (informational only)')
     print(f'Rare/untagged verb overlaps: {len(uncommon)} (full review list in EXCLUDED.md)')
-    if not 5000 <= len(chosen) <= 10000:
+    if not 8000 <= len(chosen) <= 10000:
         raise SystemExit('Lexicon outside required size range')
 
 

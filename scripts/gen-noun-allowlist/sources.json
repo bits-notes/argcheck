@@ -30,5 +30,29 @@
     "license": "Apache-2.0",
     "sha256": "31983e3a4f3d4e188f7c22967606e03c8b42bfbec94a7171701947ece0b8f63f",
     "name": "English-word-frequencies producer script"
+  },
+  {
+    "file": "enwiki-2023-04-13.txt",
+    "url": "https://raw.githubusercontent.com/IlyaSemenov/wikipedia-word-frequency/d11c4fab211156e96ab5943850dd6f98604707fb/results/enwiki-2023-04-13.txt",
+    "version": "d11c4fab211156e96ab5943850dd6f98604707fb",
+    "license": "MIT",
+    "sha256": "e2071140a49a6c40c732bd68c36836ef13c0978233fb3d5e1b2a3c2d34faef59",
+    "name": "Wikipedia English word counts (2023-04-13 dump)"
+  },
+  {
+    "file": "wikipedia-LICENSE",
+    "url": "https://raw.githubusercontent.com/IlyaSemenov/wikipedia-word-frequency/d11c4fab211156e96ab5943850dd6f98604707fb/LICENSE",
+    "version": "d11c4fab211156e96ab5943850dd6f98604707fb",
+    "license": "MIT",
+    "sha256": "dc67d398a2c3e26c83724ffd44b62ac010944286b435da4d79e204b96b1ff43d",
+    "name": "Wikipedia frequency license"
+  },
+  {
+    "file": "gather_wordfreq.py",
+    "url": "https://raw.githubusercontent.com/IlyaSemenov/wikipedia-word-frequency/d11c4fab211156e96ab5943850dd6f98604707fb/gather_wordfreq.py",
+    "version": "d11c4fab211156e96ab5943850dd6f98604707fb",
+    "license": "MIT",
+    "sha256": "e69a2a5dad473dbf8757dcbfc117813ce7ccd057cb9ae787838ca9745635e303",
+    "name": "Wikipedia frequency producer script"
   }
 ]
