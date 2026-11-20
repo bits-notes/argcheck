@@ -109,9 +109,8 @@ The must-include test covers the core argument probe except:
 The last three remain excluded by the requested first-sense rule; no semantic
 exceptions are supplied. The probe therefore reports these six missing words.
 
-This is isolated lexical data and lookup only: no validator imports it and no
-acceptance/rejection rules change. Membership alone cannot establish POS or
-countability in a sentence.
+The v46 validator imports these allowlists. Membership alone cannot establish
+POS or countability in a sentence; binding checks supply context and agreement.
 
 ## Bounded verification
 
@@ -120,5 +119,34 @@ go vet ./validation/lexicon/...
 go test -vet=off ./validation/lexicon ./validation -run 'Lexicon|DocsRules'
 ```
 
-Regenerate twice and compare all generated files byte for byte. The lookup
-remains package-private; testing `./validation` alone misses the lexicon tests.
+Regenerate twice and compare all generated files byte for byte. Testing `./validation` alone misses the lexicon tests. Public lookups are
+`IsPluralMassNoun`, `IsSingularNoun`, `IsAdjective`, and `IsMassNoun`.
+
+## Singular nouns, adjectives and agreement (v46.0)
+
+The generator also selects the top 14,000 frequency-attested WordNet singular
+noun lemmas (including mass nouns), with exactly the plural-list exclusions and
+without plural-only nouns. Required core vocabulary is retained below the cutoff.
+All `singularPartitiveWords` are excluded. The resulting list has 14,000 entries.
+
+Adjectives include WordNet adjectives and satellites, plus attested regular
+past participles of verbs with at least five tagged uses. WordNet verb exceptions
+ending in -ed or -en take precedence; other irregular past forms are not inferred
+as participles. Take the best-ranked 5,000 eligible words plus required legacy
+predicate/description vocabulary: 5,006 entries. `adjective-exclusions.txt`
+excludes quantity, determiner and identity readings even where an adjective sense
+exists, including cardinals/ordinals; Go closed words and pronoun compounds are
+also excluded. Explicit exclusions take priority over legacy modifiers: `former`
+and ordinals are not adjective members. Ordinals retain their separate description
+rule. `adjective-supplement.txt` supplies APS, ultraintelligent and the legacy
+participial attributive parking. All three are explicit reviewed additions.
+
+`mass_nouns.txt` in the output is the intersection of the reviewed mass list and
+the selected plural/mass vocabulary (303 entries), used for agreement rather than
+suffix guessing. Singular/plural homographs use the reviewed mass classification
+when present; it is deliberately not a full contextual countability parser.
+
+Use `--output-dir DIR` to regenerate outside the checkout. The deterministic
+regeneration test compares two fresh outputs against every checked-in lexical
+list and exclusion report when the pinned source cache is available. Missing
+cache skips that test; it never downloads implicitly in a test run.

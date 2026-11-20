@@ -1,0 +1,4 @@
+# Reviewed domain attributives absent from WordNet adjective entries.
+aps ultraintelligent
+# Legacy description modifier: a participial attributive of park.
+parking

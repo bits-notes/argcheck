@@ -1,4 +1,4 @@
-// Package lexicon holds the v46 noun allowlist independently of validation rules.
+// Package lexicon holds generated, immutable lexical allowlists.
 package lexicon
 
 import (
@@ -9,19 +9,44 @@ import (
 //go:embed plural_mass_nouns.txt
 var pluralMassNouns string
 
-// Construct once during package initialization. The map is never mutated after
-// initialization, so concurrent lookups need no synchronization.
-var pluralMassNounSet = func() map[string]struct{} {
-	words := make(map[string]struct{})
-	for _, line := range strings.Split(pluralMassNouns, "\n") {
+//go:embed singular_nouns.txt
+var singularNouns string
+
+//go:embed adjectives.txt
+var adjectives string
+
+//go:embed mass_nouns.txt
+var massNouns string
+
+func makeSet(data string) map[string]struct{} {
+	result := map[string]struct{}{}
+	for _, line := range strings.Split(data, "\n") {
 		if line != "" && !strings.HasPrefix(line, "#") {
-			words[line] = struct{}{}
+			result[line] = struct{}{}
 		}
 	}
-	return words
-}()
+	return result
+}
 
-func isAllowlistedPluralMassNoun(word string) bool {
-	_, ok := pluralMassNounSet[strings.ToLower(word)]
+var pluralMassNounSet = makeSet(pluralMassNouns)
+var singularNounSet = makeSet(singularNouns)
+var adjectiveSet = makeSet(adjectives)
+var massNounSet = makeSet(massNouns)
+
+func contains(set map[string]struct{}, word string) bool {
+	_, ok := set[strings.ToLower(word)]
 	return ok
 }
+
+// IsPluralMassNoun reports membership, without inferring inflections.
+func IsPluralMassNoun(word string) bool { return contains(pluralMassNounSet, word) }
+
+// IsSingularNoun reports membership in the singular description-head list.
+func IsSingularNoun(word string) bool { return contains(singularNounSet, word) }
+
+// IsAdjective reports membership in the adjective and participle list.
+func IsAdjective(word string) bool { return contains(adjectiveSet, word) }
+
+// IsMassNoun distinguishes reviewed mass nouns for slot agreement.
+func IsMassNoun(word string) bool                  { return contains(massNounSet, word) }
+func isAllowlistedPluralMassNoun(word string) bool { return IsPluralMassNoun(word) }
