@@ -15,6 +15,8 @@ pascal bar kelvin mole candela lumen lux radian steradian decibel knot league
 furlong fathom chain rod perch span pace bushel peck barrel bottle glass
 bowl spoon spoonful cupful mouthful armful bagful bag basketful basket
 truckload carload boatload dash pinch drop dollop slice chunk piece fragment
+bundle bale skein string array raft slew spate smattering modicum minimum maximum
+abundance paucity excess deficit shortfall surplus complement contingent
 segment section subset aggregate collection assortment selection batch
 multitude host throng crowd swarm flock herd pack troop school shoal bevy
 clump cluster brace duo trio quartet quintet sextet septet octave nonet

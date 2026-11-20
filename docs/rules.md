@@ -3328,3 +3328,37 @@ A variable also used as a term still needs a singular term value.
 Bare plurals and mass values remain refused. An `is`/`are` mismatch in the
 plural friction probe now reports `slot.value_singular` without certifying it.
 Clause-start failures quote both the offending clause and its first token.
+
+## Noun allowlist (v46 lexicon)
+
+The isolated `validation/lexicon` package embeds **8,001** lowercase plural/mass
+nouns. This data-only slice does not change any validation rule. Regenerate with:
+
+```sh
+python3 scripts/gen-noun-allowlist/generate.py
+```
+
+The sources are Princeton **WordNet 3.0** (Princeton WordNet license), pinned via
+NLTK data commit `550b6625bcef1f2abff2ff770a5a0d272c9c6b2a`, and
+[`brekker23/English-word-frequencies`](https://github.com/brekker23/English-word-frequencies/tree/815665f95ddab30520dff6df260ed3b6244b9638)
+commit `815665f95ddab30520dff6df260ed3b6244b9638` (**Apache-2.0**, frequencies from
+public-domain books). Exact download URLs and SHA256 checksums are in
+`scripts/gen-noun-allowlist/sources.json`; license notices accompany the lexicon.
+
+Selection takes the highest-frequency attested regular/WordNet-irregular noun
+plurals, reviewed plural-only nouns and curated mass nouns. Required domain
+vocabulary is retained; `subgoals` is the sole supplied count-noun form absent
+from WordNet and the frequency corpus. The literary frequency ranking favors
+older vocabulary. WordNet lacks countability tags, so morphology plus attestation
+is an approximation, supplemented by explicit mass-noun review.
+
+Exclusions cover quantities, proportions, partitives, container measures, units,
+number words, all words in the validator's four designated closed-word sets,
+pronoun compounds and third-person forms of common verbs (at least five tagged
+WordNet verb uses). WordNet quantity senses and measure descendants are denied
+in every sense, with one documented exception: required `information` also has
+a technical numerical-measure sense. `goods` remains a plural noun; `means` is
+excluded as a common verb form. No cross-POS first-sense ordering is assumed.
+See `validation/lexicon/EXCLUDED.md` for exclusion counts, examples and remaining
+rare/untagged verb overlaps, and `scripts/gen-noun-allowlist/README.md` for the
+full selection procedure and limitations.

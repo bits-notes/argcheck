@@ -42,8 +42,11 @@ replace their licenses. Upstream URLs are in the checksum manifest.
 1. Parse WordNet noun synsets. Keep lowercase ASCII single-word lemmas from
    non-instance synsets (exclude capitalized names and named-instance senses).
 2. Generate regular plurals: consonant-y → ies; s/x/z/ch/sh → es; otherwise s.
-   WordNet `noun.exc` takes precedence for irregular plurals, including invariant
-   forms. Retain only frequency-attested forms. This combines morphological and
+   WordNet `noun.exc` takes precedence for irregular plurals. A small reviewed
+   override adds people/persons and invariant plurals (sheep, deer, moose,
+   aircraft, spacecraft, offspring, bison, salmon, trout, swine, grouse, squid),
+   which WordNet's exception file omits. Retain only frequency-attested forms.
+   This combines morphological and
    corpus evidence; WordNet does **not** annotate countability, so this is an
    approximation rather than a proof that each lemma has a count use.
 3. Add a small explicitly reviewed list of plural-only nouns, and the reviewed
@@ -83,7 +86,7 @@ replace their licenses. Upstream URLs are in the checksum manifest.
   full list of remaining rare/untagged verb overlaps is provided for review.
 
 `EXCLUDED.md` reports overlapping exclusion counts in the candidate pool,
-30 highest-frequency examples per category (all if fewer qualify), the global
+30 frequency-ordered examples per global deny set, the global
 deny-set sizes, the selection boundary, and both common and rare verb-overlap
 review lists. Exclusions are enforced even when no candidate demonstrates them.
 The final 50 highest- and lowest-frequency words are printed and recorded there.
@@ -91,3 +94,16 @@ The final 50 highest- and lowest-frequency words are printed and recorded there.
 This slice supplies data and an isolated lookup only. No validator calls it and
 no acceptance/rejection rule changes. Future integration must still validate
 syntax and context; lexical membership alone cannot establish countability or POS.
+
+## Bounded verification
+
+```sh
+go vet ./validation/...
+go test -vet=off ./validation -run 'Lexicon|DocsRules'
+go test -vet=off ./validation/lexicon -run Lexicon
+```
+
+The lookup and its tests live in the separate `lexicon` package, so the final
+command is necessary: testing `./validation` alone does not visit subpackages.
+The lookup is intentionally package-private, as requested; this slice adds no
+public bridge or production import into the validator.
