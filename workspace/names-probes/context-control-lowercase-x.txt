@@ -1,0 +1,5 @@
+1. If X arrived, then X was seen.
+2. If the bell rang, then the courier arrived.
+3. The bell rang.
+4. The courier arrived. [2,3]
+5. Therefore, the courier was seen. [1,4]

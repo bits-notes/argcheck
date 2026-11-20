@@ -1,0 +1,3 @@
+1. Purely, deferential moral philosophy is unstable.
+2. If purely, deferential moral philosophy is unstable, then the bell rings.
+3. Therefore, the bell rings. [1,2]

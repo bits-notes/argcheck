@@ -1,4 +1,0 @@
-1. If X arrived, then X was seen.
-2. Zorvan arrived.
-3. The heading is Zorvan.
-4. Therefore, Zorvan was seen. [1,2]

@@ -1,4 +1,5 @@
 1. If X arrived, then X was seen.
-2. Zorvan arrived.
-3. If Zorvan arrived, then the bell rings.
-4. Therefore, Zorvan was seen. [1,2]
+2. If the bell rang, then Zorvan arrived.
+3. The bell rang.
+4. Zorvan arrived. [2,3]
+5. Therefore, Zorvan was seen. [1,4]

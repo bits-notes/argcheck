@@ -1,4 +1,5 @@
 1. If X arrived, then X was seen.
-2. Plenty arrived.
-3. If Plenty arrived, then the bell rings.
-4. Therefore, Plenty was seen. [1,2]
+2. If the bell rang, then Plenty arrived.
+3. The bell rang.
+4. Plenty arrived. [2,3]
+5. Therefore, Plenty was seen. [1,4]
