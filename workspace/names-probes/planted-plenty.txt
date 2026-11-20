@@ -1,0 +1,4 @@
+1. If X arrived, then X was seen.
+2. Plenty arrived.
+3. If Plenty arrived, then the bell rings.
+4. Therefore, Plenty was seen. [1,2]

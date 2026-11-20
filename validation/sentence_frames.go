@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/bits-notes/english-arg-validator/validation/lexicon"
 )
 
 // Safe lexical entry points, shared by sentence-internal certificates. Bare
@@ -69,7 +71,7 @@ func (policy strictRules) sentenceFrameOpener(s string, steps map[int]NumberedAr
 	if policy.opener_adverb && frameSentenceAdverbs[first] && policy.hit("opener.adverb") {
 		return frameOpenerMessage(words[0])
 	}
-	if policy.opener_adverb && strings.HasSuffix(first, "ly") && !frameLyNouns[first] && (policy.opener_ly_exception || !round2OldLyExceptions[first]) && !frameLyAdjectiveSubject(strings.Fields(s)) && policy.hit("opener.adverb") {
+	if policy.opener_adverb && strings.HasSuffix(first, "ly") && !frameLyNouns[first] && (policy.opener_ly_exception || !round2OldLyExceptions[first]) && !frameLyAdjectiveSubject(strings.Fields(s)) && !frameDegreeAdjectiveSubject(strings.Fields(s)) && policy.hit("opener.adverb") {
 		if policy.opener_ly_exception && round2OldLyExceptions[first] {
 			policy.hit("opener.ly_exception")
 		}
@@ -484,4 +486,29 @@ func frameGerundVerbLike(words []string, index int) bool {
 		return false
 	}
 	return true
+}
+
+// Degree modifiers only: sentence adverbs and hedges are deliberately absent.
+var frameDegreeAdverbs = wordSet("purely entirely wholly fully highly completely totally extremely")
+
+func frameDegreeAdjectiveSubject(words []string) bool {
+	return len(words) >= 2 && frameDegreeAdverbs[strings.ToLower(words[0])] && lexicon.IsAdjective(words[1])
+}
+
+// Scope admission additionally requires a noun head and a visible predicate.
+func frameDegreeAdjectiveClause(words []string) bool {
+	if !frameDegreeAdjectiveSubject(words) {
+		return false
+	}
+	for i := 2; i+1 < len(words); i++ {
+		w := strings.ToLower(words[i])
+		next := strings.ToLower(words[i+1])
+		if (lexicon.IsSingularNoun(w) || lexicon.IsPluralMassNoun(w)) && (framePredicates[next] || frameIntransitives[next] || frameTransitives[next]) {
+			return true
+		}
+		if !lexicon.IsAdjective(w) {
+			return false
+		}
+	}
+	return false
 }

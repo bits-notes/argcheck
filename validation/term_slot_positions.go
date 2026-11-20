@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 // Identity substitution (Leibniz's law) is certified only in known-safe
@@ -520,4 +521,45 @@ func (policy strictRules) pluralCopulaSlotMessage(c NumberedArgumentStep, steps 
 		}
 	}
 	return ""
+}
+
+// nameTermPosition recognizes a capitalized name span in a plain subject or
+// a known verb's object. Reuse the clause-position helpers, but require a
+// visible predicate after subjects so headings/adverbs cannot seed evidence.
+func nameTermPosition(words []string, index int) bool {
+	// A capitalized head in a definite nominal (the Bank of England) is
+	// also a term occurrence. Retaining its evidence prevents a proper-name
+	// head from being silently reinterpreted as an ordinary description.
+	if index > 0 && strings.EqualFold(words[index-1], "the") && index+1 < len(words) && strings.EqualFold(words[index+1], "of") {
+		return true
+	}
+	start, end := index, index+1
+	capital := func(w string) bool { return unicode.IsUpper(firstRune(strings.Trim(w, "\"(["))) }
+	for start > 0 && capital(words[start-1]) && !strings.ContainsAny(words[start-1], ".,;:!?") {
+		start--
+	}
+	for end < len(words) && capital(words[end]) && !strings.ContainsAny(words[end-1], ".,;:!?") {
+		end++
+	}
+	prefix := strings.ToLower(strings.Join(words[:start], " "))
+	if indefiniteSlotSafe(prefix) && !afterCopula(prefix) && end < len(words) {
+		next := strings.ToLower(strings.Trim(words[end], ".,;:!?"))
+		safe, _ := termSubjectPositions(strings.Join(words[:start], " ")+" nameterm "+strings.Join(words[end:], " "), "nameterm")
+		if safe && (framePredicates[next] || frameIntransitives[next] || frameTransitives[next]) {
+			return true
+		}
+	}
+	if start > 0 {
+		prev := strings.ToLower(words[start-1])
+		// Nominal prepositional complements are term positions too (the
+		// capital of France); they do not make their contents safe for
+		// identity substitution, which uses the stricter helper above.
+		switch prev {
+		case "of", "to", "beside", "near", "with", "from", "in", "on", "at", "by":
+			return start > 1
+		}
+		// These finite transitive uses have an explicit subject before the verb.
+		return start > 1 && (frameTransitives[prev] || prev == "saw" || prev == "met")
+	}
+	return false
 }

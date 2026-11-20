@@ -274,6 +274,11 @@ func (policy strictRules) scopeOperandFailure(s string) string {
 		return ""
 	}
 	first := strings.ToLower(words[0])
+	// The degree modifier belongs to an adjective in a visible nominal
+	// subject, not to the inspected clause as a whole.
+	if frameDegreeAdjectiveClause(words) {
+		return ""
+	}
 	if scopeClauseWords[first] || unicode.IsDigit(firstRune(first)) {
 		return ""
 	}

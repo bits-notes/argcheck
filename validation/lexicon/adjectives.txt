@@ -5,7 +5,7 @@
 # Princeton WordNet via NLTK data; WordNet 3.0; NLTK data 550b6625bcef1f2abff2ff770a5a0d272c9c6b2a; Princeton WordNet license
 # Wikipedia English word counts (2023-04-13 dump); d11c4fab211156e96ab5943850dd6f98604707fb; MIT
 # Manual mass nouns and required domain vocabulary: see generator README.md.
-# Words: 5006
+# Words: 5007
 abandoned
 abashed
 abbreviated
@@ -1109,6 +1109,7 @@ defenceless
 defended
 defending
 defensive
+deferential
 defiant
 deficient
 defied

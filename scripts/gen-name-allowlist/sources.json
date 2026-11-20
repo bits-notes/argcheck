@@ -1,0 +1,54 @@
+[
+  {
+    "file": "names.zip",
+    "url": "https://raw.githubusercontent.com/nltk/nltk_data/550b6625bcef1f2abff2ff770a5a0d272c9c6b2a/packages/corpora/names.zip",
+    "version": "550b6625bcef1f2abff2ff770a5a0d272c9c6b2a",
+    "license": "Kantrowitz attribution license",
+    "sha256": "0eec7e958b34982662b8f05824ae64642dea097b08057ade65c252191c5fe7ca"
+  },
+  {
+    "file": "surnames.csv",
+    "url": "https://raw.githubusercontent.com/fivethirtyeight/data/4c1ff5e3aef1816ae04af63218015066e186c147/most-common-name/surnames.csv",
+    "version": "4c1ff5e3aef1816ae04af63218015066e186c147",
+    "license": "CC-BY-4.0; Census public data",
+    "sha256": "1498e6a40db61e5edcbd93d9dded9e5249e1a2e9db7571ecc8468c6d6e6acdf7"
+  },
+  {
+    "file": "census-LICENSE",
+    "url": "https://raw.githubusercontent.com/fivethirtyeight/data/4c1ff5e3aef1816ae04af63218015066e186c147/LICENSE",
+    "version": "4c1ff5e3aef1816ae04af63218015066e186c147",
+    "license": "CC-BY-4.0",
+    "sha256": "7e7170e3cebf88a9f60c7b8421418323c09304da1af4d5e90f4da1dc1c8a2661"
+  },
+  {
+    "file": "census-README",
+    "url": "https://raw.githubusercontent.com/fivethirtyeight/data/4c1ff5e3aef1816ae04af63218015066e186c147/most-common-name/README.md",
+    "version": "4c1ff5e3aef1816ae04af63218015066e186c147",
+    "license": "CC-BY-4.0",
+    "sha256": "892213bcba6c51472b6e822b0130a142e88173b6f8ef97da7f73bcdc30ac4807"
+  },
+  {
+    "file": "word_count.txt",
+    "url": "https://raw.githubusercontent.com/brekker23/English-word-frequencies/815665f95ddab30520dff6df260ed3b6244b9638/word_count.txt",
+    "version": "815665f95ddab30520dff6df260ed3b6244b9638",
+    "license": "Apache-2.0 (frequency ranking from public-domain books)",
+    "sha256": "a0df8f6c69603509fda6e4af050ec92f74f9de2d99308ffeda59f988f10291e8",
+    "name": "English-word-frequencies word counts"
+  },
+  {
+    "file": "wordnet.zip",
+    "url": "https://raw.githubusercontent.com/nltk/nltk_data/550b6625bcef1f2abff2ff770a5a0d272c9c6b2a/packages/corpora/wordnet.zip",
+    "version": "WordNet 3.0; NLTK data 550b6625bcef1f2abff2ff770a5a0d272c9c6b2a",
+    "license": "Princeton WordNet license",
+    "sha256": "cbda5ea6eef7f36a97a43d4a75f85e07fccbb4f23657d27b4ccbc93e2646ab59",
+    "name": "Princeton WordNet via NLTK data"
+  },
+  {
+    "file": "frequency-LICENSE",
+    "url": "https://raw.githubusercontent.com/brekker23/English-word-frequencies/815665f95ddab30520dff6df260ed3b6244b9638/LICENSE",
+    "version": "815665f95ddab30520dff6df260ed3b6244b9638",
+    "license": "Apache-2.0",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "name": "English-word-frequencies license"
+  }
+]

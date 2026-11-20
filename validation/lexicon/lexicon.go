@@ -50,3 +50,18 @@ func IsAdjective(word string) bool { return contains(adjectiveSet, word) }
 // IsMassNoun distinguishes reviewed mass nouns for slot agreement.
 func IsMassNoun(word string) bool                  { return contains(massNounSet, word) }
 func isAllowlistedPluralMassNoun(word string) bool { return IsPluralMassNoun(word) }
+
+//go:embed names.txt
+var names string
+
+//go:embed name_forbidden.txt
+var nameForbidden string
+
+var nameSet = makeSet(names)
+var nameForbiddenSet = makeSet(nameForbidden)
+
+// IsName reports lexical membership; callers must separately require capitals.
+func IsName(word string) bool { return contains(nameSet, word) }
+
+// IsNameForbidden vetoes quantity and closed words even with contextual capitals.
+func IsNameForbidden(word string) bool { return contains(nameForbiddenSet, word) }

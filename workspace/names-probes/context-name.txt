@@ -1,0 +1,4 @@
+1. If X arrived, then X was seen.
+2. Zorvan arrived.
+3. If Zorvan arrived, then the bell rings.
+4. Therefore, Zorvan was seen. [1,2]

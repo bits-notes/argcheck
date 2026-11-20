@@ -108,3 +108,29 @@ func TestLexiconFormat(t *testing.T) {
 		t.Fatalf("unexpected list/map size: %d/%d", count, len(pluralMassNounSet))
 	}
 }
+
+func TestLexiconNames(t *testing.T) {
+	for _, w := range strings.Fields("leah amanda jennifer megan olivia samantha patel") {
+		if !IsName(w) || !IsName(strings.ToUpper(w)) {
+			t.Errorf("missing name %s", w)
+		}
+	}
+	for _, w := range strings.Fields("lots plenty most many banks rivers will may mark all some few several bill frank pat grace hope joy woods fields") {
+		if IsName(w) {
+			t.Errorf("ambiguous name %s", w)
+		}
+	}
+	previous := ""
+	for _, w := range strings.Fields(names) {
+		if !regexp.MustCompile(`^[a-z]{3,}$`).MatchString(w) || w <= previous {
+			t.Fatalf("invalid name %q after %q", w, previous)
+		}
+		if IsNameForbidden(w) || IsPluralMassNoun(w) || IsSingularNoun(w) || IsMassNoun(w) || IsAdjective(w) {
+			t.Errorf("name overlaps exclusions: %s", w)
+		}
+		previous = w
+	}
+	if len(nameSet) < 10000 || len(nameSet) > 40000 {
+		t.Fatal(len(nameSet))
+	}
+}

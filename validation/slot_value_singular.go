@@ -20,35 +20,52 @@ func internalCapital(w string) bool {
 	return false
 }
 
+// Ordinary capitals need either lexical evidence or a capitalized mid-sentence
+// term occurrence with no lowercase occurrence anywhere in the argument.
+// Quantities/closed words never supply either route. Internal capitals retain
+// their separate historical evidence rule, including at sentence start.
 func schematicNameEvidence(steps map[int]NumberedArgumentStep) *map[string]bool {
 	names := map[string]bool{}
+	lowercase := map[string]bool{}
+	baseWord := func(raw string) string {
+		w := strings.Trim(raw, ".,;:!?\"()[]")
+		return strings.TrimSuffix(strings.TrimSuffix(w, "'s"), "’s")
+	}
+	for _, step := range steps {
+		for _, raw := range strings.Fields(step.Statement) {
+			base := baseWord(raw)
+			if base == strings.ToLower(base) {
+				lowercase[base] = true
+			}
+		}
+	}
 	for _, step := range steps {
 		words := strings.Fields(step.Statement)
 		for i, raw := range words {
 			w := strings.Trim(raw, ".,;:!?\"()[]")
-			// A capital after the first letter (AIXI, McCarthy, GPT-4) is name
-			// evidence even at sentence start: an ordinary word written there
-			// ("Lots", "Most") has only its first letter capitalised.
-			base := strings.TrimSuffix(strings.TrimSuffix(w, "'s"), "’s")
-			possessiveName := base != w && unicode.IsUpper(firstRune(base)) && !scopeContractions[strings.ToLower(base)]
-			if possessiveName {
-				names["possessive:"+strings.ToLower(base)] = true
+			base := baseWord(raw)
+			lower := strings.ToLower(base)
+			if base != w && unicode.IsUpper(firstRune(base)) && !scopeContractions[lower] {
+				names["possessive:"+lower] = true
 			}
 			if internalCapital(w) {
 				names[strings.ToLower(w)] = true
-				names[strings.TrimSuffix(strings.TrimSuffix(strings.ToLower(w), "'s"), "’s")] = true
+				names[lower] = true
 				continue
 			}
-			if i == 0 || strings.ContainsAny(words[i-1], ".!?") {
+			if !unicode.IsUpper(firstRune(base)) || singularClosedWord(lower) || lexicon.IsNameForbidden(lower) {
 				continue
 			}
-			prev := strings.ToLower(strings.Trim(words[i-1], ",:"))
-			if prev == "therefore" || prev == "so" || prev == "thus" || prev == "hence" {
-				continue
+			evidence := lexicon.IsName(lower)
+			if !evidence && !lowercase[lower] && i > 0 && !strings.ContainsAny(words[i-1], ".!?") {
+				prev := strings.ToLower(strings.Trim(words[i-1], ",:"))
+				if prev != "therefore" && prev != "so" && prev != "thus" && prev != "hence" {
+					evidence = nameTermPosition(words, i)
+				}
 			}
-			if unicode.IsUpper(firstRune(w)) {
+			if evidence {
 				names[strings.ToLower(w)] = true
-				names[strings.TrimSuffix(strings.TrimSuffix(strings.ToLower(w), "'s"), "’s")] = true
+				names[lower] = true
 			}
 		}
 	}

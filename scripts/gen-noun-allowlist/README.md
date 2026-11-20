@@ -133,7 +133,7 @@ Adjectives include WordNet adjectives and satellites, plus attested regular
 past participles of verbs with at least five tagged uses. WordNet verb exceptions
 ending in -ed or -en take precedence; other irregular past forms are not inferred
 as participles. Take the best-ranked 5,000 eligible words plus required legacy
-predicate/description vocabulary: 5,006 entries. `adjective-exclusions.txt`
+predicate/description vocabulary: 5,007 entries. `adjective-exclusions.txt`
 excludes quantity, determiner and identity readings even where an adjective sense
 exists, including cardinals/ordinals; Go closed words and pronoun compounds are
 also excluded. Explicit exclusions take priority over legacy modifiers: `former`
@@ -150,3 +150,11 @@ Use `--output-dir DIR` to regenerate outside the checkout. The deterministic
 regeneration test compares two fresh outputs against every checked-in lexical
 list and exclusion report when the pinned source cache is available. Missing
 cache skips that test; it never downloads implicitly in a test run.
+
+## Name evidence
+
+The companion [name generator](../gen-name-allowlist/README.md) produces the
+conservative `names.txt` allowlist and quantity/closed-word runtime veto.
+`IsName` is a lowercase lookup; validation additionally requires capitalization.
+The adjective required vocabulary includes WordNet's `deferential` for the
+narrow degree-adverb opener exception; the adjective list now has 5,007 entries.

@@ -258,7 +258,7 @@ def main():
             participles.add(base + 'ed')
     # Ordinals/cardinals are excluded semantically as well as by closed lists.
     adjective_denied |= {w for w in adjective_lemmas if re.search(r'(?:[a-z]+teenth|[a-z]+tieth)$', w)}
-    required_adj = set('registered aligned informed trained'.split())
+    required_adj = set('registered aligned informed trained deferential'.split())
     for name in ('coordinatedAdjectives', 'singularPredicateHeads', 'descriptionModifiers'):
         for path in sorted((ROOT / 'validation').glob('*.go')):
             for match in re.findall(r'var\s+' + name + r'\s*=\s*wordSet\("([^"]*)"\)', path.read_text()):

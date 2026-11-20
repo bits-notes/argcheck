@@ -3079,8 +3079,11 @@ ending in `-ly`, such as `Arguably`, `Purportedly`, `Hypothetically`, and
 `yesterday`, `today`), or a fronted frame that starts with any preposition, single-word or complex
 (`In the story`, `Under the law of likelihood`, `According to Bob`, `As per the
 log`, `In view of ...`), with or without a comma. A capitalized word that
-also appears capitalized mid-sentence elsewhere in the argument is a name, not
-an adverb under the older recognizer. Since v44.0, initial -ing words are
+also appears capitalized mid-sentence in a term position, and never lowercase
+anywhere in the argument, can supply contextual name evidence. Generated-name
+membership supplies another route for capitalized tokens; neither route admits
+quantity/closed words. The narrow degree-adverb exception described below
+admits adjective modifiers such as `Purely deferential` without a comma. Since v44.0, initial -ing words are
 refused even with a gerund-subject reading, and inspected clauses must use
 controlled clause starts. The message suggests moving the adverb or
 frame out, or rewording so the sentence starts with its subject (`Rationalist
@@ -3147,7 +3150,7 @@ data. `TestStrictNotesExamples` checks every example and its concrete fix.
 | `slot.indefinite_object` | Indefinite in an object position | v39.0 | An indefinite object need not pick anything out: 'The robot is looking for a unicorn' does not establish that a unicorn exists. | 1. If the robot admires X, then X is admirable.<br>2. The robot admires a hero.<br>3. Therefore, a hero is admirable. [1,2] | Use a name in the slot: "The robot admires Alpha." Conclude "Alpha is admirable." This changes the premise to identify a particular hero. |
 | `slot.indefinite_written` | Indefinite written before a variable | v43.0 | When the rule writes 'a X', the instance need not be an article plus a noun: 'Bob greets a lot of people' would make X 'lot of people'. The catalog has no lexicon to tell that from 'a dog', so such a variable is refused in every position. | 1. If Rex is a X, then Fido is a X.<br>2. Rex is a dog.<br>3. Therefore, Fido is a dog. [1,2] | Write the phrase itself into the rule ("If Rex is a dog, then Fido is a dog"), or use a name or singular definite description. |
 | `slot.indefinite_value` | Indefinite value that need not name one thing | v43.0 | The v43.0 shape check requires a lone indefinite pronoun or a/an, some or one plus modifiers and one noun with nothing after it. A quantity or complement phrase ('a lot of people', 'a friend of Bob', 'a few runners') need not be one thing. Since v44.0, slot.value_singular also refuses the remaining indefinite values. | 1. If X arrived, then X is someone who arrived.<br>2. A friend of Bob arrived.<br>3. Therefore, a friend of Bob is someone who arrived. [1,2] | Write the phrase itself into the rule: "If a lot of people arrived, then a lot of people is someone who arrived." The rule then claims exactly what it says; no variable is filled with the phrase. |
-| `slot.value_singular` | Schematic value must be a singular term | v44.0 | A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Evidenced proper names and singular definite descriptions fill term slots; since v46.0, allowlisted bare plural/mass values also qualify with agreement and witness guards. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values. | 1. If X arrived, then X was seen.<br>2. A dog arrived.<br>3. Therefore, a dog was seen. [1,2] | Name the thing (Rex arrived), with internal capitals or capitalization evidenced somewhere other than sentence start or after Therefore/So/Thus/Hence; or use a singular definite description (the dog). Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable. |
+| `slot.value_singular` | Schematic value must be a singular term | v44.0 | A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Evidenced proper names and singular definite descriptions fill term slots; since v46.0, allowlisted bare plural/mass values also qualify with agreement and witness guards. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values. | 1. If X arrived, then X was seen.<br>2. A dog arrived.<br>3. Therefore, a dog was seen. [1,2] | Name the thing (Rex arrived), with internal capitals, generated-name membership, or capitalization in a mid-sentence term position with no lowercase occurrence anywhere; or use a singular definite description (the dog). Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable. |
 | `slot.modified_quantifier` | Modified quantifier in a term slot | v36.0 | A modified quantifier ('more than two robots', 'nearly all firms') is not an individual, so it cannot fill X or instantiate a universal. | 1. If X is red, then X is warm.<br>2. Nearly every robot is red.<br>3. Therefore, nearly every robot is warm. [1,2] | Use a singular definite description: "The robot is red." Conclude "The robot is warm." This certifies an individual instance rather than the quantified claim. |
 | `slot.quantity` | Quantity expression in a term slot | v38.0 | A quantity phrase ('two robots', 'a minority of voters', 'zero cases') may mean exactly that many, so it is not an individual for X or for instantiation. Since v43.0 the rule refuses only readings that are ambiguous ('exactly two'); collective quantity phrases such as 'a group of robots' are refused by slot.indefinite_value instead, so no step valid on every reading is refused by this rule alone. |  | Name the group: "The team is registered." Conclude "The team is eligible." |
 | `term.clause_inside` | Clause inside a term | v37.0 | A term that contains a finite verb with a complement may hide an attitude or embedded claim: 'the observer reckons Alpha is red' does not give that Alpha is red. | 1. If X are useful, then X are valuable.<br>2. Software exploits not known to humans are useful.<br>3. Therefore, software exploits not known to humans are valuable. [1,2] | Name the thing: "The exploit is useful." Conclude "The exploit is valuable." |
@@ -3196,7 +3199,7 @@ an allowed term; put the entire description in X or write it literally.
 - `slot.letter_in_name`: A schematic letter may be a literal component of Model U or Malcolm X. Use a variable away from names, or write the name out.
 - `term.inflection_verbatim`: A plural surface may not denote instances of the stem guessed by deleting its suffix. Write the rule with singular 'every N' (Every dog is wet).
 
-Since v45.0 descriptions admit any number of recognized modifiers plus a head (see below). Mixed subordinate-clause/term schemas are conservatively refused outright. EG uses a closed active-verb/copular grammar and refuses compound matrices and other quantified material. Noun inflection is verbatim in ordinary matching and counting classes; rewrite plural rules with singular “every N”. Ordinary initial-capital name evidence must appear away from sentence start and Therefore/So/Thus/Hence; internal capitals also count at sentence start. These intentional costs and the three inflection acceptance sites are detailed in the v44.0 coverage entry.
+Since v45.0 descriptions admit any number of recognized modifiers plus a head (see below). Mixed subordinate-clause/term schemas are conservatively refused outright. EG uses a closed active-verb/copular grammar and refuses compound matrices and other quantified material. Noun inflection is verbatim in ordinary matching and counting classes; rewrite plural rules with singular “every N”. Ordinary initial-capital name evidence requires either membership in the generated name allowlist or a mid-sentence term-position occurrence with no lowercase occurrence anywhere in the argument. Quantity/closed words cannot establish either route. Internal capitals also count at sentence start. These intentional costs and the three inflection acceptance sites are detailed in the v44.0 coverage entry.
 ## v44.0: strict scope and connective rules
 
 - **`scope.mixed_andor` — Mixed connective scope.** A and B or C may mean A and (B or C) or (A and B) or C; relative clauses and lowercase names do not disambiguate it. Use 'both … and' or 'either … or' to show the grouping.
@@ -3214,7 +3217,7 @@ Predicate positions after a copula accept any value, as in v43.0's
 `afterCopula`: “If Rex is X, then Fido is X” admits “euphoric” and “a hero”.
 A variable also used as a term still needs a singular value at that occurrence.
 Internal capitals (AIXI, McCarthy) provide name evidence even at sentence
-start; an ordinary initial capital alone does not.
+start. An ordinary initial capital needs either the generated name allowlist or a mid-sentence term-position occurrence with no lowercase occurrence anywhere in the argument; quantity and closed words are vetoed on both routes.
 
 The antecedent and consequent of “If P, then Q” are checked separately for
 scope. A compound parenthesised operand is checked part by part, so grouping
@@ -3336,7 +3339,7 @@ Clause-start failures quote both the offending clause and its first token.
 ## Noun allowlist (v46 lexicon)
 
 The `validation/lexicon` package embeds **9,002** plural/mass nouns, **14,000**
-singular nouns, **5,006** adjectives and **303** reviewed mass nouns for agreement.
+singular nouns, **5,007** adjectives and **303** reviewed mass nouns for agreement.
 The v46.0 binding and description rules use these allowlists. Regenerate with:
 
 ```sh
@@ -3388,7 +3391,7 @@ Singular heads use the same frequency ranking and all plural-list exclusions,
 including partitives, and exclude plural-only entries. The best 14,000 eligible
 WordNet noun lemmas plus required vocabulary are retained. Adjectives include
 WordNet satellites and attested regular/-ed/-en exception participles of common
-verbs; the best 5,000 plus required legacy vocabulary yield 5,006 entries.
+verbs; the best 5,000 plus required legacy vocabulary yield 5,007 entries.
 Explicit quantity/determiner/identity and ordinal/cardinal exclusions override
 legacy modifiers (`former` stays excluded). APS, ultraintelligent and parking
 are documented in `adjective-supplement.txt`. Ordinals still have a separate
@@ -3403,3 +3406,41 @@ predicate conjuncts must be allowlisted adjectives with at most one recognized
 adverb. Identity, existential witness and counting/description rules do not gain
 bare plural witnesses. Quantity exclusions also remove `the group` and `the set`
 from description heads, superseding those two v45 examples.
+
+
+### Names (v46 lexicon)
+
+`validation/lexicon/names.txt` has 22,369 lowercase entries generated by
+`python3 scripts/gen-name-allowlist/generate.py`. Sources are Kantrowitz's NLTK
+names corpus (attribution license), FiveThirtyEight's Census surname copy
+(CC-BY-4.0, count >= 1,000), and the existing WordNet and English frequency
+sources for exclusions. Exact pins/checksums are in the generator's
+`sources.json`; licenses and attribution accompany the generated lexicon.
+The generator README documents selection and `EXCLUDED-names.md` records
+all overlapping exclusion counts.
+
+A token must be written capitalized to use `lexicon.IsName`; possessives are
+stripped first. Lowercase `leah` supplies no lexical name evidence. Without
+lexical membership, ordinary initial capitals require a mid-sentence occurrence
+in a term position (plain subject with a visible predicate, known verb object,
+or nominal prepositional complement), and the base must never occur lowercase
+anywhere in the argument. Sentence starts, Therefore/So/Thus/Hence, headings
+and sentence adverbs supply no contextual evidence. Quantity/determiner/closed
+words never qualify through either route, even when planted mid-sentence.
+Internal capitals (AIXI, McCarthy) retain their separate existing treatment.
+
+The list excludes all four noun/adjective lexicons, quantity/closed words,
+all WordNet POS lemmas and inflections, and the top 10,000 frequency words.
+Leah and Patel survive; Yudkowsky is absent and is not supplied manually.
+These exclusions intentionally remove ambiguous first names and surnames.
+
+### Degree-adverb openers
+
+Under the existing `opener.adverb` policy, purely, entirely, wholly, fully,
+highly, completely, totally and extremely may directly precede an allowlisted
+adjective with no intervening punctuation. For scope admission the subject
+must also have a noun head and visible predicate. For example, “Purely
+deferential moral philosophy is unstable” qualifies. `deferential` is retained
+as required WordNet adjective vocabulary. A comma after the adverb, a following
+non-adjective, or a hedge/sentence adverb (Only, Likely, Probably, Arguably,
+Clearly, Obviously, etc.) does not receive this exception.
