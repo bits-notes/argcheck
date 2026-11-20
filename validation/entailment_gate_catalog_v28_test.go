@@ -18,15 +18,14 @@ func TestCatalogV28Identity(t *testing.T) {
 	// Explicit v44 refusal list; original case texts remain in the table below.
 	refused := map[string]strictRefusal{
 		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
-		"TestCatalogV28Identity/predicate_and": {"identity.constant_sides", "name the thing"},
+		"TestCatalogV28Identity/predicate_and": {"identity.extensional_context", "state the substituted claim as a premise"},
 		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
 		"TestCatalogV28Identity/gerund_subject": {"identity.constant_sides", "name the thing"},
 		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
 		"TestCatalogV28Identity/coordinated_name": {"identity.constant_sides", "name the thing"},
 		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
 		"TestCatalogV28Identity/negative_predicate": {"identity.constant_sides", "name the thing"},
-		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
-		"TestCatalogV28Identity/identical_with": {"identity.constant_sides", "name the thing"},
+		// v46.0: identical_with now certifies (valid; sides evidenced).
 	}
 	checkV44 := func(t *testing.T, text string, valid bool) {
 		if valid && listedStrictRefusal(t, text, refused) {
@@ -130,12 +129,13 @@ func TestCatalogV28PremiseOrder(t *testing.T) {
 func TestCatalogV28IdentityOracle(t *testing.T) {
 	// Explicit v44 refusal list; original case texts remain in the table below.
 	refused := map[string]strictRefusal{
-		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
-		"TestCatalogV28IdentityOracle/predicate_and": {"identity.constant_sides", "name the thing"},
+		// v46.0: Ada is on the names allowlist, so the sides are evidenced; the
+		// coordinated modal predicate is still not a closed extensional one.
+		"TestCatalogV28IdentityOracle/predicate_and": {"identity.extensional_context", "state the substituted claim as a premise"},
 		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
 		"TestCatalogV28IdentityOracle/negative_predicate": {"identity.constant_sides", "name the thing"},
-		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
-		"TestCatalogV28IdentityOracle/identical_with": {"identity.constant_sides", "name the thing"},
+		// v46.0: identical_with now certifies (Ada is an allowlisted name; Ben
+		// and Cy have prepositional-complement evidence), which is valid.
 	}
 	checkV44 := func(t *testing.T, text string, valid bool) {
 		if valid && listedStrictRefusal(t, text, refused) {

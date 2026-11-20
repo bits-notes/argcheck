@@ -57,15 +57,27 @@ def main():
     rows = list(csv.DictReader(io.StringIO((args.cache/'surnames.csv').read_text())))
     surnames = {r['name'].lower() for r in rows if int(r['count']) >= 1000}
     candidates = first | surnames
+    # WordNet's index.* files are lowercased, so case comes from the synset
+    # lines in data.*: a lemma written lowercase in any synset is an ordinary
+    # word (bill, rose, clement); one written only capitalised is a proper noun
+    # (Alice, Scott) and is not, by itself, evidence of a common word.
     wordnet = set()
+    lower_lemmas, proper_lemmas = set(), set()
     with zipfile.ZipFile(args.cache/'wordnet.zip') as z:
         for pos in ('noun','verb','adj','adv'):
-            lemmas = {l.split()[0].lower() for l in z.read('wordnet/index.'+pos).decode().splitlines() if l and not l.startswith(' ')}
-            for lemma in lemmas:
-                wordnet.update(inflections(lemma))
-                # Components of multiword lemmas can also be common words.
-                wordnet.update(re.split('[_-]', lemma))
+            for line in z.read('wordnet/data.'+pos).decode().splitlines():
+                if not line or line.startswith(' '):
+                    continue
+                f = line.split()
+                for k in range(int(f[3], 16)):
+                    lemma = re.sub(r'\(.*\)$', '', f[4+2*k])
+                    (lower_lemmas if lemma == lemma.lower() else proper_lemmas).add(lemma.lower())
             wordnet.update(z.read('wordnet/'+pos+'.exc').decode().lower().split())
+    for lemma in lower_lemmas:
+        wordnet.update(inflections(lemma))
+        # Components of multiword lemmas can also be common words.
+        wordnet.update(re.split('[_-]', lemma))
+    proper_only = proper_lemmas - wordnet
     quantity = set().union(*(inflections(w) for w in words(NOUN/'quantity-words.txt')))
     closed = set()
     for name in ('singularPartitiveWords', 'termDeterminers', 'quantityNumerals', 'singularClosedWords'):
@@ -83,11 +95,13 @@ def main():
         w,n = line.split()
         if re.fullmatch('[a-z]+',w):
             freq[w] = int(n)
-    common = set(sorted(freq,key=lambda w: (-freq[w],w))[:10000])
+    # The frequency list is lowercased, so frequent names (alice, scott) look
+    # common; exempt only words WordNet knows solely as capitalised proper nouns.
+    common = set(sorted(freq,key=lambda w: (-freq[w],w))[:10000]) - proper_only
     categories = [('non-ASCII, non-letter or at most two letters', {w for w in candidates if not re.fullmatch('[a-z]{3,}',w)}), ('quantity words and inflections',quantity), ('closed words and inflections',closed)]
     for file in ('plural_mass_nouns.txt','singular_nouns.txt','mass_nouns.txt','adjectives.txt'):
         categories.append((file,words(ROOT/'validation/lexicon'/file)))
-    categories += [('WordNet all POS lemmas, components and inflections',wordnet),('English-word-frequencies top 10000',common)]
+    categories += [('WordNet lowercase lemmas (all POS), components and inflections',wordnet),('English-word-frequencies top 10000, less WordNet proper-only nouns',common)]
     denied = set().union(*(s for _,s in categories))
     selected = candidates-denied
     def write(name,data):

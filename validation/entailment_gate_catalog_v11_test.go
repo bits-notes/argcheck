@@ -157,7 +157,9 @@ func TestCatalogV11IdentitySubstitution(t *testing.T) {
 		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
 		"TestCatalogV11IdentitySubstitution/symmetric": {"identity.constant_sides", "name the thing"},
 		// identity.constant_sides: identity sides require evidenced names or bounded singular descriptions.
-		"TestCatalogV11IdentitySubstitution/subject_substitution": {"identity.constant_sides", "name the thing"},
+		// v46.0: Ada and Lovelace are allowlisted names; the transitive
+		// quantified predicate is still outside the extensional copular frame.
+		"TestCatalogV11IdentitySubstitution/subject_substitution": {"identity.extensional_context", "state the substituted claim as a premise"},
 	}
 	runV44 := func(t *testing.T, cases []v11Case) { runV11Strict(t, cases, refused) }
 

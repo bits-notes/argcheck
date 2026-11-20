@@ -60,7 +60,9 @@ func schematicNameEvidence(steps map[int]NumberedArgumentStep) *map[string]bool 
 			if !evidence && !lowercase[lower] && i > 0 && !strings.ContainsAny(words[i-1], ".!?") {
 				prev := strings.ToLower(strings.Trim(words[i-1], ",:"))
 				if prev != "therefore" && prev != "so" && prev != "thus" && prev != "hence" {
-					evidence = nameTermPosition(words, i)
+					// An allowlisted count plural ("Robots") stays ambiguous even
+					// when capitalised in a term position.
+					evidence = nameTermPosition(words, i) && !(lexicon.IsPluralMassNoun(lower) && !lexicon.IsMassNoun(lower))
 				}
 			}
 			if evidence {

@@ -36,6 +36,18 @@ func TestV46ContextNameEvidence(t *testing.T) {
 		{"Zorvan", "The heading is Zorvan.", false},
 		{"Zorvan", "Bob said Zorvan, the bell rings.", false},
 		{"Zorvan", "Bob admires Zorvan.", true},
+		// Widened term positions (v46.0): any plain lowercase non-copula word
+		// before the span, no trailing comma/semicolon/colon.
+		{"Zorvan", "The town builds Zorvan.", true},
+		{"Zorvan", "The bell rang after Zorvan left.", true},
+		{"Zorvan", "The bell rang at the time Zorvan left.", true},
+		{"Zorvan Grid", "The town builds Zorvan Grid.", true},
+		{"Zorvan", "The town was Zorvan.", false},
+		{"Zorvan", "The town builds Zorvan; the bell rings.", false},
+		{"Zorvan", "The town lists Zorvan: the bell rings.", false},
+		{"Lots", "The town builds Lots.", false},
+		{"Plenty", "The bell rang after Plenty left.", false},
+		{"Zorvan Robots", "The town builds Zorvan Robots.", false},
 	} {
 		t.Run(tc.name+tc.extra, func(t *testing.T) {
 			text := "1. If X arrived, then X was seen.\n2. " + tc.name + " arrived.\n3. " + tc.extra + "\n4. Therefore, " + tc.name + " was seen. [1,2]"
@@ -44,7 +56,9 @@ func TestV46ContextNameEvidence(t *testing.T) {
 				t.Fatalf("pass=%v want=%v: %s", r.Passed, tc.pass, res.Message)
 			}
 			steps := map[int]NumberedArgumentStep{1: {Statement: tc.name + " arrived."}, 2: {Statement: tc.extra}}
-			if got := (*schematicNameEvidence(steps))[strings.ToLower(tc.name)]; got != tc.pass {
+			// Evidence is recorded per word; check the head of a multiword name.
+			fields := strings.Fields(strings.ToLower(tc.name))
+			if got := (*schematicNameEvidence(steps))[fields[len(fields)-1]]; got != tc.pass {
 				t.Errorf("evidence=%v want=%v", got, tc.pass)
 			}
 		})

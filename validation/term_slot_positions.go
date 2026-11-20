@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/bits-notes/english-arg-validator/validation/lexicon"
 )
 
 // Identity substitution (Leibniz's law) is certified only in known-safe
@@ -559,7 +561,24 @@ func nameTermPosition(words []string, index int) bool {
 			return start > 1
 		}
 		// These finite transitive uses have an explicit subject before the verb.
-		return start > 1 && (frameTransitives[prev] || prev == "saw" || prev == "met")
+		if start > 1 && (frameTransitives[prev] || prev == "saw" || prev == "met") {
+			return true
+		}
+		// v46.0: any other argument position inside a clause ("to build
+		// Artificial Intelligence", "after Expansionism ranks", "the time
+		// Leah left"). The span must follow a plain lowercase word that is not
+		// a copula (a predicate nominal such as "The heading is Zorvan" is a
+		// label, not a term), and carry no comma, semicolon or colon (vocatives,
+		// list items, headings). A span ending in an allowlisted plural
+		// ("Robots") stays ambiguous. Quantity words and tokens that also occur
+		// lowercase are vetoed by the caller.
+		last := strings.ToLower(strings.Trim(words[end-1], ".!?\"()[]"))
+		return start > 1 && plainLowerWord.MatchString(words[start-1]) && !copulaWords[prev] && !afterCopula(prefix) &&
+			!strings.ContainsAny(words[end-1], ",;:") && !(lexicon.IsPluralMassNoun(last) && !lexicon.IsMassNoun(last))
 	}
 	return false
 }
+
+var copulaWords = wordSet("is are was were be been being am")
+
+var plainLowerWord = regexp.MustCompile(`^[a-z]+$`)
