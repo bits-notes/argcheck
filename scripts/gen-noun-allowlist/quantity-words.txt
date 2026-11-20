@@ -1,0 +1,27 @@
+# All senses disqualify; these lemmas and their plurals supplement WordNet's
+# quantity subtree. Includes partitives, container measures and number words.
+lot plenty dozen hundred thousand million billion trillion quadrillion score
+bunch ton load heap pile stack majority minority bulk rest remainder most
+half part portion share number amount quantity couple handful pair percent
+percentage fraction proportion deal sum total lack mass range variety series
+set group kind sort type all none both few several many much more less least
+enough whole balance residue plurality third quarter ordinal cardinal
+unit measure measurement mile pound dollar year hour minute degree second
+foot inch yard meter metre kilometer kilometre centimeter centimetre millimeter
+millimetre gram kilogram ounce stone grain dram gallon quart pint liter litre
+milliliter millilitre cup teaspoon tablespoon acre hectare byte bit kilobyte
+megabyte gigabyte terabyte watt volt ampere ohm joule calorie hertz newton
+pascal bar kelvin mole candela lumen lux radian steradian decibel knot league
+furlong fathom chain rod perch span pace bushel peck barrel bottle glass
+bowl spoon spoonful cupful mouthful armful bagful bag basketful basket
+truckload carload boatload dash pinch drop dollop slice chunk piece fragment
+segment section subset aggregate collection assortment selection batch
+multitude host throng crowd swarm flock herd pack troop school shoal bevy
+clump cluster brace duo trio quartet quintet sextet septet octave nonet
+zero one two three four five six seven eight nine ten eleven twelve thirteen
+fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty
+fifty sixty seventy eighty ninety umpteen zillion gazillion myriad gross
+first fourth fifth sixth seventh eighth ninth tenth eleventh twelfth
+thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth
+twentieth thirtieth fortieth fiftieth sixtieth seventieth eightieth ninetieth
+hundredth thousandth millionth billionth nth umpteenth nought naught nil

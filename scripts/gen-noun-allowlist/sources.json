@@ -1,0 +1,30 @@
+[
+  {
+    "file": "word_count.txt",
+    "url": "https://raw.githubusercontent.com/brekker23/English-word-frequencies/815665f95ddab30520dff6df260ed3b6244b9638/word_count.txt",
+    "version": "815665f95ddab30520dff6df260ed3b6244b9638",
+    "license": "Apache-2.0 (frequency ranking from public-domain books)",
+    "sha256": "a0df8f6c69603509fda6e4af050ec92f74f9de2d99308ffeda59f988f10291e8"
+  },
+  {
+    "file": "wordnet.zip",
+    "url": "https://raw.githubusercontent.com/nltk/nltk_data/550b6625bcef1f2abff2ff770a5a0d272c9c6b2a/packages/corpora/wordnet.zip",
+    "version": "WordNet 3.0; NLTK data 550b6625bcef1f2abff2ff770a5a0d272c9c6b2a",
+    "license": "Princeton WordNet license",
+    "sha256": "cbda5ea6eef7f36a97a43d4a75f85e07fccbb4f23657d27b4ccbc93e2646ab59"
+  },
+  {
+    "file": "frequency-LICENSE",
+    "url": "https://raw.githubusercontent.com/brekker23/English-word-frequencies/815665f95ddab30520dff6df260ed3b6244b9638/LICENSE",
+    "version": "815665f95ddab30520dff6df260ed3b6244b9638",
+    "license": "Apache-2.0",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  {
+    "file": "get_gutenberg_books.py",
+    "url": "https://raw.githubusercontent.com/brekker23/English-word-frequencies/815665f95ddab30520dff6df260ed3b6244b9638/scripts/get_gutenberg_books.py",
+    "version": "815665f95ddab30520dff6df260ed3b6244b9638",
+    "license": "Apache-2.0",
+    "sha256": "31983e3a4f3d4e188f7c22967606e03c8b42bfbec94a7171701947ece0b8f63f"
+  }
+]

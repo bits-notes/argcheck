@@ -1,0 +1,35 @@
+# Hand-reviewed nouns with an ordinary uncountable use; not inferred from POS.
+# Each must also occur as a WordNet noun. Ambiguous count uses do not disqualify
+# a mass use, but every exclusion still applies. No blanket suffix heuristic.
+accommodation advice advertising affection aggression agriculture air alcohol
+aluminium aluminum anger applause architecture assistance attention baggage
+baking beauty beef beer behavior behaviour biology blood bread breathing
+butter cardboard cash cattle chalk chaos cheese chemistry childhood clothing
+coal coffee commerce communication compassion competence concrete confidence
+confusion consent consciousness conservation construction contentment cooking
+copper corn cotton courage courtesy cream crime criticism curiosity damage
+dancing darkness data debt democracy depression determination dirt dust
+education electricity employment energy engineering entertainment enthusiasm
+envy equipment evidence evolution excitement experience expertise faith fame
+fat fear feedback fiction finance fish flour flu fog foliage food freedom
+friendship fuel fun furniture garbage garlic gas gasoline generosity genetics
+glass gold gossip grammar grass gravel grief guilt hair happiness hardware
+harm hatred hay health heat help history homework honesty honey hope
+hospitality humanity hunger ice ignorance imagination independence industry
+information infrastructure ink innocence insight insurance integrity intelligence
+irony jewelry jewellery justice kindness knowledge labour labor laughter
+laundry lava leather leisure liberty lightning linguistics literacy literature
+livestock logic loneliness love luck luggage machinery magic maintenance
+management manufacturing mathematics meat medicine mercy metal milk misery
+mist money mud music nature news nitrogen noise nonsense nutrition obedience
+oil oxygen pain patience peace permission physics poetry pollution poverty
+power pride privacy progress propaganda psychology publicity rain reading
+recreation research respect rice rubbish rust sadness safety salt sand
+sanitation satisfaction scenery science seafood sewage shame shopping silence
+silk silver sleep smoke snow soap software soil sorrow spaghetti spam
+speech speed spinach steam steel strength stress stupidity success sugar
+sunlight sunshine sweat sympathy tea teaching technology tennis thirst
+thunder timber toast tobacco tolerance tourism traffic training transport
+transportation trash travel trouble trust tuition unemployment understanding
+underwear unity usage vegetation violence vision vocabulary warmth waste
+water wealth weather welfare wheat wisdom wood wool work writing yeast youth
