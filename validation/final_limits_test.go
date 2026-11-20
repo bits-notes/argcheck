@@ -10,7 +10,8 @@ func TestFinalDocumentedLimits(t *testing.T) {
 		{"name", "1. If X arrived, then X was seen.\n2. Rex arrived.\n3. Therefore, Rex was seen. [1,2]", "1. If Rex arrived, then Rex was seen.\n2. Rex arrived.\n3. Therefore, Rex was seen. [1,2]"},
 		{"plural class", "1. All dogs are animals.\n2. The dog is a dog.\n3. Therefore, the dog is an animal. [1,2]", "1. Every dog is an animal.\n2. The dog is a dog.\n3. Therefore, the dog is an animal. [1,2]"},
 		{"gerund clause", "1. Swimming is healthy and the lamp is lit.\n2. Therefore, swimming is healthy. [1]", "1. The activity is healthy and the lamp is lit.\n2. Therefore, the activity is healthy. [1]"},
-		{"description", "1. If X arrived, then X was seen.\n2. The big red dog arrived.\n3. Therefore, the big red dog was seen. [1,2]", "1. If the big red dog arrived, then the big red dog was seen.\n2. The big red dog arrived.\n3. Therefore, the big red dog was seen. [1,2]"},
+		// v45.0 accepts several closed-list modifiers ("the big red dog"); unlisted ones stay refused.
+		{"description", "1. If X arrived, then X was seen.\n2. The muddy wooden cart arrived.\n3. Therefore, the muddy wooden cart was seen. [1,2]", "1. If the muddy wooden cart arrived, then the muddy wooden cart was seen.\n2. The muddy wooden cart arrived.\n3. Therefore, the muddy wooden cart was seen. [1,2]"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

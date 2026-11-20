@@ -242,10 +242,13 @@ func (policy strictRules) descriptionWords(words []string, plural bool) bool {
 			if policy.hasSlotName(w) && !(w == "aps" && i < len(words)-1) {
 				return false
 			}
-			if i < len(words)-1 && !descriptionModifiers[w] && !coordinatedAdjective(w) {
+			// v44.0 accepted one unrestricted modifier ("the hard-takeoff concept");
+			// v45 must stay a superset, so the closed modifier list and the verb-head
+			// check apply only to descriptions with two or more modifiers.
+			if len(words) > 2 && i < len(words)-1 && !descriptionModifiers[w] && !coordinatedAdjective(w) {
 				return false
 			}
-			if i == len(words)-1 && (framePredicates[w] || frameTransitives[w] || frameIntransitives[w] || scopeNameVerbs[w]) {
+			if len(words) > 2 && i == len(words)-1 && (framePredicates[w] || frameTransitives[w] || frameIntransitives[w] || scopeNameVerbs[w]) {
 				return false
 			}
 		}

@@ -1386,7 +1386,9 @@ shape below is admitted.
 All indefinite term values are refused, including `a dog`, `someone`, and
 `a lot`; the v43.0 shape check is no longer sufficient for certification.
 Plural and quantity values such as `lots`, `most`, `the dogs`, and
-`Bob and Carol` are refused. `The dog` and `the red dog` pass; `the big red dog` is refused;
+`Bob and Carol` are refused. `The dog`, `the red dog` and (v45.0) `the big red dog` pass;
+with two or more modifiers each must be a closed-list modifier or a recognized adjective, so
+`the muddy wooden cart` is refused;
 `Rex` and `Bob's dog` require independent capitalization evidence away
 from sentence start and Therefore/So/Thus/Hence. `the Bank of England`
 is refused when its capitalised head is treated as name evidence; a lowercase
@@ -1493,7 +1495,7 @@ catalog inference name. Audit B numbers refer to `workspace/audit/limits.md`.
 | `scope.clause_start`, `opener.ing_frame` (B03, B12) | “Swimming is healthy and the lamp is lit; therefore swimming is healthy.” Bare nouns, adjectives and -ing subjects can fail the clause-start grammar; “Highly reliable machinery works and the lamp is lit” also fails the opener check. | Name the activity with a definite subject: “The activity is healthy and the lamp is lit; therefore the activity is healthy.” For an unfamiliar verb such as “Alice pirouettes”, declare a quoted `atom{...}` literal for the complete clause before applying propositional rules. |
 | `scope.clause_start` (capitalised subject) | “Alice is happy and Alice pirouettes; therefore Alice pirouettes.” After a capitalised subject the next word must be a listed finite verb (the frame verb lists plus a closed list of common argument verbs such as greets, believes, claims, requires, implies). | Use a listed verb, or declare an `atom{...}` literal for the clause. |
 | `scope.clause_start`, `identity.constant_sides`, `eg.name_witness` (explicit FOL and Fitch) | “alice admires alice; therefore some x is such that (x admires alice)”; “Suppose c is a student and c greets Bob” as an existential-elimination assumption. Lowercase constants and single-letter eigenvariables are not name evidence. | Use capitalised names with evidence, and a capitalised fresh name for the witness: “Suppose Cyd is a student and Cyd greets Bob.” |
-| `slot.description_shape` | “If X arrived, X was seen; the big red dog arrived; therefore the big red dog was seen.” More than one modifier, or a capitalised modifier counted as name evidence, is refused. | Write the entire description literally in the conditional, or name its referent and use that name consistently. |
+| `slot.description_shape` | “If X arrived, X was seen; the muddy wooden cart arrived; therefore the muddy wooden cart was seen.” With more than one modifier (v45.0), any modifier outside the closed modifier list and the recognized adjectives is refused, as is a capitalised modifier counted as name evidence. | Write the entire description literally in the conditional, or name its referent and use that name consistently. |
 | `scope.clause_start` (B01 surviving completeness boundary) | “Alpha eats, shoots, and leaves; therefore Alpha eats, shoots and leaves.” Even harmless Oxford-comma changes in a verb list can be refused. | Preserve the original punctuation verbatim and reiterate the clause. |
 | `term.clause_inside` (B04) | A schematic inference about “physics exploits not known to humans” can be refused because exploits can be a verb. | Write that phrase literally in the rule instead of filling a variable with it. |
 | `slot.indefinite_written` (B05) | “If a X arrived, then a X departed; a dog arrived; therefore a dog departed.” | Write “If a dog arrived, then a dog departed” literally. |
