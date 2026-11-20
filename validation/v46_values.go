@@ -36,6 +36,7 @@ func (p strictRules) termValueAt(template []rune, ti int, value string) bool {
 		for _, pair := range p.round2IdentityPairs(string(template)) {
 			marker := string(template[ti])
 			if strings.Contains(pair.left, marker) || strings.Contains(pair.right, marker) {
+				p.hit("identity.constant_sides")
 				return false
 			}
 		}
