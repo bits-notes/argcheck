@@ -153,7 +153,7 @@ func TestCatalogV22(t *testing.T) {
 		"TestCatalogV22/4-place_Fitch_EE": {"scope.clause_start", "move the operator into each clause"},
 	}
 
-	if EntailmentGateCatalogVersion != "v45.1" {
+	if EntailmentGateCatalogVersion != "v46.0" {
 		t.Fatal(EntailmentGateCatalogVersion)
 	}
 	for _, tc := range nplaceExercises() {

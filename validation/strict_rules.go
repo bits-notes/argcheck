@@ -3,6 +3,9 @@ package validation
 // strictRules belongs to one evaluation. Diagnostic retries copy it; no mutable
 // package state or locks are needed, including for concurrent library callers.
 type strictRules struct {
+	slot_plural_mass_value       bool
+	slot_plural_witness          bool
+	pluralWitnessBlocked         [256]bool
 	slot_description_shape       bool
 	slot_one_type                bool
 	eg_subject_only              bool
@@ -66,6 +69,8 @@ func (rules strictRules) recording() (strictRules, *firedRules) {
 
 func allStrictRules() strictRules {
 	return strictRules{
+		slot_plural_mass_value:       true,
+		slot_plural_witness:          true,
 		slot_description_shape:       true,
 		slot_one_type:                true,
 		eg_subject_only:              true,
@@ -102,6 +107,10 @@ func allStrictRules() strictRules {
 
 func (rules strictRules) without(id string) strictRules {
 	switch id {
+	case "slot.plural_mass_value":
+		rules.slot_plural_mass_value = false
+	case "slot.plural_witness":
+		rules.slot_plural_witness = false
 	case "slot.description_shape":
 		rules.slot_description_shape = false
 	case "slot.one_type":

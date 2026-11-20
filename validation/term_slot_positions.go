@@ -316,7 +316,7 @@ func (policy strictRules) indefiniteSlotDiagnosis(template string, premise Numbe
 			ti = len([]rune(template[:ti]))
 			if !policy.singularBindingSafe(templateRunes, ti, concrete, runeStart, value) {
 				shown := originalCaseSpan(value, premise.Statement)
-				return fmt.Sprintf("slot.value_singular: premise %d binds a schematic variable to %q; a quantity, plural, group or indefinite phrase need not be one thing, so a rule about each thing does not apply to it. Name the thing (with capitalization evidenced away from sentence start or Therefore/So/Thus/Hence), use a singular definite description (the dog), or state existence as its own premise and then name it. Write the phrase itself into the rule instead of a variable (%q)", premise.Number, shown, literalRuleSuggestion(template, variable, shown))
+				return fmt.Sprintf("slot.value_singular: premise %d binds a schematic variable to %q; the value fails the term allowlist or agreement checks; an unknown noun is not on the allowlist, and a quantity or indefinite phrase need not be one thing. Name the thing (with capitalization evidenced away from sentence start or Therefore/So/Thus/Hence), use a singular definite description (the N, for example the dog), or state existence as its own premise and then name it. Write the phrase itself into the rule instead of a variable (%q)", premise.Number, shown, literalRuleSuggestion(template, variable, shown))
 			}
 			if policy.indefiniteBindingPositionSafe(concrete, runeStart, value) {
 				continue
@@ -515,7 +515,7 @@ func (policy strictRules) pluralCopulaSlotMessage(c NumberedArgumentStep, steps 
 					continue
 				}
 				policy.hit("slot.value_singular")
-				return fmt.Sprintf("slot.value_singular: premise %d would bind %s to %q; a plural or bare value is refused for a term slot. Name the thing or write the phrase itself into the rule", other, variable, value)
+				return fmt.Sprintf("slot.value_singular: premise %d would bind %s to %q; the noun is not on the allowlist or fails its agreement/context checks; use the N. Name the thing or write the phrase itself into the rule", other, variable, value)
 			}
 		}
 	}

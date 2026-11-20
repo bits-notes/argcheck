@@ -5,6 +5,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"unicode"
+
+	"github.com/bits-notes/english-arg-validator/validation/lexicon"
 )
 
 // Retain case evidence before comparisonClause folds it away. Evidence is
@@ -96,6 +98,11 @@ func (policy strictRules) singularName(words []string) bool {
 }
 
 func (policy strictRules) singularValue(value string) bool {
+	return policy.singularOnlyValue(value) || (policy.slot_plural_mass_value && policy.pluralMassValue(value))
+}
+
+// Keep identity and description recursion restricted to singular terms.
+func (policy strictRules) singularOnlyValue(value string) bool {
 	value = strings.Trim(strings.TrimSpace(strings.ToLower(value)), ".;:!?\"()")
 	if strings.Contains(value, ",") {
 		return false
@@ -120,10 +127,10 @@ func (policy strictRules) singularValue(value string) bool {
 					return false
 				}
 			}
-			if !policy.singularValue(strings.Join(words[:k], " ")) {
+			if !policy.singularOnlyValue(strings.Join(words[:k], " ")) {
 				return false
 			}
-			if policy.singularValue(strings.Join(right, " ")) {
+			if policy.singularOnlyValue(strings.Join(right, " ")) {
 				return true
 			}
 			return policy.descriptionWords(right, words[k-1] == "group" || words[k-1] == "set")
@@ -160,7 +167,7 @@ func (policy strictRules) singularValue(value string) bool {
 func (policy strictRules) singularBindingSafe(template []rune, ti int, concrete []rune, ci int, value string) bool {
 	variable, _ := schematicVariableForMarker(template[ti])
 	if policy.slot_one_type && policy.termSlots[variable] && clauseSlotBefore(template, ti) && policy.hit("slot.one_type") {
-		return policy.singularValue(value)
+		return policy.termValueAt(template, ti, value)
 	}
 	// During unification the older checks actually run. Preserve their
 	// attribution in one-rule-off retries, but never invent such an exemption
@@ -182,7 +189,7 @@ func (policy strictRules) singularBindingShapeSafe(template []rune, ti int, conc
 	}
 	variable, _ := schematicVariableForMarker(template[ti])
 	if policy.slot_one_type && policy.termSlots[variable] && policy.hit("slot.one_type") {
-		return policy.singularValue(value)
+		return policy.termValueAt(template, ti, value)
 	}
 	if clauseSlotBefore(template, ti) && repeatedSlotClause(value) {
 		return true
@@ -198,7 +205,7 @@ func (policy strictRules) singularBindingShapeSafe(template []rune, ti int, conc
 	if afterCopula(strings.ToLower(before)) {
 		return true
 	}
-	return policy.singularValue(value)
+	return policy.termValueAt(template, ti, value)
 }
 
 func (policy strictRules) hasSlotName(w string) bool {
@@ -274,9 +281,9 @@ func (policy strictRules) descriptionWords(words []string, plural bool) bool {
 				return false
 			}
 			// v44.0 accepted one unrestricted modifier ("the hard-takeoff concept");
-			// v45 must stay a superset, so the closed modifier list and the verb-head
+			// Preserve that modifier behavior; the allowlist and the verb-head
 			// check apply only to descriptions with two or more modifiers.
-			if len(words) > 2 && i < len(words)-1 && !descriptionModifiers[w] && !coordinatedAdjective(w) {
+			if len(words) > 2 && i < len(words)-1 && !ordinal && !lexicon.IsAdjective(w) {
 				policy.hit("slot.description_shape")
 				return false
 			}
@@ -286,5 +293,9 @@ func (policy strictRules) descriptionWords(words []string, plural bool) bool {
 			}
 		}
 	}
-	return plural || !singularPluralHead(words[len(words)-1])
+	head := words[len(words)-1]
+	if plural {
+		return lexicon.IsPluralMassNoun(head)
+	}
+	return lexicon.IsSingularNoun(head) && !singularPluralHead(head)
 }

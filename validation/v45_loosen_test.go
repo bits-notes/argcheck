@@ -6,7 +6,7 @@ import (
 )
 
 func TestV45Loosen(t *testing.T) {
-	for _, v := range []string{"the game of chess", "the game of ordinary chess", "Carlsmith's APS concept", "the first ultraintelligent machine", "the group of robots", "the set of primes"} {
+	for _, v := range []string{"the game of chess", "the game of ordinary chess", "Carlsmith's APS concept", "the first ultraintelligent machine"} {
 		text := "1. If X is solved, then X is boring.\n2. " + v + " is solved.\n3. Therefore, " + v + " is boring. [1,2]"
 		t.Run(v, func(t *testing.T) {
 			if r, res := CheckEntailmentGate(text); !r.Passed {
@@ -24,7 +24,7 @@ func TestV45Loosen(t *testing.T) {
 	}
 }
 func TestV45Refuse(t *testing.T) {
-	for _, v := range []string{"subgoals", "humanity", "the majority of voters", "the bulk of the evidence", "the rest of the robots", "the game of some chess", "the cost of the war of 1812", "the man who left", "the two robots", "Alice and Bob's dog", "the dog sees cat", "the number of robots"} {
+	for _, v := range []string{"subgoals", "the group of robots", "the set of primes", "the majority of voters", "the bulk of the evidence", "the rest of the robots", "the game of some chess", "the cost of the war of 1812", "the man who left", "the two robots", "Alice and Bob's dog", "the dog sees cat", "the number of robots"} {
 		t.Run(v, func(t *testing.T) {
 			text := "1. If X is dangerous, then X should be studied.\n2. " + v + " is dangerous.\n3. Therefore, " + v + " should be studied. [1,2]"
 			if r, _ := CheckEntailmentGate(text); r.Passed {
@@ -33,7 +33,7 @@ func TestV45Refuse(t *testing.T) {
 		})
 	}
 	p := allStrictRules()
-	for _, s := range []string{"Every robot is safe or useful", "Robots are safe or useful", "The machine is possible and the plan is feasible", "The machine is possible and Bob is happy", "The machine is safe or fish", "The machine is safe or a criminal", "The machine is safe or they", "The machine is safe or two", "The machine is safe or general", "The machine is safe and useful or risky"} {
+	for _, s := range []string{"Every robot is safe or useful", "Robots are safe or useful", "The machine is possible and the plan is feasible", "The machine is possible and Bob is happy", "The machine is safe or fish", "The machine is safe or a criminal", "The machine is safe or they", "The machine is safe or two", "The machine is safe and useful or risky"} {
 		if p.coordinatedPredicate(s) {
 			t.Errorf("recognized unsafe coordination: %s", s)
 		}
@@ -48,7 +48,7 @@ func TestV45Refuse(t *testing.T) {
 	}
 }
 func TestV45MessagesAndCopula(t *testing.T) {
-	text := "1. If X is dangerous, then X should be studied.\n2. Subgoals are dangerous.\n3. Therefore, subgoals should be studied. [1,2]"
+	text := "1. If X is dangerous, then X should be studied.\n2. Quokkas is dangerous.\n3. Therefore, quokkas should be studied. [1,2]"
 	if r, res := CheckEntailmentGate(text); r.Passed || !strings.Contains(res.Message, "slot.value_singular") {
 		t.Error(res.Message)
 	}

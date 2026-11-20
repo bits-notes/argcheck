@@ -7,6 +7,7 @@ import (
 
 func TestStrictNotesExamples(t *testing.T) {
 	fixes := map[string]string{
+		"slot.plural_witness":          "1. If the water is in the cup, then the water is in both vessels.\n2. The water is in the cup.\n3. Therefore, the water is in both vessels. [1,2]",
 		"slot.description_shape":       "1. If X is red, then X is warm.\n2. The dog is red.\n3. Therefore, the dog is warm. [1,2]",
 		"slot.one_type":                "1. The dog is red.\n2. Therefore, the dog is red. [1]",
 		"eg.subject_only":              "1. There is an X such that Lois greets X.\n2. Therefore, there is an X such that Lois greets X. [1]",

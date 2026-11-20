@@ -25,6 +25,7 @@ type StrictNote struct {
 func (policy strictRules) strictStepPasses(step NumberedArgumentStep, steps map[int]NumberedArgumentStep) bool {
 	policy.slotNames = schematicNameEvidence(steps)
 	policy.termSlots = ruleTermSlots(step, steps)
+	policy.pluralWitnessBlocked = rulePluralWitnessBlocks(step, steps)
 	retry := policy.gateConclusionStepStrict(step, steps)
 	if policy.round2TermFailure(step, steps, retry) != "" {
 		return false
@@ -216,7 +217,7 @@ var strictNotes = []StrictNote{
 		ID:          "slot.value_singular",
 		Name:        "Schematic value must be a singular term",
 		Since:       "v44.0",
-		Why:         "A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Only evidenced proper names and singular definite descriptions fill term slots. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values.",
+		Why:         "A quantity, plural, group or indefinite phrase (a lot, most people, Bob and Carol, a dog) need not be one thing, so a rule about each thing does not apply to it. Evidenced proper names and singular definite descriptions fill term slots; since v46.0, allowlisted bare plural/mass values also qualify with agreement and witness guards. Predicate-only positions after a copula accept any value; variables also used as terms still require singular values.",
 		AlsoRefuses: []string{"1. If X arrived, then X was seen.\n2. A dog arrived.\n3. Therefore, a dog was seen. [1,2]"},
 		Fix:         []string{"Name the thing (Rex arrived), with internal capitals or capitalization evidenced somewhere other than sentence start or after Therefore/So/Thus/Hence; or use a singular definite description (the dog). Alternatively state existence as its own premise and then name it, or write the phrase itself into the rule instead of a variable."},
 	},
@@ -291,4 +292,5 @@ var strictNotes = []StrictNote{
 	{ID: "scope.elided_copula", Name: "Closed copula elision", Since: "v44.0", Why: "In Either the men are quiet or fish, fish may be a verb rather than a predicate with an omitted copula. Unknown predicates are not expanded.", AlsoRefuses: []string{"1. Either the men are quiet or fish.\n2. Therefore, either the men are quiet or the men are fish. [1]"}, Fix: []string{"Repeat the subject and verb: 'or the men are fish'."}},
 	{ID: "scope.description_negation", Name: "Description negation scope", Since: "v44.0", Why: "Wide negation need not assert that a description denotes; narrow predicate negation can presuppose existence. Only proper names permit the conversion.", AlsoRefuses: []string{"1. It is not the case that the present king of France is bald.\n2. Therefore, the present king of France is not bald. [1]"}, Fix: []string{"Add 'There is exactly one present king of France' and name it, or keep the wide negation."}},
 	{ID: "opener.ly_exception", Name: "Adverb-capable noun exceptions", Since: "v44.0", Why: "Daily, early and only can be adverbs with scope over an entire sentence, even when they also have nominal uses.", AlsoRefuses: []string{"1. It is not the case that it is not the case that daily the lamp is lit.\n2. Therefore, daily the lamp is lit. [1]"}, Fix: []string{"Move the adverb into each clause, or state the framed claim as its own premise."}},
+	{ID: "slot.plural_witness", Name: "No repeated plural or mass witness", Since: "v46.0", Why: "Water is in the cup and water is in the bottle does not establish the same water. Repeated antecedent occurrences, multiple fact citations, and consequents containing same, both or together cannot reuse a bare plural or mass witness.", AlsoRefuses: []string{"1. If X is in the cup, then X is in both vessels.\n2. Water is in the cup.\n3. Therefore, water is in both vessels. [1,2]"}, Fix: []string{"Name each portion or state the conclusion as a premise."}},
 }

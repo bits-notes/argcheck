@@ -71,7 +71,7 @@ func (p strictRules) egWitnessSafe(statement, term string) bool {
 	}
 	// Copular identity requires two positively evidenced terms.
 	for _, pair := range instanceCandidates(statement) {
-		if p.singularValue(pair.left) && p.singularValue(pair.right) && (pair.left == t || pair.right == t) {
+		if p.singularOnlyValue(pair.left) && p.singularOnlyValue(pair.right) && (pair.left == t || pair.right == t) {
 			return true
 		}
 	}
@@ -230,7 +230,7 @@ func (p strictRules) round2TermFailure(c NumberedArgumentStep, steps map[int]Num
 		if p.identity_constant_sides {
 			for _, s := range statements {
 				for _, pair := range p.round2IdentityPairs(s) {
-					if (!p.singularValue(pair.left) || !p.singularValue(pair.right)) && p.hit("identity.constant_sides") {
+					if (!p.singularOnlyValue(pair.left) || !p.singularOnlyValue(pair.right)) && p.hit("identity.constant_sides") {
 						return "identity.constant_sides: identity sides must be names or singular definites; name the thing, or use 'the dog'; alternatively, state the substituted claim as a premise"
 					}
 				}
@@ -283,7 +283,7 @@ func formulaNumeralTerm(f *folFormula) bool {
 // Include the v28 synonym and the v27 capitalized copular-identity surface;
 // both can otherwise reach the FOL identity matcher under a bridge form name.
 func (p strictRules) round2IdentityPairs(statement string) []clausePair {
-	s := strings.ReplaceAll(normalizeClause(statement), " is identical with ", " is identical to ")
+	s := strings.NewReplacer(" is identical with ", " is identical to ", " are identical with ", " is identical to ", " are identical to ", " is identical to ").Replace(normalizeClause(statement))
 	// Wide negation is a logical wrapper, not part of the left identity
 	// term. Keep checking both terms of the enclosed identity.
 	for strings.HasPrefix(s, "it is not the case that ") {

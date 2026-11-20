@@ -1,13 +1,17 @@
 package validation
 
-import "strings"
+import (
+	"strings"
 
-// Closed predicate vocabulary avoids suffix homographs ("criminal", "general",
-// "cannibal") that may denote nouns rather than adjective predicates.
+	"github.com/bits-notes/english-arg-validator/validation/lexicon"
+)
+
+// Legacy required vocabulary retained as generator input. Runtime predicate
+// membership uses the generated adjective allowlist, including homographs.
 var coordinatedAdjectives = wordSet("reliable possible feasible risky safe unsafe aligned causal informational dangerous useful happy red blue green warm cold wise rich poor friendly mortal alive dead hungry tired valuable eligible registered ready late early wet dry small large tall short round square honest kind brave light portable")
 var coordinatedAdverbs = wordSet("financially very quite extremely deeply highly")
 
-func coordinatedAdjective(w string) bool { return coordinatedAdjectives[w] }
+func coordinatedAdjective(w string) bool { return lexicon.IsAdjective(w) }
 
 func (policy strictRules) coordinatedPredicate(s string) bool {
 	words := strings.Fields(strings.ToLower(s))
@@ -18,7 +22,7 @@ func (policy strictRules) coordinatedPredicate(s string) bool {
 		subject := strings.Join(words[:i], " ")
 		// Schematic X/Y/Z subjects use exactly the same singular values when bound.
 		schematic := len(subject) == 1 && strings.Contains("uvwxyz", subject)
-		if !schematic && !policy.singularValue(subject) {
+		if !schematic && !policy.singularOnlyValue(subject) {
 			return false
 		}
 		tail := words[i+1:]

@@ -1533,3 +1533,40 @@ catalog inference name. Audit B numbers refer to `workspace/audit/limits.md`.
 | `FOL universal instantiation` (B32) | A valid intended instance is refused when an opaque literal body would collide with a bound-variable spelling. | Alpha-rename the bound variable and quote literal labels before instantiation. |
 | Numbered input and citation bounds (B33) | An otherwise valid proof exceeding input or citation limits is refused. | Split it into smaller separately checked lemmas and cite the explicit lemma statements in the final proof. |
 | Atomic label matching (B36) | “Definition (a) holds” cannot expose an argument inside the label's parentheses. | State the definition's content as a separate numbered premise and cite that content. |
+
+
+## v46.0: allowlisted plural/mass values and allowlisted heads
+
+`slot.plural_mass_value` (since v46.0, on) admits zero to two allowlisted
+adjectives followed by an allowlisted plural/mass head in a schematic term slot.
+For example, subgoals are dangerous, advanced machines are dangerous, and
+humanity is valuable can instantiate matching rules. No commas, possessives,
+post-head material or capitalized name evidence on the head are admitted by this
+path. Plural heads reject is/was/has/does and registered third-person -s verbs;
+reviewed mass heads reject are/were/have/do. Every occurrence, including the
+consequent, is checked.
+
+`slot.plural_witness` (since v46.0, on) refuses repeated bare witnesses in a
+rule antecedent and consequents containing same, both or together. It also
+conservatively refuses bare values in steps citing multiple non-rule premises.
+Water in the cup and water in the bottle does not establish the same water.
+Name each portion or state the conclusion as a premise. This guard may refuse
+valid uses of different variables or nested repeated occurrences.
+
+Descriptions require an allowlisted singular head; a plural complement in the
+bounded group/set grammar requires an allowlisted plural/mass head. Because the
+same explicit quantity exclusions remove group/set themselves, their v45
+examples now refuse. The pump, the main valve and the death of the child remain
+accepted. Two or more description modifiers must be allowlisted adjectives or
+recognized ordinals; one modifier retains the v45 behavior. Coordinated
+predicates accept allowlisted adjectives (including general) and an optional
+recognized adverb for each conjunct.
+
+Quantity words (lots, plenty, dozens, hundreds, ages, droves), numerous robots,
+unknown heads such as quokkas, the lot, the bulk and the majority of voters stay
+refused. Identity sides remain singular; existential, counting and description
+inference rules do not acquire bare plural witnesses. Unknown vocabulary is
+never presumed safe. Frequency cutoffs, WordNet coverage, homographs and the
+reviewed mass classification are conservative lexical limits, not a general
+English parser. `former` conflicts with the required legacy-modifier list; the
+explicit adjective exclusion wins, while the separate ordinal rule is retained.

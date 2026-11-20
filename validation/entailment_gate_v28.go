@@ -247,6 +247,7 @@ func gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentSt
 func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[int]NumberedArgumentStep) EntailmentGateStepReport {
 	policy.slotNames = schematicNameEvidence(steps)
 	policy.termSlots = ruleTermSlots(c, steps)
+	policy.pluralWitnessBlocked = rulePluralWitnessBlocks(c, steps)
 	report := policy.gateConclusionStepStrict(c, steps)
 	if reason := policy.round2TermFailure(c, steps, report); reason != "" {
 		report.Passed = false
@@ -255,6 +256,13 @@ func (policy strictRules) gateConclusionStep(c NumberedArgumentStep, steps map[i
 	}
 	if report.Passed {
 		return report
+	}
+	if policy.slot_plural_witness && policy.pluralWitnessBlocked != ([256]bool{}) {
+		relaxedWitness := policy.without("slot.plural_witness")
+		if retry := relaxedWitness.gateConclusionStepStrict(c, steps); retry.Passed && relaxedWitness.round2TermFailure(c, steps, retry) == "" {
+			report.Mismatch = "slot.plural_witness: repeated plural or mass values need not denote the same things or water; name each portion or state the conclusion as a premise"
+			return report
+		}
 	}
 	if message := policy.pluralCopulaSlotMessage(c, steps); message != "" {
 		report.Mismatch = message
