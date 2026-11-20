@@ -158,11 +158,14 @@ def main():
                  for suffix in ('', 's')}
 
     tags = defaultdict(int)
+    noun_tags = defaultdict(int)
     for line in senses.splitlines():
         key, _, _, n = line.split()
         lemma, pos = key.split('%')
         if pos.startswith('2:'):
             tags[lemma] += int(n)
+        elif pos.startswith('1:'):
+            noun_tags[lemma] += int(n)
     # "Common verb" = at least five tagged uses over WordNet verb senses.
     # Inflected verbs are not separate WordNet sense entries; compare bases.
     common_verbs = {v for v, n in tags.items() if n >= 5}
@@ -176,11 +179,34 @@ def main():
                 common_forms.add(form)
     common_forms.update(('is', 'has', 'does'))
 
+    # Verb-dominant surface forms: a third-person verb form whose verb senses
+    # are tagged more than three times as often as the noun senses it would
+    # pluralise ("says", "does", "goes"). Bound as a term value, such a word is
+    # far more likely to be read as the verb. Ordinary noun/verb pairs with
+    # strong noun use (works, values, risks, costs) stay in.
+    verb_base_of = defaultdict(set)
+    for v in verbs:
+        verb_base_of[regular(v)].add(v)
+    for line in verb_exc.splitlines():
+        form, *bases = line.split()
+        verb_base_of[form].update(bases)
+    noun_base_of = defaultdict(set)
+    for base in noun_senses:
+        for p in plurals(base):
+            noun_base_of[p].add(base)
+    verb_dominant = {'is', 'has', 'does', 'was', 'says', 'goes'}
+    for w, bases in verb_base_of.items():
+        verb_n = max(tags.get(v, 0) for v in bases)
+        noun_n = max([noun_tags.get(b, 0) for b in noun_base_of.get(w, ())] + [noun_tags.get(w, 0)])
+        if verb_n > 3 * noun_n and verb_n >= 5:
+            verb_dominant.add(w)
+
     categories = [
         ('explicit quantity, proportion, partitive, measure and number words', quantity),
         ('WordNet first noun sense under quantity or measure', semantic_quantity),
         ('Go closed-word sets, pronouns, determiners and quantifiers', closed),
         ('indefinite pronoun compounds', compounds),
+        ('verb-dominant third-person forms (verb tags > 3x noun tags)', verb_dominant),
     ]
     # Report independent matches among all attested candidates plus required
     # terms. Categories overlap; counts are not a disjoint subtraction ledger.

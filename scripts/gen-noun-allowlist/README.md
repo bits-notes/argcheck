@@ -64,9 +64,12 @@ does not replace them. Upstream URLs are in the checksum manifest.
 
 ## Exclusions and overlap review
 
-* `quantity-words.txt` is unchanged: partitives, quantities, proportions,
-  container measures, collectives, units, cardinals and ordinals remain denied,
-  including their regular/WordNet irregular plurals.
+* `quantity-words.txt`: partitives, quantities, proportions, container
+  measures, collectives, units, cardinals and ordinals are denied, including
+  their regular/WordNet irregular plurals. It also denies nouns whose bare
+  plural is a quantity idiom ("ages", "eons", "droves", "hordes", "legions",
+  "swathes"). Concrete nouns with an "N of" quantity idiom (oceans, mountains,
+  waves) stay in, because the slot rule refuses any word after the head.
 * Semantic exclusion uses only the **first noun sense** in `index.noun` and
   its hypernym ancestry. The root `00033615` is quantity.n.01 / measure.n.02 /
   amount.n.03, with descendants including unit_of_measurement.n.01 and
@@ -78,10 +81,14 @@ does not replace them. Upstream URLs are in the checksum manifest.
   `singularClosedWords` directly from `validation/*.go`; fail on missing or
   ambiguous declarations. Deny these and their plurals, supplemental closed
   words and every/some/any/no + one/body/thing/where compounds.
-* **Verb forms are not an exclusion.** Report overlaps with common verbs
-  (at least five tagged WordNet verb uses) and rare/untagged verbs separately
-  for review. Noun/verb overlap does not invalidate a noun; there is no global
-  cross-POS first-sense ordering. For example, does also pluralizes doe.
+* **Verb-dominant forms are excluded; ordinary noun/verb overlap is not.**
+  A third-person verb form is denied when its verb senses are tagged more
+  than three times as often as the noun senses it would pluralise (and at
+  least five times), plus is/has/does/was/says/goes. This removes "says",
+  "does" (also the plural of doe), "means" and "forecasts", and keeps
+  works, values, risks, costs and claims. Other overlaps with common verbs
+  (at least five tagged WordNet verb uses) and rare/untagged verbs are
+  reported for review only.
 
 `EXCLUDED.md` gives overlapping candidate exclusion counts, global deny-set
 sizes, frequency-ordered examples, selection boundaries, both verb-overlap

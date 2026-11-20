@@ -3358,16 +3358,21 @@ the sole supplied count form absent from WordNet. Literary and encyclopedic
 biases remain. WordNet lacks countability tags, so morphology and attestation
 are an approximation, supplemented by mass-noun review.
 
-The explicit quantity list and its plurals remain excluded unchanged. Semantic
+The explicit quantity list and its plurals are excluded. It includes nouns
+whose bare plural is a quantity idiom (`ages`, `eons`, `droves`, `hordes`,
+`legions`, `swathes`). Semantic
 quantity exclusion now uses only the first WordNet noun sense under
 quantity.n.01 / measure.n.02 / amount.n.03, including unit and number descendants.
 An inflection's own noun entry takes precedence over its base when available.
 Later quantity senses no longer disqualify a word; `information` needs no
 exception. The four validator closed-word sets, supplemental closed words and
-pronoun compounds remain excluded. **Verb overlaps are informational only**;
-common and rare overlaps are recorded, never removed for being verbs.
+pronoun compounds remain excluded. **Verb-dominant forms are excluded**: a
+third-person verb form whose WordNet verb senses are tagged more than three
+times as often as the noun senses it would pluralise (`says`, `does`, `means`,
+`forecasts`), plus `is has does was says goes`. Other noun/verb overlaps
+(`works`, `values`, `risks`, `costs`) stay in and are listed for review.
 
-Core probe exceptions are `nuclear` (adjective), `datasets` and `qualia`
+Core probe exceptions are `nuclear` (adjective), `forecasts` (verb-dominant), `datasets` and `qualia`
 (no WordNet noun synsets), and `norms`, `money`, `probabilities` (first noun
 senses still descend from quantity). See `scripts/gen-noun-allowlist/README.md`
 for their ancestry and the selection procedure, and

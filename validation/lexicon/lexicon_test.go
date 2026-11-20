@@ -12,7 +12,7 @@ import (
 // WordNet 3.0 noun synsets (noun.exc alone lists qualia -> quale).
 // Norms, money and probabilities have quantity-descended first noun senses.
 func TestLexiconRequiredAndLookup(t *testing.T) {
-	for _, word := range strings.Fields("subgoals humans machines robots systems agents humanity intelligence evidence water information knowledge research software people sheep deer aircraft police goods runs works leads claims results means does models algorithms computers networks values goals preferences outcomes risks incentives policies capabilities resources institutions governments corporations researchers scientists philosophers arguments reasons beliefs desires intentions actions consequences rights duties obligations laws experiments observations theories hypotheses data consciousness experience suffering welfare wellbeing happiness pleasure pain morality ethics justice freedom liberty safety security alignment training hardware electricity energy wealth poverty inequality education healthcare medicine vaccines drugs animals plants species organisms genes cells brains minds persons children students teachers workers employers employees citizens voters patients doctors nurses lawyers judges firms companies markets prices wages taxes profits costs benefits harms dangers threats weapons predictions forecasts credences utilities decisions choices options strategies simulations worlds universes zombies properties facts truths propositions sentences words concepts") {
+	for _, word := range strings.Fields("subgoals humans machines robots systems agents humanity intelligence evidence water information knowledge research software people sheep deer aircraft police goods works claims results models algorithms computers networks values goals preferences outcomes risks incentives policies capabilities resources institutions governments corporations researchers scientists philosophers arguments reasons beliefs desires intentions actions consequences rights duties obligations laws experiments observations theories hypotheses data consciousness experience suffering welfare wellbeing happiness pleasure pain morality ethics justice freedom liberty safety security alignment training hardware electricity energy wealth poverty inequality education healthcare medicine vaccines drugs animals plants species organisms genes cells brains minds persons children students teachers workers employers employees citizens voters patients doctors nurses lawyers judges firms companies markets prices wages taxes profits costs benefits harms dangers threats weapons predictions credences utilities decisions choices options strategies simulations worlds universes zombies properties facts truths propositions sentences words concepts") {
 		if !isAllowlistedPluralMassNoun(word) || !isAllowlistedPluralMassNoun(strings.ToUpper(word)) {
 			t.Errorf("required word missing or lowercase lookup broken: %q", word)
 		}
@@ -42,7 +42,8 @@ zero one two three four five six seven eight nine ten eleven twelve thirteen
 fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty fifty
 sixty seventy eighty ninety first third quarter fourth fifth sixth seventh eighth
 ninth tenth everyone something nobody anyone everything somebody anything nothing
-norms money probabilities`
+norms money probabilities ages eons aeons droves hordes legions swathes swaths
+is has does was says goes means`
 	for _, word := range strings.Fields(denied) {
 		if isAllowlistedPluralMassNoun(word) {
 			t.Errorf("excluded word present: %q", word)
