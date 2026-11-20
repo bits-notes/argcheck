@@ -160,7 +160,7 @@ var strictNotes = []StrictNote{
 		Name:        "Fronted adverb",
 		Since:       "v37.0",
 		Why:         "A sentence adverb may weaken or qualify the whole claim: 'Arguably A and B' may assert only that A and B is arguable.",
-		AlsoRefuses: []string{"1. If X is safe, then X is useful.\n2. Highly reliable machinery is safe.\n3. Therefore, highly reliable machinery is useful. [1,2]"},
+		AlsoRefuses: []string{"1. If X is safe, then X is useful.\n2. Arguably reliable machinery is safe.\n3. Therefore, arguably reliable machinery is useful. [1,2]"},
 		Fix:         []string{"Start with the subject: \"The reliable machine is safe.\" Use the same wording in the conclusion."},
 	},
 	{

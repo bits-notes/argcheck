@@ -53,6 +53,13 @@ func schematicNameEvidence(steps map[int]NumberedArgumentStep) *map[string]bool 
 				names[lower] = true
 				continue
 			}
+			// Plain capitalisation away from sentence start (the pre-v46 test)
+			// still marks a word that may be a name. It never makes a value
+			// acceptable; descriptions use it to keep refusing name modifiers
+			// ("the Bob dog") that strict evidence no longer records.
+			if unicode.IsUpper(firstRune(base)) && i > 0 && !strings.ContainsAny(words[i-1], ".!?") {
+				names["cap:"+lower] = true
+			}
 			if !unicode.IsUpper(firstRune(base)) || singularClosedWord(lower) || lexicon.IsNameForbidden(lower) {
 				continue
 			}
@@ -295,7 +302,7 @@ func (policy strictRules) descriptionWords(words []string, plural bool) bool {
 			return false
 		}
 		if policy.slot_description_shape {
-			if policy.hasSlotName(w) && !(w == "aps" && i < len(words)-1) {
+			if (policy.hasSlotName(w) || policy.hasSlotName("cap:"+w)) && !(w == "aps" && i < len(words)-1) {
 				policy.hit("slot.description_shape")
 				return false
 			}
